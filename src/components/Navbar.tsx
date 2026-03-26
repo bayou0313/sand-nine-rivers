@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import logoImg from "@/assets/riversand-logo.png";
 
-const Navbar = () => {
+const Navbar = ({ solid = false }: { solid?: boolean }) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(solid);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
