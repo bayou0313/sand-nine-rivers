@@ -27,6 +27,7 @@ export type Database = {
           distance_miles: number
           id: string
           notes: string | null
+          order_number: string | null
           payment_method: string
           payment_status: string
           price: number
@@ -36,6 +37,8 @@ export type Database = {
           saturday_surcharge_amount: number
           status: string
           stripe_payment_id: string | null
+          tax_amount: number
+          tax_rate: number
           updated_at: string
         }
         Insert: {
@@ -50,6 +53,7 @@ export type Database = {
           distance_miles: number
           id?: string
           notes?: string | null
+          order_number?: string | null
           payment_method?: string
           payment_status?: string
           price: number
@@ -59,6 +63,8 @@ export type Database = {
           saturday_surcharge_amount?: number
           status?: string
           stripe_payment_id?: string | null
+          tax_amount?: number
+          tax_rate?: number
           updated_at?: string
         }
         Update: {
@@ -73,6 +79,7 @@ export type Database = {
           distance_miles?: number
           id?: string
           notes?: string | null
+          order_number?: string | null
           payment_method?: string
           payment_status?: string
           price?: number
@@ -82,6 +89,8 @@ export type Database = {
           saturday_surcharge_amount?: number
           status?: string
           stripe_payment_id?: string | null
+          tax_amount?: number
+          tax_rate?: number
           updated_at?: string
         }
         Relationships: []

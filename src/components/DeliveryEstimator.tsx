@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
+import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -170,11 +171,11 @@ const DeliveryEstimator = () => {
                 <div className="text-center p-4 bg-background rounded-xl">
                   <p className="font-body text-xs text-muted-foreground uppercase">Per Load Starting At</p>
                   <p className="font-display text-3xl text-primary flex items-center justify-center">
-                    <DollarSign className="w-6 h-6" />{result.price.toFixed(2)}
+                    {formatCurrency(result.price)}
                   </p>
                 </div>
                 <p className="font-body text-sm text-muted-foreground text-center">
-                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Local delivery included" : `Includes $${((result.distance - BASE_MILES) * PER_MILE_EXTRA).toFixed(2)} extended-area surcharge`} • Saturday +$35
+                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Local delivery included" : `Includes ${formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA)} extended-area surcharge`} • Saturday +$35
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>

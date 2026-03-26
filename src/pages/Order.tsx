@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus } from "lucide-react";
+import { formatPhone, formatCurrency, getTaxRateFromAddress } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -129,7 +130,7 @@ const CardPaymentForm = ({
         disabled={submitting || !stripe}
         className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90"
       >
-        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PAY $${amount.toFixed(2)} NOW`}
+        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PAY ${formatCurrency(amount)} NOW`}
       </Button>
     </div>
   );
@@ -166,11 +167,14 @@ const Order = () => {
     notes: "",
   });
 
-  // Computed total with Saturday surcharge — $35 per load
+  // Tax calculation based on delivery address
+  const taxInfo = useMemo(() => getTaxRateFromAddress(address), [address]);
+
+  // Computed total with Saturday surcharge — $35 per load, plus tax
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
-  const totalPrice = result
-    ? (result.price * quantity) + saturdaySurchargeTotal
-    : 0;
+  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal : 0;
+  const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
+  const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
 
   // Pre-fill from estimator URL params
   useEffect(() => {
@@ -297,6 +301,8 @@ const Order = () => {
     saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? SATURDAY_SURCHARGE * quantity : 0,
     delivery_window: "8:00 AM – 5:00 PM",
     same_day_requested: selectedDeliveryDate!.isSameDay,
+    tax_rate: taxInfo.rate,
+    tax_amount: taxAmount,
   });
 
   const handleCardPaymentSuccess = async (paymentIntentId: string) => {
@@ -493,9 +499,9 @@ const Order = () => {
                     <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
                   </div>
                   <div className="text-center p-4 bg-background rounded-xl">
-                    <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Total (${quantity} loads)` : "Per Load"}</p>
+                    <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Subtotal (${quantity} loads)` : "Per Load"}</p>
                     <p className="font-display text-3xl text-primary flex items-center justify-center">
-                      <DollarSign className="w-6 h-6" />{(result.price * quantity).toFixed(2)}
+                      {formatCurrency(result.price * quantity)}
                     </p>
                   </div>
                 </div>
@@ -533,7 +539,7 @@ const Order = () => {
                       <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
                         <Phone className="w-4 h-4 text-primary" /> PHONE NUMBER *
                       </label>
-                      <Input type="tel" placeholder="(504) 555-0123" required maxLength={20} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-12 rounded-xl" />
+                      <Input type="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
                     </div>
                     <div>
                       <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
@@ -583,7 +589,7 @@ const Order = () => {
                       {/* Base price per load */}
                       <div className="flex justify-between py-3 border-b border-border">
                         <span className="font-body text-muted-foreground">Base delivery × {quantity}</span>
-                        <span className="font-display text-foreground">${(195 * quantity).toFixed(2)}</span>
+                        <span className="font-display text-foreground">{formatCurrency(195 * quantity)}</span>
                       </div>
 
                       {/* Extra mileage */}
@@ -593,7 +599,7 @@ const Order = () => {
                             Extended delivery surcharge × {quantity} load{quantity > 1 ? "s" : ""}
                           </span>
                           <span className="font-display text-foreground">
-                            +${((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)}
+                            +{formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}
                           </span>
                         </div>
                       )}
@@ -624,25 +630,29 @@ const Order = () => {
                       {selectedDeliveryDate.isSaturday && (
                          <div className="flex justify-between py-3 border-b border-border">
                           <span className="font-body text-destructive">Saturday Surcharge ($35 × {quantity} load{quantity > 1 ? "s" : ""})</span>
-                          <span className="font-display text-destructive">+${saturdaySurchargeTotal}.00</span>
+                          <span className="font-display text-destructive">+{formatCurrency(saturdaySurchargeTotal)}</span>
                         </div>
                       )}
 
                       {/* Subtotal breakdown */}
                       <div className="mt-4 bg-primary/5 rounded-xl p-4 space-y-2">
                         <div className="flex justify-between">
-                          <span className="font-body text-sm text-muted-foreground">Subtotal ({quantity} load{quantity > 1 ? "s" : ""} × ${result.price.toFixed(2)}/load)</span>
-                          <span className="font-display text-foreground">${(result.price * quantity).toFixed(2)}</span>
+                          <span className="font-body text-sm text-muted-foreground">Subtotal ({quantity} load{quantity > 1 ? "s" : ""} × {formatCurrency(result.price)}/load)</span>
+                          <span className="font-display text-foreground">{formatCurrency(result.price * quantity)}</span>
                         </div>
                         {selectedDeliveryDate.isSaturday && (
                           <div className="flex justify-between">
                             <span className="font-body text-sm text-muted-foreground">Saturday surcharge ($35 × {quantity})</span>
-                            <span className="font-display text-foreground">+${saturdaySurchargeTotal}.00</span>
+                            <span className="font-display text-foreground">+{formatCurrency(saturdaySurchargeTotal)}</span>
                           </div>
                         )}
+                        <div className="flex justify-between">
+                          <span className="font-body text-sm text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}% — {taxInfo.parish})</span>
+                          <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
+                        </div>
                         <div className="flex justify-between pt-2 border-t border-border">
                           <span className="font-display text-xl text-foreground">TOTAL DUE</span>
-                          <span className="font-display text-3xl text-primary">${totalPrice.toFixed(2)}</span>
+                          <span className="font-display text-3xl text-primary">{formatCurrency(totalPrice)}</span>
                         </div>
                       </div>
                     </div>
@@ -743,7 +753,7 @@ const Order = () => {
                         disabled={submitting || !form.name.trim() || !form.phone.trim()}
                         className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
                       >
-                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY ${totalPrice.toFixed(2)} VIA STRIPE</>}
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY {formatCurrency(totalPrice)} VIA STRIPE</>}
                       </Button>
                     </div>
                   )}
@@ -838,12 +848,16 @@ const Order = () => {
                   {selectedDeliveryDate.isSaturday && (
                     <div className="flex justify-between py-3 border-b border-border">
                       <span className="font-body text-destructive">Saturday Surcharge ($35 × {quantity})</span>
-                      <span className="font-display text-destructive">+${saturdaySurchargeTotal}.00</span>
+                      <span className="font-display text-destructive">+{formatCurrency(saturdaySurchargeTotal)}</span>
                     </div>
                   )}
+                  <div className="flex justify-between py-3 border-b border-border">
+                    <span className="font-body text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}%)</span>
+                    <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
+                  </div>
                   <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">
                     <span className="font-display text-lg text-foreground">TOTAL</span>
-                    <span className="font-display text-2xl text-primary">${totalPrice.toFixed(2)}</span>
+                    <span className="font-display text-2xl text-primary">{formatCurrency(totalPrice)}</span>
                   </div>
                 </div>
 
@@ -871,13 +885,13 @@ const Order = () => {
                       <p className="font-display text-lg tracking-wider">PAYMENT CONFIRMED</p>
                     </div>
                     <p className="font-body text-muted-foreground max-w-md mx-auto">
-                      Your card payment of <strong className="text-primary">${totalPrice.toFixed(2)}</strong> has been processed.
+                      Your card payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> has been processed.
                       We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
                     </p>
                   </>
                 ) : (
                   <p className="font-body text-muted-foreground max-w-md mx-auto">
-                    Your order is confirmed. Payment of <strong className="text-primary">${totalPrice.toFixed(2)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
+                    Your order is confirmed. Payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
                     We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
                   </p>
                 )}

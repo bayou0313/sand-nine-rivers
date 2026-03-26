@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Truck, MapPin, Package, ShoppingCart, Minus, Plus } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -95,7 +96,7 @@ const Pricing = () => {
               <p className="font-body text-background/60 text-sm">
                 {qty} loads × $195 =
               </p>
-              <p className="font-display text-3xl text-accent">${total}</p>
+              <p className="font-display text-3xl text-accent">{formatCurrency(total)}</p>
             </motion.div>
           )}
 

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LogOut, Package, RefreshCw, Phone, MapPin, DollarSign, Clock, Loader2, ChevronDown, ChevronUp, CreditCard, CalendarDays, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/format";
 
 type Order = {
   id: string;
@@ -27,6 +28,10 @@ type Order = {
   saturday_surcharge_amount: number;
   same_day_requested: boolean;
   delivery_window: string;
+  order_number: string | null;
+  quantity: number;
+  tax_rate: number;
+  tax_amount: number;
 };
 
 type PaymentEvent = {
@@ -229,6 +234,9 @@ const Admin = () => {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-display text-xl text-foreground">{order.customer_name}</h3>
+                        {order.order_number && (
+                          <Badge variant="secondary" className="font-mono text-xs">{order.order_number}</Badge>
+                        )}
                         <Badge variant="outline" className={statusColors[order.status] || ""}>{order.status.toUpperCase()}</Badge>
                         <Badge variant="outline" className={paymentStatusColors[order.payment_status] || paymentStatusColors.pending}>
                           <CreditCard className="w-3 h-3 mr-1" />
@@ -258,7 +266,7 @@ const Admin = () => {
                       {order.notes && <p className="font-body text-sm text-muted-foreground italic">"{order.notes}"</p>}
                     </div>
                     <div className="flex items-center gap-4">
-                      <p className="font-display text-2xl text-primary">${Number(order.price).toFixed(2)}</p>
+                      <p className="font-display text-2xl text-primary">{formatCurrency(Number(order.price))}</p>
                       <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
                         <SelectTrigger className="w-36 font-body text-sm">
                           <SelectValue />
