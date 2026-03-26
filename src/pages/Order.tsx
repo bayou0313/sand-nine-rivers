@@ -407,8 +407,9 @@ const Order = () => {
     </div>
   );
 
-  // Fallback UI for popup return tab (when window.close() is blocked)
-  if (isPopupReturnTab) {
+  // If this is a popup return tab (window.close() was blocked), show fallback UI
+  const isPopupReturn = searchParams.get("return_mode") === "popup" && searchParams.get("payment");
+  if (isPopupReturn) {
     const paymentStatus = searchParams.get("payment");
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background flex items-center justify-center">
