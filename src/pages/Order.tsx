@@ -690,7 +690,7 @@ const Order = () => {
             {step === "confirm" && result && selectedDeliveryDate && (
               <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
                 {/* Receipt-style confirmation */}
-                <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
+                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
                   {/* Logo header */}
                   <div className="bg-muted py-4 flex justify-center border-b border-border">
                     <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
