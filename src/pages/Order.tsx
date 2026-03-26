@@ -335,8 +335,13 @@ const Order = () => {
       setDateError("Please select a delivery date to continue.");
       return;
     }
-    if (!form.name.trim() || !form.phone.trim()) {
-      toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
+    if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
+      toast({ title: "Missing info", description: "Please enter your name, phone, and email.", variant: "destructive" });
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
       return;
     }
     setDateError("");
