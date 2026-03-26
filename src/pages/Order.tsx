@@ -57,6 +57,7 @@ const Order = () => {
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [isPopupReturnTab, setIsPopupReturnTab] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
@@ -86,13 +87,33 @@ const Order = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  // Handle Stripe return via URL params
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (!paymentStatus) return;
 
     const returnedOrderNumber = searchParams.get("order_number");
     const returnedSessionId = searchParams.get("session_id");
+    const returnMode = searchParams.get("return_mode");
 
+    if (returnMode === "popup") {
+      // This is the Stripe return tab — signal the original page and close
+      const signal = JSON.stringify({
+        type: "stripe-payment-result",
+        status: paymentStatus,
+        order_number: returnedOrderNumber || "",
+        session_id: returnedSessionId || "",
+        timestamp: Date.now(),
+      });
+      localStorage.setItem("stripe_payment_signal", signal);
+      // Attempt to close the tab
+      window.close();
+      // If browser blocks close, show fallback UI
+      setTimeout(() => setIsPopupReturnTab(true), 500);
+      return;
+    }
+
+    // Normal same-tab return
     if (paymentStatus === "success") {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
       if (returnedSessionId) setStripePaymentId(returnedSessionId);
@@ -115,6 +136,44 @@ const Order = () => {
       });
     }
   }, [searchParams, toast]);
+
+  // Listen for cross-tab Stripe payment signals (from popup return tab)
+  useEffect(() => {
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key !== "stripe_payment_signal" || !e.newValue) return;
+      try {
+        const signal = JSON.parse(e.newValue);
+        if (signal.type !== "stripe-payment-result") return;
+        // Consume the signal
+        localStorage.removeItem("stripe_payment_signal");
+        setSubmitting(false);
+
+        if (signal.status === "success") {
+          if (signal.order_number) setOrderNumber(signal.order_number);
+          if (signal.session_id) setStripePaymentId(signal.session_id);
+          setStep("success");
+          toast({
+            title: "Payment successful",
+            description: signal.order_number
+              ? `Order ${signal.order_number} is confirmed.`
+              : "Your payment was completed successfully.",
+          });
+        } else if (signal.status === "canceled") {
+          setStep("confirm");
+          toast({
+            title: "Payment canceled",
+            description: "No charge was made. You can try again anytime.",
+            variant: "destructive",
+          });
+        }
+      } catch {
+        // ignore malformed signals
+      }
+    };
+
+    window.addEventListener("storage", handleStorageEvent);
+    return () => window.removeEventListener("storage", handleStorageEvent);
+  }, [toast]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
@@ -292,6 +351,7 @@ const Order = () => {
 
       if (insertError) throw insertError;
 
+      const isEmbedded = window.self !== window.top;
       const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
@@ -302,6 +362,7 @@ const Order = () => {
           order_id: insertedOrder?.id,
           order_number: insertedOrder?.order_number,
           origin_url: window.location.origin,
+          return_mode: isEmbedded ? "popup" : "redirect",
         },
       });
 
@@ -309,11 +370,13 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
-      if (window.self !== window.top) {
-        const newTab = window.open(data.url, "_blank", "noopener,noreferrer");
+      if (isEmbedded) {
+        const newTab = window.open(data.url, "_blank");
         if (!newTab) {
           window.location.assign(data.url);
         }
+        // Keep submitting=true so button stays disabled while popup is open
+        return;
       } else {
         window.location.assign(data.url);
       }
@@ -345,6 +408,33 @@ const Order = () => {
       <span className={`font-display text-sm ${destructive ? "text-destructive" : accent ? "text-primary" : "text-foreground"}`}>{value}</span>
     </div>
   );
+
+  // Fallback UI for popup return tab (when window.close() is blocked)
+  if (isPopupReturnTab) {
+    const paymentStatus = searchParams.get("payment");
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background flex items-center justify-center">
+        <div className="bg-background rounded-2xl p-8 border border-border/50 shadow-lg max-w-md text-center space-y-4">
+          {paymentStatus === "success" ? (
+            <CheckCircle2 className="w-12 h-12 text-primary mx-auto" />
+          ) : (
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+          )}
+          <h2 className="text-2xl font-display text-foreground">
+            {paymentStatus === "success" ? "Payment Complete!" : "Payment Canceled"}
+          </h2>
+          <p className="font-body text-muted-foreground">
+            {paymentStatus === "success"
+              ? "Your payment has been processed. You can close this tab and return to your order page."
+              : "No charge was made. You can close this tab and try again."}
+          </p>
+          <Button onClick={() => window.close()} className="font-display tracking-wider">
+            Close This Tab
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">

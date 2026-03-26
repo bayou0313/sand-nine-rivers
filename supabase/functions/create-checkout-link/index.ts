@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url } = await req.json();
+    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url, return_mode } = await req.json();
 
     if (!amount || typeof amount !== "number" || amount < 50) {
       return new Response(
@@ -50,8 +50,8 @@ serve(async (req) => {
         order_number: order_number || "",
         customer_name: customer_name || "",
       },
-      success_url: `${safeOrigin}/order?payment=success&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${safeOrigin}/order?payment=canceled&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}`,
+      success_url: `${safeOrigin}/order?payment=success&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}&session_id={CHECKOUT_SESSION_ID}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
+      cancel_url: `${safeOrigin}/order?payment=canceled&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
     });
 
     return new Response(
