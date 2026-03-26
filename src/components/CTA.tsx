@@ -36,13 +36,13 @@ const CTA = () => {
           transition={{ delay: 0.3 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Button size="lg" className="text-lg font-display tracking-wider px-8 bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl shadow-xl" asChild>
+          <Button size="lg" className="text-lg font-display tracking-wider px-10 py-6 bg-accent hover:bg-[#C8911A] text-accent-foreground rounded-2xl shadow-xl transition-all duration-200 w-full sm:w-auto" asChild>
             <Link to="/order">
               <ShoppingCart className="w-5 h-5 mr-2" />
               ORDER ONLINE
             </Link>
           </Button>
-          <Button size="lg" variant="outline" className="text-lg font-display tracking-wider px-8 border-primary-foreground/40 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-xl" asChild>
+          <Button size="lg" variant="outline" className="text-lg font-display tracking-wider px-10 py-6 border-primary-foreground/40 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-2xl w-full sm:w-auto" asChild>
             <a href="tel:+18554689297">
               <Phone className="w-5 h-5 mr-2" />
               1-855-GOT-WAYS

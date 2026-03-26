@@ -23,20 +23,22 @@ const Hero = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 bg-accent/90 backdrop-blur-sm px-5 py-1.5 rounded-full"
+            className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-5 py-1.5 rounded-full"
           >
-            <Clock className="w-3.5 h-3.5 text-accent-foreground" />
-            <p className="font-display text-accent-foreground tracking-wider text-sm">SAME-DAY DELIVERY AVAILABLE</p>
+            <Clock className="w-3.5 h-3.5 text-white" />
+            <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY AVAILABLE</p>
           </motion.div>
 
-          <motion.h1
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-4xl md:text-5xl lg:text-6xl leading-[0.9] text-primary-foreground tracking-wide"
           >
-            SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS
-          </motion.h1>
+            <h1 className="text-5xl md:text-6xl lg:text-[4.3rem] leading-[0.9] text-primary-foreground tracking-wide">
+              SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS
+            </h1>
+            <div className="w-32 h-1 bg-accent mt-3 rounded-full" />
+          </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -54,7 +56,7 @@ const Hero = () => {
             className="bg-primary-foreground/5 backdrop-blur-xl border border-primary-foreground/15 rounded-2xl p-6 inline-block"
           >
             <p className="text-3xl md:text-4xl font-display text-primary-foreground">
-              9 YARDS — $195
+              9 YARDS — <span className="text-accent">$195</span>
             </p>
             <p className="text-primary-foreground/60 font-body mt-2 flex items-center gap-2 text-sm">
               <Truck className="w-4 h-4" /> Free delivery within the Greater New Orleans area
@@ -65,27 +67,44 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="flex flex-col sm:flex-row gap-3"
+            className="space-y-2"
           >
-            <Button size="lg" className="text-lg font-display tracking-wider px-8 bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 transition-all" asChild>
-              <Link to="/order">
-                <Truck className="w-5 h-5 mr-2" />
-                ORDER ONLINE
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg font-display tracking-wider px-8 border-primary-foreground/50 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-xl backdrop-blur-sm" asChild>
-              <a href="tel:+18554689297">
-                <Phone className="w-5 h-5 mr-2" />
-                1-855-GOT-WAYS
-              </a>
-            </Button>
+            <p className="text-[13px] font-body text-destructive font-light tracking-wide">
+              Order before noon for same-day delivery
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button size="lg" className="text-lg font-display tracking-wider px-10 py-6 bg-accent hover:bg-[#C8911A] text-accent-foreground rounded-2xl shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 transition-all duration-200 animate-cta-pulse w-full sm:w-auto" asChild>
+                <Link to="/order">
+                  <Truck className="w-5 h-5 mr-2" />
+                  ORDER ONLINE
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="text-lg font-display tracking-wider px-10 py-6 border-primary-foreground/50 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-2xl backdrop-blur-sm w-full sm:w-auto" asChild>
+                <a href="tel:+18554689297">
+                  <Phone className="w-5 h-5 mr-2" />
+                  1-855-GOT-WAYS
+                </a>
+              </Button>
+            </div>
           </motion.div>
+
+          {/* Prominent phone number */}
+          <motion.a
+            href="tel:+18554689297"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.85 }}
+            className="inline-flex items-center gap-2 text-accent font-display text-2xl md:text-3xl tracking-wider hover:text-accent/80 transition-colors"
+          >
+            <Phone className="w-6 h-6" />
+            1-855-GOT-WAYS
+          </motion.a>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
-            className="flex flex-wrap gap-6 pt-4"
+            className="flex flex-wrap gap-6 pt-2"
           >
             {[
               { icon: ShieldCheck, text: "Same-day delivery available" },

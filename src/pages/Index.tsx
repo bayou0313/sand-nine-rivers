@@ -11,16 +11,17 @@ import CTA from "@/components/CTA";
 import FAQ from "@/components/FAQ";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
+import MobilePhoneBar from "@/components/MobilePhoneBar";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-14 lg:pb-0">
       <Navbar />
       <Hero />
+      <Stats />
       <Pricing />
       <DeliveryEstimator />
       <About />
-      <Stats />
       <RiverSandInfo />
       <Features />
       <Testimonials />
@@ -28,6 +29,7 @@ const Index = () => {
       <FAQ />
       <ContactForm />
       <Footer />
+      <MobilePhoneBar />
     </div>
   );
 };

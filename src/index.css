@@ -76,3 +76,12 @@
     display: none;
   }
 }
+
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(41 83% 53% / 0.5); }
+  50% { box-shadow: 0 0 0 10px hsl(41 83% 53% / 0); }
+}
+
+.animate-cta-pulse {
+  animation: cta-pulse 2.5s ease-in-out infinite;
+}

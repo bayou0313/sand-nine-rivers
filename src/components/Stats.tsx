@@ -9,7 +9,7 @@ const stats = [
 
 const Stats = () => {
   return (
-    <section className="py-20 bg-gradient-to-r from-primary via-primary/95 to-primary/85 relative overflow-hidden">
+    <section className="py-20 bg-primary relative overflow-hidden">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute -top-20 -right-20 w-80 h-80 bg-primary-foreground rounded-full" />
         <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary-foreground rounded-full" />
@@ -24,8 +24,8 @@ const Stats = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
             >
-              <p className="font-display text-4xl md:text-5xl text-primary-foreground">{stat.value}</p>
-              <p className="font-body text-primary-foreground/60 mt-2 text-sm uppercase tracking-widest">{stat.label}</p>
+              <p className="font-display text-5xl md:text-6xl text-accent font-bold">{stat.value}</p>
+              <p className="font-body text-primary-foreground/80 mt-2 text-sm uppercase tracking-widest font-semibold">{stat.label}</p>
             </motion.div>
           ))}
         </div>
