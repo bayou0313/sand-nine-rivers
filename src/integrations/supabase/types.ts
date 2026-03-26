@@ -25,8 +25,10 @@ export type Database = {
           id: string
           notes: string | null
           payment_method: string
+          payment_status: string
           price: number
           status: string
+          stripe_payment_id: string | null
           updated_at: string
         }
         Insert: {
@@ -39,8 +41,10 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: string
+          payment_status?: string
           price: number
           status?: string
+          stripe_payment_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -53,11 +57,48 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: string
+          payment_status?: string
           price?: number
           status?: string
+          stripe_payment_id?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      payment_events: {
+        Row: {
+          created_at: string
+          event_id: string
+          event_type: string
+          id: string
+          order_id: string | null
+          stripe_payment_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          event_type: string
+          id?: string
+          order_id?: string | null
+          stripe_payment_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          event_type?: string
+          id?: string
+          order_id?: string | null
+          stripe_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
