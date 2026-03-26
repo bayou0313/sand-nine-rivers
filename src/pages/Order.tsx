@@ -599,7 +599,7 @@ const Order = () => {
                             Extended delivery surcharge × {quantity} load{quantity > 1 ? "s" : ""}
                           </span>
                           <span className="font-display text-foreground">
-                            +${((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)}
+                            +{formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}
                           </span>
                         </div>
                       )}
