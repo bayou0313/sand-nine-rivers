@@ -611,11 +611,11 @@ const Order = () => {
                         A 3.5% processing fee applies to online payments. Pay at delivery to avoid this fee.
                       </p>
                       <Button
-                        onClick={handleStripeLink}
-                        disabled={submitting || !form.name.trim() || !form.phone.trim()}
-                        className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
+                        onClick={goToStep2}
+                        disabled={!form.name.trim() || !form.phone.trim()}
+                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl"
                       >
-                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)} VIA STRIPE</>}
+                        REVIEW ORDER
                       </Button>
                     </div>
                   )}
@@ -697,7 +697,7 @@ const Order = () => {
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Payment</span>
                     <span className="font-display text-foreground">
-                      {codSubOption === "cash" ? "CASH" : "CHECK"} AT DELIVERY
+                      {paymentMethod === "stripe-link" ? "PAY NOW — STRIPE" : `${codSubOption === "cash" ? "CASH" : "CHECK"} AT DELIVERY`}
                     </span>
                   </div>
                   {selectedDeliveryDate.isSameDay && (
@@ -717,10 +717,28 @@ const Order = () => {
                     <span className="font-body text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}%)</span>
                     <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
                   </div>
-                  <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">
-                    <span className="font-display text-lg text-foreground">TOTAL</span>
-                    <span className="font-display text-2xl text-primary">{formatCurrency(totalPrice)}</span>
-                  </div>
+                  {paymentMethod === "stripe-link" && (
+                    <>
+                      <div className="flex justify-between py-3 border-b border-border">
+                        <span className="font-body text-muted-foreground">Subtotal</span>
+                        <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
+                      </div>
+                      <div className="flex justify-between py-3 border-b border-border">
+                        <span className="font-body text-muted-foreground">Processing Fee (3.5%)</span>
+                        <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
+                      </div>
+                      <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">
+                        <span className="font-display text-lg text-foreground">TOTAL CHARGE</span>
+                        <span className="font-display text-2xl text-primary">{formatCurrency(totalWithProcessingFee)}</span>
+                      </div>
+                    </>
+                  )}
+                  {paymentMethod !== "stripe-link" && (
+                    <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">
+                      <span className="font-display text-lg text-foreground">TOTAL</span>
+                      <span className="font-display text-2xl text-primary">{formatCurrency(totalPrice)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
@@ -731,8 +749,16 @@ const Order = () => {
 
                 <div className="flex gap-3 mt-4">
                   <Button variant="outline" onClick={() => setStep("details")} className="h-12 font-display tracking-wider rounded-xl">BACK</Button>
-                  <Button onClick={handleCodSubmit} disabled={submitting} className="flex-1 h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl">
-                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PLACE ORDER — ${codSubOption.toUpperCase()} AT DELIVERY`}
+                  <Button
+                    onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
+                    disabled={submitting}
+                    className="flex-1 h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
+                  >
+                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      paymentMethod === "stripe-link"
+                        ? `PAY ${formatCurrency(totalWithProcessingFee)} VIA STRIPE`
+                        : `PLACE ORDER — ${codSubOption.toUpperCase()} AT DELIVERY`
+                    )}
                   </Button>
                 </div>
               </motion.div>
