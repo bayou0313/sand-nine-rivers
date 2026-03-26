@@ -755,8 +755,8 @@ const Order = () => {
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-4">
                 <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
                   {/* Logo header */}
-                  <div className="bg-foreground py-4 flex justify-center">
-                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
+                  <div className="bg-muted py-4 flex justify-center border-b border-border">
+                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
                   </div>
 
                   <div className="p-8 text-center space-y-5">
