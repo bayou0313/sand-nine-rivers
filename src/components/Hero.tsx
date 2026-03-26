@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
+    <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-16">
       <img
         src={heroImage}
         alt="River sand delivery truck unloading 9 cubic yards of clean screened river sand at a New Orleans job site"
