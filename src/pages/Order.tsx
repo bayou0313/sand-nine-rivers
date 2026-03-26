@@ -288,6 +288,7 @@ const Order = () => {
     delivery_address: address,
     distance_miles: result!.distance,
     price: totalPrice,
+    quantity,
     notes: form.notes.trim() || null,
     delivery_date: selectedDeliveryDate!.iso,
     delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
