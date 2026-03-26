@@ -99,7 +99,7 @@ function contactCustomerEmail(contact: any) {
     <h2>We Got Your Message!</h2>
     <p>Hi${contact.name ? " " + contact.name : ""},</p>
     <p>Thanks for reaching out! We've received your message and will get back to you within <strong>one business day</strong>.</p>
-    <p>In the meantime, if it's urgent, give us a call at <a href="tel:+18554689297" style="color:${BRAND_COLOR};font-weight:600">${PHONE}</a>.</p>
+    <p>In the meantime, if it's urgent, give us a call at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
   `);
 }
 
