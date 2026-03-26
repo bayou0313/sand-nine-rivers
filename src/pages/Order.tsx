@@ -523,7 +523,7 @@ const Order = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="flex items-center justify-center gap-2 mb-8"
+            className="flex items-center justify-center gap-2 mb-2"
           >
             {stepLabels.map((label, i) => {
               const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
@@ -553,7 +553,9 @@ const Order = () => {
               );
             })}
           </motion.div>
+        </div>
 
+        <div className="max-w-2xl mx-auto">
           <AnimatePresence mode="wait">
             {/* STEP 1: Address */}
             {step === "address" && (
