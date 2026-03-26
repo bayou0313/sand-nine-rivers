@@ -31,7 +31,7 @@ const Pricing = () => {
             viewport={{ once: true }}
             className="text-3xl md:text-5xl text-background font-display"
           >
-            RIVER SAND DELIVERY
+            DELIVERY AREA & PRICING
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
