@@ -338,7 +338,7 @@ const WhatsAppButton = () => {
                 onClick={handleMainClick}
                 whileHover={{ scale: 1.12 }}
                 whileTap={{ scale: 0.9 }}
-                className="block p-3.5 rounded-full text-white transition-colors duration-300"
+                className="block p-3.5 rounded-full text-white transition-colors duration-300 pb-[157px] pr-[49px]"
                 style={{
                   backgroundColor: bg,
                   boxShadow: `0 4px 15px ${shadowColor}`,
