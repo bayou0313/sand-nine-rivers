@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LogOut, Package, RefreshCw, Phone, MapPin, DollarSign, Clock, Loader2, ChevronDown, ChevronUp, CreditCard, CalendarDays, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/format";
 
 type Order = {
   id: string;
