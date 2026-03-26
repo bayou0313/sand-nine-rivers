@@ -61,7 +61,7 @@ function orderCustomerEmail(order: any) {
     <p>Thank you for your order${order.customer_name ? ", " + order.customer_name : ""}! Here's your order summary:</p>
     <table class="info-table">${tableRows}</table>
     ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ""}
-    <p>If you have any questions, call us at <a href="tel:+18554689297" style="color:${BRAND_COLOR};font-weight:600">${PHONE}</a>.</p>
+    <p>If you have any questions, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
   `);
 }
 
