@@ -582,7 +582,7 @@ const Order = () => {
 
                       {/* Base price per load */}
                       <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">Base delivery (0–15 mi) × {quantity}</span>
+                        <span className="font-body text-muted-foreground">Base delivery × {quantity}</span>
                         <span className="font-display text-foreground">${(195 * quantity).toFixed(2)}</span>
                       </div>
 
