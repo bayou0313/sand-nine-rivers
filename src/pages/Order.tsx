@@ -851,8 +851,8 @@ const Order = () => {
                   )}
                   {selectedDeliveryDate.isSaturday && (
                     <div className="flex justify-between py-3 border-b border-border">
-                      <span className="font-body text-amber-700">Saturday Surcharge</span>
-                      <span className="font-display text-amber-700">+$35.00</span>
+                      <span className="font-body text-destructive">Saturday Surcharge ($35 × {quantity})</span>
+                      <span className="font-display text-destructive">+${saturdaySurchargeTotal}.00</span>
                     </div>
                   )}
                   <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">
