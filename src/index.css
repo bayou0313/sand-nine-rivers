@@ -2,43 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 40 20% 96%;
-    --foreground: 30 10% 12%;
+    --background: 38 25% 97%;
+    --foreground: 25 15% 10%;
 
-    --card: 40 25% 93%;
-    --card-foreground: 30 10% 12%;
+    --card: 38 20% 94%;
+    --card-foreground: 25 15% 10%;
 
-    --popover: 40 20% 96%;
-    --popover-foreground: 30 10% 12%;
+    --popover: 38 25% 97%;
+    --popover-foreground: 25 15% 10%;
 
-    --primary: 30 70% 45%;
-    --primary-foreground: 40 20% 98%;
+    --primary: 28 75% 42%;
+    --primary-foreground: 38 25% 98%;
 
-    --secondary: 35 30% 85%;
-    --secondary-foreground: 30 10% 12%;
+    --secondary: 32 25% 88%;
+    --secondary-foreground: 25 15% 10%;
 
-    --muted: 35 15% 90%;
-    --muted-foreground: 30 8% 45%;
+    --muted: 34 12% 91%;
+    --muted-foreground: 25 8% 46%;
 
-    --accent: 25 80% 50%;
-    --accent-foreground: 40 20% 98%;
+    --accent: 22 90% 48%;
+    --accent-foreground: 38 25% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 35 20% 82%;
-    --input: 35 20% 82%;
-    --ring: 30 70% 45%;
+    --border: 32 18% 85%;
+    --input: 32 18% 85%;
+    --ring: 28 75% 42%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sand-light: 40 35% 88%;
-    --sand-dark: 30 25% 25%;
-    --hero-overlay: 30 30% 8%;
+    --sand-light: 38 35% 90%;
+    --sand-dark: 25 25% 15%;
+    --hero-overlay: 25 30% 8%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -58,9 +58,21 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Bebas Neue', sans-serif;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

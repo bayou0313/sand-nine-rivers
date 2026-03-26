@@ -63,7 +63,7 @@ const DeliveryEstimator = () => {
     setLoading(true); setError(""); setResult(null);
 
     if (!apiLoaded) {
-      setError("Google Maps API is not loaded. Please check API key configuration.");
+      setError("Google Maps API is not loaded.");
       setLoading(false); return;
     }
 
@@ -78,7 +78,7 @@ const DeliveryEstimator = () => {
 
       const element = response.rows[0]?.elements[0];
       if (!element || element.status !== "OK") {
-        setError("Could not calculate distance. Please check the address and try again.");
+        setError("Could not calculate distance. Please check the address.");
         setLoading(false); return;
       }
 
@@ -105,14 +105,14 @@ const DeliveryEstimator = () => {
   }, [address, apiLoaded]);
 
   return (
-    <section id="estimator" className="py-20 bg-background">
+    <section id="estimator" className="py-24 bg-background">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <p className="text-primary font-display text-xl tracking-wider mb-2">INSTANT ESTIMATE</p>
-          <h2 className="text-5xl md:text-6xl text-foreground">GET YOUR DELIVERY PRICE</h2>
-          <p className="font-body text-muted-foreground mt-4 max-w-xl mx-auto">
-            Enter your delivery address and we'll instantly calculate your price. 9 yards of quality river sand — starting at just $195.
-          </p>
+        <div className="text-center mb-16">
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">INSTANT ESTIMATE</motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-5xl md:text-7xl text-foreground">GET YOUR PRICE</motion.h2>
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="font-body text-muted-foreground mt-6 max-w-xl mx-auto text-lg">
+            Enter your delivery address and we'll instantly calculate your price.
+          </motion.p>
         </div>
 
         <div className="max-w-2xl mx-auto">
@@ -120,7 +120,7 @@ const DeliveryEstimator = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-card border border-border rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow"
+            className="bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
           >
             <div className="space-y-4">
               <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
@@ -133,11 +133,11 @@ const DeliveryEstimator = () => {
                   placeholder="Enter your delivery address..."
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="flex-1 h-12 text-base"
+                  className="flex-1 h-12 text-base rounded-xl"
                   maxLength={500}
                   onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
                 />
-                <Button onClick={calculateDistance} disabled={loading} className="h-12 font-display tracking-wider text-base px-8">
+                <Button onClick={calculateDistance} disabled={loading} className="h-12 font-display tracking-wider text-base px-8 rounded-xl">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
                 </Button>
               </div>
@@ -145,13 +145,13 @@ const DeliveryEstimator = () => {
               {!GOOGLE_MAPS_API_KEY && (
                 <p className="text-sm text-muted-foreground font-body flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-accent" />
-                  Google Maps API key not configured. Add VITE_GOOGLE_MAPS_API_KEY to enable.
+                  Google Maps API key not configured.
                 </p>
               )}
             </div>
 
             {error && (
-              <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+              <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
                 <p className="font-body text-sm text-destructive">{error}</p>
               </div>
@@ -161,37 +161,37 @@ const DeliveryEstimator = () => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-6 p-6 bg-primary/5 border border-primary/20 rounded-lg space-y-4"
+                className="mt-6 p-6 bg-primary/5 border border-primary/20 rounded-2xl space-y-4"
               >
                 <div className="flex items-center gap-2 text-primary">
                   <CheckCircle2 className="w-6 h-6" />
                   <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-background rounded-md">
+                  <div className="text-center p-3 bg-background rounded-xl">
                     <p className="font-body text-xs text-muted-foreground uppercase">Distance</p>
                     <p className="font-display text-2xl text-foreground">{result.distance} MI</p>
                   </div>
-                  <div className="text-center p-3 bg-background rounded-md">
+                  <div className="text-center p-3 bg-background rounded-xl">
                     <p className="font-body text-xs text-muted-foreground uppercase">Drive Time</p>
                     <p className="font-display text-2xl text-foreground">{result.duration}</p>
                   </div>
-                  <div className="text-center p-3 bg-background rounded-md">
-                    <p className="font-body text-xs text-muted-foreground uppercase">Total Price</p>
+                  <div className="text-center p-3 bg-background rounded-xl">
+                    <p className="font-body text-xs text-muted-foreground uppercase">Starting At</p>
                     <p className="font-display text-2xl text-primary flex items-center justify-center">
                       <DollarSign className="w-5 h-5" />{result.price.toFixed(2)}
                     </p>
                   </div>
                 </div>
                 <p className="font-body text-sm text-muted-foreground text-center">
-                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Free delivery included" : `Includes $${((result.distance - BASE_MILES) * PER_MILE_EXTRA).toFixed(2)} delivery surcharge`} • Cash on Delivery
+                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Free delivery included" : `Includes $${((result.distance - BASE_MILES) * PER_MILE_EXTRA).toFixed(2)} distance surcharge`} • Saturday +$35
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
+                  <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
                     <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}&duration=${encodeURIComponent(result.duration)}`}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER ONLINE</Link>
                   </Button>
-                  <Button variant="outline" className="flex-1 h-12 font-display tracking-wider text-lg" asChild>
-                    <a href="tel:+15551234567">CALL TO ORDER</a>
+                  <Button variant="outline" className="flex-1 h-12 font-display tracking-wider text-lg rounded-xl" asChild>
+                    <a href="tel:+18554689297">CALL TO ORDER</a>
                   </Button>
                 </div>
               </motion.div>
@@ -204,7 +204,7 @@ const DeliveryEstimator = () => {
               { label: "15–25 MI", sub: "$195 + $3.49/mile" },
               { label: "9 YDS", sub: "Per load delivered" },
             ].map((item) => (
-              <div key={item.label} className="p-4 bg-card border border-border rounded-lg hover:border-primary/30 transition-colors">
+              <div key={item.label} className="p-4 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors">
                 <p className="font-display text-2xl text-primary">{item.label}</p>
                 <p className="font-body text-sm text-muted-foreground">{item.sub}</p>
               </div>

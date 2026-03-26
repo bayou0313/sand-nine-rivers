@@ -14,9 +14,9 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-sm border-b border-border shadow-sm" : "bg-transparent"}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm" : "bg-transparent"}`}>
       <div className="container mx-auto px-6 flex items-center justify-between h-16">
-        <a href="/" className={`text-3xl font-display tracking-wider transition-colors ${scrolled ? "text-primary" : "text-primary-foreground"}`}>
+        <a href="/" className={`text-3xl font-display tracking-wider transition-colors duration-300 ${scrolled ? "text-primary" : "text-primary-foreground"}`}>
           RIVERSAND
         </a>
         <div className="hidden md:flex items-center gap-8">
@@ -24,32 +24,32 @@ const Navbar = () => {
             <a
               key={item}
               href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
-              className={`font-body text-sm transition-colors hover:text-accent ${scrolled ? "text-muted-foreground" : "text-primary-foreground/70"}`}
+              className={`font-body text-sm transition-colors duration-300 hover:text-accent ${scrolled ? "text-muted-foreground" : "text-primary-foreground/70"}`}
             >
               {item}
             </a>
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <Button size="sm" className="font-display tracking-wider hidden sm:inline-flex bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
+          <Button size="sm" className="font-display tracking-wider hidden sm:inline-flex bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg shadow-md shadow-accent/20" asChild>
             <Link to="/order">
               <ShoppingCart className="w-4 h-4 mr-1" />
               ORDER NOW
             </Link>
           </Button>
-          <Button size="sm" variant="outline" className={`font-display tracking-wider hidden sm:inline-flex ${scrolled ? "" : "border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"}`} asChild>
-            <a href="tel:+15551234567">
+          <Button size="sm" variant="outline" className={`font-display tracking-wider hidden sm:inline-flex rounded-lg ${scrolled ? "" : "border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10"}`} asChild>
+            <a href="tel:+18554689297">
               <Phone className="w-4 h-4 mr-1" />
               CALL
             </a>
           </Button>
-          <button className={`md:hidden ${scrolled ? "text-foreground" : "text-primary-foreground"}`} onClick={() => setMenuOpen(!menuOpen)}>
+          <button className={`md:hidden transition-colors ${scrolled ? "text-foreground" : "text-primary-foreground"}`} onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
       {menuOpen && (
-        <div className="md:hidden bg-background border-t border-border px-6 py-4 space-y-3 shadow-lg">
+        <div className="md:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-4 space-y-3 shadow-xl">
           {["Pricing", "Get Estimate", "About", "FAQ", "Contact"].map((item) => (
             <a
               key={item}
@@ -61,13 +61,13 @@ const Navbar = () => {
             </a>
           ))}
           <div className="flex flex-col gap-2 pt-2">
-            <Button size="sm" className="font-display tracking-wider w-full bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
+            <Button size="sm" className="font-display tracking-wider w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg" asChild>
               <Link to="/order" onClick={() => setMenuOpen(false)}>
                 <ShoppingCart className="w-4 h-4 mr-1" /> ORDER NOW
               </Link>
             </Button>
-            <Button size="sm" variant="outline" className="font-display tracking-wider w-full" asChild>
-              <a href="tel:+15551234567">
+            <Button size="sm" variant="outline" className="font-display tracking-wider w-full rounded-lg" asChild>
+              <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" /> CALL
               </a>
             </Button>

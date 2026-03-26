@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, Package, RefreshCw, Phone, MapPin, DollarSign, Clock, Loader2, ChevronDown, ChevronUp, CreditCard } from "lucide-react";
+import { LogOut, Package, RefreshCw, Phone, MapPin, DollarSign, Clock, Loader2, ChevronDown, ChevronUp, CreditCard, CalendarDays, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Order = {
@@ -21,6 +21,12 @@ type Order = {
   status: string;
   notes: string | null;
   created_at: string;
+  delivery_date: string | null;
+  delivery_day_of_week: string | null;
+  saturday_surcharge: boolean;
+  saturday_surcharge_amount: number;
+  same_day_requested: boolean;
+  delivery_window: string;
 };
 
 type PaymentEvent = {
@@ -33,19 +39,19 @@ type PaymentEvent = {
 };
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
-  confirmed: "bg-blue-500/20 text-blue-700 border-blue-500/30",
-  en_route: "bg-purple-500/20 text-purple-700 border-purple-500/30",
-  delivered: "bg-green-500/20 text-green-700 border-green-500/30",
-  cancelled: "bg-destructive/20 text-destructive border-destructive/30",
+  pending: "bg-amber-500/15 text-amber-700 border-amber-500/30",
+  confirmed: "bg-blue-500/15 text-blue-700 border-blue-500/30",
+  en_route: "bg-purple-500/15 text-purple-700 border-purple-500/30",
+  delivered: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  cancelled: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
 const paymentStatusColors: Record<string, string> = {
-  paid: "bg-green-500/20 text-green-700 border-green-500/30",
-  pending: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
-  failed: "bg-red-500/20 text-red-700 border-red-500/30",
-  canceled: "bg-red-500/20 text-red-700 border-red-500/30",
-  refunded: "bg-blue-500/20 text-blue-700 border-blue-500/30",
+  paid: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  pending: "bg-amber-500/15 text-amber-700 border-amber-500/30",
+  failed: "bg-red-500/15 text-red-700 border-red-500/30",
+  canceled: "bg-red-500/15 text-red-700 border-red-500/30",
+  refunded: "bg-blue-500/15 text-blue-700 border-blue-500/30",
 };
 
 const paymentLabel = (method: string, status: string) => {
@@ -53,6 +59,12 @@ const paymentLabel = (method: string, status: string) => {
   if (method === "card") return `Card (${status})`;
   return `${method.charAt(0).toUpperCase() + method.slice(1)} (${status})`;
 };
+
+function formatDeliveryDate(iso: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -69,7 +81,7 @@ const Admin = () => {
     const { data, error } = await (supabase as any)
       .from("orders")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("delivery_date", { ascending: true, nullsFirst: false });
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -167,7 +179,7 @@ const Admin = () => {
             { label: "Delivered", value: stats.delivered, icon: MapPin },
             { label: "Revenue", value: `$${stats.revenue.toFixed(0)}`, icon: DollarSign },
           ].map((s) => (
-            <div key={s.label} className="bg-card border border-border rounded-lg p-4">
+            <div key={s.label} className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-1">
                 <s.icon className="w-4 h-4 text-primary" />
                 <span className="font-body text-xs text-muted-foreground uppercase">{s.label}</span>
@@ -211,23 +223,37 @@ const Admin = () => {
         ) : (
           <div className="space-y-4">
             {filtered.map((order) => (
-              <div key={order.id} className="bg-card border border-border rounded-lg">
+              <div key={order.id} className="bg-card border border-border rounded-xl">
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-display text-xl text-foreground">{order.customer_name}</h3>
                         <Badge variant="outline" className={statusColors[order.status] || ""}>{order.status.toUpperCase()}</Badge>
                         <Badge variant="outline" className={paymentStatusColors[order.payment_status] || paymentStatusColors.pending}>
                           <CreditCard className="w-3 h-3 mr-1" />
                           {paymentLabel(order.payment_method, order.payment_status)}
                         </Badge>
+                        {order.same_day_requested && (
+                          <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-500/30">
+                            <Zap className="w-3 h-3 mr-1" /> Same Day
+                          </Badge>
+                        )}
+                        {order.saturday_surcharge && (
+                          <Badge variant="outline" className="bg-amber-400/15 text-amber-600 border-amber-400/30">
+                            SAT +$35
+                          </Badge>
+                        )}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 font-body text-sm">
                         <p className="text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {order.customer_phone}</p>
                         <p className="text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> {order.delivery_address}</p>
+                        <p className="text-muted-foreground flex items-center gap-1">
+                          <CalendarDays className="w-3 h-3" />
+                          {formatDeliveryDate(order.delivery_date)}
+                          {order.delivery_day_of_week ? ` (${order.delivery_day_of_week})` : ""}
+                        </p>
                         <p className="text-muted-foreground">{order.distance_miles} miles • {order.payment_method}</p>
-                        <p className="text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
                       </div>
                       {order.notes && <p className="font-body text-sm text-muted-foreground italic">"{order.notes}"</p>}
                     </div>
@@ -248,7 +274,6 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  {/* Payment events toggle */}
                   {order.stripe_payment_id && (
                     <button
                       onClick={() => toggleExpand(order.id)}
@@ -260,9 +285,8 @@ const Admin = () => {
                   )}
                 </div>
 
-                {/* Expanded payment events */}
                 {expandedOrder === order.id && (
-                  <div className="border-t border-border px-6 py-4 bg-muted/30">
+                  <div className="border-t border-border px-6 py-4 bg-muted/30 rounded-b-xl">
                     {loadingEvents === order.id ? (
                       <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                     ) : paymentEvents[order.id]?.length ? (
