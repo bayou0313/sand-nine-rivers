@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <div className="flex flex-col justify-start">
             <img src={logoImg} alt="RiverSand logo" className="h-[168px] w-auto object-contain mb-4 brightness-0 invert self-start -mt-[80px]" loading="lazy" />
-            <p className="font-body text-background/40 text-sm leading-relaxed pt-0">
+            <p className="font-body text-background/40 text-sm leading-relaxed -mt-[60px]">
               Quality river sand delivered across the Greater New Orleans area. 9 yards for $195, same-day delivery available Mon–Fri.
             </p>
           </div>
