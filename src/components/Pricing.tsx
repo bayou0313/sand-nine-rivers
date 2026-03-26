@@ -96,7 +96,7 @@ const Pricing = () => {
               <p className="font-body text-background/60 text-sm">
                 {qty} loads × $195 =
               </p>
-              <p className="font-display text-3xl text-accent">${total}</p>
+              <p className="font-display text-3xl text-accent">{formatCurrency(total)}</p>
             </motion.div>
           )}
 
