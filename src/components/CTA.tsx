@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 const CTA = () => {
   return (
-    <section className="py-24 bg-gradient-to-br from-accent via-accent/95 to-primary relative overflow-hidden">
+    <section className="py-24 bg-gradient-to-br from-primary via-primary/95 to-primary/85 relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.07]">
         <div className="absolute top-0 left-0 w-72 h-72 bg-primary-foreground rounded-full -translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-primary-foreground rounded-full translate-x-1/3 translate-y-1/3" />
