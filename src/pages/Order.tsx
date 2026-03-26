@@ -861,7 +861,13 @@ const Order = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
+                  <p className="text-amber-800 text-sm font-body">
+                    <strong>⚠️ Curbside Delivery Only:</strong> All deliveries are made curbside. Due to liability, we cannot deliver inside backyards or enclosed areas.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 mt-4">
                   <Button variant="outline" onClick={() => setStep("details")} className="h-12 font-display tracking-wider rounded-xl">BACK</Button>
                   <Button onClick={handleCodSubmit} disabled={submitting} className="flex-1 h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl">
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PLACE ORDER — ${codSubOption.toUpperCase()} AT DELIVERY`}
