@@ -201,7 +201,7 @@ const Order = () => {
         address: `${paramDistance} miles away`,
         duration: paramDuration,
       });
-      setStep("details");
+      setStep(prev => prev === "address" ? "details" : prev);
     }
   }, [searchParams]);
 
