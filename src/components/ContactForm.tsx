@@ -80,8 +80,8 @@ const ContactForm = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <h3 className="font-display text-2xl text-foreground tracking-wider mb-4">SEND US A MESSAGE</h3>
                 <Input placeholder="Your Name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" />
-                <Input type="email" placeholder="Email Address" required maxLength={255} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-12 rounded-xl" />
-                <Input type="tel" placeholder="Phone Number" maxLength={20} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-12 rounded-xl" />
+                <EmailInput value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-12 rounded-xl" />
+                <Input type="tel" placeholder="Phone Number" maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
                 <Textarea placeholder="How can we help?" required maxLength={1000} rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="rounded-xl" />
                 <Button type="submit" className="w-full h-12 font-display tracking-wider text-lg rounded-xl shadow-md shadow-primary/20">
                   <Send className="w-5 h-5 mr-2" />
