@@ -108,7 +108,8 @@ const Order = () => {
       localStorage.setItem("stripe_payment_signal", signal);
       // Attempt to close the tab
       window.close();
-      // If browser blocks close, we'll show fallback UI (handled below)
+      // If browser blocks close, show fallback UI
+      setTimeout(() => setIsPopupReturnTab(true), 500);
       return;
     }
 
