@@ -55,7 +55,7 @@ const Admin = () => {
     // Check auth
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { navigate("/admin/login"); return; }
-      supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").then(({ data }) => {
+      (supabase as any).from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").then(({ data }: any) => {
         if (!data || data.length === 0) { navigate("/admin/login"); return; }
         fetchOrders();
       });
