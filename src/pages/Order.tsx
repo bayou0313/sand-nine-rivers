@@ -57,7 +57,6 @@ const Order = () => {
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
-  const [isPopupReturnTab, setIsPopupReturnTab] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
@@ -108,8 +107,6 @@ const Order = () => {
       localStorage.setItem("stripe_payment_signal", signal);
       // Attempt to close the tab
       window.close();
-      // If browser blocks close, show fallback UI
-      setTimeout(() => setIsPopupReturnTab(true), 500);
       return;
     }
 
@@ -139,12 +136,10 @@ const Order = () => {
 
   // Listen for cross-tab Stripe payment signals (from popup return tab)
   useEffect(() => {
-    const handleStorageEvent = (e: StorageEvent) => {
-      if (e.key !== "stripe_payment_signal" || !e.newValue) return;
+    const processSignal = (raw: string) => {
       try {
-        const signal = JSON.parse(e.newValue);
-        if (signal.type !== "stripe-payment-result") return;
-        // Consume the signal
+        const signal = JSON.parse(raw);
+        if (signal.type !== "stripe-payment-result") return false;
         localStorage.removeItem("stripe_payment_signal");
         setSubmitting(false);
 
@@ -166,13 +161,30 @@ const Order = () => {
             variant: "destructive",
           });
         }
+        return true;
       } catch {
-        // ignore malformed signals
+        return false;
       }
     };
 
+    // Method 1: storage event (fires cross-tab on same origin)
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === "stripe_payment_signal" && e.newValue) {
+        processSignal(e.newValue);
+      }
+    };
     window.addEventListener("storage", handleStorageEvent);
-    return () => window.removeEventListener("storage", handleStorageEvent);
+
+    // Method 2: Poll localStorage as fallback (storage events can be unreliable in iframes)
+    const pollInterval = setInterval(() => {
+      const raw = localStorage.getItem("stripe_payment_signal");
+      if (raw) processSignal(raw);
+    }, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageEvent);
+      clearInterval(pollInterval);
+    };
   }, [toast]);
 
   useEffect(() => {
@@ -409,8 +421,9 @@ const Order = () => {
     </div>
   );
 
-  // Fallback UI for popup return tab (when window.close() is blocked)
-  if (isPopupReturnTab) {
+  // If this is a popup return tab (window.close() was blocked), show fallback UI
+  const isPopupReturn = searchParams.get("return_mode") === "popup" && searchParams.get("payment");
+  if (isPopupReturn) {
     const paymentStatus = searchParams.get("payment");
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background flex items-center justify-center">
