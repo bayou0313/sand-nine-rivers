@@ -70,6 +70,9 @@ const Stats = () => {
             </motion.div>
           ))}
         </div>
+        <p className="text-center font-body text-primary-foreground/70 mt-8 text-sm max-w-xl mx-auto">
+          Family-owned and operated in New Orleans since 2009. Licensed, insured, and GPS-tracked on every delivery.
+        </p>
       </div>
     </section>
   );

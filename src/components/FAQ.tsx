@@ -49,7 +49,7 @@ const FAQ = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">FAQ</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">FREQUENTLY ASKED QUESTIONS ABOUT RIVER SAND DELIVERY</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Frequently Asked Questions About River Sand Delivery</motion.h2>
         </div>
 
         <motion.div
@@ -67,10 +67,10 @@ const FAQ = () => {
                   className="bg-card border border-border rounded-2xl px-6 hover:border-accent/30 transition-all duration-300 data-[state=open]:shadow-lg data-[state=open]:border-accent/40"
                 >
                   <AccordionTrigger className="font-display text-lg text-foreground tracking-wider hover:no-underline hover:text-accent transition-colors duration-300">
-                    {faq.q.toUpperCase()}
+                    <h3 className="text-left font-semibold">{faq.q}</h3>
                   </AccordionTrigger>
                   <AccordionContent className="font-body text-muted-foreground leading-relaxed">
-                    {faq.a}
+                    <p>{faq.a}</p>
                   </AccordionContent>
                 </AccordionItem>
               </motion.div>

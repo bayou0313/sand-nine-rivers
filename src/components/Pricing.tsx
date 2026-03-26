@@ -33,7 +33,7 @@ const Pricing = () => {
             viewport={{ once: true }}
             className="text-3xl md:text-5xl text-background font-display"
           >
-            DELIVERY AREA & PRICING
+            Delivery Area & Pricing
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
