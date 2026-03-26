@@ -308,7 +308,7 @@ const Order = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
-      <Navbar />
+      <Navbar solid />
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
         <div className="max-w-2xl mx-auto">
