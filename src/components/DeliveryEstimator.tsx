@@ -175,7 +175,7 @@ const DeliveryEstimator = () => {
                   </p>
                 </div>
                 <p className="font-body text-sm text-muted-foreground text-center">
-                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Local delivery included" : `Includes $${((result.distance - BASE_MILES) * PER_MILE_EXTRA).toFixed(2)} extended-area surcharge`} • Saturday +$35
+                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Local delivery included" : `Includes ${formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA)} extended-area surcharge`} • Saturday +$35
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
