@@ -623,6 +623,12 @@ const Order = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                <Link to="/" className="block mt-4">
+                  <Button variant="outline" className="w-full font-display tracking-wider">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> BACK TO HOME
+                  </Button>
+                </Link>
               </motion.div>
             )}
 
