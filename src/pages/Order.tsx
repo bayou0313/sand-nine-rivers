@@ -885,7 +885,7 @@ const Order = () => {
                       <p className="font-display text-lg tracking-wider">PAYMENT CONFIRMED</p>
                     </div>
                     <p className="font-body text-muted-foreground max-w-md mx-auto">
-                      Your card payment of <strong className="text-primary">${totalPrice.toFixed(2)}</strong> has been processed.
+                      Your card payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> has been processed.
                       We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
                     </p>
                   </>
