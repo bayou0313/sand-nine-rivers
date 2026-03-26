@@ -33,35 +33,47 @@ const faqs = [
   },
 ];
 
+const container = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
+
+const item = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const } },
+};
+
 const FAQ = () => {
   return (
     <section id="faq" className="py-24 bg-background">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">FAQ</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-4xl text-foreground">FREQUENTLY ASKED QUESTIONS ABOUT RIVER SAND DELIVERY</motion.h2>
+          <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">FAQ</motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">FREQUENTLY ASKED QUESTIONS ABOUT RIVER SAND DELIVERY</motion.h2>
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
           className="max-w-3xl mx-auto"
+          variants={container}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
         >
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, i) => (
-              <AccordionItem
-                key={i}
-                value={`item-${i}`}
-                className="bg-card border border-border rounded-2xl px-6 hover:border-primary/30 transition-colors data-[state=open]:shadow-lg"
-              >
-                <AccordionTrigger className="font-display text-lg text-foreground tracking-wider hover:no-underline">
-                  {faq.q.toUpperCase()}
-                </AccordionTrigger>
-                <AccordionContent className="font-body text-muted-foreground leading-relaxed">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
+              <motion.div key={i} variants={item}>
+                <AccordionItem
+                  value={`item-${i}`}
+                  className="bg-card border border-border rounded-2xl px-6 hover:border-accent/30 transition-all duration-300 data-[state=open]:shadow-lg data-[state=open]:border-accent/40"
+                >
+                  <AccordionTrigger className="font-display text-lg text-foreground tracking-wider hover:no-underline hover:text-accent transition-colors duration-300">
+                    {faq.q.toUpperCase()}
+                  </AccordionTrigger>
+                  <AccordionContent className="font-body text-muted-foreground leading-relaxed">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
             ))}
           </Accordion>
         </motion.div>

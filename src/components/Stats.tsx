@@ -1,11 +1,50 @@
 import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 const stats = [
-  { value: "1,000+", label: "Loads Delivered" },
-  { value: "15+", label: "Years Experience" },
-  { value: "4.9★", label: "Customer Rating" },
-  { value: "25", label: "Mile Radius" },
+  { value: 1000, suffix: "+", label: "Loads Delivered" },
+  { value: 15, suffix: "+", label: "Years Experience" },
+  { value: 4.9, suffix: "★", label: "Customer Rating", decimal: true },
+  { value: 25, suffix: "", label: "Mile Radius" },
 ];
+
+const CountUp = ({ target, suffix, decimal }: { target: number; suffix: string; decimal?: boolean }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLParagraphElement>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          const duration = 1500;
+          const start = performance.now();
+          const animate = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(eased * target);
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target]);
+
+  const display = decimal ? count.toFixed(1) : Math.floor(count).toLocaleString();
+
+  return (
+    <p ref={ref} className="font-display text-5xl md:text-6xl text-accent font-bold">
+      {display}{suffix}
+    </p>
+  );
+};
 
 const Stats = () => {
   return (
@@ -19,12 +58,14 @@ const Stats = () => {
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.12, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+              whileHover={{ scale: 1.08 }}
+              className="cursor-default"
             >
-              <p className="font-display text-5xl md:text-6xl text-accent font-bold">{stat.value}</p>
+              <CountUp target={stat.value} suffix={stat.suffix} decimal={stat.decimal} />
               <p className="font-body text-primary-foreground/80 mt-2 text-sm uppercase tracking-widest font-semibold">{stat.label}</p>
             </motion.div>
           ))}
