@@ -69,7 +69,7 @@ const Navbar = () => {
             </Button>
             <Button size="sm" variant="outline" className="font-display tracking-wider w-full rounded-lg" asChild>
               <a href="tel:+18554689297">
-                <Phone className="w-4 h-4 mr-1" /> CALL
+                <Phone className="w-4 h-4 mr-1" /> 1-855-GOT-WAYS
               </a>
             </Button>
           </div>
