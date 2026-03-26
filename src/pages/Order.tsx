@@ -451,10 +451,10 @@ const Order = () => {
                       <p className="font-body text-xs text-muted-foreground uppercase">Drive Time</p>
                       <p className="font-display text-2xl text-foreground">{result.duration}</p>
                     </div>
-                    <div className="text-center p-3 bg-background rounded-xl">
-                      <p className="font-body text-xs text-muted-foreground uppercase">Base Price</p>
+                     <div className="text-center p-3 bg-background rounded-xl">
+                      <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Total (${quantity} loads)` : "Base Price"}</p>
                       <p className="font-display text-2xl text-primary flex items-center justify-center">
-                        <DollarSign className="w-5 h-5" />{result.price.toFixed(2)}
+                        <DollarSign className="w-5 h-5" />{(result.price * quantity).toFixed(2)}
                       </p>
                     </div>
                   </div>
