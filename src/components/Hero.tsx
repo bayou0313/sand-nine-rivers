@@ -57,7 +57,7 @@ const Hero = () => {
               9 YARDS — $195
             </p>
             <p className="text-primary-foreground/60 font-body mt-2 flex items-center gap-2 text-sm">
-              <Truck className="w-4 h-4" /> Free delivery within 15 miles of Bridge City, LA
+              <Truck className="w-4 h-4" /> Free delivery within the Greater New Orleans area
             </p>
           </motion.div>
 

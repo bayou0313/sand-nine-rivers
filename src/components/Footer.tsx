@@ -23,7 +23,7 @@ const Footer = () => {
                 <Mail className="w-4 h-4" /> info@riversand.net
               </a>
               <p className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" /> 1215 River Rd, Bridge City, LA 70094
+                <MapPin className="w-4 h-4" /> Greater New Orleans, LA
               </p>
             </div>
           </div>
