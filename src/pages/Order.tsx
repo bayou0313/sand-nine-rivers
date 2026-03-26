@@ -847,7 +847,13 @@ const Order = () => {
                       { icon: Phone, title: "We'll Call You", desc: `We'll reach out to ${form.phone} to confirm details.` },
                       { icon: Truck, title: "Delivery Day", desc: selectedDeliveryDate ? `${selectedDeliveryDate.fullLabel}, 8 AM – 5 PM` : "As scheduled" },
                     ].map((item, i) => (
-                      <div key={i} className="flex items-start gap-3">
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + i * 0.15 }}
+                        className="flex items-start gap-3"
+                      >
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                           <item.icon className="w-4 h-4 text-primary" />
                         </div>
@@ -855,7 +861,7 @@ const Order = () => {
                           <p className="font-display text-sm text-foreground">{item.title}</p>
                           <p className="font-body text-xs text-muted-foreground">{item.desc}</p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
