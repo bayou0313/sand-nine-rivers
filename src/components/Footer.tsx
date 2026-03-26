@@ -51,7 +51,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-background/10 pt-8 text-center">
           <p className="font-body text-background/30 text-sm">
-            © {new Date().getFullYear()} RiverSand.net — Serving the Greater New Orleans Area · Powered by Haulogix, LLC
+            © {new Date().getFullYear()} RiverSand.net — Serving the Greater New Orleans Area · Powered by WAYS Materials, LLC
           </p>
         </div>
       </div>
