@@ -175,6 +175,46 @@ serve(async (req) => {
       }
       await Promise.all(promises);
 
+    } else if (type === "callback") {
+      const rows = [
+        ["Name", data.name || "Not provided"],
+        ["Phone", data.phone || "Not provided"],
+        ["Requested Date", data.date || "Not specified"],
+        ["Time Window", data.time_window || "ASAP"],
+      ];
+      if (data.notes) rows.push(["Notes", data.notes]);
+      const tableRows = rows.map(([k, v]: string[]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+
+      const callbackHtml = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif}
+  .container{max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden}
+  .header{background:${BRAND_RED};padding:24px;text-align:center}
+  .header h1{color:#fff;margin:0;font-size:22px;letter-spacing:2px}
+  .body{padding:32px 24px}
+  .body h2{color:${BRAND_RED};margin:0 0 16px}
+  .body p,.body td{color:#555;font-size:15px;line-height:1.6}
+  .info-table{width:100%;border-collapse:collapse;margin:16px 0}
+  .info-table td{padding:8px 0;border-bottom:1px solid #eee}
+  .info-table td:first-child{font-weight:600;color:${BRAND_COLOR};width:40%}
+  .footer{background:#f9f9f9;padding:20px 24px;text-align:center;font-size:13px;color:#999}
+  .footer a{color:${BRAND_COLOR};text-decoration:none}
+</style></head><body>
+<div class="container">
+  <div class="header"><h1>🔴 CALLBACK REQUEST</h1></div>
+  <div class="body">
+    <h2>Customer wants a callback!</h2>
+    <table class="info-table">${tableRows}</table>
+    <p style="background:#fff3f3;padding:12px;border-radius:6px;border-left:4px solid ${BRAND_RED};color:${BRAND_RED};font-weight:600">Please call this customer back as soon as possible.</p>
+  </div>
+  <div class="footer">
+    <p>WAYS River Sand &bull; Greater New Orleans, LA</p>
+  </div>
+</div></body></html>`;
+
+      await sendMail(FROM_EMAIL, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),

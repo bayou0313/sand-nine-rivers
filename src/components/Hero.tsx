@@ -87,7 +87,11 @@ const Hero = () => {
                   <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
                 </div>
               ) : (
-                <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY — MON-FRI BEFORE 11 AM</p>
+                <p className="font-display text-white tracking-wider text-sm">
+                  {nextDay === "today" 
+                    ? "SAME-DAY DELIVERY — MON-FRI BEFORE 10 AM" 
+                    : `ORDER NOW FOR DELIVERY ${nextDay.toUpperCase()}`}
+                </p>
               )}
             </div>
             <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">
