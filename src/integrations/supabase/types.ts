@@ -30,6 +30,7 @@ export type Database = {
           payment_method: string
           payment_status: string
           price: number
+          quantity: number
           same_day_requested: boolean
           saturday_surcharge: boolean
           saturday_surcharge_amount: number
@@ -52,6 +53,7 @@ export type Database = {
           payment_method?: string
           payment_status?: string
           price: number
+          quantity?: number
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
@@ -74,6 +76,7 @@ export type Database = {
           payment_method?: string
           payment_status?: string
           price?: number
+          quantity?: number
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
