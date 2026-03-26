@@ -728,6 +728,13 @@ const Order = () => {
                 </div>
                 <h2 className="text-4xl font-display text-foreground">ORDER PLACED!</h2>
 
+                {orderNumber && (
+                  <div className="bg-card border border-border rounded-xl p-4 max-w-sm mx-auto">
+                    <p className="font-display text-sm text-muted-foreground tracking-wider">ORDER NUMBER</p>
+                    <p className="font-display text-2xl text-primary">{orderNumber}</p>
+                  </div>
+                )}
+
                 {stripePaymentId ? (
                   <>
                     <div className="flex items-center justify-center gap-2 text-primary">
@@ -735,7 +742,7 @@ const Order = () => {
                       <p className="font-display text-lg tracking-wider">PAYMENT CONFIRMED</p>
                     </div>
                     <p className="font-body text-muted-foreground max-w-md mx-auto">
-                      Your card payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> has been processed.
+                      Your payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> has been processed.
                       We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
                     </p>
                   </>
