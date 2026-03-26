@@ -32,6 +32,7 @@ type EstimateResult = {
 
 const Order = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<"address" | "details" | "confirm" | "success">("address");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,25 @@ const Order = () => {
     email: "",
     notes: "",
   });
+
+  // Pre-fill from estimator URL params
+  useEffect(() => {
+    const paramAddress = searchParams.get("address");
+    const paramDistance = searchParams.get("distance");
+    const paramPrice = searchParams.get("price");
+    const paramDuration = searchParams.get("duration");
+
+    if (paramAddress && paramDistance && paramPrice && paramDuration) {
+      setAddress(paramAddress);
+      setResult({
+        distance: parseFloat(paramDistance),
+        price: parseFloat(paramPrice),
+        address: `${paramDistance} miles away`,
+        duration: paramDuration,
+      });
+      setStep("details");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!GOOGLE_MAPS_API_KEY) return;
