@@ -9,9 +9,18 @@ const ContactForm = () => {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSending(true);
     setSubmitted(true);
+
+    // Send contact form emails (fire-and-forget, don't block success UI)
+    supabase.functions.invoke("send-email", {
+      body: { type: "contact", data: form },
+    }).catch((err) => console.error("Contact email failed:", err))
+      .finally(() => setSending(false));
   };
 
   return (
