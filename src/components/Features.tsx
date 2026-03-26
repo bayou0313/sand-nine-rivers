@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 const features = [
   { icon: Truck, title: "FAST DELIVERY", desc: "Same-day and next-day delivery available across our service area." },
   { icon: Shield, title: "QUALITY SAND", desc: "Clean, screened river sand — consistent quality every time." },
-  { icon: MapPin, title: "LOCAL SERVICE", desc: "Based in Bridge City, proudly serving Greater New Orleans." },
+  { icon: MapPin, title: "LOCAL SERVICE", desc: "Proudly serving the Greater New Orleans area." },
   { icon: Clock, title: "EASY ORDERING", desc: "Order online or call — no hassle, no hidden fees." },
   { icon: ThumbsUp, title: "TRUSTED", desc: "Over 1,000 loads delivered with a 4.9-star rating." },
   { icon: Ruler, title: "9 CUBIC YARDS", desc: "Full dump truck load per delivery, every time." },

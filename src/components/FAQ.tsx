@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "Where do you deliver?",
-    a: "We deliver within a 25-mile radius of our yard at 1215 River Rd, Bridge City, LA 70094. Deliveries within 15 miles are $195 flat. Beyond 15 miles, a small per-mile charge applies.",
+    a: "We deliver across the Greater New Orleans area. Deliveries within 15 miles are $195 flat. Beyond 15 miles, a small per-mile charge applies.",
   },
   {
     q: "What if I need more or less than 9 yards?",

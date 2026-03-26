@@ -50,8 +50,8 @@ const ContactForm = () => {
                   <MapPin className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-display text-lg tracking-widest">OUR YARD</p>
-                  <p className="font-body text-primary-foreground/50">1215 River Rd, Bridge City, LA 70094</p>
+                  <p className="font-display text-lg tracking-widest">SERVICE AREA</p>
+                  <p className="font-body text-primary-foreground/50">Greater New Orleans, LA</p>
                 </div>
               </div>
             </div>

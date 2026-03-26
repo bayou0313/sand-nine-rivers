@@ -87,7 +87,7 @@ const Pricing = () => {
         >
           {[
             { icon: Truck, text: "Mon–Sat delivery" },
-            { icon: MapPin, text: "From Bridge City, LA" },
+            { icon: MapPin, text: "Greater New Orleans" },
             { icon: Package, text: "No hidden fees" },
           ].map((item) => (
             <div key={item.text} className="flex items-center gap-2 text-muted-foreground font-body">
