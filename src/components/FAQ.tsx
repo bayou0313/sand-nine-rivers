@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 const faqs = [
   {
     q: "How quickly can you deliver river sand in New Orleans?",
-    a: "WAYS offers same-day delivery across Greater New Orleans for orders placed before noon Monday through Saturday. Our GPS-tracked trucks operate throughout Orleans, Jefferson, St. Bernard, and St. Tammany parishes. For large commercial orders or specific delivery windows, call 1-855-GOT-WAYS to confirm availability.",
+    a: "RIVERSAND.NET offers same-day delivery across Greater New Orleans for orders placed before noon Monday through Saturday. Our GPS-tracked trucks operate throughout Orleans, Jefferson, St. Bernard, and St. Tammany parishes. For large commercial orders or specific delivery windows, call 1-855-GOT-WAYS to confirm availability.",
   },
   {
     q: "What type of river sand do you deliver?",
