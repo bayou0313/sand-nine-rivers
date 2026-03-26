@@ -1,22 +1,20 @@
 
 
-## Problem
+## Issue: REVIEW ORDER Button Appears Non-Functional
 
-When users select "PAY NOW" (Stripe), the flow skips the "Confirm Your Order" review step and goes directly to Stripe checkout. The "PAY AT DELIVERY" path correctly shows a review/confirm screen before placing the order.
+The REVIEW ORDER button is actually working correctly. After testing, the flow works as expected:
+1. Select delivery date → Fill in name and phone → Select payment method → Click REVIEW ORDER → Confirmation screen appears with full order details
 
-## Plan
+**Root cause**: The button is **disabled** (grayed out) when the name or phone fields are empty. The disabled state styling is subtle — the button looks faded but doesn't clearly communicate *why* it's disabled.
 
-**Route Stripe through the same confirm step as cash/check:**
+## Proposed Fix
 
-1. **In `src/pages/Order.tsx`** — Change the Stripe "PAY NOW" button from calling `handleStripeLink` directly to instead calling `goToStep2()` (same as cash), which transitions to the `confirm` step.
+1. **Add a visible validation message** below the REVIEW ORDER button when it's disabled, telling the user what's missing (e.g., "Please fill in your name and phone number above to continue").
 
-2. **Update the confirm step (Step 3)** to be payment-method-aware:
-   - Show the correct payment label ("PAY NOW — STRIPE" vs "CASH/CHECK AT DELIVERY")
-   - When `paymentMethod === "stripe-link"`, display the processing fee line item and the total with fee
-   - Change the "PLACE ORDER" button to call `handleStripeLink` when Stripe is selected, or `handleCodSubmit` when cash/check
+2. **Improve disabled button styling** — make the disabled state more obvious with a lighter background and a `cursor-not-allowed` visual cue.
 
-3. **Remove the inline Stripe summary and pay button** currently inside the `paymentMethod === "stripe-link"` block in Step 2 (lines 594–621), replacing it with the same "REVIEW ORDER" button used by cash/check.
+3. **Scroll to the first empty required field** when the user clicks a disabled-looking area, guiding them to fill in the missing info.
 
-### Result
-Both payment paths will flow: Address → Details/Payment → **Review Order** → Submit. Stripe users see the full order summary (including processing fee) before being redirected.
+### Files to modify
+- `src/pages/Order.tsx` — Add validation hint text below both REVIEW ORDER buttons (Stripe and Cash paths), and enhance the disabled button appearance.
 
