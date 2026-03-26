@@ -1,79 +1,83 @@
 
 
-## Consolidated Implementation Plan — All Pending Instructions
+## SEO Corrections for River Sand Product Page
 
-Here's everything that still needs to be implemented, gathered from all approved but unexecuted plans:
+### Current State
+- The site serves the River Sand page at `/` (root), not `/products/river-sand`
+- `index.html` already has meta tags, canonical, and some JSON-LD (LocalBusiness, Product, FAQPage) but they need updating
+- All H2 headings are ALL CAPS
+- FAQ uses Accordion components, not semantic `h3`/`p` tags
+- No BreadcrumbList schema, no related products section, no E-E-A-T trust block
 
----
-
-### 1. Remove WhatsApp from Desktop Screens
-**File: `src/components/WhatsAppButton.tsx`**
-- Desktop toggle: `message ↔ phone` only (no WhatsApp)
-- Mobile toggle: `whatsapp ↔ phone` only
-- Guard: if viewport changes to desktop while mode is `whatsapp`, auto-switch to `message`
-
-### 2. Move Floating Button to Right Side
-**File: `src/components/WhatsAppButton.tsx`**
-- Line 174: `left-6` → `right-6`, `items-start` → `items-end`
-- Line 310: Label positioning `left-14` → `right-14`, animation `x: -10` → `x: 10`
-
-### 3. Button Hover Animations
-**File: `src/components/ui/button.tsx`**
-- Replace `transition-colors` with `transition-all duration-200`
-- Default variant: add `hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0`
-- Outline variant: add `hover:border-accent hover:shadow-md`
-
-### 4. Contact / Footer Visual Separation
-**File: `src/components/ContactForm.tsx`**
-- Add accent divider at bottom of section (thin `border-accent/30` strip)
-
-**File: `src/components/Footer.tsx`**
-- Add `pt-10` and a `bg-accent/20 h-px` divider at top for clear separation
-
-### 5. Phone Number Mask — Site-Wide
-**File: `src/components/ContactForm.tsx`**
-- Import `formatPhone` from `@/lib/format`, apply to phone input onChange
-
-**File: `src/components/WhatsAppButton.tsx`**
-- Import `formatPhone`, apply to callback form phone input
-
-### 6. Email Mandatory on Orders + Validation + Autocomplete
-**File: `src/components/EmailInput.tsx`** (new)
-- Reusable email input with domain autocomplete suggestions (gmail.com, yahoo.com, aol.com, outlook.com, hotmail.com, icloud.com)
-- Dropdown appears when user types `@`, filters as they type after `@`
-
-**File: `src/pages/Order.tsx`**
-- Email field: change label to "Email *", add `required`, add regex validation
-- Update `isFormValid` (line 464) to require `form.email.trim()`
-- Use `EmailInput` component for the email field
-
-**File: `src/components/ContactForm.tsx`**
-- Use `EmailInput` component for the email field
-
-### 7. Sticky Checkout Timeline
-**File: `src/pages/Order.tsx`**
-- Wrap CountdownBar + progress steps in `sticky top-16 z-40 bg-background/95 backdrop-blur-md` container
-- Subtle bottom border when scrolled
-
-### 8. Darker Muted Text — Site-Wide Readability
-**File: `src/index.css`**
-- Change `--muted-foreground: 209 30% 40%` → `--muted-foreground: 209 40% 25%`
-- Increases contrast from ~3.5:1 to ~7:1 (WCAG AAA)
-
-### 9. Back Button on Checkout Step 1
-**File: `src/pages/Order.tsx`**
-- Add `← BACK TO HOME` link button (using `Link to="/"`) below address form in Step 1
+### Important Note on URL/Routing
+The user requests the page live at `/products/river-sand`. Currently it's at `/`. This plan will add `/products/river-sand` as an **additional route** pointing to the same Index page, and add a redirect from `/` to `/products/river-sand` so the canonical URL is correct. The `/` route will remain as a redirect.
 
 ---
 
-### Files touched (summary)
-| File | Changes |
+### 1. Meta Tags — `index.html`
+Update existing tags to match the exact values requested:
+- `<title>` → `River Sand Delivery New Orleans | WAYS`
+- `<meta name="description">` → exact copy provided
+- `og:title`, `og:description`, `og:url` → exact values provided
+- Remove `og:image` and Twitter tags (not requested, keep if desired — will preserve them)
+
+### 2. JSON-LD Schema — `index.html`
+Replace the three existing JSON-LD blocks with four blocks:
+
+- **LocalBusiness** — keep as-is (not mentioned, no changes)
+- **Product** — replace with user's exact schema (adds `brand`, `aggregateRating`, restructured `areaServed`)
+- **FAQPage** — replace with all 6 FAQ items pulled from `src/components/FAQ.tsx` (currently only 4 are in the schema)
+- **BreadcrumbList** — add new block with Home → Products → River Sand
+
+### 3. Heading Structure — Convert ALL CAPS H2s to Title Case
+Files affected (one-line change each):
+- `src/components/Pricing.tsx`: "DELIVERY AREA & PRICING" → "Delivery Area & Pricing"
+- `src/components/DeliveryEstimator.tsx`: "DELIVERY AREA & PRICING" → "Delivery Area & Pricing"
+- `src/components/About.tsx`: "WHY NEW ORLEANS CONTRACTORS CHOOSE RIVERSAND.NET" → "Why New Orleans Contractors Choose RiverSand.net"
+- `src/components/RiverSandInfo.tsx`: "WHAT IS RIVER SAND AND WHEN SHOULD YOU USE IT?" → "What Is River Sand and When Should You Use It?"
+- `src/components/Features.tsx`: "DELIVERY SCHEDULE & AVAILABILITY" → "Delivery Schedule & Availability"
+- `src/components/Testimonials.tsx`: "WHAT NEW ORLEANS CUSTOMERS SAY" → "What New Orleans Customers Say"
+- `src/components/CTA.tsx`: "READY TO ORDER?" → "Ready to Order?"
+- `src/components/FAQ.tsx`: "FREQUENTLY ASKED QUESTIONS ABOUT RIVER SAND DELIVERY" → "Frequently Asked Questions About River Sand Delivery"
+- `src/components/ContactForm.tsx`: "TALK TO US" → "Talk to Us"
+
+### 4. FAQ Semantic Headings — `src/components/FAQ.tsx`
+- Wrap each FAQ question in an `h3` tag instead of relying on AccordionTrigger's default `span`
+- Ensure answers render in `p` tags within AccordionContent
+
+### 5. Related Products Section — New Component `src/components/RelatedProducts.tsx`
+- Heading: `<h2>Also Available for Same-Day Delivery</h2>`
+- 4 cards linking to `/products/fill-dirt`, `/products/limestone`, `/products/masonry-sand`, `/products/topsoil`
+- Descriptive anchor text: "Fill Dirt Delivery", "Limestone Delivery", etc.
+- Place in `src/pages/Index.tsx` between CTA and FAQ
+
+### 6. E-E-A-T Trust Block — `src/components/Stats.tsx`
+- Add a single paragraph below the stats grid:
+  > "Family-owned and operated in New Orleans since 2009. Licensed, insured, and GPS-tracked on every delivery."
+- Styled as body text, centered, subtle
+
+### 7. Routing — `src/App.tsx`
+- Add route: `/products/river-sand` → `<Index />`
+- Add redirect: `/` → `/products/river-sand` using `<Navigate to="/products/river-sand" replace />`
+- This ensures the canonical URL matches and existing links still work
+
+---
+
+### Files touched
+| File | Change |
 |---|---|
-| `src/index.css` | Darken muted text |
-| `src/components/ui/button.tsx` | Hover animations |
-| `src/components/WhatsAppButton.tsx` | Right-side positioning, desktop mode fix, phone mask |
-| `src/components/ContactForm.tsx` | Phone mask, email autocomplete, accent divider |
-| `src/components/Footer.tsx` | Top accent divider + padding |
-| `src/components/EmailInput.tsx` | New reusable component |
-| `src/pages/Order.tsx` | Email required + validation, sticky timeline, back button |
+| `index.html` | Meta tags, Product/FAQ/Breadcrumb JSON-LD |
+| `src/App.tsx` | Add `/products/river-sand` route + redirect |
+| `src/components/Pricing.tsx` | Title case H2 |
+| `src/components/DeliveryEstimator.tsx` | Title case H2 |
+| `src/components/About.tsx` | Title case H2 |
+| `src/components/RiverSandInfo.tsx` | Title case H2 |
+| `src/components/Features.tsx` | Title case H2 |
+| `src/components/Testimonials.tsx` | Title case H2 |
+| `src/components/CTA.tsx` | Title case H2 |
+| `src/components/FAQ.tsx` | Title case H2 + semantic h3/p |
+| `src/components/ContactForm.tsx` | Title case H2 |
+| `src/components/Stats.tsx` | E-E-A-T trust line |
+| `src/components/RelatedProducts.tsx` | New — related products section |
+| `src/pages/Index.tsx` | Insert RelatedProducts component |
 
