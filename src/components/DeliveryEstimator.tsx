@@ -15,7 +15,7 @@ declare global {
 const ORIGIN = "1215 River Rd, Bridge City, LA 70094";
 const BASE_PRICE = 195;
 const BASE_MILES = 15;
-const MAX_MILES = 25;
+const MAX_MILES = 30;
 const PER_MILE_EXTRA = 3.49;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
@@ -191,7 +191,7 @@ const DeliveryEstimator = () => {
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             {[
               { label: "0–15 MI", sub: "$195 flat rate" },
-              { label: "15–25 MI", sub: "$195 + $3.49/mile" },
+              { label: "15–30 MI", sub: "$195 + $3.49/mile" },
               { label: "9 YDS", sub: "Per load delivered" },
             ].map((item) => (
               <div key={item.label} className="p-4 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors">
