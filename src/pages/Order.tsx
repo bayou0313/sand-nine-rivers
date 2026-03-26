@@ -447,7 +447,7 @@ const Order = () => {
                     <span className="font-display text-sm tracking-wider text-primary">DELIVERY AVAILABLE</span>
                   </div>
                   <span className="font-display text-xl text-primary">{formatCurrency(result.price)}<span className="text-xs font-body text-muted-foreground">/load</span></span>
-                </div>
+                </motion.div>
 
                 {/* Combined: Delivery Date + Customer Info */}
                 <div className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden">
