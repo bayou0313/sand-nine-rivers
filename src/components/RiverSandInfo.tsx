@@ -69,7 +69,7 @@ const RiverSandInfo = () => {
               <h3 className="font-display text-2xl text-foreground">IS UNSCREENED SAND RIGHT FOR MY PROJECT?</h3>
             </div>
             <p className="font-body text-muted-foreground leading-relaxed mb-4">
-              This is the question we hear most often from first-time buyers, and it's a fair one. "Unscreened" means the sand has not been run through a mechanical screen to remove oversized particles or standardize grain size. It is not a quality issue — it is a processing difference. The sand you receive from WAYS looks clean, performs reliably, and is the same material used daily by New Orleans landscapers, drainage contractors, and construction crews.
+              This is the question we hear most often from first-time buyers, and it's a fair one. "Unscreened" means the sand has not been run through a mechanical screen to remove oversized particles or standardize grain size. It is not a quality issue — it is a processing difference. The sand you receive from RIVERSAND.NET looks clean, performs reliably, and is the same material used daily by New Orleans landscapers, drainage contractors, and construction crews.
             </p>
             <p className="font-body text-muted-foreground leading-relaxed mb-4">
               What unscreened does mean in practice: there may occasionally be small traces of shell fragments, organic material, or minor size variation in the load. For the vast majority of applications — French drains, yard leveling, paver base, sandbox fills, pool surrounds, and backfill — this has no meaningful impact on performance.
