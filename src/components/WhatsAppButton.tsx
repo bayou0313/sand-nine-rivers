@@ -181,7 +181,7 @@ const WhatsAppButton = () => {
   return (
     <AnimatePresence>
       {visible && (
-        <div className="fixed bottom-24 lg:bottom-8 right-6 z-50 flex flex-col items-end gap-2">
+        <div className="fixed bottom-28 lg:bottom-10 right-6 z-50 flex flex-col items-end gap-2">
           {/* Callback request form */}
           <AnimatePresence>
             {showForm && mode === "message" && (
