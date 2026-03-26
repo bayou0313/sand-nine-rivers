@@ -2,7 +2,7 @@ import { MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
-const WHATSAPP_NUMBER = "18554689297";
+const WHATSAPP_NUMBER = "15043582000";
 const MESSAGE = "Hi! I'm interested in ordering river sand delivery in New Orleans.";
 
 const WhatsAppButton = () => {
