@@ -612,11 +612,16 @@ const Order = () => {
                       </p>
                       <Button
                         onClick={goToStep2}
-                        disabled={!form.name.trim() || !form.phone.trim()}
-                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl"
+                        disabled={!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()}
+                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         REVIEW ORDER
                       </Button>
+                      {(!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()) && (
+                        <p className="font-body text-xs text-destructive text-center">
+                          {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in your name and phone number above."}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -642,11 +647,16 @@ const Order = () => {
 
                       <Button
                         onClick={goToStep2}
-                        disabled={!form.name.trim() || !form.phone.trim()}
-                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl"
+                        disabled={!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()}
+                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         REVIEW ORDER
                       </Button>
+                      {(!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()) && (
+                        <p className="font-body text-xs text-destructive text-center">
+                          {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in your name and phone number above."}
+                        </p>
+                      )}
                     </div>
                   )}
 
