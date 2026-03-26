@@ -247,20 +247,21 @@ const Order = () => {
         ...buildOrderData(),
         payment_method: "stripe-link",
         payment_status: "pending",
+        price: totalWithProcessingFee,
       };
       const { data: insertedOrder, error: insertError } = await (supabase as any)
         .from("orders")
         .insert(orderData)
-        .select("id")
+        .select("id, order_number")
         .single();
 
       if (insertError) throw insertError;
 
       // Generate Stripe checkout link
-      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds`;
+      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
-          amount: Math.round(totalPrice * 100),
+          amount: Math.round(totalWithProcessingFee * 100),
           description,
           customer_name: form.name.trim(),
           customer_email: form.email.trim() || null,
