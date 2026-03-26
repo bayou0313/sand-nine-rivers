@@ -8,7 +8,7 @@ const Footer = () => {
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <div>
-            <img src={logoImg} alt="RiverSand logo" className="h-12 md:h-[200px] w-auto mb-3 brightness-0 invert" width={360} height={200} loading="lazy" />
+            <img src={logoImg} alt="RiverSand logo" className="h-12 md:h-[200px] w-auto object-contain mb-3 brightness-0 invert" width={360} height={200} loading="lazy" />
             <p className="font-body text-background/40 text-sm leading-relaxed">
               Quality river sand delivered across the Greater New Orleans area. 9 yards for $195, same-day delivery available Mon–Fri.
             </p>
