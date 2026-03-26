@@ -43,13 +43,17 @@ const useCountdown = () => {
 
 const Hero = () => {
   const { timeLeft, isActive } = useCountdown();
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   return (
-    <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-16">
-      <img
+    <section ref={sectionRef} className="relative min-h-[85vh] flex items-center overflow-hidden pt-16">
+      <motion.img
         src={heroImage}
         alt="River sand delivery truck unloading clean screened river sand at a New Orleans job site"
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-[120%] object-cover"
+        style={{ y: bgY }}
         width={1920}
         height={1080}
       />
