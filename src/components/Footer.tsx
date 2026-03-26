@@ -8,7 +8,7 @@ const Footer = () => {
       <div className="container mx-auto px-6 pb-[23px]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <div className="flex flex-col justify-start">
-            <img src={logoImg} alt="RiverSand logo" className="w-[200px] h-auto object-contain mb-4 brightness-0 invert self-start -mt-[100px] pb-[19px] my-0 pt-[56px] py-[113px] border-none" loading="lazy" />
+            <img src={logoImg} alt="RiverSand logo" className="w-[200px] h-auto object-contain mb-4 brightness-0 invert self-start my-0 py-[113px] border-none pb-[2px] pr-0 pt-[5px] mt-[9px] ml-[51px]" loading="lazy" />
             <p className="font-body text-background/40 text-sm leading-relaxed -mt-[75px] pt-0 mb-[19px] pb-0 my-0">
               {"\n"}
             </p>
