@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +56,7 @@ const Order = () => {
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
@@ -743,22 +745,27 @@ const Order = () => {
                   </div>
                 </div>
 
-                {/* Curbside disclaimer */}
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                  <p className="text-amber-800 text-xs font-body">
-                    <strong>Curbside Delivery Only:</strong> All deliveries are made curbside. Due to liability, we cannot deliver inside backyards or enclosed areas.
-                  </p>
-                </div>
+                {/* Curbside disclaimer checkbox */}
+                <label htmlFor="disclaimer" className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3 cursor-pointer hover:bg-amber-100/60 transition-colors">
+                  <Checkbox
+                    id="disclaimer"
+                    checked={disclaimerAccepted}
+                    onCheckedChange={(checked) => setDisclaimerAccepted(!!checked)}
+                    className="mt-0.5 border-amber-400 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
+                  />
+                  <span className="text-amber-800 text-xs font-body leading-relaxed">
+                    <strong>Curbside Delivery Only:</strong> I understand that all deliveries are curbside only. Due to liability, deliveries cannot be made inside backyards or enclosed areas.
+                  </span>
+                </label>
 
                 {/* Action buttons */}
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep("details")} className="h-12 font-display tracking-wider rounded-xl text-sm">
+                  <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setStep("details"); }} className="h-12 font-display tracking-wider rounded-xl text-sm">
                     <ArrowLeft className="w-4 h-4 mr-1" /> BACK
                   </Button>
                   <Button
                     onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                    disabled={submitting}
+                    disabled={submitting || !disclaimerAccepted}
                     className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
                   >
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
