@@ -409,6 +409,33 @@ const Order = () => {
     </div>
   );
 
+  // Fallback UI for popup return tab (when window.close() is blocked)
+  if (isPopupReturnTab) {
+    const paymentStatus = searchParams.get("payment");
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background flex items-center justify-center">
+        <div className="bg-background rounded-2xl p-8 border border-border/50 shadow-lg max-w-md text-center space-y-4">
+          {paymentStatus === "success" ? (
+            <CheckCircle2 className="w-12 h-12 text-primary mx-auto" />
+          ) : (
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+          )}
+          <h2 className="text-2xl font-display text-foreground">
+            {paymentStatus === "success" ? "Payment Complete!" : "Payment Canceled"}
+          </h2>
+          <p className="font-body text-muted-foreground">
+            {paymentStatus === "success"
+              ? "Your payment has been processed. You can close this tab and return to your order page."
+              : "No charge was made. You can close this tab and try again."}
+          </p>
+          <Button onClick={() => window.close()} className="font-display tracking-wider">
+            Close This Tab
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
       <Navbar solid />
