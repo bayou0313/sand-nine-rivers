@@ -167,11 +167,14 @@ const Order = () => {
     notes: "",
   });
 
-  // Computed total with Saturday surcharge — $35 per load
+  // Tax calculation based on delivery address
+  const taxInfo = useMemo(() => getTaxRateFromAddress(address), [address]);
+
+  // Computed total with Saturday surcharge — $35 per load, plus tax
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
-  const totalPrice = result
-    ? (result.price * quantity) + saturdaySurchargeTotal
-    : 0;
+  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal : 0;
+  const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
+  const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
 
   // Pre-fill from estimator URL params
   useEffect(() => {
