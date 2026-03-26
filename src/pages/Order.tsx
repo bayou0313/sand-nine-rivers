@@ -56,6 +56,7 @@ const Order = () => {
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
@@ -146,6 +147,7 @@ const Order = () => {
         if (signal.status === "success") {
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
+          setPendingOrderId(null);
           setStep("success");
           toast({
             title: "Payment successful",
@@ -186,6 +188,38 @@ const Order = () => {
       clearInterval(pollInterval);
     };
   }, [toast]);
+
+  // Poll DB for payment status as reliable fallback (webhook updates DB)
+  useEffect(() => {
+    if (!pendingOrderId || step === "success") return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from("orders")
+          .select("payment_status, order_number")
+          .eq("id", pendingOrderId)
+          .single();
+
+        if (data?.payment_status === "paid") {
+          if (data.order_number) setOrderNumber(data.order_number);
+          setPendingOrderId(null);
+          setSubmitting(false);
+          setStep("success");
+          toast({
+            title: "Payment successful",
+            description: data.order_number
+              ? `Order ${data.order_number} is confirmed.`
+              : "Your payment was completed successfully.",
+          });
+        }
+      } catch {
+        // Ignore polling errors
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [pendingOrderId, step, toast]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
@@ -381,6 +415,9 @@ const Order = () => {
       if (error || !data?.url) {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
+
+      // Store order ID for DB polling
+      setPendingOrderId(insertedOrder?.id || null);
 
       if (isEmbedded) {
         const newTab = window.open(data.url, "_blank");
