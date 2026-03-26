@@ -147,6 +147,7 @@ const Order = () => {
         if (signal.status === "success") {
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
+          setPendingOrderId(null);
           setStep("success");
           toast({
             title: "Payment successful",
