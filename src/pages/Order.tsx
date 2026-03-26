@@ -688,7 +688,7 @@ const Order = () => {
 
             {/* STEP 3: Confirm */}
             {step === "confirm" && result && selectedDeliveryDate && (
-              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
                 {/* Receipt-style confirmation */}
                 <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
                   {/* Logo header */}
