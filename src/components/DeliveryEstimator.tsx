@@ -188,7 +188,7 @@ const DeliveryEstimator = () => {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
-                    <Link to="/order"><ShoppingCart className="w-5 h-5 mr-2" /> ORDER ONLINE</Link>
+                    <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}&duration=${encodeURIComponent(result.duration)}`}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER ONLINE</Link>
                   </Button>
                   <Button variant="outline" className="flex-1 h-12 font-display tracking-wider text-lg" asChild>
                     <a href="tel:+15551234567">CALL TO ORDER</a>
