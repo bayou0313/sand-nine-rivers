@@ -891,7 +891,7 @@ const Order = () => {
                   </>
                 ) : (
                   <p className="font-body text-muted-foreground max-w-md mx-auto">
-                    Your order is confirmed. Payment of <strong className="text-primary">${totalPrice.toFixed(2)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
+                    Your order is confirmed. Payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
                     We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
                   </p>
                 )}
