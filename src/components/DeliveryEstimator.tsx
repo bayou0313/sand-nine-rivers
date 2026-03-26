@@ -1,7 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 const ORIGIN = "1215 River Rd, Bridge City, LA 70094";
 const BASE_PRICE = 195;
@@ -24,7 +31,7 @@ const DeliveryEstimator = () => {
   const [error, setError] = useState("");
   const [apiLoaded, setApiLoaded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteRef = useRef<any>(null);
 
   // Load Google Maps script
   useEffect(() => {
