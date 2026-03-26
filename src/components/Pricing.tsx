@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Truck, MapPin, Package, ShoppingCart, Minus, Plus } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
