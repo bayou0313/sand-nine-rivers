@@ -367,6 +367,17 @@ const Order = () => {
       if (insertError) throw insertError;
       setOrderNumber(insertedOrder?.order_number || null);
       setStep("success");
+
+      // Send order confirmation emails (fire-and-forget)
+      const emailData = {
+        ...buildOrderData(),
+        payment_method: codSubOption,
+        payment_status: "pending",
+        order_number: insertedOrder?.order_number,
+      };
+      supabase.functions.invoke("send-email", {
+        body: { type: "order", data: emailData },
+      }).catch((err) => console.error("Email send failed:", err));
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
     } finally {

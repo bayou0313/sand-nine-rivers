@@ -113,11 +113,31 @@ serve(async (req) => {
       if (paymentStatus === "paid") {
         const { data: currentOrder } = await supabase
           .from("orders")
-          .select("status")
+          .select("*")
           .eq("id", orderId)
           .maybeSingle();
         if (currentOrder?.status === "pending") {
           updateData.status = "confirmed";
+        }
+
+        // Send order confirmation emails after successful payment
+        if (currentOrder) {
+          try {
+            const emailUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`;
+            await fetch(emailUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+              },
+              body: JSON.stringify({
+                type: "order",
+                data: { ...currentOrder, payment_status: "paid" },
+              }),
+            });
+          } catch (emailErr) {
+            console.error("Failed to send order email:", emailErr);
+          }
         }
       }
       const { error: updateError } = await supabase
