@@ -385,7 +385,7 @@ const Order = () => {
             {step === "address" && (
               <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/10">
                 <h1 className="text-4xl md:text-5xl font-display text-foreground mb-2">PLACE YOUR ORDER</h1>
-                <p className="font-body text-muted-foreground mb-8">Enter your delivery address to get your instant price. 9 cubic yards of quality river sand.</p>
+                <p className="font-body text-muted-foreground mb-8">Enter your delivery address to get your instant price. {quantity > 1 ? `${quantity} loads × ` : ""}9 cubic yards of quality river sand.</p>
 
                 <div className="space-y-4">
                   <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
