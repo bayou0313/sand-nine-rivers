@@ -171,7 +171,7 @@ const DeliveryEstimator = () => {
                 <div className="text-center p-4 bg-background rounded-xl">
                   <p className="font-body text-xs text-muted-foreground uppercase">Per Load Starting At</p>
                   <p className="font-display text-3xl text-primary flex items-center justify-center">
-                    <DollarSign className="w-6 h-6" />{result.price.toFixed(2)}
+                    {formatCurrency(result.price)}
                   </p>
                 </div>
                 <p className="font-body text-sm text-muted-foreground text-center">
