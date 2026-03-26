@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, description, customer_name, customer_email, order_id, origin_url } = await req.json();
+    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url } = await req.json();
 
     if (!amount || typeof amount !== "number" || amount < 50) {
       return new Response(
@@ -25,6 +25,10 @@ serve(async (req) => {
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
+
+    const safeOrigin = origin_url || "https://riversand.net";
+    const encodedOrderId = encodeURIComponent(order_id || "");
+    const encodedOrderNumber = encodeURIComponent(order_number || "");
 
     const session = await stripe.checkout.sessions.create({
       line_items: [
@@ -43,10 +47,11 @@ serve(async (req) => {
       customer_email: customer_email || undefined,
       metadata: {
         order_id: order_id || "",
+        order_number: order_number || "",
         customer_name: customer_name || "",
       },
-      success_url: `${origin_url || "https://riversand.net"}/order?payment=success`,
-      cancel_url: `${origin_url || "https://riversand.net"}/order?payment=canceled`,
+      success_url: `${safeOrigin}/order?payment=success&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${safeOrigin}/order?payment=canceled&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}`,
     });
 
     return new Response(

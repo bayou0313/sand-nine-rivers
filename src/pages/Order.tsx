@@ -87,6 +87,36 @@ const Order = () => {
   }, [step]);
 
   useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (!paymentStatus) return;
+
+    const returnedOrderNumber = searchParams.get("order_number");
+    const returnedSessionId = searchParams.get("session_id");
+
+    if (paymentStatus === "success") {
+      if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
+      if (returnedSessionId) setStripePaymentId(returnedSessionId);
+      setStep("success");
+      toast({
+        title: "Payment successful",
+        description: returnedOrderNumber
+          ? `Order ${returnedOrderNumber} is confirmed.`
+          : "Your payment was completed successfully.",
+      });
+      return;
+    }
+
+    if (paymentStatus === "canceled") {
+      setStep("confirm");
+      toast({
+        title: "Payment canceled",
+        description: "No charge was made. You can try again anytime.",
+        variant: "destructive",
+      });
+    }
+  }, [searchParams, toast]);
+
+  useEffect(() => {
     const paramAddress = searchParams.get("address");
     const paramDistance = searchParams.get("distance");
     const paramPrice = searchParams.get("price");
@@ -270,6 +300,7 @@ const Order = () => {
           customer_name: form.name.trim(),
           customer_email: form.email.trim() || null,
           order_id: insertedOrder?.id,
+          order_number: insertedOrder?.order_number,
           origin_url: window.location.origin,
         },
       });
@@ -278,7 +309,14 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
-      window.location.href = data.url;
+      if (window.self !== window.top) {
+        const newTab = window.open(data.url, "_blank", "noopener,noreferrer");
+        if (!newTab) {
+          window.location.assign(data.url);
+        }
+      } else {
+        window.location.assign(data.url);
+      }
     } catch (err: any) {
       toast({ title: "Payment link failed", description: err.message || "Please try another payment method.", variant: "destructive" });
     } finally {
