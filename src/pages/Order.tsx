@@ -684,8 +684,8 @@ const Order = () => {
                         <Input type="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-11 rounded-lg" />
                       </div>
                       <div>
-                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email (optional)</label>
-                        <Input type="email" placeholder="john@example.com" maxLength={255} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-11 rounded-lg" />
+                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
+                        <EmailInput value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-11 rounded-lg" />
                       </div>
                       <div className="sm:col-span-2">
                         <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Notes (optional)</label>
