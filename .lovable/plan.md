@@ -1,28 +1,33 @@
 
 
-## Fix: Payment Success State Getting Overridden
+## Fix: Add Database Polling Alongside Cross-Tab Signal for Reliable Payment Confirmation
 
 ### Problem
-When the Stripe popup tab signals success back to the original tab, the cross-tab listener correctly sets `step="success"`. However, the URL-params `useEffect` (line 190–206) also fires and sees the address/distance/price params still in the URL, so it resets `step` back to `"details"` — sending the user back to the checkout form instead of showing the thank-you page.
+The cross-tab `localStorage` signal is unreliable in certain environments (iframes, different origins, browser restrictions). When it fails, the user stays on the checkout/confirm step even though the webhook has already updated the order to `paid` in the database.
 
-### Fix
+### Solution
+After the user clicks "Pay" and the Stripe tab opens, **poll the order's `payment_status` in the database** every 2–3 seconds. The existing `stripe-webhook` edge function already sets `payment_status = 'paid'` when Stripe confirms payment. When the poll detects `paid`, transition to the success step — no localStorage signal needed.
 
-**In `src/pages/Order.tsx`:**
+### Changes
 
-1. **Guard the URL-params effect** (line 190–206) so it only sets `step="details"` when the current step is `"address"` (initial state). If the step has already advanced (e.g. to `"success"` via the payment signal), skip the override.
+**`src/pages/Order.tsx`:**
 
-   Change line 204 from:
-   ```tsx
-   setStep("details");
+1. **Store the order ID after insert** — add state `pendingOrderId` to track the order waiting for payment.
+
+2. **Start polling after Stripe tab opens** — in `handleStripeLink`, after opening the Stripe URL, start an interval that queries:
+   ```sql
+   SELECT payment_status, order_number FROM orders WHERE id = pendingOrderId
    ```
-   to:
-   ```tsx
-   setStep(prev => prev === "address" ? "details" : prev);
-   ```
+   When `payment_status === 'paid'`, set `step = "success"`, set `orderNumber`, show toast, and clear the interval.
 
-2. **Also guard against the signal arriving *after* the URL-params effect** — in the cross-tab signal listener (`processSignal`, ~line 139), the `setStep("success")` call already works correctly, but ensure `setSubmitting(false)` is called so the button state resets if the user navigates back.
+3. **Keep existing cross-tab signal as fast path** — the localStorage listener fires instantly when it works; the DB poll is the reliable fallback (fires within 2–3s of webhook completing).
+
+4. **Clean up** — clear the polling interval on unmount, on success, or on cancel signal.
 
 ### Technical Details
-- Single line change using the functional form of `setStep` to only transition from `"address"` → `"details"`, preserving any other state (`"confirm"`, `"success"`)
-- No backend or database changes needed
+- Poll interval: every 3 seconds via `setInterval`
+- Uses the existing anon RLS policy "Anon can read back recent orders" (order was created < 5 min ago)
+- The `stripe-webhook` function already handles `payment_intent.succeeded` → sets `payment_status = 'paid'` and `status = 'confirmed'`
+- No new edge functions, no database changes, no new secrets needed
+- Both signals (localStorage + DB poll) race; whichever fires first wins, the other is cleaned up
 
