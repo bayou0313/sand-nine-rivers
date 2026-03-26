@@ -1,46 +1,32 @@
-import { Truck, Clock, Shield, MapPin } from "lucide-react";
+import { Truck, Clock, Shield, MapPin, ThumbsUp, Ruler } from "lucide-react";
 
 const features = [
-  {
-    icon: Truck,
-    title: "FAST DELIVERY",
-    description: "Same-day and next-day delivery available throughout the Greater New Orleans metro area.",
-  },
-  {
-    icon: Shield,
-    title: "QUALITY SAND",
-    description: "Clean, screened river sand perfect for construction, landscaping, fill, and drainage projects.",
-  },
-  {
-    icon: MapPin,
-    title: "LOCAL SERVICE",
-    description: "Proudly serving a 15-mile radius from zip code 70123 — Jefferson Parish and surrounding areas.",
-  },
-  {
-    icon: Clock,
-    title: "EASY ORDERING",
-    description: "Call us to schedule your delivery. No hassle, no hidden fees — just $195 for 9 yards delivered.",
-  },
+  { icon: Truck, title: "FAST DELIVERY", desc: "Same-day and next-day delivery available." },
+  { icon: Shield, title: "QUALITY SAND", desc: "Clean, screened river sand every time." },
+  { icon: MapPin, title: "LOCAL SERVICE", desc: "Based in Bridge City, serving GNO." },
+  { icon: Clock, title: "EASY ORDERING", desc: "Call to schedule — no hassle, no hidden fees." },
+  { icon: ThumbsUp, title: "TRUSTED", desc: "Hundreds of satisfied customers." },
+  { icon: Ruler, title: "9 CUBIC YARDS", desc: "Full dump truck load per delivery." },
 ];
 
 const Features = () => {
   return (
     <section className="py-20 bg-card">
       <div className="container mx-auto px-6">
-        <h2 className="text-5xl md:text-6xl text-center text-foreground mb-16">
-          WHY CHOOSE RIVERSAND?
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="bg-background rounded-lg p-8 border border-border hover:border-primary/50 transition-colors"
-            >
-              <feature.icon className="w-10 h-10 text-primary mb-4" />
-              <h3 className="text-2xl text-foreground mb-3">{feature.title}</h3>
-              <p className="font-body text-muted-foreground leading-relaxed">
-                {feature.description}
-              </p>
+        <div className="text-center mb-12">
+          <p className="text-primary font-display text-xl tracking-wider mb-2">WHY US</p>
+          <h2 className="text-5xl md:text-6xl text-foreground">
+            WHY CHOOSE RIVERSAND?
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {features.map((f) => (
+            <div key={f.title} className="flex items-start gap-4 p-6 bg-background border border-border rounded-lg hover:border-primary/50 transition-colors">
+              <f.icon className="w-8 h-8 text-primary shrink-0 mt-1" />
+              <div>
+                <h3 className="font-display text-xl text-foreground mb-1">{f.title}</h3>
+                <p className="font-body text-muted-foreground text-sm">{f.desc}</p>
+              </div>
             </div>
           ))}
         </div>
