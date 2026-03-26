@@ -306,50 +306,74 @@ const Order = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
       {/* Header with Logo */}
-      <div className="bg-background border-b border-border">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="bg-background/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50 shadow-sm"
+      >
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center">
             <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
           </Link>
-          <Link to="/" className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+          <Link to="/" className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 hover:gap-2">
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="max-w-2xl mx-auto">
           {/* Progress steps */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="flex items-center justify-center gap-2 mb-8"
+          >
             {stepLabels.map((label, i) => {
               const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
               const isActive = i <= stepIndex;
               const isCurrent = i === stepIndex;
               return (
                 <div key={label} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-display text-xs transition-all duration-300 ${
-                    isCurrent ? "bg-accent text-accent-foreground scale-110 shadow-lg shadow-accent/30" 
-                    : isActive ? "bg-accent/60 text-accent-foreground" 
-                    : "bg-muted/30 text-muted-foreground/50"
-                  }`}>
+                  <motion.div
+                    animate={{
+                      scale: isCurrent ? 1.1 : 1,
+                      boxShadow: isCurrent ? "0 4px 14px hsl(var(--accent) / 0.3)" : "0 1px 3px hsl(var(--border) / 0.5)",
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-display text-xs transition-colors duration-300 ${
+                      isCurrent ? "bg-accent text-accent-foreground" 
+                      : isActive ? "bg-accent/60 text-accent-foreground" 
+                      : "bg-muted text-muted-foreground/50"
+                    }`}
+                  >
                     {isActive && i < stepIndex ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
-                  </div>
-                  <span className={`font-body text-xs hidden sm:inline transition-colors ${
-                    isCurrent ? "text-background font-medium" : isActive ? "text-background/70" : "text-background/30"
+                  </motion.div>
+                  <span className={`font-body text-xs hidden sm:inline transition-colors duration-300 ${
+                    isCurrent ? "text-foreground font-medium" : isActive ? "text-foreground/70" : "text-muted-foreground/50"
                   }`}>{label}</span>
-                  {i < 2 && <div className={`w-8 h-px transition-colors ${isActive ? "bg-accent/60" : "bg-muted/20"}`} />}
+                  {i < 2 && <div className={`w-8 h-px transition-colors duration-300 ${isActive ? "bg-accent/60" : "bg-border"}`} />}
                 </div>
               );
             })}
-          </div>
+          </motion.div>
 
           <AnimatePresence mode="wait">
             {/* STEP 1: Address */}
             {step === "address" && (
-              <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-background rounded-2xl p-6 md:p-8 border border-border shadow-2xl shadow-foreground/10">
-                <h1 className="text-4xl md:text-5xl font-display text-foreground mb-2">PLACE YOUR ORDER</h1>
+              <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="bg-background rounded-2xl p-6 md:p-8 border border-border/50 shadow-lg shadow-foreground/5">
+                <motion.h1
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="text-4xl md:text-5xl font-display text-foreground mb-2"
+                >
+                  PLACE YOUR ORDER
+                </motion.h1>
                 <p className="font-body text-muted-foreground mb-6">Enter your delivery address to get your instant price. {quantity > 1 ? `${quantity} loads × ` : ""}9 cubic yards of quality river sand.</p>
 
                 <div className="space-y-4">
@@ -362,7 +386,7 @@ const Order = () => {
                     placeholder="Enter your delivery address..."
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="h-14 text-base rounded-xl"
+                    className="h-14 text-base rounded-xl border-border/50 shadow-sm focus:shadow-md transition-shadow"
                     maxLength={500}
                     onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
                   />
@@ -373,12 +397,16 @@ const Order = () => {
                     </p>
                   )}
                   {error && (
-                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3"
+                    >
                       <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
                       <p className="font-body text-sm text-destructive">{error}</p>
-                    </div>
+                    </motion.div>
                   )}
-                  <Button onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl">
+                  <Button onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow">
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET DELIVERY PRICE</>}
                   </Button>
                 </div>
@@ -388,11 +416,17 @@ const Order = () => {
                     { top: "LOCAL AREA", bot: "Starting at $195" },
                     { top: "EXTENDED", bot: "Surcharge applies" },
                     { top: "9 YDS", bot: "Per load" },
-                  ].map((item) => (
-                    <div key={item.top} className="p-3 bg-card border border-border rounded-xl">
+                  ].map((item, i) => (
+                    <motion.div
+                      key={item.top}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + i * 0.1 }}
+                      className="p-3 bg-muted/50 border border-border/50 rounded-xl hover:shadow-md transition-shadow"
+                    >
                       <p className="font-display text-lg text-primary">{item.top}</p>
                       <p className="font-body text-xs text-muted-foreground">{item.bot}</p>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>
