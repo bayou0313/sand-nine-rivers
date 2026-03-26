@@ -63,7 +63,7 @@ const Admin = () => {
   }, []);
 
   const updateStatus = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("orders")
       .update({ status: newStatus })
       .eq("id", orderId);

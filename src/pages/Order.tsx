@@ -135,7 +135,7 @@ const Order = () => {
 
     setSubmitting(true);
     try {
-      const { error: insertError } = await (supabase.from("orders") as any).insert({
+      const { error: insertError } = await (supabase as any).from("orders").insert({
         customer_name: form.name.trim(),
         customer_email: form.email.trim() || null,
         customer_phone: form.phone.trim(),
