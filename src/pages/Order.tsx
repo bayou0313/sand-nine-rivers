@@ -500,7 +500,7 @@ const Order = () => {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden"
+                    className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden hover:shadow-xl transition-shadow duration-300"
                   >
                     <div className="p-6">
                       <SectionHeading icon={Package} title="ORDER SUMMARY" />
