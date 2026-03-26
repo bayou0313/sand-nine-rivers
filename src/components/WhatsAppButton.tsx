@@ -317,7 +317,7 @@ const WhatsAppButton = () => {
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 10 }}
-                  className="absolute right-14 bg-background text-foreground text-xs font-medium px-2.5 py-1 rounded-full shadow-md border border-border whitespace-nowrap"
+                  className="absolute right-14 bg-primary text-primary-foreground text-xs font-medium px-2.5 py-1 rounded-full shadow-md border border-primary/20 whitespace-nowrap"
                 >
                   {label}
                 </motion.span>
