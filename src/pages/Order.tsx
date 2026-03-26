@@ -311,7 +311,7 @@ const Order = () => {
       <div className="bg-foreground/95 backdrop-blur-sm border-b border-border/20">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center">
-            <img src={logoImg} alt="RIVERSAND" className="h-12 md:h-16 object-contain brightness-0 invert" />
+            <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
           </Link>
           <Link to="/" className="font-body text-sm text-background/60 hover:text-background transition-colors flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> Back
@@ -654,7 +654,7 @@ const Order = () => {
                 <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
                   {/* Logo header */}
                   <div className="bg-foreground py-4 flex justify-center">
-                    <img src={logoImg} alt="RIVERSAND" className="h-10 object-contain brightness-0 invert" />
+                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
                   </div>
 
                   <div className="p-6 space-y-4">
@@ -756,7 +756,7 @@ const Order = () => {
                 <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
                   {/* Logo header */}
                   <div className="bg-foreground py-4 flex justify-center">
-                    <img src={logoImg} alt="RIVERSAND" className="h-10 object-contain brightness-0 invert" />
+                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
                   </div>
 
                   <div className="p-8 text-center space-y-5">
