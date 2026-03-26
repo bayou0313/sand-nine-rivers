@@ -28,6 +28,10 @@ type Order = {
   saturday_surcharge_amount: number;
   same_day_requested: boolean;
   delivery_window: string;
+  order_number: string | null;
+  quantity: number;
+  tax_rate: number;
+  tax_amount: number;
 };
 
 type PaymentEvent = {
