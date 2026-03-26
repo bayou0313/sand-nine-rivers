@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus } from "lucide-react";
+import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import { formatPhone, formatCurrency, getTaxRateFromAddress } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import DeliveryDatePicker, { type DeliveryDate, SATURDAY_SURCHARGE } from "@/components/DeliveryDatePicker";
+import logoImg from "@/assets/riversand-logo.png";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -56,7 +58,6 @@ const Order = () => {
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
 
-  // Quantity from URL params (default 1)
   const qtyParam = parseInt(searchParams.get("qty") || "1", 10);
   const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
 
@@ -67,10 +68,8 @@ const Order = () => {
     notes: "",
   });
 
-  // Tax calculation based on delivery address
   const taxInfo = useMemo(() => getTaxRateFromAddress(address), [address]);
 
-  // Computed total with Saturday surcharge — $35 per load, plus tax
   const PROCESSING_FEE_RATE = 0.035;
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal : 0;
@@ -79,7 +78,11 @@ const Order = () => {
   const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
 
-  // Pre-fill from estimator URL params
+  // Scroll to top on step change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
   useEffect(() => {
     const paramAddress = searchParams.get("address");
     const paramDistance = searchParams.get("distance");
@@ -242,7 +245,6 @@ const Order = () => {
 
     setSubmitting(true);
     try {
-      // First save the order as pending
       const orderData = {
         ...buildOrderData(),
         payment_method: "stripe-link",
@@ -257,7 +259,6 @@ const Order = () => {
 
       if (insertError) throw insertError;
 
-      // Generate Stripe checkout link
       const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
@@ -274,7 +275,6 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
-      // Redirect to Stripe checkout
       window.location.href = data.url;
     } catch (err: any) {
       toast({ title: "Payment link failed", description: err.message || "Please try another payment method.", variant: "destructive" });
@@ -285,39 +285,61 @@ const Order = () => {
 
   const stepLabels = ["Delivery Details", "Payment", "Confirm"];
 
+  const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim();
+
+  // --- Section heading helper ---
+  const SectionHeading = ({ icon: Icon, title }: { icon: any; title: string }) => (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <Icon className="w-4 h-4 text-primary" />
+      </div>
+      <h2 className="text-2xl font-display text-foreground tracking-wider">{title}</h2>
+    </div>
+  );
+
+  // --- Receipt row helper ---
+  const ReceiptRow = ({ label, value, accent, destructive }: { label: string; value: string; accent?: boolean; destructive?: boolean }) => (
+    <div className="flex justify-between items-center py-2.5">
+      <span className={`font-body text-sm ${destructive ? "text-destructive" : "text-muted-foreground"}`}>{label}</span>
+      <span className={`font-display text-sm ${destructive ? "text-destructive" : accent ? "text-primary" : "text-foreground"}`}>{value}</span>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-sand-dark to-foreground">
-      {/* Header */}
+      {/* Header with Logo */}
       <div className="bg-foreground/95 backdrop-blur-sm border-b border-border/20">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="text-3xl font-display text-background tracking-wider">RIVERSAND</Link>
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <Link to="/" className="flex items-center">
+            <img src={logoImg} alt="RIVERSAND" className="h-12 md:h-16 object-contain brightness-0 invert" />
+          </Link>
           <Link to="/" className="font-body text-sm text-background/60 hover:text-background transition-colors flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Back to site
+            <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="max-w-2xl mx-auto">
           {/* Progress steps */}
-          <div className="flex items-center justify-center gap-2 mb-10">
+          <div className="flex items-center justify-center gap-2 mb-8">
             {stepLabels.map((label, i) => {
               const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
               const isActive = i <= stepIndex;
               const isCurrent = i === stepIndex;
               return (
                 <div key={label} className="flex items-center gap-2">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-sm transition-all duration-300 ${
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-display text-xs transition-all duration-300 ${
                     isCurrent ? "bg-accent text-accent-foreground scale-110 shadow-lg shadow-accent/30" 
                     : isActive ? "bg-accent/60 text-accent-foreground" 
                     : "bg-muted/30 text-muted-foreground/50"
                   }`}>
-                    {isActive && i < stepIndex ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                    {isActive && i < stepIndex ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
                   </div>
-                  <span className={`font-body text-sm hidden sm:inline transition-colors ${
+                  <span className={`font-body text-xs hidden sm:inline transition-colors ${
                     isCurrent ? "text-background font-medium" : isActive ? "text-background/70" : "text-background/30"
                   }`}>{label}</span>
-                  {i < 2 && <div className={`w-10 h-px transition-colors ${isActive ? "bg-accent/60" : "bg-muted/20"}`} />}
+                  {i < 2 && <div className={`w-8 h-px transition-colors ${isActive ? "bg-accent/60" : "bg-muted/20"}`} />}
                 </div>
               );
             })}
@@ -326,9 +348,9 @@ const Order = () => {
           <AnimatePresence mode="wait">
             {/* STEP 1: Address */}
             {step === "address" && (
-              <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/10">
+              <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-background rounded-2xl p-6 md:p-8 border border-border shadow-2xl shadow-foreground/10">
                 <h1 className="text-4xl md:text-5xl font-display text-foreground mb-2">PLACE YOUR ORDER</h1>
-                <p className="font-body text-muted-foreground mb-8">Enter your delivery address to get your instant price. {quantity > 1 ? `${quantity} loads × ` : ""}9 cubic yards of quality river sand.</p>
+                <p className="font-body text-muted-foreground mb-6">Enter your delivery address to get your instant price. {quantity > 1 ? `${quantity} loads × ` : ""}9 cubic yards of quality river sand.</p>
 
                 <div className="space-y-4">
                   <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
@@ -361,14 +383,14 @@ const Order = () => {
                   </Button>
                 </div>
 
-                <div className="mt-8 grid grid-cols-3 gap-3 text-center">
+                <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                   {[
                     { top: "LOCAL AREA", bot: "Starting at $195" },
-                    { top: "EXTENDED AREA", bot: "Surcharge applies" },
+                    { top: "EXTENDED", bot: "Surcharge applies" },
                     { top: "9 YDS", bot: "Per load" },
                   ].map((item) => (
                     <div key={item.top} className="p-3 bg-card border border-border rounded-xl">
-                      <p className="font-display text-xl text-primary">{item.top}</p>
+                      <p className="font-display text-lg text-primary">{item.top}</p>
                       <p className="font-body text-xs text-muted-foreground">{item.bot}</p>
                     </div>
                   ))}
@@ -376,257 +398,206 @@ const Order = () => {
               </motion.div>
             )}
 
-            {/* STEP 2: Delivery Details + Payment */}
+            {/* STEP 2: Details + Payment */}
             {step === "details" && result && (
-              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
-                {/* Price summary */}
-                <div className="bg-primary/10 border border-primary/30 rounded-2xl p-6">
-                  <div className="flex items-center gap-2 text-primary mb-3">
-                    <CheckCircle2 className="w-6 h-6" />
-                    <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
+              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+                {/* Compact delivery confirmation banner */}
+                <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                    <span className="font-display text-sm tracking-wider text-primary">DELIVERY AVAILABLE</span>
                   </div>
-                  <div className="text-center p-4 bg-background rounded-xl">
-                    <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Subtotal (${quantity} loads)` : "Per Load"}</p>
-                    <p className="font-display text-3xl text-primary flex items-center justify-center">
-                      {formatCurrency(result.price * quantity)}
-                    </p>
-                  </div>
+                  <span className="font-display text-xl text-primary">{formatCurrency(result.price)}<span className="text-xs font-body text-muted-foreground">/load</span></span>
                 </div>
 
-                {/* Delivery Date Picker */}
-                <div className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/5">
-                  <DeliveryDatePicker
-                    selectedDate={selectedDeliveryDate}
-                    onSelect={(d) => {
-                      setSelectedDeliveryDate(d);
-                      setDateError("");
-                    }}
-                  />
-                  {dateError && (
-                    <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
-                      <p className="font-body text-sm text-destructive">{dateError}</p>
-                    </div>
-                  )}
-                </div>
+                {/* Combined: Delivery Date + Customer Info */}
+                <div className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden">
+                  {/* Delivery Date Section */}
+                  <div className="p-6">
+                    <SectionHeading icon={CalendarDays} title="DELIVERY DATE" />
+                    <DeliveryDatePicker
+                      selectedDate={selectedDeliveryDate}
+                      onSelect={(d) => {
+                        setSelectedDeliveryDate(d);
+                        setDateError("");
+                      }}
+                    />
+                    {dateError && (
+                      <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+                        <p className="font-body text-sm text-destructive">{dateError}</p>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Customer form */}
-                <div className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/5">
-                  <h2 className="text-3xl font-display text-foreground mb-2">YOUR INFORMATION</h2>
-                  <p className="font-body text-muted-foreground mb-6">Tell us where to reach you.</p>
+                  <Separator />
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
-                        <User className="w-4 h-4 text-primary" /> FULL NAME *
-                      </label>
-                      <Input placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" />
-                    </div>
-                    <div>
-                      <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
-                        <Phone className="w-4 h-4 text-primary" /> PHONE NUMBER *
-                      </label>
-                      <Input type="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
-                    </div>
-                    <div>
-                      <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
-                        <Mail className="w-4 h-4 text-primary" /> EMAIL (optional)
-                      </label>
-                      <Input type="email" placeholder="john@example.com" maxLength={255} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-12 rounded-xl" />
-                    </div>
-                    <div>
-                      <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
-                        <FileText className="w-4 h-4 text-primary" /> DELIVERY NOTES (optional)
-                      </label>
-                      <Textarea placeholder="Gate code, placement instructions, preferred time..." maxLength={1000} rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl" />
+                  {/* Customer Info Section */}
+                  <div className="p-6">
+                    <SectionHeading icon={User} title="YOUR INFORMATION" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
+                        <Input placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-11 rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone *</label>
+                        <Input type="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-11 rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email (optional)</label>
+                        <Input type="email" placeholder="john@example.com" maxLength={255} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-11 rounded-lg" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Notes (optional)</label>
+                        <Textarea placeholder="Gate code, placement instructions..." maxLength={1000} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg" />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Full Cost Breakdown */}
+                {/* Order Summary */}
                 {selectedDeliveryDate && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/5"
+                    className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden"
                   >
-                    <h2 className="text-3xl font-display text-foreground mb-4">ORDER SUMMARY</h2>
+                    <div className="p-6">
+                      <SectionHeading icon={Package} title="ORDER SUMMARY" />
 
-                    {/* Quantity selector */}
-                    <div className="flex items-center justify-between py-3 border-b border-border">
-                      <span className="font-body text-muted-foreground">Number of Loads</span>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="font-display text-xl text-foreground w-8 text-center">{quantity}</span>
-                        <button onClick={() => setQuantity(q => Math.min(10, q + 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-0">
-                      {/* Product line */}
-                      <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">River Sand (9 cubic yards × {quantity})</span>
-                        <span className="font-display text-foreground">{quantity} load{quantity > 1 ? "s" : ""}</span>
-                      </div>
-
-                      {/* Base price per load */}
-                      <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">Base delivery × {quantity}</span>
-                        <span className="font-display text-foreground">{formatCurrency(195 * quantity)}</span>
-                      </div>
-
-                      {/* Extra mileage */}
-                      {result.distance > BASE_MILES && (
-                        <div className="flex justify-between py-3 border-b border-border">
-                          <span className="font-body text-muted-foreground">
-                            Extended delivery surcharge × {quantity} load{quantity > 1 ? "s" : ""}
-                          </span>
-                          <span className="font-display text-foreground">
-                            +{formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}
-                          </span>
+                      {/* Quantity selector */}
+                      <div className="flex items-center justify-between py-2.5 border-b border-dashed border-border">
+                        <span className="font-body text-sm text-muted-foreground">Number of Loads</span>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="font-display text-lg text-foreground w-6 text-center">{quantity}</span>
+                          <button onClick={() => setQuantity(q => Math.min(10, q + 1))} className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                            <Plus className="w-3 h-3" />
+                          </button>
                         </div>
+                      </div>
+
+                      <ReceiptRow label={`River Sand (9 cu yds × ${quantity})`} value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
+                      <div className="border-b border-dashed border-border" />
+                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(195 * quantity)} />
+                      {result.distance > BASE_MILES && (
+                        <>
+                          <div className="border-b border-dashed border-border" />
+                          <ReceiptRow label={`Extended delivery surcharge × ${quantity}`} value={`+${formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}`} />
+                        </>
                       )}
-
-                      {/* Delivery date */}
-                      <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">Delivery Date</span>
-                        <span className="font-body text-foreground">
-                          {selectedDeliveryDate.fullLabel}
-                        </span>
-                      </div>
-
-                      {/* Delivery window */}
-                      <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">Delivery Window</span>
-                        <span className="font-body text-foreground flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> 8:00 AM – 5:00 PM
-                        </span>
-                      </div>
+                      <div className="border-b border-dashed border-border" />
+                      <ReceiptRow label="Delivery Date" value={selectedDeliveryDate.fullLabel} />
+                      <div className="border-b border-dashed border-border" />
+                      <ReceiptRow label="Delivery Window" value="8:00 AM – 5:00 PM" />
 
                       {selectedDeliveryDate.isSameDay && (
                         <p className="font-body text-xs text-destructive bg-destructive/5 p-2 rounded-lg my-2">
-                          ⚡ Same-day request — our team will call to confirm availability before dispatching.
+                          ⚡ Same-day request — our team will call to confirm availability.
                         </p>
                       )}
 
-                      {/* Saturday surcharge */}
                       {selectedDeliveryDate.isSaturday && (
-                         <div className="flex justify-between py-3 border-b border-border">
-                          <span className="font-body text-destructive">Saturday Surcharge ($35 × {quantity} load{quantity > 1 ? "s" : ""})</span>
-                          <span className="font-display text-destructive">+{formatCurrency(saturdaySurchargeTotal)}</span>
-                        </div>
+                        <>
+                          <div className="border-b border-dashed border-border" />
+                          <ReceiptRow label={`Saturday Surcharge ($35 × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                        </>
                       )}
 
-                      {/* Subtotal breakdown */}
-                      <div className="mt-4 bg-primary/5 rounded-xl p-4 space-y-2">
-                        <div className="flex justify-between">
-                          <span className="font-body text-sm text-muted-foreground">Subtotal ({quantity} load{quantity > 1 ? "s" : ""} × {formatCurrency(result.price)}/load)</span>
+                      {/* Totals area */}
+                      <div className="mt-3 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 space-y-1.5">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-body text-muted-foreground">Subtotal</span>
                           <span className="font-display text-foreground">{formatCurrency(result.price * quantity)}</span>
                         </div>
                         {selectedDeliveryDate.isSaturday && (
-                          <div className="flex justify-between">
-                            <span className="font-body text-sm text-muted-foreground">Saturday surcharge ($35 × {quantity})</span>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-body text-muted-foreground">Saturday surcharge</span>
                             <span className="font-display text-foreground">+{formatCurrency(saturdaySurchargeTotal)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between">
-                          <span className="font-body text-sm text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}% — {taxInfo.parish})</span>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-body text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}% — {taxInfo.parish})</span>
                           <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
                         </div>
-                        <div className="flex justify-between pt-2 border-t border-border">
-                          <span className="font-display text-xl text-foreground">TOTAL DUE</span>
-                          <span className="font-display text-3xl text-primary">{formatCurrency(totalPrice)}</span>
+                        <Separator className="my-1" />
+                        <div className="flex justify-between items-center">
+                          <span className="font-display text-lg text-foreground">TOTAL DUE</span>
+                          <span className="font-display text-2xl text-primary">{formatCurrency(totalPrice)}</span>
                         </div>
                       </div>
                     </div>
                   </motion.div>
                 )}
 
-                {/* Payment method selection */}
-                <div className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/5">
-                  <h2 className="text-3xl font-display text-foreground mb-2">PAYMENT METHOD</h2>
-                  <p className="font-body text-muted-foreground mb-6">Choose how you'd like to pay.</p>
+                {/* Payment method */}
+                <div className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden">
+                  <div className="p-6">
+                    <SectionHeading icon={CreditCard} title="PAYMENT METHOD" />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("stripe-link")}
-                      className={`p-5 rounded-xl border-2 text-left transition-all ${
-                        paymentMethod === "stripe-link"
-                          ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
-                          : "border-border bg-card hover:border-accent/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "stripe-link" ? "bg-accent/20" : "bg-muted"}`}>
-                          <CreditCard className={`w-5 h-5 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
-                        </div>
-                        <p className="font-display text-sm text-foreground tracking-wider">PAY NOW</p>
-                      </div>
-                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> Secure Stripe Checkout
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("cash")}
-                      className={`p-5 rounded-xl border-2 text-left transition-all ${
-                        paymentMethod === "cash" || paymentMethod === "check"
-                          ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
-                          : "border-border bg-card hover:border-accent/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "cash" || paymentMethod === "check" ? "bg-accent/20" : "bg-muted"}`}>
-                          <Banknote className={`w-5 h-5 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                        </div>
-                        <p className="font-display text-sm text-foreground tracking-wider">PAY AT DELIVERY</p>
-                      </div>
-                      <p className="font-body text-xs text-muted-foreground">Cash or Check accepted</p>
-                    </button>
-                  </div>
-
-                  {paymentMethod === "stripe-link" && (
-                    <div className="space-y-4">
-                      <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-                        <div className="flex justify-between">
-                          <span className="font-body text-sm text-muted-foreground">Order Total</span>
-                          <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-body text-sm text-muted-foreground">Processing Fee (3.5%)</span>
-                          <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
-                        </div>
-                        <div className="flex justify-between pt-2 border-t border-border">
-                          <span className="font-display text-foreground">TOTAL CHARGE</span>
-                          <span className="font-display text-xl text-primary">{formatCurrency(totalWithProcessingFee)}</span>
-                        </div>
-                      </div>
-                      <p className="font-body text-xs text-muted-foreground">
-                        A 3.5% processing fee applies to online payments. Pay at delivery to avoid this fee.
-                      </p>
-                      <Button
-                        onClick={goToStep2}
-                        disabled={!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()}
-                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("stripe-link")}
+                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          paymentMethod === "stripe-link"
+                            ? "border-accent bg-accent/5 shadow-md shadow-accent/10"
+                            : "border-border bg-card hover:border-accent/40"
+                        }`}
                       >
-                        REVIEW ORDER
-                      </Button>
-                      {(!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()) && (
-                        <p className="font-body text-xs text-destructive text-center">
-                          {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in your name and phone number above."}
+                        <div className="flex items-center gap-2 mb-1">
+                          <CreditCard className={`w-4 h-4 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
+                          <p className="font-display text-xs text-foreground tracking-wider">PAY NOW</p>
+                        </div>
+                        <p className="font-body text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" /> Secure Checkout
                         </p>
-                      )}
-                    </div>
-                  )}
+                      </button>
 
-                  {(paymentMethod === "cash" || paymentMethod === "check") && (
-                    <div className="space-y-4">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("cash")}
+                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          paymentMethod === "cash" || paymentMethod === "check"
+                            ? "border-accent bg-accent/5 shadow-md shadow-accent/10"
+                            : "border-border bg-card hover:border-accent/40"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Banknote className={`w-4 h-4 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
+                          <p className="font-display text-xs text-foreground tracking-wider">AT DELIVERY</p>
+                        </div>
+                        <p className="font-body text-[10px] text-muted-foreground">Cash or Check</p>
+                      </button>
+                    </div>
+
+                    {paymentMethod === "stripe-link" && (
+                      <div className="space-y-3">
+                        <div className="bg-card border border-border rounded-lg p-3 space-y-1.5">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-body text-muted-foreground">Order Total</span>
+                            <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-body text-muted-foreground">Processing Fee (3.5%)</span>
+                            <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
+                          </div>
+                          <Separator className="my-1" />
+                          <div className="flex justify-between">
+                            <span className="font-display text-sm text-foreground">TOTAL CHARGE</span>
+                            <span className="font-display text-lg text-primary">{formatCurrency(totalWithProcessingFee)}</span>
+                          </div>
+                        </div>
+                        <p className="font-body text-[10px] text-muted-foreground text-center">
+                          3.5% processing fee applies. Pay at delivery to avoid.
+                        </p>
+                      </div>
+                    )}
+
+                    {(paymentMethod === "cash" || paymentMethod === "check") && (
                       <RadioGroup
                         value={codSubOption}
                         onValueChange={(v) => {
@@ -637,137 +608,142 @@ const Order = () => {
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="cash" id="cash" />
-                          <label htmlFor="cash" className="font-body text-foreground cursor-pointer">Cash</label>
+                          <label htmlFor="cash" className="font-body text-sm text-foreground cursor-pointer">Cash</label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="check" id="check" />
-                          <label htmlFor="check" className="font-body text-foreground cursor-pointer">Check</label>
+                          <label htmlFor="check" className="font-body text-sm text-foreground cursor-pointer">Check</label>
                         </div>
                       </RadioGroup>
+                    )}
 
+                    {!paymentMethod && (
+                      <p className="font-body text-xs text-muted-foreground text-center">Select a payment method to continue.</p>
+                    )}
+                  </div>
+
+                  {/* Review Order Button */}
+                  {paymentMethod && (
+                    <div className="px-6 pb-6 space-y-2">
                       <Button
                         onClick={goToStep2}
-                        disabled={!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()}
-                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                        disabled={!isFormValid}
+                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl bg-accent hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        REVIEW ORDER
+                        <ShieldCheck className="w-5 h-5 mr-2" /> REVIEW ORDER
                       </Button>
-                      {(!selectedDeliveryDate || !form.name.trim() || !form.phone.trim()) && (
+                      {!isFormValid && (
                         <p className="font-body text-xs text-destructive text-center">
                           {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in your name and phone number above."}
                         </p>
                       )}
                     </div>
                   )}
-
-                  {!paymentMethod && (
-                    <p className="font-body text-sm text-muted-foreground text-center">Select a payment method to continue.</p>
-                  )}
                 </div>
 
-                <Button variant="outline" onClick={() => setStep("address")} className="h-12 font-display tracking-wider rounded-xl border-accent/50 text-accent hover:text-accent hover:bg-accent/10">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> BACK TO ADDRESS
+                <Button variant="outline" onClick={() => setStep("address")} className="h-11 font-display tracking-wider rounded-xl border-accent/50 text-accent hover:text-accent hover:bg-accent/10 text-sm">
+                  <ArrowLeft className="w-4 h-4 mr-1" /> CHANGE ADDRESS
                 </Button>
               </motion.div>
             )}
 
             {/* STEP 3: Confirm */}
             {step === "confirm" && result && selectedDeliveryDate && (
-              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/10">
-                <h2 className="text-3xl font-display text-foreground mb-6">CONFIRM YOUR ORDER</h2>
+              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+                {/* Receipt-style confirmation */}
+                <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
+                  {/* Logo header */}
+                  <div className="bg-foreground py-4 flex justify-center">
+                    <img src={logoImg} alt="RIVERSAND" className="h-10 object-contain brightness-0 invert" />
+                  </div>
 
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Product</span>
-                    <span className="font-display text-foreground">{quantity} × 9 CU YDS RIVER SAND</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Delivery To</span>
-                    <span className="font-body text-foreground text-right max-w-[60%]">{address}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Delivery Date</span>
-                    <span className="font-body text-foreground">
-                      {selectedDeliveryDate.fullLabel}
-                      {selectedDeliveryDate.isSaturday && <span className="text-amber-600 text-sm ml-1">(+$35)</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Delivery Window</span>
-                    <span className="font-body text-foreground">8:00 AM – 5:00 PM</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Customer</span>
-                    <span className="font-body text-foreground">{form.name}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Phone</span>
-                    <span className="font-body text-foreground">{form.phone}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Payment</span>
-                    <span className="font-display text-foreground">
-                      {paymentMethod === "stripe-link" ? "PAY NOW — STRIPE" : `${codSubOption === "cash" ? "CASH" : "CHECK"} AT DELIVERY`}
-                    </span>
-                  </div>
-                  {selectedDeliveryDate.isSameDay && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                      <p className="font-body text-sm text-amber-800">
-                        ⚡ This is a same-day delivery request. Our team will contact you to confirm availability before dispatching.
-                      </p>
+                  <div className="p-6 space-y-4">
+                    <h2 className="text-2xl font-display text-foreground text-center tracking-wider">CONFIRM YOUR ORDER</h2>
+
+                    {/* Product */}
+                    <div>
+                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">PRODUCT</p>
+                      <ReceiptRow label="River Sand" value={`${quantity} × 9 CU YDS`} />
                     </div>
-                  )}
-                  {selectedDeliveryDate.isSaturday && (
-                    <div className="flex justify-between py-3 border-b border-border">
-                      <span className="font-body text-destructive">Saturday Surcharge ($35 × {quantity})</span>
-                      <span className="font-display text-destructive">+{formatCurrency(saturdaySurchargeTotal)}</span>
+                    <div className="border-b border-dashed border-border" />
+
+                    {/* Delivery */}
+                    <div>
+                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">DELIVERY</p>
+                      <ReceiptRow label="Address" value="" />
+                      <p className="font-body text-sm text-foreground -mt-1 mb-2 text-right">{address}</p>
+                      <ReceiptRow label="Date" value={selectedDeliveryDate.fullLabel} />
+                      <ReceiptRow label="Window" value="8:00 AM – 5:00 PM" />
                     </div>
-                  )}
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}%)</span>
-                    <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
+                    <div className="border-b border-dashed border-border" />
+
+                    {/* Customer */}
+                    <div>
+                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">CUSTOMER</p>
+                      <ReceiptRow label="Name" value={form.name} />
+                      <ReceiptRow label="Phone" value={form.phone} />
+                      {form.email && <ReceiptRow label="Email" value={form.email} />}
+                    </div>
+                    <div className="border-b border-dashed border-border" />
+
+                    {/* Payment */}
+                    <div>
+                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">PAYMENT</p>
+                      <ReceiptRow label="Method" value={paymentMethod === "stripe-link" ? "Pay Now — Stripe" : `${codSubOption === "cash" ? "Cash" : "Check"} at Delivery`} />
+
+                      {selectedDeliveryDate.isSameDay && (
+                        <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-lg my-2">
+                          ⚡ Same-day request — we'll call to confirm availability.
+                        </p>
+                      )}
+
+                      {selectedDeliveryDate.isSaturday && (
+                        <ReceiptRow label={`Saturday Surcharge ($35 × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                      )}
+                      <ReceiptRow label={`Sales Tax (${(taxInfo.rate * 100).toFixed(2)}%)`} value={`+${formatCurrency(taxAmount)}`} />
+
+                      {paymentMethod === "stripe-link" && (
+                        <>
+                          <ReceiptRow label="Subtotal" value={formatCurrency(totalPrice)} />
+                          <ReceiptRow label="Processing Fee (3.5%)" value={`+${formatCurrency(processingFee)}`} />
+                        </>
+                      )}
+                    </div>
+
+                    {/* Grand total */}
+                    <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 flex justify-between items-center">
+                      <span className="font-display text-lg text-foreground">
+                        {paymentMethod === "stripe-link" ? "TOTAL CHARGE" : "TOTAL"}
+                      </span>
+                      <span className="font-display text-3xl text-primary">
+                        {paymentMethod === "stripe-link" ? formatCurrency(totalWithProcessingFee) : formatCurrency(totalPrice)}
+                      </span>
+                    </div>
                   </div>
-                  {paymentMethod === "stripe-link" && (
-                    <>
-                      <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">Subtotal</span>
-                        <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
-                      </div>
-                      <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">Processing Fee (3.5%)</span>
-                        <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
-                      </div>
-                      <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">
-                        <span className="font-display text-lg text-foreground">TOTAL CHARGE</span>
-                        <span className="font-display text-2xl text-primary">{formatCurrency(totalWithProcessingFee)}</span>
-                      </div>
-                    </>
-                  )}
-                  {paymentMethod !== "stripe-link" && (
-                    <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">
-                      <span className="font-display text-lg text-foreground">TOTAL</span>
-                      <span className="font-display text-2xl text-primary">{formatCurrency(totalPrice)}</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
-                  <p className="text-amber-800 text-sm font-body">
-                    <strong>⚠️ Curbside Delivery Only:</strong> All deliveries are made curbside. Due to liability, we cannot deliver inside backyards or enclosed areas.
+                {/* Curbside disclaimer */}
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-amber-800 text-xs font-body">
+                    <strong>Curbside Delivery Only:</strong> All deliveries are made curbside. Due to liability, we cannot deliver inside backyards or enclosed areas.
                   </p>
                 </div>
 
-                <div className="flex gap-3 mt-4">
-                  <Button variant="outline" onClick={() => setStep("details")} className="h-12 font-display tracking-wider rounded-xl">BACK</Button>
+                {/* Action buttons */}
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep("details")} className="h-12 font-display tracking-wider rounded-xl text-sm">
+                    <ArrowLeft className="w-4 h-4 mr-1" /> BACK
+                  </Button>
                   <Button
                     onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
                     disabled={submitting}
-                    className="flex-1 h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
+                    className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20"
                   >
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                       paymentMethod === "stripe-link"
-                        ? `PAY ${formatCurrency(totalWithProcessingFee)} VIA STRIPE`
-                        : `PLACE ORDER — ${codSubOption.toUpperCase()} AT DELIVERY`
+                        ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
+                        : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER</>
                     )}
                   </Button>
                 </div>
@@ -776,56 +752,80 @@ const Order = () => {
 
             {/* SUCCESS */}
             {step === "success" && (
-              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-background rounded-2xl p-12 border border-border shadow-2xl shadow-foreground/10 text-center space-y-6">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-10 h-10 text-primary" />
+              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-4">
+                <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
+                  {/* Logo header */}
+                  <div className="bg-foreground py-4 flex justify-center">
+                    <img src={logoImg} alt="RIVERSAND" className="h-10 object-contain brightness-0 invert" />
+                  </div>
+
+                  <div className="p-8 text-center space-y-5">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 }}
+                      className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto"
+                    >
+                      <CheckCircle2 className="w-8 h-8 text-primary" />
+                    </motion.div>
+
+                    <h2 className="text-3xl font-display text-foreground">ORDER PLACED!</h2>
+
+                    {orderNumber && (
+                      <div className="bg-card border-2 border-primary/20 rounded-xl p-4 max-w-xs mx-auto">
+                        <p className="font-body text-xs text-muted-foreground uppercase tracking-wider">Order Number</p>
+                        <p className="font-display text-2xl text-primary mt-1">{orderNumber}</p>
+                      </div>
+                    )}
+
+                    {stripePaymentId ? (
+                      <div className="flex items-center justify-center gap-2 text-primary">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <p className="font-display text-sm tracking-wider">PAYMENT CONFIRMED</p>
+                      </div>
+                    ) : (
+                      <p className="font-body text-sm text-muted-foreground max-w-sm mx-auto">
+                        Payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
+                      </p>
+                    )}
+
+                    {selectedDeliveryDate && (
+                      <div className="bg-card border border-border rounded-xl p-3 max-w-xs mx-auto">
+                        <p className="font-body text-xs text-muted-foreground uppercase tracking-wider">Scheduled Delivery</p>
+                        <p className="font-display text-lg text-foreground mt-1">{selectedDeliveryDate.fullLabel}</p>
+                        <p className="font-body text-xs text-muted-foreground">8:00 AM – 5:00 PM</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <h2 className="text-4xl font-display text-foreground">ORDER PLACED!</h2>
 
-                {orderNumber && (
-                  <div className="bg-card border border-border rounded-xl p-4 max-w-sm mx-auto">
-                    <p className="font-display text-sm text-muted-foreground tracking-wider">ORDER NUMBER</p>
-                    <p className="font-display text-2xl text-primary">{orderNumber}</p>
+                {/* What happens next timeline */}
+                <div className="bg-background rounded-2xl border border-border p-6">
+                  <h3 className="font-display text-lg text-foreground tracking-wider mb-4">WHAT HAPPENS NEXT?</h3>
+                  <div className="space-y-4">
+                    {[
+                      { icon: CheckCircle2, title: "Order Confirmed", desc: "Your order has been received and logged." },
+                      { icon: Phone, title: "We'll Call You", desc: `We'll reach out to ${form.phone} to confirm details.` },
+                      { icon: Truck, title: "Delivery Day", desc: selectedDeliveryDate ? `${selectedDeliveryDate.fullLabel}, 8 AM – 5 PM` : "As scheduled" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <item.icon className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-display text-sm text-foreground">{item.title}</p>
+                          <p className="font-body text-xs text-muted-foreground">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
 
-                {stripePaymentId ? (
-                  <>
-                    <div className="flex items-center justify-center gap-2 text-primary">
-                      <CheckCircle2 className="w-5 h-5" />
-                      <p className="font-display text-lg tracking-wider">PAYMENT CONFIRMED</p>
-                    </div>
-                    <p className="font-body text-muted-foreground max-w-md mx-auto">
-                      Your payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> has been processed.
-                      We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
-                    </p>
-                  </>
-                ) : (
-                  <p className="font-body text-muted-foreground max-w-md mx-auto">
-                    Your order is confirmed. Payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
-                    We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
-                  </p>
-                )}
-
-                {selectedDeliveryDate && (
-                  <div className="bg-card border border-border rounded-xl p-4 max-w-sm mx-auto space-y-1">
-                    <p className="font-display text-sm text-muted-foreground tracking-wider">SCHEDULED DELIVERY</p>
-                    <p className="font-display text-xl text-foreground">{selectedDeliveryDate.fullLabel}</p>
-                    <p className="font-body text-sm text-muted-foreground">8:00 AM – 5:00 PM</p>
-                    {selectedDeliveryDate.isSameDay && (
-                      <p className="font-body text-xs text-amber-700">Same-day — we'll confirm availability</p>
-                    )}
-                    {selectedDeliveryDate.isSaturday && (
-                      <p className="font-body text-xs text-amber-700">Saturday surcharge of $35 included</p>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-                  <Button asChild className="font-display tracking-wider rounded-xl">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button asChild className="font-display tracking-wider rounded-xl h-12">
                     <Link to="/">BACK TO HOME</Link>
                   </Button>
-                  <Button variant="outline" asChild className="font-display tracking-wider rounded-xl">
+                  <Button variant="outline" asChild className="font-display tracking-wider rounded-xl h-12">
                     <a href="tel:+18554689297"><Phone className="w-4 h-4 mr-2" /> CALL US</a>
                   </Button>
                 </div>
