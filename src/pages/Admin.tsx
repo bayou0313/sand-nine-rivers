@@ -266,7 +266,7 @@ const Admin = () => {
                       {order.notes && <p className="font-body text-sm text-muted-foreground italic">"{order.notes}"</p>}
                     </div>
                     <div className="flex items-center gap-4">
-                      <p className="font-display text-2xl text-primary">${Number(order.price).toFixed(2)}</p>
+                      <p className="font-display text-2xl text-primary">{formatCurrency(Number(order.price))}</p>
                       <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
                         <SelectTrigger className="w-36 font-body text-sm">
                           <SelectValue />
