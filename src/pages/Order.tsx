@@ -136,12 +136,10 @@ const Order = () => {
 
   // Listen for cross-tab Stripe payment signals (from popup return tab)
   useEffect(() => {
-    const handleStorageEvent = (e: StorageEvent) => {
-      if (e.key !== "stripe_payment_signal" || !e.newValue) return;
+    const processSignal = (raw: string) => {
       try {
-        const signal = JSON.parse(e.newValue);
-        if (signal.type !== "stripe-payment-result") return;
-        // Consume the signal
+        const signal = JSON.parse(raw);
+        if (signal.type !== "stripe-payment-result") return false;
         localStorage.removeItem("stripe_payment_signal");
         setSubmitting(false);
 
@@ -163,13 +161,30 @@ const Order = () => {
             variant: "destructive",
           });
         }
+        return true;
       } catch {
-        // ignore malformed signals
+        return false;
       }
     };
 
+    // Method 1: storage event (fires cross-tab on same origin)
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === "stripe_payment_signal" && e.newValue) {
+        processSignal(e.newValue);
+      }
+    };
     window.addEventListener("storage", handleStorageEvent);
-    return () => window.removeEventListener("storage", handleStorageEvent);
+
+    // Method 2: Poll localStorage as fallback (storage events can be unreliable in iframes)
+    const pollInterval = setInterval(() => {
+      const raw = localStorage.getItem("stripe_payment_signal");
+      if (raw) processSignal(raw);
+    }, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageEvent);
+      clearInterval(pollInterval);
+    };
   }, [toast]);
 
   useEffect(() => {
