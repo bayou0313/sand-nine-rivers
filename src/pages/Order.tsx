@@ -294,7 +294,7 @@ const Order = () => {
     delivery_date: selectedDeliveryDate!.iso,
     delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
     saturday_surcharge: selectedDeliveryDate!.isSaturday,
-    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? SATURDAY_SURCHARGE : 0,
+    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? SATURDAY_SURCHARGE * quantity : 0,
     delivery_window: "8:00 AM – 5:00 PM",
     same_day_requested: selectedDeliveryDate!.isSameDay,
   });
