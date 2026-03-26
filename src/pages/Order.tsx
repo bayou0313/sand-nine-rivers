@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import Navbar from "@/components/Navbar";
 import DeliveryDatePicker, { type DeliveryDate, SATURDAY_SURCHARGE } from "@/components/DeliveryDatePicker";
 import logoImg from "@/assets/riversand-logo.png";
 
@@ -307,24 +308,9 @@ const Order = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
-      {/* Header with Logo */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="bg-background/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50 shadow-sm"
-      >
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center">
-            <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
-          </Link>
-          <Link to="/" className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 hover:gap-2">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Link>
-        </div>
-      </motion.div>
+      <Navbar />
 
-      <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
         <div className="max-w-2xl mx-auto">
           {/* Progress steps */}
           <motion.div
