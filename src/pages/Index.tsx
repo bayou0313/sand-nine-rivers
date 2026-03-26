@@ -8,6 +8,7 @@ import RiverSandInfo from "@/components/RiverSandInfo";
 import Features from "@/components/Features";
 import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
+import RelatedProducts from "@/components/RelatedProducts";
 import FAQ from "@/components/FAQ";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
