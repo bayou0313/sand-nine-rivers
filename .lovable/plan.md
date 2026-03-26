@@ -1,29 +1,36 @@
 
 
-## Toggle Contact Button
+## Device-Aware Contact Button
 
-Transform the current WhatsApp floating button into a toggle button that alternates between WhatsApp chat and phone call with a smooth animation.
+Adapt the floating contact button behavior based on whether the user is on mobile or desktop.
 
-### How it works
-- Single floating button in the bottom-left corner
-- Tapping toggles between two modes: **WhatsApp** (green, MessageCircle icon) and **Phone** (primary color, Phone icon)
-- Each mode links to the appropriate action (`wa.me/...` for WhatsApp, `tel:+18554689297` for phone)
-- Smooth icon rotation/flip animation on toggle
-- A small label appears briefly showing the current mode ("WhatsApp" or "Call Us")
+### Behavior
 
-### File changes
+**Mobile (< 768px):**
+- Toggle button with two modes: **WhatsApp** (opens WhatsApp chat) and **Phone** (direct `tel:` call)
+- Same toggle pill UI as current implementation
+- Bottom bar stays as-is for quick calling
 
-**`src/components/WhatsAppButton.tsx`** → Rename concept to `ContactToggleButton`:
-- Add `mode` state toggling between `"whatsapp"` and `"phone"`
-- On tap of button area (not the link), toggle mode; on tap of icon/link, navigate
-- Use `framer-motion` `AnimatePresence` to animate icon swap (scale + rotate transition)
-- WhatsApp mode: green background, MessageCircle icon, links to `wa.me/15043582000`
-- Phone mode: primary/accent background, Phone icon, links to `tel:+18554689297`
-- Small animated label badge showing current mode text
+**Desktop (≥ 768px):**
+- Toggle button with two modes: **WhatsApp** (opens WhatsApp web chat) and **Message Us** (opens a small contact popup/modal)
+- Instead of `tel:` link (useless on desktop), the phone mode becomes a quick message form — name, phone, short message — submitted via the existing `send-email` edge function
+- Small floating form appears above the button when in "message" mode, with fields for name, phone number, and message
+- On submit: sends via `send-email` function, shows confirmation, then closes
+
+### File Changes
+
+**`src/components/WhatsAppButton.tsx`:**
+- Import `useIsMobile` hook
+- Change `ContactMode` type to `"whatsapp" | "phone" | "message"`
+- On mobile: modes are `whatsapp` ↔ `phone` (current behavior, `tel:` link)
+- On desktop: modes are `whatsapp` ↔ `message`
+- In "message" mode: render a small animated popup form above the button (name, phone, message fields)
+- Form submits to `supabase.functions.invoke("send-email", { body: { type: "contact", data } })`
+- Icon for message mode: `Mail` icon with primary color background
+- Success state shows a checkmark briefly, then closes
 
 ### Design
-- Same position: `fixed bottom-20 lg:bottom-6 left-6`
-- Background color transitions smoothly between green (#25D366) and accent
-- Icon swaps with a flip/rotate animation
-- Small text label fades in below or beside the button
+- Popup form: ~300px wide card floating above the button, with smooth scale/fade animation
+- Matches existing design tokens (rounded-2xl, border-border, shadow-2xl)
+- Close button on the popup to dismiss without sending
 
