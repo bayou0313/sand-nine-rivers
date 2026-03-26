@@ -7,7 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRAND_COLOR = "#E8601C";
+const BRAND_COLOR = "#041F38";
+const BRAND_GOLD = "#EAAB22";
+const BRAND_RED = "#C21F32";
 const FROM_EMAIL = "orders@riversand.net";
 const PHONE = "1-855-GOT-WAYS";
 
