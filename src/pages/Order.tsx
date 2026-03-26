@@ -383,6 +383,9 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
+      // Store order ID for DB polling
+      setPendingOrderId(insertedOrder?.id || null);
+
       if (isEmbedded) {
         const newTab = window.open(data.url, "_blank");
         if (!newTab) {
