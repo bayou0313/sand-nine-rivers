@@ -3,54 +3,8 @@ import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star, MapPin, AlertTriangl
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
-
-const useCountdown = () => {
-  const [timeLeft, setTimeLeft] = useState("");
-  const [isActive, setIsActive] = useState(false);
-  const [nextDay, setNextDay] = useState("");
-
-  useEffect(() => {
-    const calculate = () => {
-      const now = new Date();
-      const day = now.getDay();
-      const isWeekday = day >= 1 && day <= 5;
-      const cutoffHour = 10;
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-
-      const computeNextDay = () => {
-        if (day === 5 && hours >= cutoffHour) return "Monday";
-        if (day === 6) return "Monday";
-        if (day === 0) return "Monday";
-        if (hours >= cutoffHour) return "tomorrow";
-        return "today";
-      };
-
-      if (!isWeekday || hours >= cutoffHour) {
-        setIsActive(false);
-        setTimeLeft("");
-        setNextDay(computeNextDay());
-        return;
-      }
-
-      const remaining = (cutoffHour * 3600) - (hours * 3600 + minutes * 60 + seconds);
-      const h = Math.floor(remaining / 3600);
-      const m = Math.floor((remaining % 3600) / 60);
-      const s = remaining % 60;
-      setTimeLeft(`${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`);
-      setIsActive(true);
-      setNextDay("today");
-    };
-
-    calculate();
-    const interval = setInterval(calculate, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return { timeLeft, isActive, nextDay };
-};
+import { useRef } from "react";
+import { useCountdown } from "@/hooks/use-countdown";
 
 const Hero = () => {
   const { timeLeft, isActive, nextDay } = useCountdown();
