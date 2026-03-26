@@ -7,7 +7,7 @@ import { useRef } from "react";
 import { useCountdown } from "@/hooks/use-countdown";
 
 const Hero = () => {
-  const { timeLeft, isActive, nextDay } = useCountdown();
+  const { timeLeft, label } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
