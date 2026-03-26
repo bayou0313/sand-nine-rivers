@@ -611,11 +611,11 @@ const Order = () => {
                         A 3.5% processing fee applies to online payments. Pay at delivery to avoid this fee.
                       </p>
                       <Button
-                        onClick={handleStripeLink}
-                        disabled={submitting || !form.name.trim() || !form.phone.trim()}
-                        className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
+                        onClick={goToStep2}
+                        disabled={!form.name.trim() || !form.phone.trim()}
+                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl"
                       >
-                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)} VIA STRIPE</>}
+                        REVIEW ORDER
                       </Button>
                     </div>
                   )}
