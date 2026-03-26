@@ -1,51 +1,28 @@
 
-## Stripe Return-to-Original-Page Flow (Auto-close Checkout Tab)
 
-### Goal
-Make Stripe checkout opened from `/order` return users back to the original checkout page automatically after success/cancel, and close the temporary payment tab/window.
+## Fix: Payment Success State Getting Overridden
 
-### Files to update
-- `src/pages/Order.tsx`
-- `supabase/functions/create-checkout-link/index.ts`
+### Problem
+When the Stripe popup tab signals success back to the original tab, the cross-tab listener correctly sets `step="success"`. However, the URL-params `useEffect` (line 190–206) also fires and sees the address/distance/price params still in the URL, so it resets `step` back to `"details"` — sending the user back to the checkout form instead of showing the thank-you page.
 
-### Implementation plan
+### Fix
 
-1. **Add an explicit return mode for Stripe checkout creation**
-   - In `handleStripeLink` (`Order.tsx`), send a new field in the function payload (e.g. `return_mode: "popup"` when checkout is opened in a new tab from embedded preview, otherwise `"redirect"`).
-   - Keep current non-embedded behavior as same-tab redirect.
+**In `src/pages/Order.tsx`:**
 
-2. **Include return mode in Stripe success/cancel URLs**
-   - In `create-checkout-link/index.ts`, accept `return_mode` from request body.
-   - Append `return_mode` to `success_url` and `cancel_url` query params so `/order` knows whether it is the temporary Stripe-return tab or the primary app tab.
+1. **Guard the URL-params effect** (line 190–206) so it only sets `step="details"` when the current step is `"address"` (initial state). If the step has already advanced (e.g. to `"success"` via the payment signal), skip the override.
 
-3. **Handle popup return tab: notify original page, then close**
-   - In `Order.tsx` payment-return `useEffect`, when `payment` query param exists **and** `return_mode=popup`:
-     - Publish a cross-tab signal to the original page (recommended: `localStorage` event payload with `status`, `order_number`, `session_id`).
-     - Attempt `window.close()` immediately after signaling.
-     - If browser blocks close, show a minimal fallback message/button (“Return to checkout”).
+   Change line 204 from:
+   ```tsx
+   setStep("details");
+   ```
+   to:
+   ```tsx
+   setStep(prev => prev === "address" ? "details" : prev);
+   ```
 
-4. **Handle signal in original page and restore flow**
-   - In `Order.tsx`, add a listener for the cross-tab signal.
-   - On success signal: set `orderNumber`, `stripePaymentId`, move to `step="success"`, show success toast.
-   - On cancel signal: set `step="confirm"`, show cancel toast.
-   - Clear consumed signal to avoid duplicate toasts on refresh.
+2. **Also guard against the signal arriving *after* the URL-params effect** — in the cross-tab signal listener (`processSignal`, ~line 139), the `setStep("success")` call already works correctly, but ensure `setSubmitting(false)` is called so the button state resets if the user navigates back.
 
-5. **Keep existing direct URL return behavior intact**
-   - Preserve current search-param handling for normal same-tab Stripe flow (`return_mode=redirect` or absent) so production behavior remains reliable outside embedded preview.
+### Technical Details
+- Single line change using the functional form of `setStep` to only transition from `"address"` → `"details"`, preserving any other state (`"confirm"`, `"success"`)
+- No backend or database changes needed
 
-6. **Tighten UX around pending payment state**
-   - While popup is open, keep submit button disabled/loading to avoid duplicate clicks.
-   - Re-enable cleanly if popup closes/cancels without completion signal.
-
-### Technical details
-- **Why this is needed:** browser security won’t let the original embedded tab automatically “take over” a separate checkout tab unless we pass a deliberate return signal.
-- **Security:** only process signals that include expected shape/timestamp; ignore malformed payloads.
-- **No database/schema changes required.**
-
-### Verification checklist
-1. From `/order`, click **Pay** (embedded preview path opens a new tab).
-2. Complete payment in Stripe.
-3. Confirm payment tab closes automatically.
-4. Confirm original `/order` tab transitions to success state with order number/payment confirmed.
-5. Repeat with cancel flow; confirm it returns to confirm step with cancel toast.
-6. Verify non-embedded same-tab checkout still works normally.
