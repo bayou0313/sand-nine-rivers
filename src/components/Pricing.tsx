@@ -127,11 +127,20 @@ const Pricing = () => {
         </motion.div>
 
         {/* Bottom badges */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-8 text-center text-background/50 text-sm font-body max-w-xl mx-auto"
+        >
+          ⚠️ All deliveries are curbside only. Due to liability, we cannot deliver inside backyards or enclosed areas.
+        </motion.p>
+
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="mt-14 flex flex-wrap justify-center gap-8 text-center"
+          className="mt-10 flex flex-wrap justify-center gap-8 text-center"
         >
           {[
             { icon: Truck, text: "Mon–Sat delivery" },
