@@ -15,13 +15,19 @@ type ContactMode = "whatsapp" | "phone" | "message";
 
 const WhatsAppButton = () => {
   const [visible, setVisible] = useState(false);
-  const [mode, setMode] = useState<ContactMode>("whatsapp");
+  const [mode, setMode] = useState<ContactMode>("message");
   const [showLabel, setShowLabel] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [formData, setFormData] = useState({ name: "", phone: "", message: "" });
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (isMobile !== undefined) {
+      setMode(isMobile ? "whatsapp" : "message");
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 2000);
