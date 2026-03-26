@@ -130,7 +130,7 @@ const CardPaymentForm = ({
         disabled={submitting || !stripe}
         className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90"
       >
-        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PAY $${amount.toFixed(2)} NOW`}
+        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PAY ${formatCurrency(amount)} NOW`}
       </Button>
     </div>
   );
