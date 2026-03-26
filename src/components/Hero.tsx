@@ -33,7 +33,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-6xl md:text-8xl lg:text-9xl leading-[0.9] text-primary-foreground tracking-wide"
+            className="text-4xl md:text-5xl lg:text-6xl leading-[0.9] text-primary-foreground tracking-wide"
           >
             SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS
           </motion.h1>
