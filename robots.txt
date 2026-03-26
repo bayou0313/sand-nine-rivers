@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /order
+Disallow: /admin
+Disallow: /admin/
+
+Sitemap: https://riversand.net/sitemap.xml
