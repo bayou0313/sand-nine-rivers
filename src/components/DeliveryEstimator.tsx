@@ -191,7 +191,7 @@ const DeliveryEstimator = () => {
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             {[
               { label: "0–15 MI", sub: "$195 flat rate" },
-              { label: "15–25 MI", sub: "$195 + $3.49/mile" },
+              { label: "15–30 MI", sub: "$195 + $3.49/mile" },
               { label: "9 YDS", sub: "Per load delivered" },
             ].map((item) => (
               <div key={item.label} className="p-4 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors">
