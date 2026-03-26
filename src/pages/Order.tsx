@@ -306,50 +306,74 @@ const Order = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
       {/* Header with Logo */}
-      <div className="bg-background border-b border-border">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="bg-background/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50 shadow-sm"
+      >
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center">
             <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
           </Link>
-          <Link to="/" className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+          <Link to="/" className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 hover:gap-2">
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="max-w-2xl mx-auto">
           {/* Progress steps */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="flex items-center justify-center gap-2 mb-8"
+          >
             {stepLabels.map((label, i) => {
               const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
               const isActive = i <= stepIndex;
               const isCurrent = i === stepIndex;
               return (
                 <div key={label} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-display text-xs transition-all duration-300 ${
-                    isCurrent ? "bg-accent text-accent-foreground scale-110 shadow-lg shadow-accent/30" 
-                    : isActive ? "bg-accent/60 text-accent-foreground" 
-                    : "bg-muted/30 text-muted-foreground/50"
-                  }`}>
+                  <motion.div
+                    animate={{
+                      scale: isCurrent ? 1.1 : 1,
+                      boxShadow: isCurrent ? "0 4px 14px hsl(var(--accent) / 0.3)" : "0 1px 3px hsl(var(--border) / 0.5)",
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-display text-xs transition-colors duration-300 ${
+                      isCurrent ? "bg-accent text-accent-foreground" 
+                      : isActive ? "bg-accent/60 text-accent-foreground" 
+                      : "bg-muted text-muted-foreground/50"
+                    }`}
+                  >
                     {isActive && i < stepIndex ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
-                  </div>
-                  <span className={`font-body text-xs hidden sm:inline transition-colors ${
-                    isCurrent ? "text-background font-medium" : isActive ? "text-background/70" : "text-background/30"
+                  </motion.div>
+                  <span className={`font-body text-xs hidden sm:inline transition-colors duration-300 ${
+                    isCurrent ? "text-foreground font-medium" : isActive ? "text-foreground/70" : "text-muted-foreground/50"
                   }`}>{label}</span>
-                  {i < 2 && <div className={`w-8 h-px transition-colors ${isActive ? "bg-accent/60" : "bg-muted/20"}`} />}
+                  {i < 2 && <div className={`w-8 h-px transition-colors duration-300 ${isActive ? "bg-accent/60" : "bg-border"}`} />}
                 </div>
               );
             })}
-          </div>
+          </motion.div>
 
           <AnimatePresence mode="wait">
             {/* STEP 1: Address */}
             {step === "address" && (
-              <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-background rounded-2xl p-6 md:p-8 border border-border shadow-2xl shadow-foreground/10">
-                <h1 className="text-4xl md:text-5xl font-display text-foreground mb-2">PLACE YOUR ORDER</h1>
+              <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="bg-background rounded-2xl p-6 md:p-8 border border-border/50 shadow-lg shadow-foreground/5">
+                <motion.h1
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="text-4xl md:text-5xl font-display text-foreground mb-2"
+                >
+                  PLACE YOUR ORDER
+                </motion.h1>
                 <p className="font-body text-muted-foreground mb-6">Enter your delivery address to get your instant price. {quantity > 1 ? `${quantity} loads × ` : ""}9 cubic yards of quality river sand.</p>
 
                 <div className="space-y-4">
@@ -362,7 +386,7 @@ const Order = () => {
                     placeholder="Enter your delivery address..."
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="h-14 text-base rounded-xl"
+                    className="h-14 text-base rounded-xl border-border/50 shadow-sm focus:shadow-md transition-shadow"
                     maxLength={500}
                     onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
                   />
@@ -373,12 +397,16 @@ const Order = () => {
                     </p>
                   )}
                   {error && (
-                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3"
+                    >
                       <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
                       <p className="font-body text-sm text-destructive">{error}</p>
-                    </div>
+                    </motion.div>
                   )}
-                  <Button onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl">
+                  <Button onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow">
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET DELIVERY PRICE</>}
                   </Button>
                 </div>
@@ -388,11 +416,17 @@ const Order = () => {
                     { top: "LOCAL AREA", bot: "Starting at $195" },
                     { top: "EXTENDED", bot: "Surcharge applies" },
                     { top: "9 YDS", bot: "Per load" },
-                  ].map((item) => (
-                    <div key={item.top} className="p-3 bg-card border border-border rounded-xl">
+                  ].map((item, i) => (
+                    <motion.div
+                      key={item.top}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + i * 0.1 }}
+                      className="p-3 bg-muted/50 border border-border/50 rounded-xl hover:shadow-md transition-shadow"
+                    >
                       <p className="font-display text-lg text-primary">{item.top}</p>
                       <p className="font-body text-xs text-muted-foreground">{item.bot}</p>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>
@@ -400,18 +434,23 @@ const Order = () => {
 
             {/* STEP 2: Details + Payment */}
             {step === "details" && result && (
-              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
                 {/* Compact delivery confirmation banner */}
-                <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
+                  className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 shadow-sm"
+                >
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-primary" />
                     <span className="font-display text-sm tracking-wider text-primary">DELIVERY AVAILABLE</span>
                   </div>
                   <span className="font-display text-xl text-primary">{formatCurrency(result.price)}<span className="text-xs font-body text-muted-foreground">/load</span></span>
-                </div>
+                </motion.div>
 
                 {/* Combined: Delivery Date + Customer Info */}
-                <div className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden">
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                   {/* Delivery Date Section */}
                   <div className="p-6">
                     <SectionHeading icon={CalendarDays} title="DELIVERY DATE" />
@@ -454,14 +493,14 @@ const Order = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Order Summary */}
                 {selectedDeliveryDate && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden"
+                    className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden hover:shadow-xl transition-shadow duration-300"
                   >
                     <div className="p-6">
                       <SectionHeading icon={Package} title="ORDER SUMMARY" />
@@ -534,7 +573,7 @@ const Order = () => {
                 )}
 
                 {/* Payment method */}
-                <div className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden">
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                   <div className="p-6">
                     <SectionHeading icon={CreditCard} title="PAYMENT METHOD" />
 
@@ -628,7 +667,7 @@ const Order = () => {
                       <Button
                         onClick={goToStep2}
                         disabled={!isFormValid}
-                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl bg-accent hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl bg-accent hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
                       >
                         <ShieldCheck className="w-5 h-5 mr-2" /> REVIEW ORDER
                       </Button>
@@ -639,7 +678,7 @@ const Order = () => {
                       )}
                     </div>
                   )}
-                </div>
+                </motion.div>
 
                 <Button variant="outline" onClick={() => setStep("address")} className="h-11 font-display tracking-wider rounded-xl border-accent/50 text-accent hover:text-accent hover:bg-accent/10 text-sm">
                   <ArrowLeft className="w-4 h-4 mr-1" /> CHANGE ADDRESS
@@ -649,11 +688,11 @@ const Order = () => {
 
             {/* STEP 3: Confirm */}
             {step === "confirm" && result && selectedDeliveryDate && (
-              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
                 {/* Receipt-style confirmation */}
-                <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
+                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
                   {/* Logo header */}
-                  <div className="bg-muted py-4 flex justify-center border-b border-border">
+                  <div className="bg-muted/50 py-4 flex justify-center border-b border-border/50">
                     <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
                   </div>
 
@@ -738,7 +777,7 @@ const Order = () => {
                   <Button
                     onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
                     disabled={submitting}
-                    className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20"
+                    className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
                   >
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                       paymentMethod === "stripe-link"
@@ -753,9 +792,9 @@ const Order = () => {
             {/* SUCCESS */}
             {step === "success" && (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-4">
-                <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
+                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
                   {/* Logo header */}
-                  <div className="bg-muted py-4 flex justify-center border-b border-border">
+                  <div className="bg-muted/50 py-4 flex justify-center border-b border-border/50">
                     <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
                   </div>
 
@@ -800,7 +839,7 @@ const Order = () => {
                 </div>
 
                 {/* What happens next timeline */}
-                <div className="bg-background rounded-2xl border border-border p-6">
+                <div className="bg-background rounded-2xl border border-border/50 p-6 shadow-lg shadow-foreground/5">
                   <h3 className="font-display text-lg text-foreground tracking-wider mb-4">WHAT HAPPENS NEXT?</h3>
                   <div className="space-y-4">
                     {[
@@ -808,7 +847,13 @@ const Order = () => {
                       { icon: Phone, title: "We'll Call You", desc: `We'll reach out to ${form.phone} to confirm details.` },
                       { icon: Truck, title: "Delivery Day", desc: selectedDeliveryDate ? `${selectedDeliveryDate.fullLabel}, 8 AM – 5 PM` : "As scheduled" },
                     ].map((item, i) => (
-                      <div key={i} className="flex items-start gap-3">
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + i * 0.15 }}
+                        className="flex items-start gap-3"
+                      >
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                           <item.icon className="w-4 h-4 text-primary" />
                         </div>
@@ -816,7 +861,7 @@ const Order = () => {
                           <p className="font-display text-sm text-foreground">{item.title}</p>
                           <p className="font-body text-xs text-muted-foreground">{item.desc}</p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
