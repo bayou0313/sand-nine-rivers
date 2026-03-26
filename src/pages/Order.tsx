@@ -188,6 +188,38 @@ const Order = () => {
     };
   }, [toast]);
 
+  // Poll DB for payment status as reliable fallback (webhook updates DB)
+  useEffect(() => {
+    if (!pendingOrderId || step === "success") return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from("orders")
+          .select("payment_status, order_number")
+          .eq("id", pendingOrderId)
+          .single();
+
+        if (data?.payment_status === "paid") {
+          if (data.order_number) setOrderNumber(data.order_number);
+          setPendingOrderId(null);
+          setSubmitting(false);
+          setStep("success");
+          toast({
+            title: "Payment successful",
+            description: data.order_number
+              ? `Order ${data.order_number} is confirmed.`
+              : "Your payment was completed successfully.",
+          });
+        }
+      } catch {
+        // Ignore polling errors
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [pendingOrderId, step, toast]);
+
   useEffect(() => {
     const paramAddress = searchParams.get("address");
     const paramDistance = searchParams.get("distance");
