@@ -87,6 +87,36 @@ const Order = () => {
   }, [step]);
 
   useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (!paymentStatus) return;
+
+    const returnedOrderNumber = searchParams.get("order_number");
+    const returnedSessionId = searchParams.get("session_id");
+
+    if (paymentStatus === "success") {
+      if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
+      if (returnedSessionId) setStripePaymentId(returnedSessionId);
+      setStep("success");
+      toast({
+        title: "Payment successful",
+        description: returnedOrderNumber
+          ? `Order ${returnedOrderNumber} is confirmed.`
+          : "Your payment was completed successfully.",
+      });
+      return;
+    }
+
+    if (paymentStatus === "canceled") {
+      setStep("confirm");
+      toast({
+        title: "Payment canceled",
+        description: "No charge was made. You can try again anytime.",
+        variant: "destructive",
+      });
+    }
+  }, [searchParams, toast]);
+
+  useEffect(() => {
     const paramAddress = searchParams.get("address");
     const paramDistance = searchParams.get("distance");
     const paramPrice = searchParams.get("price");
