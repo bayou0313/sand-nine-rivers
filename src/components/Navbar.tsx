@@ -2,7 +2,7 @@ import { Phone, Menu, X, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import logoImg from "@/assets/riversand-logo.png";
+
 
 const Navbar = ({ solid = false }: { solid?: boolean }) => {
   const [menuOpen, setMenuOpen] = useState(false);
