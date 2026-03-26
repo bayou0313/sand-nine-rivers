@@ -20,16 +20,16 @@ function emailWrapper(body: string) {
   body{margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif}
   .container{max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden}
   .header{background:${BRAND_COLOR};padding:24px;text-align:center}
-  .header h1{color:#ffffff;margin:0;font-size:24px;letter-spacing:2px}
+  .header h1{color:${BRAND_GOLD};margin:0;font-size:24px;letter-spacing:2px}
   .body{padding:32px 24px}
-  .body h2{color:#1a1a1a;margin:0 0 16px}
+  .body h2{color:${BRAND_COLOR};margin:0 0 16px}
   .body p,.body td{color:#555;font-size:15px;line-height:1.6}
   .info-table{width:100%;border-collapse:collapse;margin:16px 0}
   .info-table td{padding:8px 0;border-bottom:1px solid #eee}
-  .info-table td:first-child{font-weight:600;color:#333;width:40%}
+  .info-table td:first-child{font-weight:600;color:${BRAND_COLOR};width:40%}
   .footer{background:#f9f9f9;padding:20px 24px;text-align:center;font-size:13px;color:#999}
   .footer a{color:${BRAND_COLOR};text-decoration:none}
-  .cta{display:inline-block;background:${BRAND_COLOR};color:#fff!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0}
+  .cta{display:inline-block;background:${BRAND_GOLD};color:${BRAND_COLOR}!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0}
 </style></head><body>
 <div class="container">
   <div class="header"><h1>WAYS River Sand</h1></div>
