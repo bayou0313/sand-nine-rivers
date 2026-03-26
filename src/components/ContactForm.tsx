@@ -26,44 +26,44 @@ const ContactForm = () => {
   };
 
   return (
-    <section id="contact" className="py-24 bg-gradient-to-b from-sand-dark to-foreground">
+    <section id="contact" className="py-24 bg-muted/50">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
           <div className="space-y-10">
             <div>
               <p className="text-accent font-display text-lg tracking-widest mb-3">CONTACT</p>
-              <h2 className="text-3xl md:text-4xl text-primary-foreground">TALK TO US</h2>
-              <p className="font-body text-primary-foreground/60 mt-6 leading-relaxed text-lg">
+              <h2 className="text-3xl md:text-4xl text-foreground">TALK TO US</h2>
+              <p className="font-body text-muted-foreground mt-6 leading-relaxed text-lg">
                 Ready to order or have questions? Reach out by phone, email, or fill out the form. We'll get back to you as soon as possible.
               </p>
             </div>
 
             <div className="space-y-5">
-              <a href="tel:+18554689297" className="flex items-center gap-4 text-primary-foreground hover:text-accent transition-colors group">
-                <div className="w-14 h-14 bg-primary-foreground/10 rounded-2xl flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+              <a href="tel:+18554689297" className="flex items-center gap-4 text-foreground hover:text-accent transition-colors group">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                   <Phone className="w-6 h-6 text-primary group-hover:text-accent" />
                 </div>
                 <div>
                   <p className="font-display text-lg tracking-widest">CALL US</p>
-                  <p className="font-body text-primary-foreground/50">1-855-GOT-WAYS</p>
+                  <p className="font-body text-muted-foreground">1-855-GOT-WAYS</p>
                 </div>
               </a>
-              <a href="mailto:info@riversand.net" className="flex items-center gap-4 text-primary-foreground hover:text-accent transition-colors group">
-                <div className="w-14 h-14 bg-primary-foreground/10 rounded-2xl flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+              <a href="mailto:info@riversand.net" className="flex items-center gap-4 text-foreground hover:text-accent transition-colors group">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                   <Mail className="w-6 h-6 text-primary group-hover:text-accent" />
                 </div>
                 <div>
                   <p className="font-display text-lg tracking-widest">EMAIL US</p>
-                  <p className="font-body text-primary-foreground/50">info@riversand.net</p>
+                  <p className="font-body text-muted-foreground">info@riversand.net</p>
                 </div>
               </a>
-              <div className="flex items-center gap-4 text-primary-foreground">
-                <div className="w-14 h-14 bg-primary-foreground/10 rounded-2xl flex items-center justify-center">
+              <div className="flex items-center gap-4 text-foreground">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
                   <MapPin className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                   <p className="font-display text-lg tracking-widest">SERVICE AREA</p>
-                  <p className="font-body text-primary-foreground/50">Greater New Orleans, LA</p>
+                  <p className="font-body text-muted-foreground">Greater New Orleans, LA</p>
                 </div>
               </div>
             </div>
@@ -92,7 +92,6 @@ const ContactForm = () => {
           </div>
         </div>
       </div>
-      <div className="h-px bg-accent/30 mt-12" />
     </section>
   );
 };

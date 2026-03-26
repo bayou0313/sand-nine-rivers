@@ -15,8 +15,7 @@ const fadeUp: Variants = {
 
 const Footer = () => {
   return (
-    <footer className="bg-foreground pt-10">
-      <div className="h-px bg-accent/20 mb-8" />
+    <footer className="bg-foreground pt-8">
       <div className="container mx-auto px-6 pb-[23px]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <motion.div
