@@ -24,8 +24,7 @@ const AdminLogin = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user");
 
-      const { data: roles } = await supabase
-        .from("user_roles")
+      const { data: roles } = await (supabase.from("user_roles") as any)
         .select("role")
         .eq("user_id", user.id)
         .eq("role", "admin");
