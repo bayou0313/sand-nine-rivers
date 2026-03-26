@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress } from "@/lib/format";
+import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
