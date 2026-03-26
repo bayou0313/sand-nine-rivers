@@ -50,8 +50,8 @@ serve(async (req) => {
         order_number: order_number || "",
         customer_name: customer_name || "",
       },
-      success_url: `${safeOrigin}/order?payment=success&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${safeOrigin}/order?payment=canceled&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}`,
+      success_url: `${safeOrigin}/order?payment=success&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}&session_id={CHECKOUT_SESSION_ID}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
+      cancel_url: `${safeOrigin}/order?payment=canceled&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
     });
 
     return new Response(
