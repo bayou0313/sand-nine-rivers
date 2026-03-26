@@ -590,7 +590,7 @@ const Order = () => {
                       {result.distance > BASE_MILES && (
                         <div className="flex justify-between py-3 border-b border-border">
                           <span className="font-body text-muted-foreground">
-                            Extra mileage: {(result.distance - BASE_MILES).toFixed(1)} mi × $3.49 × {quantity} load{quantity > 1 ? "s" : ""}
+                            Extended delivery surcharge × {quantity} load{quantity > 1 ? "s" : ""}
                           </span>
                           <span className="font-display text-foreground">
                             +${((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)}
