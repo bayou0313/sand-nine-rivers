@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Truck, MapPin, Package, ShoppingCart, Minus, Plus } from "lucide-react";
+import { Truck, MapPin, Package, ShoppingCart, Minus, Plus, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useCountdown } from "@/hooks/use-countdown";
 
 const BASE_PRICE = 195;
 
 const Pricing = () => {
   const [qty, setQty] = useState(1);
   const total = qty * BASE_PRICE;
+  const { timeLeft, label } = useCountdown();
 
   return (
     <section id="pricing" className="relative py-32 bg-foreground overflow-hidden">
@@ -109,11 +111,13 @@ const Pricing = () => {
             Saturday delivery: +$35 per load.
           </p>
 
-          {/* Urgency + CTAs */}
+          {/* Countdown + CTAs */}
           <div className="space-y-3">
-            <p className="text-center text-[13px] font-body text-destructive font-light tracking-wide">
-              Order before noon for same-day delivery
-            </p>
+            <div className="flex items-center justify-center gap-2 bg-accent/10 border border-accent/20 rounded-xl px-4 py-2.5">
+              <Clock className="w-4 h-4 text-accent animate-pulse" />
+              <span className="font-display text-accent text-xs tracking-wider">{label}</span>
+              <span className="font-mono text-accent font-bold text-sm">{timeLeft}</span>
+            </div>
             <Button
               className="w-full h-16 font-display tracking-wider text-lg bg-accent hover:bg-[#C8911A] text-accent-foreground rounded-2xl shadow-lg shadow-accent/20 transition-all duration-200"
               asChild

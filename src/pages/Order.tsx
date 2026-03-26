@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
+import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,17 @@ type EstimateResult = {
 };
 
 type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
+
+const CountdownBar = () => {
+  const { timeLeft, label } = useCountdown();
+  return (
+    <div className="flex items-center justify-center gap-2 bg-foreground/90 backdrop-blur-md rounded-xl px-4 py-2.5 mb-6">
+      <Clock className="w-4 h-4 text-accent animate-pulse" />
+      <span className="font-display text-white text-xs tracking-wider">{label}</span>
+      <span className="font-mono text-accent font-bold text-sm">{timeLeft}</span>
+    </div>
+  );
+};
 
 const Order = () => {
   const { toast } = useToast();
@@ -502,6 +514,8 @@ const Order = () => {
       <Navbar solid />
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
+        {/* Urgency countdown bar */}
+        <CountdownBar />
         <div className="max-w-2xl mx-auto">
           {/* Progress steps */}
           <motion.div

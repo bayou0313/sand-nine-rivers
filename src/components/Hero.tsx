@@ -3,57 +3,11 @@ import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star, MapPin, AlertTriangl
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
-
-const useCountdown = () => {
-  const [timeLeft, setTimeLeft] = useState("");
-  const [isActive, setIsActive] = useState(false);
-  const [nextDay, setNextDay] = useState("");
-
-  useEffect(() => {
-    const calculate = () => {
-      const now = new Date();
-      const day = now.getDay();
-      const isWeekday = day >= 1 && day <= 5;
-      const cutoffHour = 10;
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-
-      const computeNextDay = () => {
-        if (day === 5 && hours >= cutoffHour) return "Monday";
-        if (day === 6) return "Monday";
-        if (day === 0) return "Monday";
-        if (hours >= cutoffHour) return "tomorrow";
-        return "today";
-      };
-
-      if (!isWeekday || hours >= cutoffHour) {
-        setIsActive(false);
-        setTimeLeft("");
-        setNextDay(computeNextDay());
-        return;
-      }
-
-      const remaining = (cutoffHour * 3600) - (hours * 3600 + minutes * 60 + seconds);
-      const h = Math.floor(remaining / 3600);
-      const m = Math.floor((remaining % 3600) / 60);
-      const s = remaining % 60;
-      setTimeLeft(`${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`);
-      setIsActive(true);
-      setNextDay("today");
-    };
-
-    calculate();
-    const interval = setInterval(calculate, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return { timeLeft, isActive, nextDay };
-};
+import { useRef } from "react";
+import { useCountdown } from "@/hooks/use-countdown";
 
 const Hero = () => {
-  const { timeLeft, isActive, nextDay } = useCountdown();
+  const { timeLeft, label } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
@@ -81,18 +35,10 @@ const Hero = () => {
           >
             <div className="inline-flex items-center gap-2 bg-foreground/80 backdrop-blur-md px-5 py-2 rounded-xl shadow-lg shadow-black/20 border border-white/10">
               <Clock className="w-4 h-4 text-accent animate-pulse" />
-              {isActive ? (
-                <div className="flex items-center gap-3">
-                  <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY CLOSES IN</p>
-                  <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
-                </div>
-              ) : (
-                <p className="font-display text-white tracking-wider text-sm">
-                  {nextDay === "today" 
-                    ? "SAME-DAY DELIVERY — MON-FRI BEFORE 10 AM" 
-                    : `ORDER NOW FOR DELIVERY ${nextDay.toUpperCase()}`}
-                </p>
-              )}
+              <div className="flex items-center gap-3">
+                <p className="font-display text-white tracking-wider text-sm">{label}</p>
+                <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
+              </div>
             </div>
             <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">
               <AlertTriangle className="w-3.5 h-3.5 text-white animate-pulse" />
