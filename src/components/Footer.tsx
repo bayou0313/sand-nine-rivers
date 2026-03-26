@@ -17,7 +17,6 @@ const Footer = () => {
   return (
     <footer className="bg-foreground pt-8">
       <div className="container mx-auto px-6 pb-[23px]">
-      <div className="container mx-auto px-6 pb-[23px]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <motion.div
             className="flex flex-col justify-start"
