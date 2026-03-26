@@ -18,7 +18,7 @@ const Hero = () => {
       <div className="absolute inset-0 bg-gradient-to-t from-sand-dark/60 via-transparent to-sand-dark/30" />
 
       <div className="relative z-10 container mx-auto px-6 py-20">
-        <div className="max-w-2xl space-y-8">
+        <div className="max-w-2xl space-y-5">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
