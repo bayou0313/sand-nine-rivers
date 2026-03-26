@@ -760,7 +760,7 @@ const Order = () => {
 
                 {/* Action buttons */}
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep("details")} className="h-12 font-display tracking-wider rounded-xl text-sm">
+                  <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setStep("details"); }} className="h-12 font-display tracking-wider rounded-xl text-sm">
                     <ArrowLeft className="w-4 h-4 mr-1" /> BACK
                   </Button>
                   <Button
