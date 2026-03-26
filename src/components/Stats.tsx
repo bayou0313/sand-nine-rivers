@@ -24,7 +24,7 @@ const Stats = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
             >
-              <p className="font-display text-5xl md:text-7xl text-primary-foreground">{stat.value}</p>
+              <p className="font-display text-4xl md:text-5xl text-primary-foreground">{stat.value}</p>
               <p className="font-body text-primary-foreground/60 mt-2 text-sm uppercase tracking-widest">{stat.label}</p>
             </motion.div>
           ))}

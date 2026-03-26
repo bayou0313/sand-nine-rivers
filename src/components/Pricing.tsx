@@ -23,7 +23,7 @@ const Pricing = () => {
             <div className="absolute top-4 right-4 z-10 bg-accent text-accent-foreground font-display text-xs tracking-wider px-3 py-1 rounded-full">MOST POPULAR</div>
             <div className="bg-gradient-to-br from-primary to-primary/80 p-8 text-center">
               <p className="font-display text-xl text-primary-foreground tracking-widest">STANDARD DELIVERY</p>
-              <p className="font-display text-7xl text-primary-foreground mt-3">$195</p>
+              <p className="font-display text-4xl md:text-5xl text-primary-foreground mt-3">$195</p>
               <p className="font-body text-primary-foreground/70 mt-2">9 cubic yards of river sand</p>
             </div>
             <div className="p-8 space-y-4">
