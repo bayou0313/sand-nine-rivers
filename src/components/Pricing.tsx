@@ -117,7 +117,7 @@ const Pricing = () => {
             </Button>
             <Button
               variant="outline"
-              className="w-full h-12 font-display tracking-wider text-sm rounded-xl border-background/30 text-background hover:bg-background/10 hover:text-background"
+              className="w-full h-12 font-display tracking-wider text-sm rounded-xl border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
               asChild
             >
               <a href="#estimator">GET ESTIMATE</a>
