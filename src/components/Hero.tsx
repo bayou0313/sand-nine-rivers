@@ -1,5 +1,5 @@
 import heroImage from "@/assets/hero-sand.jpg";
-import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star } from "lucide-react";
+import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -9,7 +9,7 @@ const Hero = () => {
     <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-16">
       <img
         src={heroImage}
-        alt="River sand delivery truck unloading 9 cubic yards of clean screened river sand at a New Orleans job site"
+        alt="River sand delivery truck unloading clean screened river sand at a New Orleans job site"
         className="absolute inset-0 w-full h-full object-cover"
         width={1920}
         height={1080}
@@ -26,7 +26,7 @@ const Hero = () => {
             className="inline-flex items-center gap-2 bg-accent/90 backdrop-blur-sm px-5 py-1.5 rounded-full"
           >
             <Clock className="w-3.5 h-3.5 text-accent-foreground" />
-            <p className="font-display text-accent-foreground tracking-wider text-sm">SAME DAY DELIVERY AVAILABLE</p>
+            <p className="font-display text-accent-foreground tracking-wider text-sm">SAME-DAY DELIVERY AVAILABLE</p>
           </motion.div>
 
           <motion.h1
@@ -44,7 +44,7 @@ const Hero = () => {
             transition={{ delay: 0.5 }}
             className="text-lg md:text-xl font-body text-primary-foreground/75 max-w-lg leading-relaxed"
           >
-            Quality river sand for construction, landscaping, and fill projects across the Greater New Orleans area.
+            Quality river sand for landscaping, drainage, backfill, and construction projects across Greater New Orleans. Order before noon for same-day delivery.
           </motion.p>
 
           <motion.div
@@ -88,9 +88,9 @@ const Hero = () => {
             className="flex flex-wrap gap-6 pt-4"
           >
             {[
-              { icon: ShieldCheck, text: "Licensed & Insured" },
-              { icon: Clock, text: "Same Day Delivery" },
-              { icon: Star, text: "4.9★ Rating" },
+              { icon: ShieldCheck, text: "Same-day delivery available" },
+              { icon: MapPin, text: "GPS-tracked loads" },
+              { icon: Star, text: "Local New Orleans team" },
             ].map((item) => (
               <div key={item.text} className="flex items-center gap-2 text-primary-foreground/50 font-body text-sm">
                 <item.icon className="w-4 h-4 text-accent/80" />

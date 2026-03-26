@@ -4,6 +4,7 @@ import Pricing from "@/components/Pricing";
 import DeliveryEstimator from "@/components/DeliveryEstimator";
 import About from "@/components/About";
 import Stats from "@/components/Stats";
+import RiverSandInfo from "@/components/RiverSandInfo";
 import Features from "@/components/Features";
 import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
@@ -20,6 +21,7 @@ const Index = () => {
       <DeliveryEstimator />
       <About />
       <Stats />
+      <RiverSandInfo />
       <Features />
       <Testimonials />
       <CTA />
