@@ -43,7 +43,7 @@ const FAQ = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">FAQ</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-4xl text-foreground">FREQUENTLY ASKED QUESTIONS</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-4xl text-foreground">FREQUENTLY ASKED QUESTIONS ABOUT RIVER SAND DELIVERY</motion.h2>
         </div>
 
         <motion.div
