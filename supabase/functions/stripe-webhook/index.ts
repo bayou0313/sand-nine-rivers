@@ -48,6 +48,7 @@ serve(async (req) => {
   }
 
   const handledTypes = [
+    "checkout.session.completed",
     "payment_intent.succeeded",
     "payment_intent.payment_failed",
     "payment_intent.canceled",
@@ -64,8 +65,14 @@ serve(async (req) => {
   try {
     let stripePaymentId: string | null = null;
     let paymentStatus = "";
+    let orderId: string | null = null;
 
-    if (event.type === "charge.refunded") {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      orderId = session.metadata?.order_id || null;
+      stripePaymentId = (session.payment_intent as string) || null;
+      paymentStatus = session.payment_status === "paid" ? "paid" : "pending";
+    } else if (event.type === "charge.refunded") {
       const charge = event.data.object as Stripe.Charge;
       stripePaymentId = (charge.payment_intent as string) || null;
       paymentStatus = "refunded";
@@ -85,48 +92,50 @@ serve(async (req) => {
       }
     }
 
-    // Find order
-    let orderId: string | null = null;
-    if (stripePaymentId) {
+    // Find order by ID from metadata (checkout.session.completed) or by stripe_payment_id
+    if (!orderId && stripePaymentId) {
       const { data: order } = await supabase
         .from("orders")
         .select("id")
         .eq("stripe_payment_id", stripePaymentId)
         .maybeSingle();
       orderId = order?.id || null;
-
-      if (orderId) {
-        const updateData: Record<string, string> = { payment_status: paymentStatus };
-        if (event.type === "payment_intent.succeeded") {
-          // Also confirm the order
-          const { data: currentOrder } = await supabase
-            .from("orders")
-            .select("status")
-            .eq("id", orderId)
-            .maybeSingle();
-          if (currentOrder?.status === "pending") {
-            updateData.status = "confirmed";
-          }
-        }
-        const { error: updateError } = await supabase
-          .from("orders")
-          .update(updateData)
-          .eq("id", orderId);
-
-        if (updateError) {
-          console.error("Failed to update order:", updateError);
-          // Log event anyway, return 500 so Stripe retries
-          await supabase.from("payment_events").insert({
-            order_id: orderId,
-            stripe_payment_id: stripePaymentId,
-            event_type: event.type,
-            event_id: event.id,
-          });
-          return new Response("Database update failed", { status: 500 });
-        }
-      }
     }
 
+    if (orderId && paymentStatus) {
+      const updateData: Record<string, string> = {
+        payment_status: paymentStatus,
+      };
+      // Store the stripe payment ID on the order for future lookups
+      if (stripePaymentId) {
+        updateData.stripe_payment_id = stripePaymentId;
+      }
+      if (paymentStatus === "paid") {
+        const { data: currentOrder } = await supabase
+          .from("orders")
+          .select("status")
+          .eq("id", orderId)
+          .maybeSingle();
+        if (currentOrder?.status === "pending") {
+          updateData.status = "confirmed";
+        }
+      }
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update(updateData)
+        .eq("id", orderId);
+
+      if (updateError) {
+        console.error("Failed to update order:", updateError);
+        await supabase.from("payment_events").insert({
+          order_id: orderId,
+          stripe_payment_id: stripePaymentId,
+          event_type: event.type,
+          event_id: event.id,
+        });
+        return new Response("Database update failed", { status: 500 });
+      }
+    }
     // Log event
     await supabase.from("payment_events").insert({
       order_id: orderId,
