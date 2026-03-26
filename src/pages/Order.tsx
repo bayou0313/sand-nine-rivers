@@ -10,8 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import DeliveryDatePicker, { type DeliveryDate, SATURDAY_SURCHARGE } from "@/components/DeliveryDatePicker";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -28,9 +26,6 @@ const MAX_MILES = 30;
 const PER_MILE_EXTRA = 3.49;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
-const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
-
 type EstimateResult = {
   distance: number;
   price: number;
@@ -38,103 +33,7 @@ type EstimateResult = {
   duration: string;
 };
 
-type PaymentMethodType = "card" | "cash" | "check" | "stripe-link" | null;
-
-// Card payment form component (must be inside Elements provider)
-const CardPaymentForm = ({
-  onPaymentSuccess,
-  onPaymentError,
-  amount,
-  orderData,
-  submitting,
-  setSubmitting,
-}: {
-  onPaymentSuccess: (paymentIntentId: string) => void;
-  onPaymentError: (msg: string) => void;
-  amount: number;
-  orderData: any;
-  submitting: boolean;
-  setSubmitting: (v: boolean) => void;
-}) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [cardError, setCardError] = useState("");
-
-  const handleCardPayment = async () => {
-    if (!stripe || !elements) return;
-    setSubmitting(true);
-    setCardError("");
-
-    try {
-      const { data, error } = await supabase.functions.invoke("create-payment-intent", {
-        body: {
-          amount: Math.round(amount * 100),
-          metadata: {
-            customer_name: orderData.name,
-            customer_phone: orderData.phone,
-            delivery_address: orderData.address,
-          },
-        },
-      });
-
-      if (error || !data?.clientSecret) {
-        throw new Error(data?.error || error?.message || "Failed to create payment");
-      }
-
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) throw new Error("Card element not found");
-
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: { card: cardElement },
-      });
-
-      if (stripeError) {
-        setCardError(stripeError.message || "Payment failed");
-        onPaymentError(stripeError.message || "Payment failed");
-      } else if (paymentIntent?.status === "succeeded") {
-        onPaymentSuccess(paymentIntent.id);
-      }
-    } catch (err: any) {
-      const msg = err.message || "Payment could not be processed. Please try again or choose Pay at Delivery.";
-      setCardError(msg);
-      onPaymentError(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="p-4 bg-card border border-border rounded-xl">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "#1a1a1a",
-                "::placeholder": { color: "#9ca3af" },
-              },
-              invalid: { color: "#ef4444" },
-            },
-          }}
-        />
-      </div>
-      {cardError && (
-        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
-          <p className="font-body text-sm text-destructive">{cardError}</p>
-        </div>
-      )}
-      <Button
-        onClick={handleCardPayment}
-        disabled={submitting || !stripe}
-        className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90"
-      >
-        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PAY ${formatCurrency(amount)} NOW`}
-      </Button>
-    </div>
-  );
-};
+type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
 
 const Order = () => {
   const { toast } = useToast();
@@ -152,6 +51,7 @@ const Order = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
@@ -305,24 +205,6 @@ const Order = () => {
     tax_amount: taxAmount,
   });
 
-  const handleCardPaymentSuccess = async (paymentIntentId: string) => {
-    if (!result) return;
-    setStripePaymentId(paymentIntentId);
-
-    try {
-      const { error: insertError } = await (supabase as any).from("orders").insert({
-        ...buildOrderData(),
-        payment_method: "card",
-        payment_status: "paid",
-        stripe_payment_id: paymentIntentId,
-      });
-      if (insertError) throw insertError;
-      setStep("success");
-    } catch (err: any) {
-      toast({ title: "Order save failed", description: "Payment succeeded but order could not be saved. Please contact us.", variant: "destructive" });
-    }
-  };
-
   const handleCodSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
       toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
@@ -332,13 +214,14 @@ const Order = () => {
 
     setSubmitting(true);
     try {
-      const { error: insertError } = await (supabase as any).from("orders").insert({
+      const { data: insertedOrder, error: insertError } = await (supabase as any).from("orders").insert({
         ...buildOrderData(),
         payment_method: codSubOption,
         payment_status: "pending",
-      });
+      }).select("order_number").single();
 
       if (insertError) throw insertError;
+      setOrderNumber(insertedOrder?.order_number || null);
       setStep("success");
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
@@ -664,27 +547,7 @@ const Order = () => {
                   <h2 className="text-3xl font-display text-foreground mb-2">PAYMENT METHOD</h2>
                   <p className="font-body text-muted-foreground mb-6">Choose how you'd like to pay.</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("card")}
-                      className={`p-5 rounded-xl border-2 text-left transition-all ${
-                        paymentMethod === "card"
-                          ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
-                          : "border-border bg-card hover:border-accent/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "card" ? "bg-accent/20" : "bg-muted"}`}>
-                          <CreditCard className={`w-5 h-5 ${paymentMethod === "card" ? "text-accent" : "text-muted-foreground"}`} />
-                        </div>
-                        <p className="font-display text-sm text-foreground tracking-wider">PAY BY CARD</p>
-                      </div>
-                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> Secured by Stripe
-                      </p>
-                    </button>
-
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("stripe-link")}
@@ -696,11 +559,13 @@ const Order = () => {
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "stripe-link" ? "bg-accent/20" : "bg-muted"}`}>
-                          <ExternalLink className={`w-5 h-5 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
+                          <CreditCard className={`w-5 h-5 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
-                        <p className="font-display text-sm text-foreground tracking-wider">PAYMENT LINK</p>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY NOW</p>
                       </div>
-                      <p className="font-body text-xs text-muted-foreground">Pay via Stripe Checkout</p>
+                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Secure Stripe Checkout
+                      </p>
                     </button>
 
                     <button
@@ -721,27 +586,6 @@ const Order = () => {
                       <p className="font-body text-xs text-muted-foreground">Cash or Check accepted</p>
                     </button>
                   </div>
-
-                  {paymentMethod === "card" && stripePromise && (
-                    <Elements stripe={stripePromise}>
-                      <CardPaymentForm
-                        onPaymentSuccess={handleCardPaymentSuccess}
-                        onPaymentError={() => {}}
-                        amount={totalPrice}
-                        orderData={{ name: form.name, phone: form.phone, address }}
-                        submitting={submitting}
-                        setSubmitting={setSubmitting}
-                      />
-                    </Elements>
-                  )}
-
-                  {paymentMethod === "card" && !stripePromise && (
-                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
-                      <p className="font-body text-sm text-destructive flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4" /> Stripe is not configured. Please choose Pay at Delivery or contact us.
-                      </p>
-                    </div>
-                  )}
 
                   {paymentMethod === "stripe-link" && (
                     <div className="space-y-4">
@@ -884,6 +728,13 @@ const Order = () => {
                 </div>
                 <h2 className="text-4xl font-display text-foreground">ORDER PLACED!</h2>
 
+                {orderNumber && (
+                  <div className="bg-card border border-border rounded-xl p-4 max-w-sm mx-auto">
+                    <p className="font-display text-sm text-muted-foreground tracking-wider">ORDER NUMBER</p>
+                    <p className="font-display text-2xl text-primary">{orderNumber}</p>
+                  </div>
+                )}
+
                 {stripePaymentId ? (
                   <>
                     <div className="flex items-center justify-center gap-2 text-primary">
@@ -891,7 +742,7 @@ const Order = () => {
                       <p className="font-display text-lg tracking-wider">PAYMENT CONFIRMED</p>
                     </div>
                     <p className="font-body text-muted-foreground max-w-md mx-auto">
-                      Your card payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> has been processed.
+                      Your payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> has been processed.
                       We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery.
                     </p>
                   </>
