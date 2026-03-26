@@ -40,7 +40,7 @@ const Pricing = () => {
             transition={{ delay: 0.15 }}
             className="font-body text-background/60 mt-3 text-lg max-w-xl mx-auto"
           >
-            9 cubic yards per load · Clean, screened material · Dumped where you need it
+            9 cubic yards per load · Clean, unscreened river sand · Dumped where you need it
           </motion.p>
         </div>
 
