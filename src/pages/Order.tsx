@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft } from "lucide-react";
+import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -23,11 +26,113 @@ const MAX_MILES = 25;
 const PER_MILE_EXTRA = 3.49;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
+
 type EstimateResult = {
   distance: number;
   price: number;
   address: string;
   duration: string;
+};
+
+type PaymentMethodType = "card" | "cash" | "check" | null;
+
+// Card payment form component (must be inside Elements provider)
+const CardPaymentForm = ({
+  onPaymentSuccess,
+  onPaymentError,
+  amount,
+  orderData,
+  submitting,
+  setSubmitting,
+}: {
+  onPaymentSuccess: (paymentIntentId: string) => void;
+  onPaymentError: (msg: string) => void;
+  amount: number;
+  orderData: any;
+  submitting: boolean;
+  setSubmitting: (v: boolean) => void;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [cardError, setCardError] = useState("");
+
+  const handleCardPayment = async () => {
+    if (!stripe || !elements) return;
+    setSubmitting(true);
+    setCardError("");
+
+    try {
+      // Create PaymentIntent via edge function
+      const { data, error } = await supabase.functions.invoke("create-payment-intent", {
+        body: {
+          amount: Math.round(amount * 100), // cents
+          metadata: {
+            customer_name: orderData.name,
+            customer_phone: orderData.phone,
+            delivery_address: orderData.address,
+          },
+        },
+      });
+
+      if (error || !data?.clientSecret) {
+        throw new Error(data?.error || error?.message || "Failed to create payment");
+      }
+
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) throw new Error("Card element not found");
+
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: { card: cardElement },
+      });
+
+      if (stripeError) {
+        setCardError(stripeError.message || "Payment failed");
+        onPaymentError(stripeError.message || "Payment failed");
+      } else if (paymentIntent?.status === "succeeded") {
+        onPaymentSuccess(paymentIntent.id);
+      }
+    } catch (err: any) {
+      const msg = err.message || "Payment could not be processed. Please try again or choose Pay at Delivery.";
+      setCardError(msg);
+      onPaymentError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 bg-card border border-border rounded-lg">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: "16px",
+                color: "#1a1a1a",
+                "::placeholder": { color: "#9ca3af" },
+              },
+              invalid: { color: "#ef4444" },
+            },
+          }}
+        />
+      </div>
+      {cardError && (
+        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+          <p className="font-body text-sm text-destructive">{cardError}</p>
+        </div>
+      )}
+      <Button
+        onClick={handleCardPayment}
+        disabled={submitting || !stripe}
+        className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90"
+      >
+        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PAY $${amount.toFixed(2)} NOW`}
+      </Button>
+    </div>
+  );
 };
 
 const Order = () => {
@@ -42,6 +147,11 @@ const Order = () => {
   const [apiLoaded, setApiLoaded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
+  const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
+  const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
+  const [cardLast4, setCardLast4] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -147,7 +257,32 @@ const Order = () => {
     }
   }, [address, apiLoaded]);
 
-  const handleSubmitOrder = async () => {
+  const handleCardPaymentSuccess = async (paymentIntentId: string) => {
+    if (!result) return;
+    setStripePaymentId(paymentIntentId);
+
+    // Write order to DB only after successful payment
+    try {
+      const { error: insertError } = await (supabase as any).from("orders").insert({
+        customer_name: form.name.trim(),
+        customer_email: form.email.trim() || null,
+        customer_phone: form.phone.trim(),
+        delivery_address: address,
+        distance_miles: result.distance,
+        price: result.price,
+        payment_method: "card",
+        payment_status: "paid",
+        stripe_payment_id: paymentIntentId,
+        notes: form.notes.trim() || null,
+      });
+      if (insertError) throw insertError;
+      setStep("success");
+    } catch (err: any) {
+      toast({ title: "Order save failed", description: "Payment succeeded but order could not be saved. Please contact us.", variant: "destructive" });
+    }
+  };
+
+  const handleCodSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
       toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
       return;
@@ -163,7 +298,8 @@ const Order = () => {
         delivery_address: address,
         distance_miles: result.distance,
         price: result.price,
-        payment_method: "COD",
+        payment_method: codSubOption,
+        payment_status: "pending",
         notes: form.notes.trim() || null,
       });
 
@@ -192,7 +328,7 @@ const Order = () => {
         <div className="max-w-2xl mx-auto">
           {/* Progress steps */}
           <div className="flex items-center justify-center gap-2 mb-10">
-            {["Address", "Your Info", "Confirm"].map((label, i) => {
+            {["Address", "Order Summary", "Confirm"].map((label, i) => {
               const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
               const isActive = i <= stepIndex;
               return (
@@ -290,7 +426,7 @@ const Order = () => {
                 {/* Customer form */}
                 <div className="bg-background rounded-lg p-8 border border-border shadow-lg">
                   <h2 className="text-3xl font-display text-foreground mb-2">YOUR INFORMATION</h2>
-                  <p className="font-body text-muted-foreground mb-6">Tell us where to reach you. Payment is Cash on Delivery (COD).</p>
+                  <p className="font-body text-muted-foreground mb-6">Tell us where to reach you.</p>
 
                   <div className="space-y-4">
                     <div>
@@ -317,23 +453,121 @@ const Order = () => {
                       </label>
                       <Textarea placeholder="Gate code, placement instructions, preferred time..." maxLength={1000} rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                     </div>
+                  </div>
+                </div>
 
-                    <div className="flex items-center gap-3 p-4 bg-accent/10 border border-accent/20 rounded-lg">
-                      <CreditCard className="w-6 h-6 text-accent shrink-0" />
-                      <div>
-                        <p className="font-display text-sm text-foreground tracking-wider">CASH ON DELIVERY (COD)</p>
-                        <p className="font-body text-xs text-muted-foreground">Payment is collected upon delivery. Cash or check accepted.</p>
+                {/* Payment method selection */}
+                <div className="bg-background rounded-lg p-8 border border-border shadow-lg">
+                  <h2 className="text-3xl font-display text-foreground mb-2">PAYMENT METHOD</h2>
+                  <p className="font-body text-muted-foreground mb-6">Choose how you'd like to pay.</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    {/* Pay Now by Card */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("card")}
+                      className={`p-6 rounded-lg border-2 text-left transition-all ${
+                        paymentMethod === "card"
+                          ? "border-accent bg-accent/5 shadow-md"
+                          : "border-border bg-card hover:border-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "card" ? "bg-accent/20" : "bg-muted"}`}>
+                          <Lock className={`w-5 h-5 ${paymentMethod === "card" ? "text-accent" : "text-muted-foreground"}`} />
+                        </div>
+                        <div>
+                          <p className="font-display text-lg text-foreground tracking-wider">PAY NOW BY CARD</p>
+                        </div>
                       </div>
-                    </div>
+                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Secured by Stripe
+                      </p>
+                    </button>
 
-                    <div className="flex gap-3">
-                      <Button variant="outline" onClick={() => setStep("address")} className="h-12 font-display tracking-wider">BACK</Button>
-                      <Button onClick={() => setStep("confirm")} className="flex-1 h-12 font-display tracking-wider text-lg" disabled={!form.name.trim() || !form.phone.trim()}>
+                    {/* Pay at Delivery */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("cash")}
+                      className={`p-6 rounded-lg border-2 text-left transition-all ${
+                        paymentMethod === "cash" || paymentMethod === "check"
+                          ? "border-accent bg-accent/5 shadow-md"
+                          : "border-border bg-card hover:border-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "cash" || paymentMethod === "check" ? "bg-accent/20" : "bg-muted"}`}>
+                          <Banknote className={`w-5 h-5 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
+                        </div>
+                        <div>
+                          <p className="font-display text-lg text-foreground tracking-wider">PAY AT DELIVERY</p>
+                        </div>
+                      </div>
+                      <p className="font-body text-xs text-muted-foreground">Cash or Check accepted</p>
+                    </button>
+                  </div>
+
+                  {/* Card payment form */}
+                  {paymentMethod === "card" && stripePromise && (
+                    <Elements stripe={stripePromise}>
+                      <CardPaymentForm
+                        onPaymentSuccess={handleCardPaymentSuccess}
+                        onPaymentError={() => {}}
+                        amount={result.price}
+                        orderData={{ name: form.name, phone: form.phone, address }}
+                        submitting={submitting}
+                        setSubmitting={setSubmitting}
+                      />
+                    </Elements>
+                  )}
+
+                  {paymentMethod === "card" && !stripePromise && (
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <p className="font-body text-sm text-destructive flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" /> Stripe is not configured. Please choose Pay at Delivery or contact us.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* COD sub-options */}
+                  {(paymentMethod === "cash" || paymentMethod === "check") && (
+                    <div className="space-y-4">
+                      <RadioGroup
+                        value={codSubOption}
+                        onValueChange={(v) => {
+                          setCodSubOption(v as "cash" | "check");
+                          setPaymentMethod(v as "cash" | "check");
+                        }}
+                        className="flex gap-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="cash" id="cash" />
+                          <label htmlFor="cash" className="font-body text-foreground cursor-pointer">Cash</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="check" id="check" />
+                          <label htmlFor="check" className="font-body text-foreground cursor-pointer">Check</label>
+                        </div>
+                      </RadioGroup>
+
+                      <Button
+                        onClick={() => setStep("confirm")}
+                        disabled={!form.name.trim() || !form.phone.trim()}
+                        className="w-full h-14 font-display tracking-wider text-lg"
+                      >
                         REVIEW ORDER
                       </Button>
                     </div>
-                  </div>
+                  )}
+
+                  {!paymentMethod && (
+                    <p className="font-body text-sm text-muted-foreground text-center">Select a payment method to continue.</p>
+                  )}
                 </div>
+
+                <Button variant="outline" onClick={() => setStep("address")} className="h-12 font-display tracking-wider">
+                  <ArrowLeft className="w-4 h-4 mr-2" /> BACK TO ADDRESS
+                </Button>
               </motion.div>
             )}
 
@@ -364,7 +598,9 @@ const Order = () => {
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Payment</span>
-                    <span className="font-display text-foreground">CASH ON DELIVERY</span>
+                    <span className="font-display text-foreground">
+                      {codSubOption === "cash" ? "CASH" : "CHECK"} AT DELIVERY
+                    </span>
                   </div>
                   <div className="flex justify-between py-3 bg-primary/5 rounded-lg px-4">
                     <span className="font-display text-lg text-foreground">TOTAL</span>
@@ -374,8 +610,8 @@ const Order = () => {
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep("details")} className="h-12 font-display tracking-wider">BACK</Button>
-                  <Button onClick={handleSubmitOrder} disabled={submitting} className="flex-1 h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90">
-                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "PLACE ORDER — COD"}
+                  <Button onClick={handleCodSubmit} disabled={submitting} className="flex-1 h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90">
+                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : `PLACE ORDER — ${codSubOption.toUpperCase()} AT DELIVERY`}
                   </Button>
                 </div>
               </motion.div>
@@ -387,12 +623,25 @@ const Order = () => {
                   <CheckCircle2 className="w-10 h-10 text-primary" />
                 </div>
                 <h2 className="text-4xl font-display text-foreground">ORDER PLACED!</h2>
-                <p className="font-body text-muted-foreground max-w-md mx-auto">
-                  Your order has been received. We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery details and timing.
-                </p>
-                <p className="font-body text-sm text-muted-foreground">
-                  Payment of <strong className="text-primary">${result?.price.toFixed(2)}</strong> is due upon delivery (Cash on Delivery).
-                </p>
+
+                {stripePaymentId ? (
+                  <>
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <p className="font-display text-lg tracking-wider">PAYMENT CONFIRMED</p>
+                    </div>
+                    <p className="font-body text-muted-foreground max-w-md mx-auto">
+                      Your card payment of <strong className="text-primary">${result?.price.toFixed(2)}</strong> has been processed successfully.
+                      We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery details.
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-body text-muted-foreground max-w-md mx-auto">
+                    Your order is confirmed. Payment of <strong className="text-primary">${result?.price.toFixed(2)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
+                    We'll call you at <strong className="text-foreground">{form.phone}</strong> to confirm delivery details.
+                  </p>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
                   <Button asChild className="font-display tracking-wider">
                     <Link to="/">BACK TO HOME</Link>
