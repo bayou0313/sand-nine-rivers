@@ -3,7 +3,6 @@ import { Truck, MapPin, Package, ShoppingCart, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import sandPileImg from "@/assets/sand-pile.jpg";
 
 const BASE_PRICE = 195;
 
