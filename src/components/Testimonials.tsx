@@ -24,11 +24,11 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section className="py-20 bg-card">
+    <section className="py-24 bg-card">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <p className="text-primary font-display text-xl tracking-wider mb-2">TESTIMONIALS</p>
-          <h2 className="text-5xl md:text-6xl text-foreground">WHAT OUR CUSTOMERS SAY</h2>
+        <div className="text-center mb-16">
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">TESTIMONIALS</motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-5xl md:text-7xl text-foreground">WHAT CUSTOMERS SAY</motion.h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -39,16 +39,16 @@ const Testimonials = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15 }}
-              className="bg-background border border-border rounded-lg p-6 space-y-4 hover:shadow-md transition-shadow relative"
+              className="bg-background border border-border rounded-2xl p-8 space-y-5 hover:shadow-xl transition-all duration-300 relative group"
             >
-              <Quote className="w-8 h-8 text-primary/20 absolute top-4 right-4" />
-              <div className="flex gap-1">
+              <Quote className="w-10 h-10 text-primary/10 absolute top-6 right-6 group-hover:text-primary/20 transition-colors" />
+              <div className="flex gap-0.5">
                 {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} className="w-5 h-5 fill-accent text-accent" />
+                  <Star key={j} className="w-4 h-4 fill-accent text-accent" />
                 ))}
               </div>
-              <p className="font-body text-foreground leading-relaxed italic">"{t.text}"</p>
-              <div className="pt-2 border-t border-border">
+              <p className="font-body text-foreground leading-relaxed">"{t.text}"</p>
+              <div className="pt-4 border-t border-border">
                 <p className="font-display text-lg text-foreground">{t.name}</p>
                 <p className="font-body text-sm text-muted-foreground">{t.location}</p>
               </div>

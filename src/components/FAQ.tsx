@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: "How quickly can you deliver?",
-    a: "We offer same-day delivery for orders placed before noon, and next-day delivery is available for all orders. Call us to confirm availability for your area.",
+    a: "We offer same-day delivery for orders placed before 10:00 AM Central Time on weekdays. Next-day delivery is always available. Saturday delivery is available with a $35 surcharge.",
   },
   {
     q: "Where do you deliver?",
@@ -29,21 +29,21 @@ const faqs = [
   },
   {
     q: "How do I pay?",
-    a: "We accept Cash on Delivery (COD). Payment is due at the time of delivery — cash or check accepted. You can place your order online and pay when the sand arrives.",
+    a: "We accept credit/debit cards online (secured by Stripe) and Cash on Delivery (COD) — cash or check accepted at the time of delivery.",
   },
   {
-    q: "Can I order online?",
-    a: "Yes! Use our Order Now page to enter your delivery address, get an instant price, and place your order. Payment is COD — you pay when we deliver.",
+    q: "Do you deliver on Saturdays?",
+    a: "Yes! Saturday delivery is available with a $35 surcharge. Limited spots are available, so we recommend booking early.",
   },
 ];
 
 const FAQ = () => {
   return (
-    <section id="faq" className="py-20 bg-background">
+    <section id="faq" className="py-24 bg-background">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <p className="text-primary font-display text-xl tracking-wider mb-2">FAQ</p>
-          <h2 className="text-5xl md:text-6xl text-foreground">ASK US ANYTHING</h2>
+        <div className="text-center mb-16">
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">FAQ</motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-5xl md:text-7xl text-foreground">ASK US ANYTHING</motion.h2>
         </div>
 
         <motion.div
@@ -57,7 +57,7 @@ const FAQ = () => {
               <AccordionItem
                 key={i}
                 value={`item-${i}`}
-                className="bg-card border border-border rounded-lg px-6 hover:border-primary/30 transition-colors"
+                className="bg-card border border-border rounded-2xl px-6 hover:border-primary/30 transition-colors data-[state=open]:shadow-lg"
               >
                 <AccordionTrigger className="font-display text-lg text-foreground tracking-wider hover:no-underline">
                   {faq.q.toUpperCase()}
