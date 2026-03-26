@@ -493,7 +493,7 @@ const Order = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Order Summary */}
                 {selectedDeliveryDate && (
