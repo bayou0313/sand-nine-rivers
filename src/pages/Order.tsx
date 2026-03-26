@@ -637,18 +637,22 @@ const Order = () => {
                       {/* Subtotal breakdown */}
                       <div className="mt-4 bg-primary/5 rounded-xl p-4 space-y-2">
                         <div className="flex justify-between">
-                          <span className="font-body text-sm text-muted-foreground">Subtotal ({quantity} load{quantity > 1 ? "s" : ""} × ${result.price.toFixed(2)}/load)</span>
-                          <span className="font-display text-foreground">${(result.price * quantity).toFixed(2)}</span>
+                          <span className="font-body text-sm text-muted-foreground">Subtotal ({quantity} load{quantity > 1 ? "s" : ""} × {formatCurrency(result.price)}/load)</span>
+                          <span className="font-display text-foreground">{formatCurrency(result.price * quantity)}</span>
                         </div>
                         {selectedDeliveryDate.isSaturday && (
                           <div className="flex justify-between">
                             <span className="font-body text-sm text-muted-foreground">Saturday surcharge ($35 × {quantity})</span>
-                            <span className="font-display text-foreground">+${saturdaySurchargeTotal}.00</span>
+                            <span className="font-display text-foreground">+{formatCurrency(saturdaySurchargeTotal)}</span>
                           </div>
                         )}
+                        <div className="flex justify-between">
+                          <span className="font-body text-sm text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}% — {taxInfo.parish})</span>
+                          <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
+                        </div>
                         <div className="flex justify-between pt-2 border-t border-border">
                           <span className="font-display text-xl text-foreground">TOTAL DUE</span>
-                          <span className="font-display text-3xl text-primary">${totalPrice.toFixed(2)}</span>
+                          <span className="font-display text-3xl text-primary">{formatCurrency(totalPrice)}</span>
                         </div>
                       </div>
                     </div>
