@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: "How much does river sand delivery cost in New Orleans?",
-    a: "WAYS prices river sand by the yard based on delivery distance and load size. A standard 9-yard load starts at $195. Larger loads of 14–20 yards or 21+ yards are priced separately. Pricing includes delivery to your address — there are no hidden fuel surcharges. Use the pricing calculator on this page for an instant estimate based on your location.",
+    a: "RIVERSAND.NET prices river sand by the yard based on delivery distance and load size. A standard 9-yard load starts at $195. Larger loads of 14–20 yards or 21+ yards are priced separately. Pricing includes delivery to your address — there are no hidden fuel surcharges. Use the pricing calculator on this page for an instant estimate based on your location.",
   },
   {
     q: "Where do you deliver river sand?",
