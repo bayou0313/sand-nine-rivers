@@ -92,6 +92,7 @@ const ContactForm = () => {
           </div>
         </div>
       </div>
+      <div className="h-px bg-accent/30 mt-12" />
     </section>
   );
 };
