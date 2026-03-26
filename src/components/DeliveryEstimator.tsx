@@ -57,7 +57,7 @@ const DeliveryEstimator = () => {
   useEffect(() => {
     if (!apiLoaded || !inputRef.current) return;
 
-    autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
       componentRestrictions: { country: "us" },
       types: ["address"],
     });
