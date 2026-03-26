@@ -573,7 +573,7 @@ const Order = () => {
                 )}
 
                 {/* Payment method */}
-                <div className="bg-background rounded-2xl border border-border shadow-xl shadow-foreground/5 overflow-hidden">
+                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                   <div className="p-6">
                     <SectionHeading icon={CreditCard} title="PAYMENT METHOD" />
 
