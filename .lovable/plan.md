@@ -1,10 +1,29 @@
 
 
-## Reduce Logo to 40% of Current Size
+## Toggle Contact Button
 
-Current logo heights: **168px** (mobile) and **200px** (desktop).
-At 40%: **67px** (mobile) and **80px** (desktop).
+Transform the current WhatsApp floating button into a toggle button that alternates between WhatsApp chat and phone call with a smooth animation.
 
-### Change
-**File: `src/components/Navbar.tsx`** — Update the logo `className` from `h-[168px] lg:h-[200px]` to `h-[67px] lg:h-[80px]`.
+### How it works
+- Single floating button in the bottom-left corner
+- Tapping toggles between two modes: **WhatsApp** (green, MessageCircle icon) and **Phone** (primary color, Phone icon)
+- Each mode links to the appropriate action (`wa.me/...` for WhatsApp, `tel:+18554689297` for phone)
+- Smooth icon rotation/flip animation on toggle
+- A small label appears briefly showing the current mode ("WhatsApp" or "Call Us")
+
+### File changes
+
+**`src/components/WhatsAppButton.tsx`** → Rename concept to `ContactToggleButton`:
+- Add `mode` state toggling between `"whatsapp"` and `"phone"`
+- On tap of button area (not the link), toggle mode; on tap of icon/link, navigate
+- Use `framer-motion` `AnimatePresence` to animate icon swap (scale + rotate transition)
+- WhatsApp mode: green background, MessageCircle icon, links to `wa.me/15043582000`
+- Phone mode: primary/accent background, Phone icon, links to `tel:+18554689297`
+- Small animated label badge showing current mode text
+
+### Design
+- Same position: `fixed bottom-20 lg:bottom-6 left-6`
+- Background color transitions smoothly between green (#25D366) and accent
+- Icon swaps with a flip/rotate animation
+- Small text label fades in below or beside the button
 
