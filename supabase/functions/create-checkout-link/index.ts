@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url } = await req.json();
+    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url, return_mode } = await req.json();
 
     if (!amount || typeof amount !== "number" || amount < 50) {
       return new Response(
