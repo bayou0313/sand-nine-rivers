@@ -7,8 +7,8 @@ const Footer = () => {
     <footer className="py-14 bg-foreground">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
-          <div>
-            <img src={logoImg} alt="RiverSand logo" className="h-[200px] w-auto object-contain mb-3 brightness-0 invert pt-0" loading="lazy" />
+          <div className="flex flex-col justify-start">
+            <img src={logoImg} alt="RiverSand logo" className="h-[60px] w-auto object-contain mb-4 brightness-0 invert self-start" loading="lazy" />
             <p className="font-body text-background/40 text-sm leading-relaxed">
               Quality river sand delivered across the Greater New Orleans area. 9 yards for $195, same-day delivery available Mon–Fri.
             </p>
