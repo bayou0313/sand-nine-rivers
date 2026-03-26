@@ -38,10 +38,10 @@ const Navbar = () => {
               ORDER NOW
             </Link>
           </Button>
-          <Button size="sm" variant="outline" className={`font-display tracking-wider hidden sm:inline-flex rounded-lg ${scrolled ? "" : "border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10"}`} asChild>
+          <Button size="sm" variant="outline" className={`font-display tracking-wider hidden sm:inline-flex rounded-lg ${scrolled ? "border-border text-foreground hover:bg-muted" : "border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/20"}`} asChild>
             <a href="tel:+18554689297">
               <Phone className="w-4 h-4 mr-1" />
-              CALL
+              1-855-GOT-WAYS
             </a>
           </Button>
           <button className={`md:hidden transition-colors ${scrolled ? "text-foreground" : "text-primary-foreground"}`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
