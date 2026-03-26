@@ -42,7 +42,7 @@ const CTA = () => {
               ORDER ONLINE
             </Link>
           </Button>
-          <Button size="lg" variant="outline" className="text-lg font-display tracking-wider px-8 border-accent-foreground/25 text-accent-foreground hover:bg-accent-foreground/10 rounded-xl" asChild>
+          <Button size="lg" variant="outline" className="text-lg font-display tracking-wider px-8 border-background/40 text-background bg-background/10 hover:bg-background/20 rounded-xl" asChild>
             <a href="tel:+18554689297">
               <Phone className="w-5 h-5 mr-2" />
               1-855-GOT-WAYS
