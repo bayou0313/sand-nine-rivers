@@ -8,20 +8,30 @@ import { useState, useEffect, useRef } from "react";
 const useCountdown = () => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isActive, setIsActive] = useState(false);
+  const [nextDay, setNextDay] = useState("");
 
   useEffect(() => {
     const calculate = () => {
       const now = new Date();
-      const day = now.getDay(); // 0=Sun, 6=Sat
+      const day = now.getDay();
       const isWeekday = day >= 1 && day <= 5;
-      const cutoffHour = 11;
+      const cutoffHour = 10;
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const seconds = now.getSeconds();
 
+      const computeNextDay = () => {
+        if (day === 5 && hours >= cutoffHour) return "Monday";
+        if (day === 6) return "Monday";
+        if (day === 0) return "Monday";
+        if (hours >= cutoffHour) return "tomorrow";
+        return "today";
+      };
+
       if (!isWeekday || hours >= cutoffHour) {
         setIsActive(false);
         setTimeLeft("");
+        setNextDay(computeNextDay());
         return;
       }
 
@@ -31,6 +41,7 @@ const useCountdown = () => {
       const s = remaining % 60;
       setTimeLeft(`${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`);
       setIsActive(true);
+      setNextDay("today");
     };
 
     calculate();
@@ -38,11 +49,11 @@ const useCountdown = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return { timeLeft, isActive };
+  return { timeLeft, isActive, nextDay };
 };
 
 const Hero = () => {
-  const { timeLeft, isActive } = useCountdown();
+  const { timeLeft, isActive, nextDay } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
@@ -76,7 +87,11 @@ const Hero = () => {
                   <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
                 </div>
               ) : (
-                <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY — MON-FRI BEFORE 11 AM</p>
+                <p className="font-display text-white tracking-wider text-sm">
+                  {nextDay === "today" 
+                    ? "SAME-DAY DELIVERY — MON-FRI BEFORE 10 AM" 
+                    : `ORDER NOW FOR DELIVERY ${nextDay.toUpperCase()}`}
+                </p>
               )}
             </div>
             <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">

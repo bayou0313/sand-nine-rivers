@@ -1,17 +1,50 @@
-import { MessageCircle, Phone, Mail, X, Check, Send } from "lucide-react";
+import { MessageCircle, Phone, Mail, X, Check, Send, CalendarIcon, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, isSameDay, isSunday, isBefore, startOfDay, addDays, isSaturday, getDay } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const WHATSAPP_NUMBER = "15043582000";
 const PHONE_NUMBER = "+18554689297";
 const MESSAGE = "Hi! I'm interested in ordering river sand delivery in New Orleans.";
 
 type ContactMode = "whatsapp" | "phone" | "message";
+
+const WEEKDAY_WINDOWS = [
+  { label: "8–10 AM", startHour: 8 },
+  { label: "10 AM–12 PM", startHour: 10 },
+  { label: "12–2 PM", startHour: 12 },
+  { label: "2–4 PM", startHour: 14 },
+  { label: "4–6 PM", startHour: 16 },
+];
+
+const SATURDAY_WINDOWS = [
+  { label: "8–10 AM", startHour: 8 },
+  { label: "10 AM–12 PM", startHour: 10 },
+];
+
+function getAvailableWindows(selectedDate: Date): { label: string; startHour: number }[] {
+  const now = new Date();
+  const isToday = isSameDay(selectedDate, now);
+  const isSat = isSaturday(selectedDate);
+  const baseWindows = isSat ? SATURDAY_WINDOWS : WEEKDAY_WINDOWS;
+
+  if (!isToday) return baseWindows;
+
+  const currentHour = now.getHours();
+  return baseWindows.filter((w) => w.startHour > currentHour);
+}
+
+function isBusinessDay(date: Date): boolean {
+  return !isSunday(date);
+}
 
 const WhatsAppButton = () => {
   const [visible, setVisible] = useState(false);
@@ -20,7 +53,9 @@ const WhatsAppButton = () => {
   const [showForm, setShowForm] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [formData, setFormData] = useState({ name: "", phone: "", message: "" });
+  const [formData, setFormData] = useState({ name: "", phone: "", notes: "" });
+  const [callbackDate, setCallbackDate] = useState<Date>(new Date());
+  const [timeWindow, setTimeWindow] = useState<string>("ASAP");
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -33,6 +68,31 @@ const WhatsAppButton = () => {
     const timer = setTimeout(() => setVisible(true), 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  const availableWindows = useMemo(() => getAvailableWindows(callbackDate), [callbackDate]);
+
+  const showAsap = useMemo(() => {
+    if (!isSameDay(callbackDate, new Date())) return false;
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    if (day === 0) return false; // Sunday
+    if (day === 6) return hour < 12; // Saturday
+    return hour >= 8 && hour < 18; // Weekday
+  }, [callbackDate]);
+
+  // Reset time window when date changes
+  useEffect(() => {
+    const windows = getAvailableWindows(callbackDate);
+    const isToday = isSameDay(callbackDate, new Date());
+    if (isToday && showAsap) {
+      setTimeWindow("ASAP");
+    } else if (windows.length > 0) {
+      setTimeWindow(windows[0].label);
+    } else {
+      setTimeWindow("");
+    }
+  }, [callbackDate, showAsap]);
 
   const altMode: ContactMode = isMobile ? "phone" : "message";
 
@@ -56,19 +116,23 @@ const WhatsAppButton = () => {
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.phone.trim()) return;
+    if (!formData.name.trim() || !formData.phone.trim() || !timeWindow) return;
     setSending(true);
     try {
       await supabase.functions.invoke("send-email", {
         body: {
-          type: "contact",
-          name: formData.name.trim(),
-          phone: formData.phone.trim(),
-          message: formData.message.trim(),
+          type: "callback",
+          data: {
+            name: formData.name.trim(),
+            phone: formData.phone.trim(),
+            date: format(callbackDate, "EEEE, MMMM d, yyyy"),
+            time_window: timeWindow,
+            notes: formData.notes.trim(),
+          },
         },
       });
       setSent(true);
-      setFormData({ name: "", phone: "", message: "" });
+      setFormData({ name: "", phone: "", notes: "" });
       setTimeout(() => {
         setShowForm(false);
         setSent(false);
@@ -78,7 +142,7 @@ const WhatsAppButton = () => {
     } finally {
       setSending(false);
     }
-  }, [formData]);
+  }, [formData, callbackDate, timeWindow]);
 
   const href =
     mode === "whatsapp"
@@ -87,20 +151,28 @@ const WhatsAppButton = () => {
         ? `tel:${PHONE_NUMBER}`
         : "#";
 
-  const label = mode === "whatsapp" ? "WhatsApp" : mode === "phone" ? "Call Us" : "Message Us";
+  const label = mode === "whatsapp" ? "WhatsApp" : mode === "phone" ? "Call Us" : "Request Callback";
   const bg = mode === "whatsapp" ? "#25D366" : "hsl(var(--primary))";
   const shadowColor = mode === "whatsapp" ? "rgba(37,211,102,0.3)" : "hsl(var(--primary) / 0.3)";
 
-  const IconMain = mode === "whatsapp" ? MessageCircle : mode === "phone" ? Phone : Mail;
+  const IconMain = mode === "whatsapp" ? MessageCircle : mode === "phone" ? Phone : Phone;
   const IconAlt = mode === "whatsapp"
-    ? (isMobile ? Phone : Mail)
+    ? (isMobile ? Phone : Phone)
     : MessageCircle;
+
+  const disableDate = (date: Date) => {
+    if (isSunday(date)) return true;
+    if (isBefore(date, startOfDay(new Date()))) return true;
+    return false;
+  };
+
+  const isSatSelected = isSaturday(callbackDate);
 
   return (
     <AnimatePresence>
       {visible && (
         <div className="fixed bottom-20 lg:bottom-6 left-6 z-50 flex flex-col items-start gap-2">
-          {/* Desktop message form */}
+          {/* Callback request form */}
           <AnimatePresence>
             {showForm && mode === "message" && (
               <motion.div
@@ -108,7 +180,7 @@ const WhatsAppButton = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.85, y: 10 }}
                 transition={{ duration: 0.2 }}
-                className="w-[300px] bg-background border border-border rounded-2xl shadow-2xl p-4 mb-2"
+                className="w-[320px] bg-background border border-border rounded-2xl shadow-2xl p-4 mb-2"
               >
                 {sent ? (
                   <div className="flex flex-col items-center gap-2 py-4">
@@ -119,13 +191,16 @@ const WhatsAppButton = () => {
                     >
                       <Check className="w-5 h-5 text-white" />
                     </motion.div>
-                    <p className="text-sm font-medium text-foreground">Message sent!</p>
-                    <p className="text-xs text-muted-foreground">We'll get back to you shortly.</p>
+                    <p className="text-sm font-medium text-foreground">Callback requested!</p>
+                    <p className="text-xs text-muted-foreground">We'll call you soon.</p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-foreground">Send us a message</span>
+                      <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5" />
+                        Request a Callback
+                      </span>
                       <button
                         type="button"
                         onClick={() => setShowForm(false)}
@@ -151,17 +226,72 @@ const WhatsAppButton = () => {
                       maxLength={20}
                       className="text-sm h-9"
                     />
-                    <Textarea
-                      placeholder="Short message (optional)"
-                      value={formData.message}
-                      onChange={(e) => setFormData((d) => ({ ...d, message: e.target.value }))}
-                      maxLength={500}
-                      className="text-sm min-h-[60px] resize-none"
-                      rows={2}
+
+                    {/* Date picker */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-9 text-sm",
+                            !callbackDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                          {format(callbackDate, "EEE, MMM d")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[60]" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={callbackDate}
+                          onSelect={(d) => d && setCallbackDate(d)}
+                          disabled={disableDate}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Time window */}
+                    <Select value={timeWindow} onValueChange={setTimeWindow}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <Clock className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Select time window" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[60]">
+                        {showAsap && <SelectItem value="ASAP">ASAP</SelectItem>}
+                        {availableWindows.map((w) => (
+                          <SelectItem key={w.label} value={w.label}>{w.label}</SelectItem>
+                        ))}
+                        {!showAsap && availableWindows.length === 0 && (
+                          <SelectItem value="" disabled>No windows available</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    {isSatSelected && (
+                      <p className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                        ⚠️ Limited Saturday availability — 5 spots
+                      </p>
+                    )}
+
+                    <Input
+                      placeholder="Notes (optional)"
+                      value={formData.notes}
+                      onChange={(e) => setFormData((d) => ({ ...d, notes: e.target.value }))}
+                      maxLength={200}
+                      className="text-sm h-9"
                     />
-                    <Button type="submit" size="sm" disabled={sending} className="w-full gap-2">
-                      <Send className="w-3.5 h-3.5" />
-                      {sending ? "Sending..." : "Send Message"}
+
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={sending || (!showAsap && availableWindows.length === 0)}
+                      className="w-full gap-2"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      {sending ? "Submitting..." : "Request Callback"}
                     </Button>
                   </form>
                 )}
