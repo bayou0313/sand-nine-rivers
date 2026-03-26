@@ -101,7 +101,8 @@ const Pricing = () => {
 
           {/* Note */}
           <p className="text-center font-body text-background/50 text-sm mb-8">
-            Within 15 miles. Farther? Price adjusts automatically at checkout.
+            Within 15 miles. Farther? Price adjusts automatically at checkout.<br />
+            Saturday delivery: +$35 per load.
           </p>
 
           {/* CTAs */}
