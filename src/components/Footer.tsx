@@ -1,10 +1,11 @@
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, MapPin, ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
     <footer className="py-12 bg-foreground">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <p className="font-display text-3xl text-background tracking-wider mb-3">RIVERSAND</p>
             <p className="font-body text-background/50 text-sm leading-relaxed">
@@ -33,6 +34,17 @@ const Footer = () => {
               <a href="#about" className="block hover:text-background transition-colors">About Us</a>
               <a href="#faq" className="block hover:text-background transition-colors">FAQ</a>
               <a href="#contact" className="block hover:text-background transition-colors">Contact</a>
+            </div>
+          </div>
+          <div>
+            <p className="font-display text-lg text-background tracking-wider mb-3">ORDER</p>
+            <div className="space-y-2 font-body text-sm text-background/50">
+              <Link to="/order" className="flex items-center gap-2 hover:text-background transition-colors">
+                <ShoppingCart className="w-4 h-4" /> Order Online
+              </Link>
+              <p>Cash on Delivery (COD)</p>
+              <p>Same-day available</p>
+              <p>Licensed & Insured</p>
             </div>
           </div>
         </div>

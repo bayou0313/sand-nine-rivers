@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { motion } from "framer-motion";
 
 const faqs = [
   {
@@ -28,7 +29,11 @@ const faqs = [
   },
   {
     q: "How do I pay?",
-    a: "We accept cash, check, and major credit cards. Payment is due at the time of delivery.",
+    a: "We accept Cash on Delivery (COD). Payment is due at the time of delivery — cash or check accepted. You can place your order online and pay when the sand arrives.",
+  },
+  {
+    q: "Can I order online?",
+    a: "Yes! Use our Order Now page to enter your delivery address, get an instant price, and place your order. Payment is COD — you pay when we deliver.",
   },
 ];
 
@@ -38,18 +43,21 @@ const FAQ = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
           <p className="text-primary font-display text-xl tracking-wider mb-2">FAQ</p>
-          <h2 className="text-5xl md:text-6xl text-foreground">
-            ASK US ANYTHING
-          </h2>
+          <h2 className="text-5xl md:text-6xl text-foreground">ASK US ANYTHING</h2>
         </div>
 
-        <div className="max-w-3xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="max-w-3xl mx-auto"
+        >
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, i) => (
               <AccordionItem
                 key={i}
                 value={`item-${i}`}
-                className="bg-card border border-border rounded-lg px-6"
+                className="bg-card border border-border rounded-lg px-6 hover:border-primary/30 transition-colors"
               >
                 <AccordionTrigger className="font-display text-lg text-foreground tracking-wider hover:no-underline">
                   {faq.q.toUpperCase()}
@@ -60,7 +68,7 @@ const FAQ = () => {
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
