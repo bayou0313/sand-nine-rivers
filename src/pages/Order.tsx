@@ -914,7 +914,7 @@ const Order = () => {
                     <Link to="/">BACK TO HOME</Link>
                   </Button>
                   <Button variant="outline" asChild className="font-display tracking-wider rounded-xl">
-                    <a href="tel:+15551234567"><Phone className="w-4 h-4 mr-2" /> CALL US</a>
+                    <a href="tel:+18554689297"><Phone className="w-4 h-4 mr-2" /> CALL US</a>
                   </Button>
                 </div>
               </motion.div>
