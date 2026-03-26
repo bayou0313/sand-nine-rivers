@@ -86,13 +86,32 @@ const Order = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  // Handle Stripe return via URL params
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (!paymentStatus) return;
 
     const returnedOrderNumber = searchParams.get("order_number");
     const returnedSessionId = searchParams.get("session_id");
+    const returnMode = searchParams.get("return_mode");
 
+    if (returnMode === "popup") {
+      // This is the Stripe return tab — signal the original page and close
+      const signal = JSON.stringify({
+        type: "stripe-payment-result",
+        status: paymentStatus,
+        order_number: returnedOrderNumber || "",
+        session_id: returnedSessionId || "",
+        timestamp: Date.now(),
+      });
+      localStorage.setItem("stripe_payment_signal", signal);
+      // Attempt to close the tab
+      window.close();
+      // If browser blocks close, we'll show fallback UI (handled below)
+      return;
+    }
+
+    // Normal same-tab return
     if (paymentStatus === "success") {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
       if (returnedSessionId) setStripePaymentId(returnedSessionId);
@@ -115,6 +134,44 @@ const Order = () => {
       });
     }
   }, [searchParams, toast]);
+
+  // Listen for cross-tab Stripe payment signals (from popup return tab)
+  useEffect(() => {
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key !== "stripe_payment_signal" || !e.newValue) return;
+      try {
+        const signal = JSON.parse(e.newValue);
+        if (signal.type !== "stripe-payment-result") return;
+        // Consume the signal
+        localStorage.removeItem("stripe_payment_signal");
+        setSubmitting(false);
+
+        if (signal.status === "success") {
+          if (signal.order_number) setOrderNumber(signal.order_number);
+          if (signal.session_id) setStripePaymentId(signal.session_id);
+          setStep("success");
+          toast({
+            title: "Payment successful",
+            description: signal.order_number
+              ? `Order ${signal.order_number} is confirmed.`
+              : "Your payment was completed successfully.",
+          });
+        } else if (signal.status === "canceled") {
+          setStep("confirm");
+          toast({
+            title: "Payment canceled",
+            description: "No charge was made. You can try again anytime.",
+            variant: "destructive",
+          });
+        }
+      } catch {
+        // ignore malformed signals
+      }
+    };
+
+    window.addEventListener("storage", handleStorageEvent);
+    return () => window.removeEventListener("storage", handleStorageEvent);
+  }, [toast]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
