@@ -1,64 +1,46 @@
 
 
-## Font Size Proportionality Audit & Fix
+## Redesign Pricing Section
 
-### Problem
-At the user's viewport (1021px, hitting the `md` breakpoint), font sizes are disproportionate:
+**Goal**: Replace the two pricing cards with a single, visually striking section featuring a sand pile background image, a quantity selector for multiple loads, and dynamic price recalculation based on delivery distance.
 
-```text
-Current Scale (at md breakpoint):
-─────────────────────────────────
-Hero H1:          96px (text-8xl)  ← dominates everything, pushes CTA below fold
-CTA H2:           96px (text-8xl)  ← same size as Hero H1, no hierarchy
-Section H2s:      72px (text-7xl)  ← almost as big as H1
-Pricing card $:   72px (text-7xl)  ← same as section headings (no responsive class)
-Stats values:     72px (text-7xl)  ← same as headings
-Hero price:       60px (text-6xl)  ← competes with H1
-Body text:        14-18px          ← inconsistent jumps between sections
-```
+### Design Concept
 
-Everything is oversized and there's no visual hierarchy — section headings, stats, and prices are all the same size.
+A full-width hero-style pricing section with a sand pile background image (from Unsplash), a dark overlay for readability, and a centered interactive pricing widget. The widget lets customers:
+1. Select number of loads (1-5) with +/- buttons
+2. See base price update in real-time ($195 per load)
+3. Enter address to get distance-adjusted total
+4. Link to the order page or estimator with quantity param
 
-### Proposed Scale
+### Changes
 
-```text
-Fixed Scale (at md breakpoint):
-─────────────────────────────────
-Hero H1:          48px (text-4xl → md:text-5xl)     top of hierarchy
-CTA H2:           42px (text-3xl → md:text-5xl)     slightly smaller than H1
-Section H2s:      36px (text-3xl → md:text-4xl)     clear step down
-Stats values:     42px (text-4xl → md:text-5xl)     display numbers, prominent
-Pricing card $:   48px (text-4xl → md:text-5xl)     price prominence
-Hero price block: 36px (text-3xl → md:text-4xl)     supports H1, doesn't compete
-Feature titles:   20px (text-xl)                     no change
-Body large:       16-18px (text-base to text-lg)     consistent
-Body regular:     14px (text-sm)                     consistent
-Meta/labels:      12px (text-xs)                     consistent
-```
+**1. Replace `src/components/Pricing.tsx`**
+- Remove the two-card layout entirely
+- Add a full-width section with a sand pile background image (Unsplash URL: high-quality sand/aggregate photo)
+- Dark gradient overlay for text readability
+- Center content: heading, subtext, and an interactive pricing widget
+- Quantity selector: displays "Number of Loads" with minus/plus buttons and count (default 1, max 10)
+- Price display: shows `$195 × {qty} = ${total}` for base pricing
+- Note: "Within 15 miles. Farther? Price adjusts automatically at checkout."
+- CTA buttons: "ORDER NOW" (links to `/order`) and "GET ESTIMATE" (scrolls to `#estimator`)
+- Bottom badges: Mon-Sat delivery, Greater New Orleans, No hidden fees (keep existing)
+- Framer Motion animations retained
 
-### Changes by File
+**2. Update `src/components/DeliveryEstimator.tsx`**
+- No changes needed — it already handles distance-based recalculation
 
-1. **Hero.tsx** — Reduce H1 from `text-6xl md:text-8xl lg:text-9xl` to `text-4xl md:text-5xl lg:text-6xl`. Reduce price block from `text-5xl md:text-6xl` to `text-3xl md:text-4xl`. Tighten `space-y-8` to `space-y-5` and `py-20` to `py-12`. Change `min-h-screen` to `min-h-[85vh]` so CTA stays above fold.
+**3. Update `src/pages/Order.tsx`**
+- Accept a `qty` (quantity/loads) URL parameter
+- Multiply `BASE_PRICE` by quantity for pricing
+- Display "X loads × 9 cubic yards" in the order summary
+- Store quantity in order data sent to database
 
-2. **Pricing.tsx** — Reduce section H2 from `text-5xl md:text-7xl` to `text-3xl md:text-4xl`. Reduce card prices from `text-7xl` to `text-4xl md:text-5xl`.
+**4. Database migration**
+- Add `quantity` integer column (default 1) to `orders` table to track number of loads
 
-3. **Stats.tsx** — Reduce stat values from `text-5xl md:text-7xl` to `text-4xl md:text-5xl`.
-
-4. **Features.tsx** — Reduce section H2 from `text-5xl md:text-7xl` to `text-3xl md:text-4xl`.
-
-5. **About.tsx** — Reduce section H2 from `text-5xl md:text-7xl` to `text-3xl md:text-4xl`.
-
-6. **DeliveryEstimator.tsx** — Reduce section H2 from `text-5xl md:text-7xl` to `text-3xl md:text-4xl`.
-
-7. **Testimonials.tsx** — Reduce section H2 from `text-5xl md:text-7xl` to `text-3xl md:text-4xl`.
-
-8. **FAQ.tsx** — Reduce section H2 from `text-5xl md:text-7xl` to `text-3xl md:text-4xl`.
-
-9. **ContactForm.tsx** — Reduce H2 from `text-5xl md:text-7xl` to `text-3xl md:text-4xl`.
-
-10. **CTA.tsx** — Reduce H2 from `text-5xl md:text-8xl` to `text-3xl md:text-5xl`.
-
-11. **Navbar.tsx** — Reduce container from `h-28` to `h-20`, logo from `h-16 md:h-24` to `h-10 md:h-14` for better proportion with the tightened hero.
-
-All body text, button text, labels, and meta text remain unchanged — they are already proportional to each other.
+### Technical Details
+- Sand image: Use a royalty-free Unsplash image URL for the background
+- Quantity state managed with `useState<number>(1)` in Pricing component
+- Price formula: `quantity * BASE_PRICE` (base), extended miles calculated same way but multiplied by quantity
+- Order page reads `qty` from search params and applies multiplier throughout
 
