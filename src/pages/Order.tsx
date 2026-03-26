@@ -765,7 +765,7 @@ const Order = () => {
                   </Button>
                   <Button
                     onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                    disabled={submitting}
+                    disabled={submitting || !disclaimerAccepted}
                     className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
                   >
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
