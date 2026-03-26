@@ -87,12 +87,12 @@ const DeliveryEstimator = () => {
     }
 
     try {
-      const service = new google.maps.DistanceMatrixService();
+      const service = new window.google.maps.DistanceMatrixService();
       const response = await service.getDistanceMatrix({
         origins: [ORIGIN],
         destinations: [address],
-        travelMode: google.maps.TravelMode.DRIVING,
-        unitSystem: google.maps.UnitSystem.IMPERIAL,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+        unitSystem: window.google.maps.UnitSystem.IMPERIAL,
       });
 
       const element = response.rows[0]?.elements[0];
