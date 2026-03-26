@@ -71,10 +71,13 @@ const Order = () => {
   const taxInfo = useMemo(() => getTaxRateFromAddress(address), [address]);
 
   // Computed total with Saturday surcharge — $35 per load, plus tax
+  const PROCESSING_FEE_RATE = 0.035;
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
+  const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
+  const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
 
   // Pre-fill from estimator URL params
   useEffect(() => {
