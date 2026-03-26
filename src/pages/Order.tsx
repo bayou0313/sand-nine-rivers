@@ -205,25 +205,9 @@ const Order = () => {
     tax_amount: taxAmount,
   });
 
-  const handleCardPaymentSuccess = async (paymentIntentId: string) => {
-    if (!result) return;
-    setStripePaymentId(paymentIntentId);
+  // handleCardPaymentSuccess removed — card payment superseded by Stripe Checkout Link
 
-    try {
-      const { error: insertError } = await (supabase as any).from("orders").insert({
-        ...buildOrderData(),
-        payment_method: "card",
-        payment_status: "paid",
-        stripe_payment_id: paymentIntentId,
-      });
-      if (insertError) throw insertError;
-      setStep("success");
-    } catch (err: any) {
-      toast({ title: "Order save failed", description: "Payment succeeded but order could not be saved. Please contact us.", variant: "destructive" });
-    }
-  };
 
-  const handleCodSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
       toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
       return;
