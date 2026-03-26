@@ -9,7 +9,7 @@ const stats = [
 
 const Stats = () => {
   return (
-    <section className="py-20 bg-gradient-to-r from-primary via-primary/90 to-accent/80 relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-r from-primary via-primary/95 to-primary/85 relative overflow-hidden">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute -top-20 -right-20 w-80 h-80 bg-primary-foreground rounded-full" />
         <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary-foreground rounded-full" />

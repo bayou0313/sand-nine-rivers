@@ -7,7 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRAND_COLOR = "#E8601C";
+const BRAND_COLOR = "#041F38";
+const BRAND_GOLD = "#EAAB22";
+const BRAND_RED = "#C21F32";
 const FROM_EMAIL = "orders@riversand.net";
 const PHONE = "1-855-GOT-WAYS";
 
@@ -18,16 +20,16 @@ function emailWrapper(body: string) {
   body{margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif}
   .container{max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden}
   .header{background:${BRAND_COLOR};padding:24px;text-align:center}
-  .header h1{color:#ffffff;margin:0;font-size:24px;letter-spacing:2px}
+  .header h1{color:${BRAND_GOLD};margin:0;font-size:24px;letter-spacing:2px}
   .body{padding:32px 24px}
-  .body h2{color:#1a1a1a;margin:0 0 16px}
+  .body h2{color:${BRAND_COLOR};margin:0 0 16px}
   .body p,.body td{color:#555;font-size:15px;line-height:1.6}
   .info-table{width:100%;border-collapse:collapse;margin:16px 0}
   .info-table td{padding:8px 0;border-bottom:1px solid #eee}
-  .info-table td:first-child{font-weight:600;color:#333;width:40%}
+  .info-table td:first-child{font-weight:600;color:${BRAND_COLOR};width:40%}
   .footer{background:#f9f9f9;padding:20px 24px;text-align:center;font-size:13px;color:#999}
   .footer a{color:${BRAND_COLOR};text-decoration:none}
-  .cta{display:inline-block;background:${BRAND_COLOR};color:#fff!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0}
+  .cta{display:inline-block;background:${BRAND_GOLD};color:${BRAND_COLOR}!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0}
 </style></head><body>
 <div class="container">
   <div class="header"><h1>WAYS River Sand</h1></div>
@@ -59,7 +61,7 @@ function orderCustomerEmail(order: any) {
     <p>Thank you for your order${order.customer_name ? ", " + order.customer_name : ""}! Here's your order summary:</p>
     <table class="info-table">${tableRows}</table>
     ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ""}
-    <p>If you have any questions, call us at <a href="tel:+18554689297" style="color:${BRAND_COLOR};font-weight:600">${PHONE}</a>.</p>
+    <p>If you have any questions, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
   `);
 }
 
@@ -97,7 +99,7 @@ function contactCustomerEmail(contact: any) {
     <h2>We Got Your Message!</h2>
     <p>Hi${contact.name ? " " + contact.name : ""},</p>
     <p>Thanks for reaching out! We've received your message and will get back to you within <strong>one business day</strong>.</p>
-    <p>In the meantime, if it's urgent, give us a call at <a href="tel:+18554689297" style="color:${BRAND_COLOR};font-weight:600">${PHONE}</a>.</p>
+    <p>In the meantime, if it's urgent, give us a call at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
   `);
 }
 
@@ -113,7 +115,7 @@ function contactInternalEmail(contact: any) {
     <h2>📬 New Contact Form Submission</h2>
     <table class="info-table">${tableRows}</table>
     <p><strong>Message:</strong></p>
-    <p style="background:#f9f9f9;padding:16px;border-radius:6px;border-left:4px solid ${BRAND_COLOR}">${(contact.message || "").replace(/\n/g, "<br>")}</p>
+    <p style="background:#f9f9f9;padding:16px;border-radius:6px;border-left:4px solid ${BRAND_GOLD}">${(contact.message || "").replace(/\n/g, "<br>")}</p>
   `);
 }
 
