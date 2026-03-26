@@ -614,21 +614,21 @@ const Order = () => {
                   <h2 className="text-3xl font-display text-foreground mb-2">PAYMENT METHOD</h2>
                   <p className="font-body text-muted-foreground mb-6">Choose how you'd like to pay.</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("card")}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                      className={`p-5 rounded-xl border-2 text-left transition-all ${
                         paymentMethod === "card"
                           ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
                           : "border-border bg-card hover:border-accent/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "card" ? "bg-accent/20" : "bg-muted"}`}>
-                          <Lock className={`w-5 h-5 ${paymentMethod === "card" ? "text-accent" : "text-muted-foreground"}`} />
+                          <CreditCard className={`w-5 h-5 ${paymentMethod === "card" ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
-                        <p className="font-display text-lg text-foreground tracking-wider">PAY NOW BY CARD</p>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY BY CARD</p>
                       </div>
                       <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
                         <Lock className="w-3 h-3" /> Secured by Stripe
@@ -637,18 +637,36 @@ const Order = () => {
 
                     <button
                       type="button"
+                      onClick={() => setPaymentMethod("stripe-link")}
+                      className={`p-5 rounded-xl border-2 text-left transition-all ${
+                        paymentMethod === "stripe-link"
+                          ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
+                          : "border-border bg-card hover:border-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "stripe-link" ? "bg-accent/20" : "bg-muted"}`}>
+                          <ExternalLink className={`w-5 h-5 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
+                        </div>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAYMENT LINK</p>
+                      </div>
+                      <p className="font-body text-xs text-muted-foreground">Pay via Stripe Checkout</p>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setPaymentMethod("cash")}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                      className={`p-5 rounded-xl border-2 text-left transition-all ${
                         paymentMethod === "cash" || paymentMethod === "check"
                           ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
                           : "border-border bg-card hover:border-accent/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "cash" || paymentMethod === "check" ? "bg-accent/20" : "bg-muted"}`}>
                           <Banknote className={`w-5 h-5 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
-                        <p className="font-display text-lg text-foreground tracking-wider">PAY AT DELIVERY</p>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY AT DELIVERY</p>
                       </div>
                       <p className="font-body text-xs text-muted-foreground">Cash or Check accepted</p>
                     </button>
@@ -672,6 +690,21 @@ const Order = () => {
                       <p className="font-body text-sm text-destructive flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" /> Stripe is not configured. Please choose Pay at Delivery or contact us.
                       </p>
+                    </div>
+                  )}
+
+                  {paymentMethod === "stripe-link" && (
+                    <div className="space-y-4">
+                      <p className="font-body text-sm text-muted-foreground">
+                        We'll create your order and generate a secure Stripe payment link. You'll be redirected to Stripe to complete payment.
+                      </p>
+                      <Button
+                        onClick={handleStripeLink}
+                        disabled={submitting || !form.name.trim() || !form.phone.trim()}
+                        className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
+                      >
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY ${totalPrice.toFixed(2)} VIA STRIPE</>}
+                      </Button>
                     </div>
                   )}
 
