@@ -306,14 +306,14 @@ const Order = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sand-dark to-foreground">
+    <div className="min-h-screen bg-background">
       {/* Header with Logo */}
-      <div className="bg-foreground/95 backdrop-blur-sm border-b border-border/20">
+      <div className="bg-background border-b border-border">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center">
-            <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
+            <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
           </Link>
-          <Link to="/" className="font-body text-sm text-background/60 hover:text-background transition-colors flex items-center gap-1">
+          <Link to="/" className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
@@ -653,8 +653,8 @@ const Order = () => {
                 {/* Receipt-style confirmation */}
                 <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
                   {/* Logo header */}
-                  <div className="bg-foreground py-4 flex justify-center">
-                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
+                  <div className="bg-muted py-4 flex justify-center border-b border-border">
+                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
                   </div>
 
                   <div className="p-6 space-y-4">
@@ -755,8 +755,8 @@ const Order = () => {
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-4">
                 <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
                   {/* Logo header */}
-                  <div className="bg-foreground py-4 flex justify-center">
-                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
+                  <div className="bg-muted py-4 flex justify-center border-b border-border">
+                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain" />
                   </div>
 
                   <div className="p-8 text-center space-y-5">
