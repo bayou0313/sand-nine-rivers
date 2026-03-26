@@ -499,9 +499,9 @@ const Order = () => {
                     <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
                   </div>
                   <div className="text-center p-4 bg-background rounded-xl">
-                    <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Total (${quantity} loads)` : "Per Load"}</p>
+                    <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Subtotal (${quantity} loads)` : "Per Load"}</p>
                     <p className="font-display text-3xl text-primary flex items-center justify-center">
-                      <DollarSign className="w-6 h-6" />{(result.price * quantity).toFixed(2)}
+                      {formatCurrency(result.price * quantity)}
                     </p>
                   </div>
                 </div>
