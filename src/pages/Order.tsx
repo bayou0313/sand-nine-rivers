@@ -462,7 +462,7 @@ const Order = () => {
 
   const stepLabels = ["Delivery Details", "Payment", "Confirm"];
 
-  const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim();
+  const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim() && form.email.trim();
 
   // --- Section heading helper ---
   const SectionHeading = ({ icon: Icon, title }: { icon: any; title: string }) => (
