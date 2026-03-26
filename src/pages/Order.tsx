@@ -71,10 +71,13 @@ const Order = () => {
   const taxInfo = useMemo(() => getTaxRateFromAddress(address), [address]);
 
   // Computed total with Saturday surcharge — $35 per load, plus tax
+  const PROCESSING_FEE_RATE = 0.035;
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
+  const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
+  const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
 
   // Pre-fill from estimator URL params
   useEffect(() => {
@@ -244,20 +247,21 @@ const Order = () => {
         ...buildOrderData(),
         payment_method: "stripe-link",
         payment_status: "pending",
+        price: totalWithProcessingFee,
       };
       const { data: insertedOrder, error: insertError } = await (supabase as any)
         .from("orders")
         .insert(orderData)
-        .select("id")
+        .select("id, order_number")
         .single();
 
       if (insertError) throw insertError;
 
       // Generate Stripe checkout link
-      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds`;
+      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
-          amount: Math.round(totalPrice * 100),
+          amount: Math.round(totalWithProcessingFee * 100),
           description,
           customer_name: form.name.trim(),
           customer_email: form.email.trim() || null,
@@ -589,15 +593,29 @@ const Order = () => {
 
                   {paymentMethod === "stripe-link" && (
                     <div className="space-y-4">
-                      <p className="font-body text-sm text-muted-foreground">
-                        We'll create your order and generate a secure Stripe payment link. You'll be redirected to Stripe to complete payment.
+                      <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                        <div className="flex justify-between">
+                          <span className="font-body text-sm text-muted-foreground">Order Total</span>
+                          <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-body text-sm text-muted-foreground">Processing Fee (3.5%)</span>
+                          <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t border-border">
+                          <span className="font-display text-foreground">TOTAL CHARGE</span>
+                          <span className="font-display text-xl text-primary">{formatCurrency(totalWithProcessingFee)}</span>
+                        </div>
+                      </div>
+                      <p className="font-body text-xs text-muted-foreground">
+                        A 3.5% processing fee applies to online payments. Pay at delivery to avoid this fee.
                       </p>
                       <Button
                         onClick={handleStripeLink}
                         disabled={submitting || !form.name.trim() || !form.phone.trim()}
                         className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
                       >
-                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY {formatCurrency(totalPrice)} VIA STRIPE</>}
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)} VIA STRIPE</>}
                       </Button>
                     </div>
                   )}
