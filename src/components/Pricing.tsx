@@ -11,6 +11,7 @@ const BASE_PRICE = 195;
 const Pricing = () => {
   const [qty, setQty] = useState(1);
   const total = qty * BASE_PRICE;
+  const { timeLeft, label } = useCountdown();
 
   return (
     <section id="pricing" className="relative py-32 bg-foreground overflow-hidden">
