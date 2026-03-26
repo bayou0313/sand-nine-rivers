@@ -1,4 +1,1 @@
 project_id = "lclbexhytmpfxzcztzva"
-
-[functions.create-admin]
-verify_jwt = false
