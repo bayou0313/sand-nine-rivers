@@ -53,7 +53,7 @@ const useCountdown = () => {
 };
 
 const Hero = () => {
-  const { timeLeft, isActive } = useCountdown();
+  const { timeLeft, isActive, nextDay } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
