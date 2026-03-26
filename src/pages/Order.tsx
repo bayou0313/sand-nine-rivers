@@ -300,6 +300,7 @@ const Order = () => {
           customer_name: form.name.trim(),
           customer_email: form.email.trim() || null,
           order_id: insertedOrder?.id,
+          order_number: insertedOrder?.order_number,
           origin_url: window.location.origin,
         },
       });
@@ -308,7 +309,14 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
-      window.location.href = data.url;
+      if (window.self !== window.top) {
+        const newTab = window.open(data.url, "_blank", "noopener,noreferrer");
+        if (!newTab) {
+          window.location.assign(data.url);
+        }
+      } else {
+        window.location.assign(data.url);
+      }
     } catch (err: any) {
       toast({ title: "Payment link failed", description: err.message || "Please try another payment method.", variant: "destructive" });
     } finally {
