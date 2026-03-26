@@ -301,6 +301,8 @@ const Order = () => {
     saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? SATURDAY_SURCHARGE * quantity : 0,
     delivery_window: "8:00 AM – 5:00 PM",
     same_day_requested: selectedDeliveryDate!.isSameDay,
+    tax_rate: taxInfo.rate,
+    tax_amount: taxAmount,
   });
 
   const handleCardPaymentSuccess = async (paymentIntentId: string) => {
