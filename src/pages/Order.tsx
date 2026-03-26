@@ -492,21 +492,11 @@ const Order = () => {
                     <CheckCircle2 className="w-6 h-6" />
                     <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 bg-background rounded-xl">
-                      <p className="font-body text-xs text-muted-foreground uppercase">Distance</p>
-                      <p className="font-display text-2xl text-foreground">{result.distance} MI</p>
-                    </div>
-                    <div className="text-center p-3 bg-background rounded-xl">
-                      <p className="font-body text-xs text-muted-foreground uppercase">Drive Time</p>
-                      <p className="font-display text-2xl text-foreground">{result.duration}</p>
-                    </div>
-                     <div className="text-center p-3 bg-background rounded-xl">
-                      <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Total (${quantity} loads)` : "Base Price"}</p>
-                      <p className="font-display text-2xl text-primary flex items-center justify-center">
-                        <DollarSign className="w-5 h-5" />{(result.price * quantity).toFixed(2)}
-                      </p>
-                    </div>
+                  <div className="text-center p-4 bg-background rounded-xl">
+                    <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Total (${quantity} loads)` : "Per Load"}</p>
+                    <p className="font-display text-3xl text-primary flex items-center justify-center">
+                      <DollarSign className="w-6 h-6" />{(result.price * quantity).toFixed(2)}
+                    </p>
                   </div>
                 </div>
 
