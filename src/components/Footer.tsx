@@ -1,5 +1,6 @@
 import { Phone, Mail, MapPin, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
+import logoImg from "@/assets/riversand-logo.png";
 
 const Footer = () => {
   return (
@@ -7,7 +8,7 @@ const Footer = () => {
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <div>
-            <p className="font-display text-3xl text-background tracking-wider mb-3">RIVERSAND</p>
+            <img src={logoImg} alt="RiverSand logo" className="h-8 w-auto mb-3 brightness-0 invert" width={120} height={32} loading="lazy" />
             <p className="font-body text-background/40 text-sm leading-relaxed">
               Quality river sand delivered across the Greater New Orleans area. 9 yards for $195, same-day delivery available Mon–Fri.
             </p>
@@ -50,7 +51,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-background/10 pt-8 text-center">
           <p className="font-body text-background/30 text-sm">
-            © {new Date().getFullYear()} RiverSand.net — Serving the Greater New Orleans Area
+            © {new Date().getFullYear()} RiverSand.net — Serving the Greater New Orleans Area · Powered by Haulogix, LLC
           </p>
         </div>
       </div>
