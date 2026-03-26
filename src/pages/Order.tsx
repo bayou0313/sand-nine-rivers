@@ -365,7 +365,7 @@ const Order = () => {
       if (insertError) throw insertError;
 
       // Generate Stripe checkout link
-      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (${result.distance} mi)`;
+      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
           amount: Math.round(totalPrice * 100),
