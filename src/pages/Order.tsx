@@ -37,7 +37,7 @@ type EstimateResult = {
   duration: string;
 };
 
-type PaymentMethodType = "card" | "cash" | "check" | null;
+type PaymentMethodType = "card" | "cash" | "check" | "stripe-link" | null;
 
 // Card payment form component (must be inside Elements provider)
 const CardPaymentForm = ({
