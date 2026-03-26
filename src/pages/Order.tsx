@@ -340,6 +340,55 @@ const Order = () => {
     }
   };
 
+  const handleStripeLink = async () => {
+    if (!form.name.trim() || !form.phone.trim()) {
+      toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
+      return;
+    }
+    if (!result || !selectedDeliveryDate) return;
+
+    setSubmitting(true);
+    try {
+      // First save the order as pending
+      const orderData = {
+        ...buildOrderData(),
+        payment_method: "stripe-link",
+        payment_status: "pending",
+      };
+      const { data: insertedOrder, error: insertError } = await (supabase as any)
+        .from("orders")
+        .insert(orderData)
+        .select("id")
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Generate Stripe checkout link
+      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (${result.distance} mi)`;
+      const { data, error } = await supabase.functions.invoke("create-checkout-link", {
+        body: {
+          amount: Math.round(totalPrice * 100),
+          description,
+          customer_name: form.name.trim(),
+          customer_email: form.email.trim() || null,
+          order_id: insertedOrder?.id,
+          origin_url: window.location.origin,
+        },
+      });
+
+      if (error || !data?.url) {
+        throw new Error(data?.error || error?.message || "Failed to create payment link");
+      }
+
+      // Redirect to Stripe checkout
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast({ title: "Payment link failed", description: err.message || "Please try another payment method.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const stepLabels = ["Delivery Details", "Payment", "Confirm"];
 
   return (
