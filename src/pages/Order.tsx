@@ -547,27 +547,7 @@ const Order = () => {
                   <h2 className="text-3xl font-display text-foreground mb-2">PAYMENT METHOD</h2>
                   <p className="font-body text-muted-foreground mb-6">Choose how you'd like to pay.</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("card")}
-                      className={`p-5 rounded-xl border-2 text-left transition-all ${
-                        paymentMethod === "card"
-                          ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
-                          : "border-border bg-card hover:border-accent/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "card" ? "bg-accent/20" : "bg-muted"}`}>
-                          <CreditCard className={`w-5 h-5 ${paymentMethod === "card" ? "text-accent" : "text-muted-foreground"}`} />
-                        </div>
-                        <p className="font-display text-sm text-foreground tracking-wider">PAY BY CARD</p>
-                      </div>
-                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> Secured by Stripe
-                      </p>
-                    </button>
-
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("stripe-link")}
@@ -579,11 +559,13 @@ const Order = () => {
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "stripe-link" ? "bg-accent/20" : "bg-muted"}`}>
-                          <ExternalLink className={`w-5 h-5 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
+                          <CreditCard className={`w-5 h-5 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
-                        <p className="font-display text-sm text-foreground tracking-wider">PAYMENT LINK</p>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY NOW</p>
                       </div>
-                      <p className="font-body text-xs text-muted-foreground">Pay via Stripe Checkout</p>
+                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Secure Stripe Checkout
+                      </p>
                     </button>
 
                     <button
@@ -604,27 +586,6 @@ const Order = () => {
                       <p className="font-body text-xs text-muted-foreground">Cash or Check accepted</p>
                     </button>
                   </div>
-
-                  {paymentMethod === "card" && stripePromise && (
-                    <Elements stripe={stripePromise}>
-                      <CardPaymentForm
-                        onPaymentSuccess={handleCardPaymentSuccess}
-                        onPaymentError={() => {}}
-                        amount={totalPrice}
-                        orderData={{ name: form.name, phone: form.phone, address }}
-                        submitting={submitting}
-                        setSubmitting={setSubmitting}
-                      />
-                    </Elements>
-                  )}
-
-                  {paymentMethod === "card" && !stripePromise && (
-                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
-                      <p className="font-body text-sm text-destructive flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4" /> Stripe is not configured. Please choose Pay at Delivery or contact us.
-                      </p>
-                    </div>
-                  )}
 
                   {paymentMethod === "stripe-link" && (
                     <div className="space-y-4">
