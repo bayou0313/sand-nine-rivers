@@ -8,20 +8,30 @@ import { useState, useEffect, useRef } from "react";
 const useCountdown = () => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isActive, setIsActive] = useState(false);
+  const [nextDay, setNextDay] = useState("");
 
   useEffect(() => {
     const calculate = () => {
       const now = new Date();
-      const day = now.getDay(); // 0=Sun, 6=Sat
+      const day = now.getDay();
       const isWeekday = day >= 1 && day <= 5;
-      const cutoffHour = 11;
+      const cutoffHour = 10;
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const seconds = now.getSeconds();
 
+      const computeNextDay = () => {
+        if (day === 5 && hours >= cutoffHour) return "Monday";
+        if (day === 6) return "Monday";
+        if (day === 0) return "Monday";
+        if (hours >= cutoffHour) return "tomorrow";
+        return "today";
+      };
+
       if (!isWeekday || hours >= cutoffHour) {
         setIsActive(false);
         setTimeLeft("");
+        setNextDay(computeNextDay());
         return;
       }
 
@@ -31,6 +41,7 @@ const useCountdown = () => {
       const s = remaining % 60;
       setTimeLeft(`${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`);
       setIsActive(true);
+      setNextDay("today");
     };
 
     calculate();
@@ -38,7 +49,7 @@ const useCountdown = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return { timeLeft, isActive };
+  return { timeLeft, isActive, nextDay };
 };
 
 const Hero = () => {
