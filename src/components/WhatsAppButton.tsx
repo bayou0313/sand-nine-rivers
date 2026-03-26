@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, isSameDay, isSunday, isBefore, startOfDay, addDays, isSaturday, getDay } from "date-fns";
+import { format, isSameDay, isSunday, isBefore, startOfDay, isSaturday } from "date-fns";
 import { cn } from "@/lib/utils";
+import { formatPhone } from "@/lib/format";
 
 const WHATSAPP_NUMBER = "15043582000";
 const PHONE_NUMBER = "+18554689297";
@@ -58,11 +59,19 @@ const WhatsAppButton = () => {
   const [timeWindow, setTimeWindow] = useState<string>("ASAP");
   const isMobile = useIsMobile();
 
+  // Set initial mode based on device
   useEffect(() => {
     if (isMobile !== undefined) {
       setMode(isMobile ? "whatsapp" : "message");
     }
   }, [isMobile]);
+
+  // Guard: if viewport changes to desktop while mode is whatsapp, switch to message
+  useEffect(() => {
+    if (!isMobile && mode === "whatsapp") {
+      setMode("message");
+    }
+  }, [isMobile, mode]);
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 2000);
@@ -76,12 +85,11 @@ const WhatsAppButton = () => {
     const now = new Date();
     const hour = now.getHours();
     const day = now.getDay();
-    if (day === 0) return false; // Sunday
-    if (day === 6) return hour < 12; // Saturday
-    return hour >= 8 && hour < 18; // Weekday
+    if (day === 0) return false;
+    if (day === 6) return hour < 12;
+    return hour >= 8 && hour < 18;
   }, [callbackDate]);
 
-  // Reset time window when date changes
   useEffect(() => {
     const windows = getAvailableWindows(callbackDate);
     const isToday = isSameDay(callbackDate, new Date());
@@ -94,18 +102,20 @@ const WhatsAppButton = () => {
     }
   }, [callbackDate, showAsap]);
 
-  const altMode: ContactMode = isMobile ? "phone" : "message";
-
+  // Desktop: message ↔ phone, Mobile: whatsapp ↔ phone
   const toggleMode = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const next = mode === "whatsapp" ? altMode : "whatsapp";
-    setMode(next);
+    if (isMobile) {
+      setMode((m) => (m === "whatsapp" ? "phone" : "whatsapp"));
+    } else {
+      setMode((m) => (m === "message" ? "phone" : "message"));
+    }
     setShowLabel(true);
     setShowForm(false);
     setSent(false);
     setTimeout(() => setShowLabel(false), 2000);
-  }, [mode, altMode]);
+  }, [isMobile]);
 
   const handleMainClick = useCallback((e: React.MouseEvent) => {
     if (mode === "message") {
@@ -156,9 +166,9 @@ const WhatsAppButton = () => {
   const shadowColor = mode === "whatsapp" ? "rgba(37,211,102,0.3)" : "hsl(var(--primary) / 0.3)";
 
   const IconMain = mode === "whatsapp" ? MessageCircle : mode === "phone" ? Phone : Phone;
-  const IconAlt = mode === "whatsapp"
-    ? (isMobile ? Phone : Phone)
-    : MessageCircle;
+  const IconAlt = isMobile
+    ? (mode === "whatsapp" ? Phone : MessageCircle)
+    : (mode === "message" ? Phone : Phone);
 
   const disableDate = (date: Date) => {
     if (isSunday(date)) return true;
@@ -171,7 +181,7 @@ const WhatsAppButton = () => {
   return (
     <AnimatePresence>
       {visible && (
-        <div className="fixed bottom-20 lg:bottom-6 left-6 z-50 flex flex-col items-start gap-2">
+        <div className="fixed bottom-20 lg:bottom-6 right-6 z-50 flex flex-col items-end gap-2">
           {/* Callback request form */}
           <AnimatePresence>
             {showForm && mode === "message" && (
@@ -221,9 +231,9 @@ const WhatsAppButton = () => {
                       placeholder="Phone number"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData((d) => ({ ...d, phone: e.target.value }))}
+                      onChange={(e) => setFormData((d) => ({ ...d, phone: formatPhone(e.target.value) }))}
                       required
-                      maxLength={20}
+                      maxLength={14}
                       className="text-sm h-9"
                     />
 
@@ -241,7 +251,7 @@ const WhatsAppButton = () => {
                           {format(callbackDate, "EEE, MMM d")}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[60]" align="start">
+                      <PopoverContent className="w-auto p-0 z-[60]" align="end">
                         <Calendar
                           mode="single"
                           selected={callbackDate}
@@ -304,10 +314,10 @@ const WhatsAppButton = () => {
             <AnimatePresence>
               {showLabel && (
                 <motion.span
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="absolute left-14 bg-background text-foreground text-xs font-medium px-2.5 py-1 rounded-full shadow-md border border-border whitespace-nowrap"
+                  exit={{ opacity: 0, x: 10 }}
+                  className="absolute right-14 bg-background text-foreground text-xs font-medium px-2.5 py-1 rounded-full shadow-md border border-border whitespace-nowrap"
                 >
                   {label}
                 </motion.span>
@@ -354,7 +364,7 @@ const WhatsAppButton = () => {
                 onClick={toggleMode}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background border border-border shadow-sm flex items-center justify-center"
+                className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-background border border-border shadow-sm flex items-center justify-center"
                 aria-label="Switch contact mode"
               >
                 <IconAlt className="w-2.5 h-2.5 text-foreground" />

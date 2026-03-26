@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress } from "@/lib/format";
+import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -334,8 +335,13 @@ const Order = () => {
       setDateError("Please select a delivery date to continue.");
       return;
     }
-    if (!form.name.trim() || !form.phone.trim()) {
-      toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
+    if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
+      toast({ title: "Missing info", description: "Please enter your name, phone, and email.", variant: "destructive" });
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
       return;
     }
     setDateError("");
@@ -461,7 +467,7 @@ const Order = () => {
 
   const stepLabels = ["Delivery Details", "Payment", "Confirm"];
 
-  const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim();
+  const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim() && form.email.trim();
 
   // --- Section heading helper ---
   const SectionHeading = ({ icon: Icon, title }: { icon: any; title: string }) => (
@@ -514,15 +520,15 @@ const Order = () => {
       <Navbar solid />
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
-        {/* Urgency countdown bar */}
-        <CountdownBar />
-        <div className="max-w-2xl mx-auto">
+        {/* Sticky countdown + progress */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-accent/10 -mx-4 px-4 mb-4">
+          <CountdownBar />
           {/* Progress steps */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="flex items-center justify-center gap-2 mb-8"
+            className="flex items-center justify-center gap-2 mb-2"
           >
             {stepLabels.map((label, i) => {
               const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
@@ -552,7 +558,9 @@ const Order = () => {
               );
             })}
           </motion.div>
+        </div>
 
+        <div className="max-w-2xl mx-auto">
           <AnimatePresence mode="wait">
             {/* STEP 1: Address */}
             {step === "address" && (
@@ -620,6 +628,12 @@ const Order = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                <Link to="/" className="block mt-4">
+                  <Button variant="outline" className="w-full font-display tracking-wider">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> BACK TO HOME
+                  </Button>
+                </Link>
               </motion.div>
             )}
 
@@ -675,8 +689,8 @@ const Order = () => {
                         <Input type="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-11 rounded-lg" />
                       </div>
                       <div>
-                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email (optional)</label>
-                        <Input type="email" placeholder="john@example.com" maxLength={255} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-11 rounded-lg" />
+                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
+                        <EmailInput value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-11 rounded-lg" />
                       </div>
                       <div className="sm:col-span-2">
                         <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Notes (optional)</label>
