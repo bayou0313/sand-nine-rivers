@@ -470,8 +470,8 @@ const Order = () => {
 
                 <div className="mt-8 grid grid-cols-3 gap-3 text-center">
                   {[
-                    { top: "0–15 MI", bot: "$195 flat" },
-                    { top: "15–25 MI", bot: "+$3.49/mi" },
+                    { top: "LOCAL AREA", bot: "Starting at $195" },
+                    { top: "EXTENDED AREA", bot: "Surcharge applies" },
                     { top: "9 YDS", bot: "Per load" },
                   ].map((item) => (
                     <div key={item.top} className="p-3 bg-card border border-border rounded-xl">
