@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock } from "lucide-react";
+import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,7 +37,7 @@ type EstimateResult = {
   duration: string;
 };
 
-type PaymentMethodType = "card" | "cash" | "check" | null;
+type PaymentMethodType = "card" | "cash" | "check" | "stripe-link" | null;
 
 // Card payment form component (must be inside Elements provider)
 const CardPaymentForm = ({
@@ -340,6 +340,55 @@ const Order = () => {
     }
   };
 
+  const handleStripeLink = async () => {
+    if (!form.name.trim() || !form.phone.trim()) {
+      toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
+      return;
+    }
+    if (!result || !selectedDeliveryDate) return;
+
+    setSubmitting(true);
+    try {
+      // First save the order as pending
+      const orderData = {
+        ...buildOrderData(),
+        payment_method: "stripe-link",
+        payment_status: "pending",
+      };
+      const { data: insertedOrder, error: insertError } = await (supabase as any)
+        .from("orders")
+        .insert(orderData)
+        .select("id")
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Generate Stripe checkout link
+      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (${result.distance} mi)`;
+      const { data, error } = await supabase.functions.invoke("create-checkout-link", {
+        body: {
+          amount: Math.round(totalPrice * 100),
+          description,
+          customer_name: form.name.trim(),
+          customer_email: form.email.trim() || null,
+          order_id: insertedOrder?.id,
+          origin_url: window.location.origin,
+        },
+      });
+
+      if (error || !data?.url) {
+        throw new Error(data?.error || error?.message || "Failed to create payment link");
+      }
+
+      // Redirect to Stripe checkout
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast({ title: "Payment link failed", description: err.message || "Please try another payment method.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const stepLabels = ["Delivery Details", "Payment", "Confirm"];
 
   return (
@@ -510,7 +559,7 @@ const Order = () => {
                   </div>
                 </div>
 
-                {/* Order Summary */}
+                {/* Full Cost Breakdown */}
                 {selectedDeliveryDate && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -518,42 +567,92 @@ const Order = () => {
                     className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/5"
                   >
                     <h2 className="text-3xl font-display text-foreground mb-4">ORDER SUMMARY</h2>
-                    <div className="space-y-3">
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <span className="font-body text-muted-foreground">Product</span>
-                        <span className="font-display text-foreground">9 YDS RIVER SAND</span>
+
+                    {/* Quantity selector */}
+                    <div className="flex items-center justify-between py-3 border-b border-border">
+                      <span className="font-body text-muted-foreground">Number of Loads</span>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="font-display text-xl text-foreground w-8 text-center">{quantity}</span>
+                        <button onClick={() => setQuantity(q => Math.min(10, q + 1))} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                          <Plus className="w-4 h-4" />
+                        </button>
                       </div>
-                      <div className="flex justify-between py-2 border-b border-border">
+                    </div>
+
+                    <div className="space-y-0">
+                      {/* Product line */}
+                      <div className="flex justify-between py-3 border-b border-border">
+                        <span className="font-body text-muted-foreground">River Sand (9 cubic yards × {quantity})</span>
+                        <span className="font-display text-foreground">{quantity} load{quantity > 1 ? "s" : ""}</span>
+                      </div>
+
+                      {/* Base price per load */}
+                      <div className="flex justify-between py-3 border-b border-border">
+                        <span className="font-body text-muted-foreground">Base delivery (0–15 mi) × {quantity}</span>
+                        <span className="font-display text-foreground">${(195 * quantity).toFixed(2)}</span>
+                      </div>
+
+                      {/* Extra mileage */}
+                      {result.distance > BASE_MILES && (
+                        <div className="flex justify-between py-3 border-b border-border">
+                          <span className="font-body text-muted-foreground">
+                            Extra mileage: {(result.distance - BASE_MILES).toFixed(1)} mi × $3.49 × {quantity} load{quantity > 1 ? "s" : ""}
+                          </span>
+                          <span className="font-display text-foreground">
+                            +${((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Delivery date */}
+                      <div className="flex justify-between py-3 border-b border-border">
                         <span className="font-body text-muted-foreground">Delivery Date</span>
                         <span className="font-body text-foreground">
                           {selectedDeliveryDate.fullLabel}
-                          {selectedDeliveryDate.isSaturday && <span className="text-amber-600 text-sm ml-1">(+$35 surcharge)</span>}
                         </span>
                       </div>
-                      <div className="flex justify-between py-2 border-b border-border">
+
+                      {/* Delivery window */}
+                      <div className="flex justify-between py-3 border-b border-border">
                         <span className="font-body text-muted-foreground">Delivery Window</span>
                         <span className="font-body text-foreground flex items-center gap-1">
                           <Clock className="w-3 h-3" /> 8:00 AM – 5:00 PM
                         </span>
                       </div>
+
                       {selectedDeliveryDate.isSameDay && (
-                        <p className="font-body text-xs text-amber-700 bg-amber-50 p-2 rounded-lg">
-                          For same-day orders, our team will call to confirm availability before dispatching.
+                        <p className="font-body text-xs text-destructive bg-destructive/5 p-2 rounded-lg my-2">
+                          ⚡ Same-day request — our team will call to confirm availability before dispatching.
                         </p>
                       )}
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <span className="font-body text-muted-foreground">Base Delivery</span>
-                        <span className="font-display text-foreground">${result.price.toFixed(2)}</span>
-                      </div>
+
+                      {/* Saturday surcharge */}
                       {selectedDeliveryDate.isSaturday && (
-                        <div className="flex justify-between py-2 border-b border-border">
-                          <span className="font-body text-amber-700">Saturday Delivery Surcharge</span>
-                          <span className="font-display text-amber-700">+${SATURDAY_SURCHARGE}.00</span>
+                        <div className="flex justify-between py-3 border-b border-border">
+                          <span className="font-body text-destructive">Saturday Delivery Surcharge</span>
+                          <span className="font-display text-destructive">+${SATURDAY_SURCHARGE}.00</span>
                         </div>
                       )}
-                      <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4 mt-2">
-                        <span className="font-display text-lg text-foreground">TOTAL</span>
-                        <span className="font-display text-2xl text-primary">${totalPrice.toFixed(2)}</span>
+
+                      {/* Subtotal breakdown */}
+                      <div className="mt-4 bg-primary/5 rounded-xl p-4 space-y-2">
+                        <div className="flex justify-between">
+                          <span className="font-body text-sm text-muted-foreground">Subtotal ({quantity} load{quantity > 1 ? "s" : ""} × ${result.price.toFixed(2)}/load)</span>
+                          <span className="font-display text-foreground">${(result.price * quantity).toFixed(2)}</span>
+                        </div>
+                        {selectedDeliveryDate.isSaturday && (
+                          <div className="flex justify-between">
+                            <span className="font-body text-sm text-muted-foreground">Saturday surcharge</span>
+                            <span className="font-display text-foreground">+${SATURDAY_SURCHARGE}.00</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pt-2 border-t border-border">
+                          <span className="font-display text-xl text-foreground">TOTAL DUE</span>
+                          <span className="font-display text-3xl text-primary">${totalPrice.toFixed(2)}</span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -564,21 +663,21 @@ const Order = () => {
                   <h2 className="text-3xl font-display text-foreground mb-2">PAYMENT METHOD</h2>
                   <p className="font-body text-muted-foreground mb-6">Choose how you'd like to pay.</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("card")}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                      className={`p-5 rounded-xl border-2 text-left transition-all ${
                         paymentMethod === "card"
                           ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
                           : "border-border bg-card hover:border-accent/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "card" ? "bg-accent/20" : "bg-muted"}`}>
-                          <Lock className={`w-5 h-5 ${paymentMethod === "card" ? "text-accent" : "text-muted-foreground"}`} />
+                          <CreditCard className={`w-5 h-5 ${paymentMethod === "card" ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
-                        <p className="font-display text-lg text-foreground tracking-wider">PAY NOW BY CARD</p>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY BY CARD</p>
                       </div>
                       <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
                         <Lock className="w-3 h-3" /> Secured by Stripe
@@ -587,18 +686,36 @@ const Order = () => {
 
                     <button
                       type="button"
+                      onClick={() => setPaymentMethod("stripe-link")}
+                      className={`p-5 rounded-xl border-2 text-left transition-all ${
+                        paymentMethod === "stripe-link"
+                          ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
+                          : "border-border bg-card hover:border-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "stripe-link" ? "bg-accent/20" : "bg-muted"}`}>
+                          <ExternalLink className={`w-5 h-5 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
+                        </div>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAYMENT LINK</p>
+                      </div>
+                      <p className="font-body text-xs text-muted-foreground">Pay via Stripe Checkout</p>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setPaymentMethod("cash")}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                      className={`p-5 rounded-xl border-2 text-left transition-all ${
                         paymentMethod === "cash" || paymentMethod === "check"
                           ? "border-accent bg-accent/5 shadow-lg shadow-accent/10"
                           : "border-border bg-card hover:border-accent/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${paymentMethod === "cash" || paymentMethod === "check" ? "bg-accent/20" : "bg-muted"}`}>
                           <Banknote className={`w-5 h-5 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
-                        <p className="font-display text-lg text-foreground tracking-wider">PAY AT DELIVERY</p>
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY AT DELIVERY</p>
                       </div>
                       <p className="font-body text-xs text-muted-foreground">Cash or Check accepted</p>
                     </button>
@@ -622,6 +739,21 @@ const Order = () => {
                       <p className="font-body text-sm text-destructive flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" /> Stripe is not configured. Please choose Pay at Delivery or contact us.
                       </p>
+                    </div>
+                  )}
+
+                  {paymentMethod === "stripe-link" && (
+                    <div className="space-y-4">
+                      <p className="font-body text-sm text-muted-foreground">
+                        We'll create your order and generate a secure Stripe payment link. You'll be redirected to Stripe to complete payment.
+                      </p>
+                      <Button
+                        onClick={handleStripeLink}
+                        disabled={submitting || !form.name.trim() || !form.phone.trim()}
+                        className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
+                      >
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY ${totalPrice.toFixed(2)} VIA STRIPE</>}
+                      </Button>
                     </div>
                   )}
 
@@ -674,7 +806,7 @@ const Order = () => {
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Product</span>
-                    <span className="font-display text-foreground">9 CUBIC YARDS RIVER SAND</span>
+                    <span className="font-display text-foreground">{quantity} × 9 CU YDS RIVER SAND</span>
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Delivery To</span>
@@ -782,7 +914,7 @@ const Order = () => {
                     <Link to="/">BACK TO HOME</Link>
                   </Button>
                   <Button variant="outline" asChild className="font-display tracking-wider rounded-xl">
-                    <a href="tel:+15551234567"><Phone className="w-4 h-4 mr-2" /> CALL US</a>
+                    <a href="tel:+18554689297"><Phone className="w-4 h-4 mr-2" /> CALL US</a>
                   </Button>
                 </div>
               </motion.div>
