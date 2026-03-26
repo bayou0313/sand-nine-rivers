@@ -21,12 +21,18 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_address: string
+          delivery_date: string | null
+          delivery_day_of_week: string | null
+          delivery_window: string
           distance_miles: number
           id: string
           notes: string | null
           payment_method: string
           payment_status: string
           price: number
+          same_day_requested: boolean
+          saturday_surcharge: boolean
+          saturday_surcharge_amount: number
           status: string
           stripe_payment_id: string | null
           updated_at: string
@@ -37,12 +43,18 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_address: string
+          delivery_date?: string | null
+          delivery_day_of_week?: string | null
+          delivery_window?: string
           distance_miles: number
           id?: string
           notes?: string | null
           payment_method?: string
           payment_status?: string
           price: number
+          same_day_requested?: boolean
+          saturday_surcharge?: boolean
+          saturday_surcharge_amount?: number
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
@@ -53,12 +65,18 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           delivery_address?: string
+          delivery_date?: string | null
+          delivery_day_of_week?: string | null
+          delivery_window?: string
           distance_miles?: number
           id?: string
           notes?: string | null
           payment_method?: string
           payment_status?: string
           price?: number
+          same_day_requested?: boolean
+          saturday_surcharge?: boolean
+          saturday_surcharge_amount?: number
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
