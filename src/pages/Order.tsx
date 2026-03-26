@@ -155,6 +155,10 @@ const Order = () => {
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
 
+  // Quantity from URL params (default 1)
+  const qtyParam = parseInt(searchParams.get("qty") || "1", 10);
+  const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
+
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -162,9 +166,9 @@ const Order = () => {
     notes: "",
   });
 
-  // Computed total with Saturday surcharge
+  // Computed total with Saturday surcharge — price per load × quantity
   const totalPrice = result
-    ? result.price + (selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE : 0)
+    ? (result.price * quantity) + (selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE : 0)
     : 0;
 
   // Pre-fill from estimator URL params
