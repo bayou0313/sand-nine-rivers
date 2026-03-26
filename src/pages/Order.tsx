@@ -806,7 +806,7 @@ const Order = () => {
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Product</span>
-                    <span className="font-display text-foreground">9 CUBIC YARDS RIVER SAND</span>
+                    <span className="font-display text-foreground">{quantity} × 9 CU YDS RIVER SAND</span>
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Delivery To</span>
