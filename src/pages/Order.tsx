@@ -839,7 +839,7 @@ const Order = () => {
                 </div>
 
                 {/* What happens next timeline */}
-                <div className="bg-background rounded-2xl border border-border p-6">
+                <div className="bg-background rounded-2xl border border-border/50 p-6 shadow-lg shadow-foreground/5">
                   <h3 className="font-display text-lg text-foreground tracking-wider mb-4">WHAT HAPPENS NEXT?</h3>
                   <div className="space-y-4">
                     {[
