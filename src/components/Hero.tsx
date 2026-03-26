@@ -1,10 +1,49 @@
 import heroImage from "@/assets/hero-sand.jpg";
-import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star, MapPin } from "lucide-react";
+import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star, MapPin, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+
+const useCountdown = () => {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const calculate = () => {
+      const now = new Date();
+      const day = now.getDay(); // 0=Sun, 6=Sat
+      const isWeekday = day >= 1 && day <= 5;
+      const cutoffHour = 11;
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+
+      if (!isWeekday || hours >= cutoffHour) {
+        setIsActive(false);
+        setTimeLeft("");
+        return;
+      }
+
+      const remaining = (cutoffHour * 3600) - (hours * 3600 + minutes * 60 + seconds);
+      const h = Math.floor(remaining / 3600);
+      const m = Math.floor((remaining % 3600) / 60);
+      const s = remaining % 60;
+      setTimeLeft(`${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`);
+      setIsActive(true);
+    };
+
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { timeLeft, isActive };
+};
 
 const Hero = () => {
+  const { timeLeft, isActive } = useCountdown();
+
   return (
     <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-16">
       <img
@@ -23,10 +62,23 @@ const Hero = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-5 py-1.5 rounded-full"
+            className="space-y-2"
           >
-            <Clock className="w-3.5 h-3.5 text-white" />
-            <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY AVAILABLE</p>
+            <div className="inline-flex items-center gap-2 bg-foreground/80 backdrop-blur-md px-5 py-2 rounded-xl shadow-lg shadow-black/20 border border-white/10">
+              <Clock className="w-4 h-4 text-accent animate-pulse" />
+              {isActive ? (
+                <div className="flex items-center gap-3">
+                  <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY CLOSES IN</p>
+                  <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
+                </div>
+              ) : (
+                <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY — MON-FRI BEFORE 11 AM</p>
+              )}
+            </div>
+            <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">
+              <AlertTriangle className="w-3.5 h-3.5 text-white animate-pulse" />
+              <p className="font-display text-white tracking-wider text-xs">LIMITED SPOTS AVAILABLE TODAY</p>
+            </div>
           </motion.div>
 
           <motion.div
