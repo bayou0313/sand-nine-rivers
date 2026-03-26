@@ -9,7 +9,7 @@ const Hero = () => {
     <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
       <img
         src={heroImage}
-        alt="River sand supply yard"
+        alt="River sand delivery truck unloading 9 cubic yards of clean screened river sand at a New Orleans job site"
         className="absolute inset-0 w-full h-full object-cover"
         width={1920}
         height={1080}
@@ -35,7 +35,7 @@ const Hero = () => {
             transition={{ delay: 0.3, duration: 0.6 }}
             className="text-6xl md:text-8xl lg:text-9xl leading-[0.9] text-primary-foreground tracking-wide"
           >
-            BULK SAND<br />DELIVERED<br />TO YOUR DOOR
+            SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS
           </motion.h1>
 
           <motion.p
@@ -100,7 +100,7 @@ const Hero = () => {
           </motion.div>
         </div>
       </div>
-      <a href="#pricing" className="absolute bottom-8 left-1/2 -translate-x-1/2 text-primary-foreground/30 hover:text-primary-foreground/60 transition-colors animate-bounce">
+      <a href="#pricing" className="absolute bottom-8 left-1/2 -translate-x-1/2 text-primary-foreground/30 hover:text-primary-foreground/60 transition-colors animate-bounce" aria-label="Scroll to pricing section">
         <ArrowDown className="w-8 h-8" />
       </a>
     </section>

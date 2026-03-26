@@ -2,6 +2,7 @@ import { Phone, Menu, X, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import logoImg from "@/assets/riversand-logo.png";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -16,8 +17,8 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm" : "bg-transparent"}`}>
       <div className="container mx-auto px-6 flex items-center justify-between h-16">
-        <a href="/" className={`text-3xl font-display tracking-wider transition-colors duration-300 ${scrolled ? "text-primary" : "text-primary-foreground"}`}>
-          RIVERSAND
+        <a href="/" className="flex items-center gap-2">
+          <img src={logoImg} alt="RiverSand logo" className="h-8 w-auto" width={120} height={32} />
         </a>
         <div className="hidden md:flex items-center gap-8">
           {["Pricing", "Get Estimate", "About", "FAQ", "Contact"].map((item) => (
@@ -43,7 +44,7 @@ const Navbar = () => {
               CALL
             </a>
           </Button>
-          <button className={`md:hidden transition-colors ${scrolled ? "text-foreground" : "text-primary-foreground"}`} onClick={() => setMenuOpen(!menuOpen)}>
+          <button className={`md:hidden transition-colors ${scrolled ? "text-foreground" : "text-primary-foreground"}`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
