@@ -40,6 +40,17 @@ type EstimateResult = {
 
 type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
 
+const CountdownBar = () => {
+  const { timeLeft, label } = useCountdown();
+  return (
+    <div className="flex items-center justify-center gap-2 bg-foreground/90 backdrop-blur-md rounded-xl px-4 py-2.5 mb-6">
+      <Clock className="w-4 h-4 text-accent animate-pulse" />
+      <span className="font-display text-white text-xs tracking-wider">{label}</span>
+      <span className="font-mono text-accent font-bold text-sm">{timeLeft}</span>
+    </div>
+  );
+};
+
 const Order = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
