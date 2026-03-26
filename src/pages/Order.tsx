@@ -349,6 +349,7 @@ const Order = () => {
 
       if (insertError) throw insertError;
 
+      const isEmbedded = window.self !== window.top;
       const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
@@ -359,6 +360,7 @@ const Order = () => {
           order_id: insertedOrder?.id,
           order_number: insertedOrder?.order_number,
           origin_url: window.location.origin,
+          return_mode: isEmbedded ? "popup" : "redirect",
         },
       });
 
@@ -366,11 +368,13 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
-      if (window.self !== window.top) {
-        const newTab = window.open(data.url, "_blank", "noopener,noreferrer");
+      if (isEmbedded) {
+        const newTab = window.open(data.url, "_blank");
         if (!newTab) {
           window.location.assign(data.url);
         }
+        // Keep submitting=true so button stays disabled while popup is open
+        return;
       } else {
         window.location.assign(data.url);
       }
