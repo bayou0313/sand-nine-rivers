@@ -25,7 +25,7 @@ const CTA = () => {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="text-xl font-body text-accent-foreground/75 max-w-xl mx-auto"
+          className="text-xl font-body text-primary-foreground/75 max-w-xl mx-auto"
         >
           9 yards of quality river sand delivered to your site. Schedule online Mon–Sat or call to order.
         </motion.p>
