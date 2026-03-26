@@ -205,9 +205,7 @@ const Order = () => {
     tax_amount: taxAmount,
   });
 
-  // handleCardPaymentSuccess removed — card payment superseded by Stripe Checkout Link
-
-
+  const handleCodSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
       toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
       return;
@@ -216,13 +214,14 @@ const Order = () => {
 
     setSubmitting(true);
     try {
-      const { error: insertError } = await (supabase as any).from("orders").insert({
+      const { data: insertedOrder, error: insertError } = await (supabase as any).from("orders").insert({
         ...buildOrderData(),
         payment_method: codSubOption,
         payment_status: "pending",
-      });
+      }).select("order_number").single();
 
       if (insertError) throw insertError;
+      setOrderNumber(insertedOrder?.order_number || null);
       setStep("success");
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
