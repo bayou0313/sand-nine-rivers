@@ -115,7 +115,7 @@ function contactInternalEmail(contact: any) {
     <h2>📬 New Contact Form Submission</h2>
     <table class="info-table">${tableRows}</table>
     <p><strong>Message:</strong></p>
-    <p style="background:#f9f9f9;padding:16px;border-radius:6px;border-left:4px solid ${BRAND_COLOR}">${(contact.message || "").replace(/\n/g, "<br>")}</p>
+    <p style="background:#f9f9f9;padding:16px;border-radius:6px;border-left:4px solid ${BRAND_GOLD}">${(contact.message || "").replace(/\n/g, "<br>")}</p>
   `);
 }
 
