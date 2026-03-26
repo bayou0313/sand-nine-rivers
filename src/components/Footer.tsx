@@ -93,7 +93,7 @@ const Footer = () => {
           transition={{ delay: 0.6, duration: 0.5 }}
         >
           <p className="font-body text-background/30 text-sm">
-            © {new Date().getFullYear()} RiverSand.net — Serving the Greater New Orleans Area · Powered by WAYS Materials, LLC
+            © {new Date().getFullYear()} RiverSand.net — Serving the Greater New Orleans Area · Powered by WAYS® Materials, LLC
           </p>
         </motion.div>
       </div>
