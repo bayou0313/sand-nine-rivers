@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: "Do you deliver on Saturdays?",
-    a: "Yes. WAYS delivers Monday through Saturday. We do not currently offer Sunday delivery. Same-day Saturday orders must be placed before noon. For urgent or large Saturday deliveries, we recommend calling ahead to confirm truck availability.",
+    a: "Yes. RIVERSAND.NET delivers Monday through Saturday. We do not currently offer Sunday delivery. Same-day Saturday orders must be placed before noon. For urgent or large Saturday deliveries, we recommend calling ahead to confirm truck availability.",
   },
 ];
 
