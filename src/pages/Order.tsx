@@ -854,7 +854,19 @@ const Order = () => {
 
             {/* STEP 3: Confirm */}
             {step === "confirm" && result && selectedDeliveryDate && (
-              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
+              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4 relative">
+                {/* Payment waiting overlay */}
+                {pendingOrderId && submitting && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 z-20 bg-background/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-4"
+                  >
+                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                    <p className="font-display text-lg text-foreground tracking-wider">Waiting for payment confirmation…</p>
+                    <p className="font-body text-sm text-muted-foreground max-w-xs text-center">Complete your payment in the Stripe tab. This page will update automatically.</p>
+                  </motion.div>
+                )}
                 {/* Receipt-style confirmation */}
                 <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
 
