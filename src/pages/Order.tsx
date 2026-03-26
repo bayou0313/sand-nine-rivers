@@ -434,9 +434,14 @@ const Order = () => {
 
             {/* STEP 2: Details + Payment */}
             {step === "details" && result && (
-              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
                 {/* Compact delivery confirmation banner */}
-                <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
+                  className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 shadow-sm"
+                >
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-primary" />
                     <span className="font-display text-sm tracking-wider text-primary">DELIVERY AVAILABLE</span>
