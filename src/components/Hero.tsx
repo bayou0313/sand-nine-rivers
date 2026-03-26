@@ -40,10 +40,12 @@ const Hero = () => {
                 <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
               </div>
             </div>
-            <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">
-              <AlertTriangle className="w-3.5 h-3.5 text-white animate-pulse" />
-              <p className="font-display text-white tracking-wider text-xs">LIMITED SPOTS AVAILABLE TODAY</p>
-            </div>
+            {new Date().getHours() < 13 && (
+              <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">
+                <AlertTriangle className="w-3.5 h-3.5 text-white animate-pulse" />
+                <p className="font-display text-white tracking-wider text-xs">LIMITED SPOTS AVAILABLE TODAY</p>
+              </div>
+            )}
           </motion.div>
 
           <motion.div
