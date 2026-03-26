@@ -51,6 +51,7 @@ const Order = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
