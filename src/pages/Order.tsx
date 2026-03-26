@@ -753,7 +753,7 @@ const Order = () => {
                         disabled={submitting || !form.name.trim() || !form.phone.trim()}
                         className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-xl"
                       >
-                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY ${totalPrice.toFixed(2)} VIA STRIPE</>}
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5 mr-2" /> PAY {formatCurrency(totalPrice)} VIA STRIPE</>}
                       </Button>
                     </div>
                   )}
