@@ -17,7 +17,7 @@ const BASE_PRICE = 195;
 const BASE_MILES = 15;
 const MAX_MILES = 25;
 const PER_MILE_EXTRA = 3.49;
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
 type EstimateResult = {
   distance: number;
