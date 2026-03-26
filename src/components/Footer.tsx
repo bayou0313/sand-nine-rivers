@@ -4,12 +4,12 @@ import logoImg from "@/assets/riversand-logo.png";
 
 const Footer = () => {
   return (
-    <footer className="py-14 bg-foreground">
-      <div className="container mx-auto px-6">
+    <footer className="bg-foreground py-px">
+      <div className="container mx-auto px-6 pb-[23px]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <div className="flex flex-col justify-start">
-            <img src={logoImg} alt="RiverSand logo" className="h-[168px] lg:h-[200px] w-auto object-contain mb-4 brightness-0 invert self-start -mt-[100px]" loading="lazy" />
-            <p className="font-body text-background/40 text-sm leading-relaxed -mt-[75px]">
+            <img src={logoImg} alt="RiverSand logo" className="w-[200px] h-auto object-contain mb-4 brightness-0 invert self-start -mt-[100px] pb-[21px] pt-[17px] py-[12px]" loading="lazy" />
+            <p className="font-body text-background/40 text-sm leading-relaxed -mt-[75px] pt-0 mb-[19px] pb-0">
               Quality river sand delivered across the Greater New Orleans area. 9 yards for $195, same-day delivery available Mon–Fri.
             </p>
           </div>
