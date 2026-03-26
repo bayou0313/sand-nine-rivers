@@ -756,7 +756,7 @@ const Order = () => {
                 <div className="bg-background rounded-2xl border border-border shadow-2xl shadow-foreground/10 overflow-hidden">
                   {/* Logo header */}
                   <div className="bg-foreground py-4 flex justify-center">
-                    <img src={logoImg} alt="RIVERSAND" className="h-10 object-contain brightness-0 invert" />
+                    <img src={logoImg} alt="RIVERSAND" className="h-[168px] lg:h-[200px] w-auto object-contain brightness-0 invert" />
                   </div>
 
                   <div className="p-8 text-center space-y-5">
