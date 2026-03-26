@@ -815,10 +815,6 @@ const Order = () => {
                     <span className="font-body text-foreground">8:00 AM – 5:00 PM</span>
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Distance</span>
-                    <span className="font-display text-foreground">{result.distance} MILES</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Customer</span>
                     <span className="font-body text-foreground">{form.name}</span>
                   </div>
