@@ -793,7 +793,7 @@ const Order = () => {
                   )}
                 </div>
 
-                <Button variant="outline" onClick={() => setStep("address")} className="h-12 font-display tracking-wider rounded-xl border-background/20 text-background/60 hover:text-background hover:bg-background/10">
+                <Button variant="outline" onClick={() => setStep("address")} className="h-12 font-display tracking-wider rounded-xl border-accent/50 text-accent hover:text-accent hover:bg-accent/10">
                   <ArrowLeft className="w-4 h-4 mr-2" /> BACK TO ADDRESS
                 </Button>
               </motion.div>
