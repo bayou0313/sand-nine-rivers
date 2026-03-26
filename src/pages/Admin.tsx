@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, Package, RefreshCw, Phone, MapPin, DollarSign, Clock, Loader2 } from "lucide-react";
+import { LogOut, Package, RefreshCw, Phone, MapPin, DollarSign, Clock, Loader2, ChevronDown, ChevronUp, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Order = {
@@ -16,8 +16,19 @@ type Order = {
   distance_miles: number;
   price: number;
   payment_method: string;
+  payment_status: string;
+  stripe_payment_id: string | null;
   status: string;
   notes: string | null;
+  created_at: string;
+};
+
+type PaymentEvent = {
+  id: string;
+  order_id: string | null;
+  stripe_payment_id: string | null;
+  event_type: string;
+  event_id: string;
   created_at: string;
 };
 
@@ -29,12 +40,29 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
+const paymentStatusColors: Record<string, string> = {
+  paid: "bg-green-500/20 text-green-700 border-green-500/30",
+  pending: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
+  failed: "bg-red-500/20 text-red-700 border-red-500/30",
+  canceled: "bg-red-500/20 text-red-700 border-red-500/30",
+  refunded: "bg-blue-500/20 text-blue-700 border-blue-500/30",
+};
+
+const paymentLabel = (method: string, status: string) => {
+  if (method === "card" && status === "paid") return "Card ✓";
+  if (method === "card") return `Card (${status})`;
+  return `${method.charAt(0).toUpperCase() + method.slice(1)} (${status})`;
+};
+
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [paymentEvents, setPaymentEvents] = useState<Record<string, PaymentEvent[]>>({});
+  const [loadingEvents, setLoadingEvents] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -51,8 +79,31 @@ const Admin = () => {
     setLoading(false);
   };
 
+  const fetchPaymentEvents = async (orderId: string) => {
+    if (paymentEvents[orderId]) return;
+    setLoadingEvents(orderId);
+    const { data, error } = await (supabase as any)
+      .from("payment_events")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setPaymentEvents((prev) => ({ ...prev, [orderId]: data as PaymentEvent[] }));
+    }
+    setLoadingEvents(null);
+  };
+
+  const toggleExpand = (orderId: string) => {
+    if (expandedOrder === orderId) {
+      setExpandedOrder(null);
+    } else {
+      setExpandedOrder(orderId);
+      fetchPaymentEvents(orderId);
+    }
+  };
+
   useEffect(() => {
-    // Check auth
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { navigate("/admin/login"); return; }
       (supabase as any).from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").then(({ data }: any) => {
@@ -160,37 +211,75 @@ const Admin = () => {
         ) : (
           <div className="space-y-4">
             {filtered.map((order) => (
-              <div key={order.id} className="bg-card border border-border rounded-lg p-6">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-display text-xl text-foreground">{order.customer_name}</h3>
-                      <Badge variant="outline" className={statusColors[order.status] || ""}>{order.status.toUpperCase()}</Badge>
+              <div key={order.id} className="bg-card border border-border rounded-lg">
+                <div className="p-6">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="font-display text-xl text-foreground">{order.customer_name}</h3>
+                        <Badge variant="outline" className={statusColors[order.status] || ""}>{order.status.toUpperCase()}</Badge>
+                        <Badge variant="outline" className={paymentStatusColors[order.payment_status] || paymentStatusColors.pending}>
+                          <CreditCard className="w-3 h-3 mr-1" />
+                          {paymentLabel(order.payment_method, order.payment_status)}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 font-body text-sm">
+                        <p className="text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {order.customer_phone}</p>
+                        <p className="text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> {order.delivery_address}</p>
+                        <p className="text-muted-foreground">{order.distance_miles} miles • {order.payment_method}</p>
+                        <p className="text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
+                      </div>
+                      {order.notes && <p className="font-body text-sm text-muted-foreground italic">"{order.notes}"</p>}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 font-body text-sm">
-                      <p className="text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {order.customer_phone}</p>
-                      <p className="text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> {order.delivery_address}</p>
-                      <p className="text-muted-foreground">{order.distance_miles} miles • {order.payment_method}</p>
-                      <p className="text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
+                    <div className="flex items-center gap-4">
+                      <p className="font-display text-2xl text-primary">${Number(order.price).toFixed(2)}</p>
+                      <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
+                        <SelectTrigger className="w-36 font-body text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="en_route">En Route</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    {order.notes && <p className="font-body text-sm text-muted-foreground italic">"{order.notes}"</p>}
                   </div>
-                  <div className="flex items-center gap-4">
-                    <p className="font-display text-2xl text-primary">${Number(order.price).toFixed(2)}</p>
-                    <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
-                      <SelectTrigger className="w-36 font-body text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="en_route">En Route</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+
+                  {/* Payment events toggle */}
+                  {order.stripe_payment_id && (
+                    <button
+                      onClick={() => toggleExpand(order.id)}
+                      className="mt-3 flex items-center gap-1 font-body text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {expandedOrder === order.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      Payment Events
+                    </button>
+                  )}
                 </div>
+
+                {/* Expanded payment events */}
+                {expandedOrder === order.id && (
+                  <div className="border-t border-border px-6 py-4 bg-muted/30">
+                    {loadingEvents === order.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    ) : paymentEvents[order.id]?.length ? (
+                      <div className="space-y-2">
+                        <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">PAYMENT HISTORY</p>
+                        {paymentEvents[order.id].map((evt) => (
+                          <div key={evt.id} className="flex items-center justify-between font-body text-sm">
+                            <span className="text-foreground">{evt.event_type}</span>
+                            <span className="text-muted-foreground text-xs">{new Date(evt.created_at).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="font-body text-sm text-muted-foreground">No payment events recorded.</p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
