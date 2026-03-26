@@ -234,6 +234,9 @@ const Admin = () => {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-display text-xl text-foreground">{order.customer_name}</h3>
+                        {order.order_number && (
+                          <Badge variant="secondary" className="font-mono text-xs">{order.order_number}</Badge>
+                        )}
                         <Badge variant="outline" className={statusColors[order.status] || ""}>{order.status.toUpperCase()}</Badge>
                         <Badge variant="outline" className={paymentStatusColors[order.payment_status] || paymentStatusColors.pending}>
                           <CreditCard className="w-3 h-3 mr-1" />
