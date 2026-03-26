@@ -155,6 +155,10 @@ const Order = () => {
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
 
+  // Quantity from URL params (default 1)
+  const qtyParam = parseInt(searchParams.get("qty") || "1", 10);
+  const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
+
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -162,9 +166,9 @@ const Order = () => {
     notes: "",
   });
 
-  // Computed total with Saturday surcharge
+  // Computed total with Saturday surcharge — price per load × quantity
   const totalPrice = result
-    ? result.price + (selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE : 0)
+    ? (result.price * quantity) + (selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE : 0)
     : 0;
 
   // Pre-fill from estimator URL params
@@ -284,6 +288,7 @@ const Order = () => {
     delivery_address: address,
     distance_miles: result!.distance,
     price: totalPrice,
+    quantity,
     notes: form.notes.trim() || null,
     delivery_date: selectedDeliveryDate!.iso,
     delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
@@ -380,7 +385,7 @@ const Order = () => {
             {step === "address" && (
               <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-background rounded-2xl p-8 border border-border shadow-2xl shadow-foreground/10">
                 <h1 className="text-4xl md:text-5xl font-display text-foreground mb-2">PLACE YOUR ORDER</h1>
-                <p className="font-body text-muted-foreground mb-8">Enter your delivery address to get your instant price. 9 cubic yards of quality river sand.</p>
+                <p className="font-body text-muted-foreground mb-8">Enter your delivery address to get your instant price. {quantity > 1 ? `${quantity} loads × ` : ""}9 cubic yards of quality river sand.</p>
 
                 <div className="space-y-4">
                   <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
@@ -446,10 +451,10 @@ const Order = () => {
                       <p className="font-body text-xs text-muted-foreground uppercase">Drive Time</p>
                       <p className="font-display text-2xl text-foreground">{result.duration}</p>
                     </div>
-                    <div className="text-center p-3 bg-background rounded-xl">
-                      <p className="font-body text-xs text-muted-foreground uppercase">Base Price</p>
+                     <div className="text-center p-3 bg-background rounded-xl">
+                      <p className="font-body text-xs text-muted-foreground uppercase">{quantity > 1 ? `Total (${quantity} loads)` : "Base Price"}</p>
                       <p className="font-display text-2xl text-primary flex items-center justify-center">
-                        <DollarSign className="w-5 h-5" />{result.price.toFixed(2)}
+                        <DollarSign className="w-5 h-5" />{(result.price * quantity).toFixed(2)}
                       </p>
                     </div>
                   </div>
