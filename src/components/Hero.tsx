@@ -53,7 +53,7 @@ const Hero = () => {
             transition={{ delay: 0.6 }}
             className="bg-primary-foreground/5 backdrop-blur-xl border border-primary-foreground/15 rounded-2xl p-6 inline-block"
           >
-            <p className="text-5xl md:text-6xl font-display text-primary-foreground">
+            <p className="text-3xl md:text-4xl font-display text-primary-foreground">
               9 YARDS — $195
             </p>
             <p className="text-primary-foreground/60 font-body mt-2 flex items-center gap-2 text-sm">
