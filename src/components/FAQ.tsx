@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 const faqs = [
   {
     q: "How quickly can you deliver river sand in New Orleans?",
-    a: "WAYS offers same-day delivery across Greater New Orleans for orders placed before noon Monday through Saturday. Our GPS-tracked trucks operate throughout Orleans, Jefferson, St. Bernard, and St. Tammany parishes. For large commercial orders or specific delivery windows, call 1-855-GOT-WAYS to confirm availability.",
+    a: "RIVERSAND.NET offers same-day delivery across Greater New Orleans for orders placed before noon Monday through Saturday. Our GPS-tracked trucks operate throughout Orleans, Jefferson, St. Bernard, and St. Tammany parishes. For large commercial orders or specific delivery windows, call 1-855-GOT-WAYS to confirm availability.",
   },
   {
     q: "What type of river sand do you deliver?",
@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: "How much does river sand delivery cost in New Orleans?",
-    a: "WAYS prices river sand by the yard based on delivery distance and load size. A standard 9-yard load starts at $195. Larger loads of 14–20 yards or 21+ yards are priced separately. Pricing includes delivery to your address — there are no hidden fuel surcharges. Use the pricing calculator on this page for an instant estimate based on your location.",
+    a: "RIVERSAND.NET prices river sand by the yard based on delivery distance and load size. A standard 9-yard load starts at $195. Larger loads of 14–20 yards or 21+ yards are priced separately. Pricing includes delivery to your address — there are no hidden fuel surcharges. Use the pricing calculator on this page for an instant estimate based on your location.",
   },
   {
     q: "Where do you deliver river sand?",
@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: "Do you deliver on Saturdays?",
-    a: "Yes. WAYS delivers Monday through Saturday. We do not currently offer Sunday delivery. Same-day Saturday orders must be placed before noon. For urgent or large Saturday deliveries, we recommend calling ahead to confirm truck availability.",
+    a: "Yes. RIVERSAND.NET delivers Monday through Saturday. We do not currently offer Sunday delivery. Same-day Saturday orders must be placed before noon. For urgent or large Saturday deliveries, we recommend calling ahead to confirm truck availability.",
   },
 ];
 
