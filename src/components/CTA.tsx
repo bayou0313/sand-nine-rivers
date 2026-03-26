@@ -16,7 +16,7 @@ const CTA = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-5xl md:text-8xl text-accent-foreground"
+          className="text-3xl md:text-5xl text-accent-foreground"
         >
           READY TO ORDER?
         </motion.h2>

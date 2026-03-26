@@ -9,7 +9,7 @@ const Pricing = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">SIMPLE PRICING</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-5xl md:text-7xl text-foreground">RIVER SAND — 9 CUBIC YARD LOAD DELIVERY</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-4xl text-foreground">RIVER SAND — 9 CUBIC YARD LOAD DELIVERY</motion.h2>
         </div>
 
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -23,7 +23,7 @@ const Pricing = () => {
             <div className="absolute top-4 right-4 z-10 bg-accent text-accent-foreground font-display text-xs tracking-wider px-3 py-1 rounded-full">MOST POPULAR</div>
             <div className="bg-gradient-to-br from-primary to-primary/80 p-8 text-center">
               <p className="font-display text-xl text-primary-foreground tracking-widest">STANDARD DELIVERY</p>
-              <p className="font-display text-7xl text-primary-foreground mt-3">$195</p>
+              <p className="font-display text-4xl md:text-5xl text-primary-foreground mt-3">$195</p>
               <p className="font-body text-primary-foreground/70 mt-2">9 cubic yards of river sand</p>
             </div>
             <div className="p-8 space-y-4">
@@ -55,7 +55,7 @@ const Pricing = () => {
           >
             <div className="bg-gradient-to-br from-sand-dark to-foreground p-8 text-center">
               <p className="font-display text-xl text-primary-foreground tracking-widest">EXTENDED DELIVERY</p>
-              <p className="font-display text-7xl text-primary-foreground mt-3">$195<span className="text-4xl">+</span></p>
+              <p className="font-display text-4xl md:text-5xl text-primary-foreground mt-3">$195<span className="text-2xl">+</span></p>
               <p className="font-body text-primary-foreground/70 mt-2">15–25 miles from our yard</p>
             </div>
             <div className="p-8 space-y-4">

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
+    <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-16">
       <img
         src={heroImage}
         alt="River sand delivery truck unloading 9 cubic yards of clean screened river sand at a New Orleans job site"
@@ -17,8 +17,8 @@ const Hero = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/95 via-sand-dark/85 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-sand-dark/60 via-transparent to-sand-dark/30" />
 
-      <div className="relative z-10 container mx-auto px-6 py-20">
-        <div className="max-w-2xl space-y-8">
+      <div className="relative z-10 container mx-auto px-6 py-12">
+        <div className="max-w-2xl space-y-5">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -33,7 +33,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-6xl md:text-8xl lg:text-9xl leading-[0.9] text-primary-foreground tracking-wide"
+            className="text-4xl md:text-5xl lg:text-6xl leading-[0.9] text-primary-foreground tracking-wide"
           >
             SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS
           </motion.h1>
@@ -53,7 +53,7 @@ const Hero = () => {
             transition={{ delay: 0.6 }}
             className="bg-primary-foreground/5 backdrop-blur-xl border border-primary-foreground/15 rounded-2xl p-6 inline-block"
           >
-            <p className="text-5xl md:text-6xl font-display text-primary-foreground">
+            <p className="text-3xl md:text-4xl font-display text-primary-foreground">
               9 YARDS — $195
             </p>
             <p className="text-primary-foreground/60 font-body mt-2 flex items-center gap-2 text-sm">
