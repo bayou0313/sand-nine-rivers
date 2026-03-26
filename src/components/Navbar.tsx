@@ -2,7 +2,7 @@ import { Phone, Menu, X, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import logoImg from "@/assets/riversand-logo.png";
+
 
 const Navbar = ({ solid = false }: { solid?: boolean }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -18,7 +18,7 @@ const Navbar = ({ solid = false }: { solid?: boolean }) => {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm" : "bg-transparent"}`}>
         <div className="container mx-auto px-6 flex items-center justify-between h-16 md:h-20">
         <a href="/" className="flex items-center shrink-0">
-          <img src={logoImg} alt="RiverSand logo" className={`h-[168px] lg:h-[200px] w-auto max-w-none object-contain transition-all duration-300 ${scrolled ? "" : "brightness-0 invert"}`} />
+          <img src="/lovable-uploads/cdf3008a-d38c-427d-b163-9d0d2ff6da22/lovable_image-2.png" alt="RiverSand logo" className={`h-[168px] lg:h-[200px] w-auto max-w-none object-contain transition-all duration-300 ${scrolled ? "" : "brightness-0 invert"}`} />
         </a>
         <div className="hidden lg:flex items-center gap-8">
           {["Pricing", "Get Estimate", "About", "FAQ", "Contact"].map((item) => (
