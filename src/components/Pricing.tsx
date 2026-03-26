@@ -55,7 +55,7 @@ const Pricing = () => {
           >
             <div className="bg-gradient-to-br from-sand-dark to-foreground p-8 text-center">
               <p className="font-display text-xl text-primary-foreground tracking-widest">EXTENDED DELIVERY</p>
-              <p className="font-display text-7xl text-primary-foreground mt-3">$195<span className="text-4xl">+</span></p>
+              <p className="font-display text-4xl md:text-5xl text-primary-foreground mt-3">$195<span className="text-2xl">+</span></p>
               <p className="font-body text-primary-foreground/70 mt-2">15–25 miles from our yard</p>
             </div>
             <div className="p-8 space-y-4">
