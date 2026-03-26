@@ -166,9 +166,10 @@ const Order = () => {
     notes: "",
   });
 
-  // Computed total with Saturday surcharge — price per load × quantity
+  // Computed total with Saturday surcharge — $35 per load
+  const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
   const totalPrice = result
-    ? (result.price * quantity) + (selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE : 0)
+    ? (result.price * quantity) + saturdaySurchargeTotal
     : 0;
 
   // Pre-fill from estimator URL params
@@ -293,7 +294,7 @@ const Order = () => {
     delivery_date: selectedDeliveryDate!.iso,
     delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
     saturday_surcharge: selectedDeliveryDate!.isSaturday,
-    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? SATURDAY_SURCHARGE : 0,
+    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? SATURDAY_SURCHARGE * quantity : 0,
     delivery_window: "8:00 AM – 5:00 PM",
     same_day_requested: selectedDeliveryDate!.isSameDay,
   });
@@ -631,9 +632,9 @@ const Order = () => {
 
                       {/* Saturday surcharge */}
                       {selectedDeliveryDate.isSaturday && (
-                        <div className="flex justify-between py-3 border-b border-border">
-                          <span className="font-body text-destructive">Saturday Delivery Surcharge</span>
-                          <span className="font-display text-destructive">+${SATURDAY_SURCHARGE}.00</span>
+                         <div className="flex justify-between py-3 border-b border-border">
+                          <span className="font-body text-destructive">Saturday Surcharge ($35 × {quantity} load{quantity > 1 ? "s" : ""})</span>
+                          <span className="font-display text-destructive">+${saturdaySurchargeTotal}.00</span>
                         </div>
                       )}
 
@@ -645,8 +646,8 @@ const Order = () => {
                         </div>
                         {selectedDeliveryDate.isSaturday && (
                           <div className="flex justify-between">
-                            <span className="font-body text-sm text-muted-foreground">Saturday surcharge</span>
-                            <span className="font-display text-foreground">+${SATURDAY_SURCHARGE}.00</span>
+                            <span className="font-body text-sm text-muted-foreground">Saturday surcharge ($35 × {quantity})</span>
+                            <span className="font-display text-foreground">+${saturdaySurchargeTotal}.00</span>
                           </div>
                         )}
                         <div className="flex justify-between pt-2 border-t border-border">
@@ -850,8 +851,8 @@ const Order = () => {
                   )}
                   {selectedDeliveryDate.isSaturday && (
                     <div className="flex justify-between py-3 border-b border-border">
-                      <span className="font-body text-amber-700">Saturday Surcharge</span>
-                      <span className="font-display text-amber-700">+$35.00</span>
+                      <span className="font-body text-destructive">Saturday Surcharge ($35 × {quantity})</span>
+                      <span className="font-display text-destructive">+${saturdaySurchargeTotal}.00</span>
                     </div>
                   )}
                   <div className="flex justify-between py-3 bg-primary/5 rounded-xl px-4">

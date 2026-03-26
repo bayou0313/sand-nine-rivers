@@ -3,7 +3,6 @@ import { Truck, MapPin, Package, ShoppingCart, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import sandPileImg from "@/assets/sand-pile.jpg";
 
 const BASE_PRICE = 195;
 
@@ -12,17 +11,9 @@ const Pricing = () => {
   const total = qty * BASE_PRICE;
 
   return (
-    <section id="pricing" className="relative py-32 overflow-hidden">
-      {/* Background image */}
-      <img
-        src={sandPileImg}
-        alt="River sand pile"
-        className="absolute inset-0 w-full h-full object-cover"
-        width={1920}
-        height={1080}
-      />
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-foreground/85 via-foreground/75 to-foreground/90" />
+    <section id="pricing" className="relative py-32 bg-foreground overflow-hidden">
+      {/* Subtle texture overlay */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.08),transparent_60%)]" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-12">
@@ -110,7 +101,8 @@ const Pricing = () => {
 
           {/* Note */}
           <p className="text-center font-body text-background/50 text-sm mb-8">
-            Within 15 miles. Farther? Price adjusts automatically at checkout.
+            Within 15 miles. Farther? Price adjusts automatically at checkout.<br />
+            Saturday delivery: +$35 per load.
           </p>
 
           {/* CTAs */}
