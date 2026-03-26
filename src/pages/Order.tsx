@@ -166,9 +166,10 @@ const Order = () => {
     notes: "",
   });
 
-  // Computed total with Saturday surcharge — price per load × quantity
+  // Computed total with Saturday surcharge — $35 per load
+  const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
   const totalPrice = result
-    ? (result.price * quantity) + (selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE : 0)
+    ? (result.price * quantity) + saturdaySurchargeTotal
     : 0;
 
   // Pre-fill from estimator URL params
