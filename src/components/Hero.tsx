@@ -35,18 +35,10 @@ const Hero = () => {
           >
             <div className="inline-flex items-center gap-2 bg-foreground/80 backdrop-blur-md px-5 py-2 rounded-xl shadow-lg shadow-black/20 border border-white/10">
               <Clock className="w-4 h-4 text-accent animate-pulse" />
-              {isActive ? (
-                <div className="flex items-center gap-3">
-                  <p className="font-display text-white tracking-wider text-sm">SAME-DAY DELIVERY CLOSES IN</p>
-                  <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
-                </div>
-              ) : (
-                <p className="font-display text-white tracking-wider text-sm">
-                  {nextDay === "today" 
-                    ? "SAME-DAY DELIVERY — MON-FRI BEFORE 10 AM" 
-                    : `ORDER NOW FOR DELIVERY ${nextDay.toUpperCase()}`}
-                </p>
-              )}
+              <div className="flex items-center gap-3">
+                <p className="font-display text-white tracking-wider text-sm">{label}</p>
+                <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
+              </div>
             </div>
             <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">
               <AlertTriangle className="w-3.5 h-3.5 text-white animate-pulse" />

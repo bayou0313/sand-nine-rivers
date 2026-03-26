@@ -503,6 +503,8 @@ const Order = () => {
       <Navbar solid />
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
+        {/* Urgency countdown bar */}
+        <CountdownBar />
         <div className="max-w-2xl mx-auto">
           {/* Progress steps */}
           <motion.div
