@@ -247,7 +247,7 @@ const Order = () => {
 
       const distanceMiles = element.distance.value / 1609.34;
       if (distanceMiles > MAX_MILES) {
-        setError(`That address is ${distanceMiles.toFixed(1)} miles away. We deliver within ${MAX_MILES} miles. Please call us for options.`);
+        setError("That address is outside our delivery area. Please call us for options.");
         setLoading(false);
         return;
       }
@@ -365,7 +365,7 @@ const Order = () => {
       if (insertError) throw insertError;
 
       // Generate Stripe checkout link
-      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (${result.distance} mi)`;
+      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
           amount: Math.round(totalPrice * 100),
@@ -470,8 +470,8 @@ const Order = () => {
 
                 <div className="mt-8 grid grid-cols-3 gap-3 text-center">
                   {[
-                    { top: "0–15 MI", bot: "$195 flat" },
-                    { top: "15–25 MI", bot: "+$3.49/mi" },
+                    { top: "LOCAL AREA", bot: "Starting at $195" },
+                    { top: "EXTENDED AREA", bot: "Surcharge applies" },
                     { top: "9 YDS", bot: "Per load" },
                   ].map((item) => (
                     <div key={item.top} className="p-3 bg-card border border-border rounded-xl">
@@ -582,7 +582,7 @@ const Order = () => {
 
                       {/* Base price per load */}
                       <div className="flex justify-between py-3 border-b border-border">
-                        <span className="font-body text-muted-foreground">Base delivery (0–15 mi) × {quantity}</span>
+                        <span className="font-body text-muted-foreground">Base delivery × {quantity}</span>
                         <span className="font-display text-foreground">${(195 * quantity).toFixed(2)}</span>
                       </div>
 
@@ -590,7 +590,7 @@ const Order = () => {
                       {result.distance > BASE_MILES && (
                         <div className="flex justify-between py-3 border-b border-border">
                           <span className="font-body text-muted-foreground">
-                            Extra mileage: {(result.distance - BASE_MILES).toFixed(1)} mi × $3.49 × {quantity} load{quantity > 1 ? "s" : ""}
+                            Extended delivery surcharge × {quantity} load{quantity > 1 ? "s" : ""}
                           </span>
                           <span className="font-display text-foreground">
                             +${((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)}
@@ -813,10 +813,6 @@ const Order = () => {
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Delivery Window</span>
                     <span className="font-body text-foreground">8:00 AM – 5:00 PM</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-border">
-                    <span className="font-body text-muted-foreground">Distance</span>
-                    <span className="font-display text-foreground">{result.distance} MILES</span>
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="font-body text-muted-foreground">Customer</span>

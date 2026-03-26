@@ -84,7 +84,7 @@ const DeliveryEstimator = () => {
 
       const distanceMiles = element.distance.value / 1609.34;
       if (distanceMiles > MAX_MILES) {
-        setError(`That address is ${distanceMiles.toFixed(1)} miles away. We deliver within ${MAX_MILES} miles. Call us for options.`);
+        setError("That address is outside our delivery area. Call us for options.");
         setLoading(false); return;
       }
 
@@ -174,7 +174,7 @@ const DeliveryEstimator = () => {
                   </p>
                 </div>
                 <p className="font-body text-sm text-muted-foreground text-center">
-                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Free delivery included" : `Includes $${((result.distance - BASE_MILES) * PER_MILE_EXTRA).toFixed(2)} distance surcharge`} • Saturday +$35
+                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Local delivery included" : `Includes $${((result.distance - BASE_MILES) * PER_MILE_EXTRA).toFixed(2)} extended-area surcharge`} • Saturday +$35
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
@@ -190,8 +190,8 @@ const DeliveryEstimator = () => {
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             {[
-              { label: "0–15 MI", sub: "$195 flat rate" },
-              { label: "15–30 MI", sub: "$195 + $3.49/mile" },
+              { label: "LOCAL AREA", sub: "Starting at $195 per load" },
+              { label: "EXTENDED AREA", sub: "Additional surcharge applies" },
               { label: "9 YDS", sub: "Per load delivered" },
             ].map((item) => (
               <div key={item.label} className="p-4 bg-card border border-border rounded-2xl hover:border-primary/30 transition-colors">
