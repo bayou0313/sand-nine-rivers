@@ -57,6 +57,7 @@ const Order = () => {
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [isPopupReturnTab, setIsPopupReturnTab] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
