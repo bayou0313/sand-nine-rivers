@@ -15,7 +15,7 @@ const Navbar = ({ solid = false }: { solid?: boolean }) => {
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm" : "bg-transparent"}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-background/95 backdrop-blur-md" : "bg-transparent"}`}>
         <div className="container mx-auto px-6 flex items-center justify-between h-16 md:h-20">
         <a href="/" className="flex items-center shrink-0">
           <img src="/lovable-uploads/riversand-logo.png" alt="RiverSand logo" className={`h-[67px] lg:h-[80px] w-auto max-w-none object-contain transition-all duration-300 ${scrolled ? "" : "brightness-0 invert"}`} />
