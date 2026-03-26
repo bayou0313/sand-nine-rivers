@@ -539,7 +539,7 @@ const Order = () => {
                       <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
                         <Phone className="w-4 h-4 text-primary" /> PHONE NUMBER *
                       </label>
-                      <Input type="tel" placeholder="(504) 555-0123" required maxLength={20} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-12 rounded-xl" />
+                      <Input type="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
                     </div>
                     <div>
                       <label className="font-display text-sm text-foreground tracking-wider flex items-center gap-2 mb-1">
