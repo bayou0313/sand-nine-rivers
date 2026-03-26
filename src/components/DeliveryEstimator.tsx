@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
+import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
