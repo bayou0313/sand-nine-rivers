@@ -2,8 +2,8 @@ import heroImage from "@/assets/hero-sand.jpg";
 import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star, MapPin, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 
 const useCountdown = () => {
   const [timeLeft, setTimeLeft] = useState("");
