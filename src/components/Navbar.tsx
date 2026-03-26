@@ -16,9 +16,9 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm" : "bg-transparent"}`}>
-      <div className="container mx-auto px-6 flex items-center justify-between h-20">
+      <div className="container mx-auto px-6 flex items-center justify-between h-24">
         <a href="/" className="flex items-center gap-2">
-          <img src={logoImg} alt="RiverSand logo" className={`h-14 w-auto transition-all duration-300 ${scrolled ? "" : "brightness-0 invert"}`} width={210} height={56} />
+          <img src={logoImg} alt="RiverSand logo" className={`h-20 w-auto transition-all duration-300 ${scrolled ? "" : "brightness-0 invert"}`} width={300} height={80} />
         </a>
         <div className="hidden md:flex items-center gap-8">
           {["Pricing", "Get Estimate", "About", "FAQ", "Contact"].map((item) => (
