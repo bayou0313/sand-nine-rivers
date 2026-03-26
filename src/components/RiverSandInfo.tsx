@@ -35,7 +35,7 @@ const RiverSandInfo = () => {
               Not all sand is the same, and in a city like New Orleans — where drainage is everything — using the right material for the right application is the difference between a project that holds and one that fails inside two wet seasons.
             </p>
             <p className="font-body text-muted-foreground leading-relaxed text-lg mt-4">
-              The river sand WAYS delivers is pumped directly from the Mississippi River. It's a natural, unscreened material sourced from one of the most active waterways in North America, which gives it a distinct set of properties that make it particularly well-suited for the soil conditions and drainage challenges common across Southeast Louisiana.
+              The river sand RIVERSAND.NET delivers is pumped directly from the Mississippi River. It's a natural, unscreened material sourced from one of the most active waterways in North America, which gives it a distinct set of properties that make it particularly well-suited for the soil conditions and drainage challenges common across Southeast Louisiana.
             </p>
             <p className="font-body text-muted-foreground leading-relaxed text-lg mt-4">
               The rounded grain also means it compacts consistently without fully sealing, which is critical in low-lying areas where water management is the primary concern. It settles firmly underfoot or under pavers without creating an impermeable base that traps water below the surface — a problem that affects poorly chosen fill materials in flood-prone areas like the Orleans and Jefferson Parish lowlands.
