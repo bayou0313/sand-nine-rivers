@@ -13,8 +13,7 @@ const Pricing = () => {
 
   return (
     <section id="pricing" className="relative py-32 bg-foreground overflow-hidden">
-      {/* Subtle texture overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.08),transparent_60%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--accent)/0.08),transparent_60%)]" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-12">
@@ -45,18 +44,22 @@ const Pricing = () => {
           </motion.p>
         </div>
 
-        {/* Interactive pricing widget */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="max-w-lg mx-auto bg-background/10 backdrop-blur-md border border-background/20 rounded-3xl p-8 md:p-10"
+          className="max-w-lg mx-auto bg-background/10 backdrop-blur-md border-2 border-accent/50 rounded-3xl p-8 md:p-10 relative"
         >
+          {/* Best Value badge */}
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground font-display tracking-wider text-sm px-6 py-1.5 rounded-full shadow-lg">
+            BEST VALUE
+          </div>
+
           {/* Price per load */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 mt-2">
             <p className="font-display text-background/70 tracking-widest text-sm mb-1">PER LOAD</p>
-            <p className="font-display text-6xl md:text-7xl text-background">
+            <p className="font-display text-7xl md:text-8xl text-accent font-bold">
               $195
             </p>
             <p className="font-body text-background/50 text-sm mt-1">9 cubic yards of river sand</p>
@@ -72,7 +75,7 @@ const Pricing = () => {
               <Minus className="w-5 h-5" />
             </button>
             <div className="text-center min-w-[100px]">
-              <p className="font-display text-4xl text-accent">{qty}</p>
+              <p className="font-display text-5xl text-accent font-bold">{qty}</p>
               <p className="font-body text-background/50 text-xs tracking-wider">
                 {qty === 1 ? "LOAD" : "LOADS"}
               </p>
@@ -96,7 +99,7 @@ const Pricing = () => {
               <p className="font-body text-background/60 text-sm">
                 {qty} loads × $195 =
               </p>
-              <p className="font-display text-3xl text-accent">{formatCurrency(total)}</p>
+              <p className="font-display text-4xl text-accent font-bold">{formatCurrency(total)}</p>
             </motion.div>
           )}
 
@@ -106,10 +109,13 @@ const Pricing = () => {
             Saturday delivery: +$35 per load.
           </p>
 
-          {/* CTAs */}
+          {/* Urgency + CTAs */}
           <div className="space-y-3">
+            <p className="text-center text-[13px] font-body text-destructive font-light tracking-wide">
+              Order before noon for same-day delivery
+            </p>
             <Button
-              className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-lg shadow-accent/20"
+              className="w-full h-16 font-display tracking-wider text-lg bg-accent hover:bg-[#C8911A] text-accent-foreground rounded-2xl shadow-lg shadow-accent/20 transition-all duration-200"
               asChild
             >
               <Link to={`/order?qty=${qty}`}>
@@ -118,7 +124,7 @@ const Pricing = () => {
             </Button>
             <Button
               variant="outline"
-              className="w-full h-12 font-display tracking-wider text-sm rounded-xl border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
+              className="w-full h-14 font-display tracking-wider text-sm rounded-2xl border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
               asChild
             >
               <a href="#estimator">GET ESTIMATE</a>

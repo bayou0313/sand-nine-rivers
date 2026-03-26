@@ -1,0 +1,15 @@
+import { Phone } from "lucide-react";
+
+const MobilePhoneBar = () => {
+  return (
+    <a
+      href="tel:+18554689297"
+      className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-primary flex items-center justify-center gap-3 py-3.5 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]"
+    >
+      <Phone className="w-5 h-5 text-accent" />
+      <span className="font-display text-accent text-lg tracking-wider">1-855-GOT-WAYS</span>
+    </a>
+  );
+};
+
+export default MobilePhoneBar;
