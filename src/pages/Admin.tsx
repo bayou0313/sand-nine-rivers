@@ -38,7 +38,8 @@ const Admin = () => {
 
   const fetchOrders = async () => {
     setLoading(true);
-    const { data, error } = await (supabase.from("orders") as any)
+    const { data, error } = await (supabase as any)
+      .from("orders")
       .select("*")
       .order("created_at", { ascending: false });
 
