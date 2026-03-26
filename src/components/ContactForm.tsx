@@ -32,7 +32,7 @@ const ContactForm = () => {
           <div className="space-y-10">
             <div>
               <p className="text-accent font-display text-lg tracking-widest mb-3">CONTACT</p>
-              <h2 className="text-3xl md:text-4xl text-foreground">TALK TO US</h2>
+              <h2 className="text-3xl md:text-4xl text-foreground">Talk to Us</h2>
               <p className="font-body text-muted-foreground mt-6 leading-relaxed text-lg">
                 Ready to order or have questions? Reach out by phone, email, or fill out the form. We'll get back to you as soon as possible.
               </p>

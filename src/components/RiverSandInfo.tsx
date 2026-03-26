@@ -20,7 +20,7 @@ const RiverSandInfo = () => {
             viewport={{ once: true }}
             className="text-3xl md:text-4xl text-foreground"
           >
-            WHAT IS RIVER SAND AND WHEN SHOULD YOU USE IT?
+            What Is River Sand and When Should You Use It?
           </motion.h2>
         </div>
 

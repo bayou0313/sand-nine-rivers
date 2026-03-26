@@ -67,10 +67,10 @@ const FAQ = () => {
                   className="bg-card border border-border rounded-2xl px-6 hover:border-accent/30 transition-all duration-300 data-[state=open]:shadow-lg data-[state=open]:border-accent/40"
                 >
                   <AccordionTrigger className="font-display text-lg text-foreground tracking-wider hover:no-underline hover:text-accent transition-colors duration-300">
-                    {faq.q.toUpperCase()}
+                    <h3 className="text-left font-semibold">{faq.q}</h3>
                   </AccordionTrigger>
                   <AccordionContent className="font-body text-muted-foreground leading-relaxed">
-                    {faq.a}
+                    <p>{faq.a}</p>
                   </AccordionContent>
                 </AccordionItem>
               </motion.div>
