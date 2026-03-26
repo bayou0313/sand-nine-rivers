@@ -515,9 +515,9 @@ const Order = () => {
       <Navbar solid />
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
-        {/* Urgency countdown bar */}
-        <CountdownBar />
-        <div className="max-w-2xl mx-auto">
+        {/* Sticky countdown + progress */}
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-accent/10 -mx-4 px-4 mb-4">
+          <CountdownBar />
           {/* Progress steps */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
