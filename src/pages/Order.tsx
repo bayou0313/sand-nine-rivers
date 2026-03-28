@@ -70,7 +70,7 @@ const Order = () => {
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
-  const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
+  const [lookupToken, setLookupToken] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
@@ -209,15 +209,15 @@ const Order = () => {
 
     const pollInterval = setInterval(async () => {
       try {
-        if (!confirmationToken) return;
-        const { data } = await (supabase as any).rpc("get_order_status", {
-          p_order_id: pendingOrderId,
-          p_token: confirmationToken,
+        if (!lookupToken) return;
+        const { data, error } = await supabase.functions.invoke("get-order-status", {
+          body: { order_id: pendingOrderId, lookup_token: lookupToken },
         });
-        const row = data?.[0];
 
-        if (row?.payment_status === "paid") {
-          if (row.order_number) setOrderNumber(row.order_number);
+        if (error || !data) return;
+
+        if (data.payment_status === "paid") {
+          if (data.order_number) setOrderNumber(data.order_number);
           setPendingOrderId(null);
           setSubmitting(false);
           setStep("success");
@@ -234,7 +234,7 @@ const Order = () => {
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [pendingOrderId, confirmationToken, step, toast]);
+  }, [pendingOrderId, lookupToken, step, toast]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
@@ -382,7 +382,7 @@ const Order = () => {
         ...buildOrderData(),
         payment_method: codSubOption,
         payment_status: "pending",
-      }).select("order_number, confirmation_token").single();
+      }).select("order_number, lookup_token").single();
 
       if (insertError) throw insertError;
       setOrderNumber(insertedOrder?.order_number || null);
@@ -423,7 +423,7 @@ const Order = () => {
       const { data: insertedOrder, error: insertError } = await (supabase as any)
         .from("orders")
         .insert(orderData)
-        .select("id, order_number, confirmation_token")
+        .select("id, order_number, lookup_token")
         .single();
 
       if (insertError) throw insertError;
@@ -449,7 +449,7 @@ const Order = () => {
 
       // Store order ID and token for DB polling
       setPendingOrderId(insertedOrder?.id || null);
-      setConfirmationToken(insertedOrder?.confirmation_token || null);
+      setLookupToken(insertedOrder?.lookup_token || null);
 
       if (isEmbedded) {
         const newTab = window.open(data.url, "_blank");
