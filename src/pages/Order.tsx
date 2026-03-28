@@ -380,14 +380,19 @@ const Order = () => {
 
     setSubmitting(true);
     try {
-      const { data: insertedOrder, error: insertError } = await (supabase as any).from("orders").insert({
-        ...buildOrderData(),
-        payment_method: codSubOption,
-        payment_status: "pending",
-      }).select("order_number, lookup_token").single();
+      const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
+        p_data: {
+          ...buildOrderData(),
+          payment_method: codSubOption,
+          payment_status: "pending",
+        },
+      });
 
       if (insertError) throw insertError;
-      setOrderNumber(insertedOrder?.order_number || null);
+      const inserted = rpcResult as any;
+      setOrderNumber(inserted?.order_number || null);
+      setConfirmedOrderId(inserted?.id || null);
+      setLookupToken(inserted?.lookup_token || null);
       setStep("success");
 
       // Send order confirmation emails (fire-and-forget)
