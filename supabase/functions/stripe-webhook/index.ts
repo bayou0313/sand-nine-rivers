@@ -123,8 +123,9 @@ serve(async (req) => {
         // Send order confirmation emails after successful payment
         if (currentOrder) {
           try {
+            console.log("[stripe-webhook] Sending order email for order:", orderId, "order_number:", currentOrder.order_number);
             const emailUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`;
-            await fetch(emailUrl, {
+            const emailResponse = await fetch(emailUrl, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -135,8 +136,11 @@ serve(async (req) => {
                 data: { ...currentOrder, payment_status: "paid" },
               }),
             });
+            console.log("[stripe-webhook] Email response status:", emailResponse.status);
+            const emailBody = await emailResponse.text();
+            console.log("[stripe-webhook] Email response body:", emailBody);
           } catch (emailErr) {
-            console.error("Failed to send order email:", emailErr);
+            console.error("[stripe-webhook] Failed to send order email:", emailErr);
           }
         }
       }
