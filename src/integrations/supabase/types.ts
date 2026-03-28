@@ -156,6 +156,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_order_status: {
+        Args: { p_order_id: string; p_token: string }
+        Returns: {
+          order_number: string
+          payment_status: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
