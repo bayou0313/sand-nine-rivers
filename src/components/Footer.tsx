@@ -30,7 +30,7 @@ const Footer = () => {
             <motion.img
               src={logoImg}
               alt="RiverSand logo"
-              className="w-[200px] h-auto object-contain mb-4 brightness-0 invert self-start my-0 py-[113px] border-none pb-[2px] pr-0 pt-[5px] mt-[9px] ml-[51px]"
+              className="w-[200px] h-auto object-contain mb-4 brightness-0 invert self-start my-0 py-[113px] border-none pb-[2px] pr-0 pt-[5px] mt-[9px] ml-0"
               loading="lazy"
               whileHover={{ scale: 1.08, filter: "brightness(0) invert(1) drop-shadow(0 0 12px hsl(41 83% 53% / 0.5))" }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
