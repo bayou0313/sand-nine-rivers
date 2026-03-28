@@ -209,16 +209,15 @@ const Order = () => {
 
     const pollInterval = setInterval(async () => {
       try {
-        const headers: Record<string, string> = {};
-        if (confirmationToken) headers["x-confirmation-token"] = confirmationToken;
-        const { data } = await (supabase as any)
-          .from("orders")
-          .select("payment_status, order_number")
-          .eq("id", pendingOrderId)
-          .single({ headers });
+        if (!confirmationToken) return;
+        const { data } = await (supabase as any).rpc("get_order_status", {
+          p_order_id: pendingOrderId,
+          p_token: confirmationToken,
+        });
+        const row = data?.[0];
 
-        if (data?.payment_status === "paid") {
-          if (data.order_number) setOrderNumber(data.order_number);
+        if (row?.payment_status === "paid") {
+          if (row.order_number) setOrderNumber(row.order_number);
           setPendingOrderId(null);
           setSubmitting(false);
           setStep("success");
