@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import logoImg from "@/assets/riversand-logo.png";
+import waysLogoImg from "@/assets/ways-logo.png";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -34,9 +35,14 @@ const Footer = () => {
               whileHover={{ scale: 1.08, filter: "brightness(0) invert(1) drop-shadow(0 0 12px hsl(41 83% 53% / 0.5))" }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
             />
-            <p className="font-body text-background/40 text-sm leading-relaxed -mt-[75px] pt-0 mb-[19px] pb-0 my-0">
-              {"\n"}
-            </p>
+            <motion.img
+              src={waysLogoImg}
+              alt="WAYS — We Are Your Source"
+              className="w-[120px] h-auto object-contain brightness-0 invert opacity-40 ml-[51px] mt-2"
+              loading="lazy"
+              whileHover={{ opacity: 0.7 }}
+              transition={{ duration: 0.3 }}
+            />
           </motion.div>
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} custom={1} variants={fadeUp}>
