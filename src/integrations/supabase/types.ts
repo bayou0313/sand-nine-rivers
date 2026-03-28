@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       orders: {
         Row: {
+          confirmation_token: string
           created_at: string
           customer_email: string | null
           customer_name: string
@@ -42,6 +43,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          confirmation_token?: string
           created_at?: string
           customer_email?: string | null
           customer_name: string
@@ -68,6 +70,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          confirmation_token?: string
           created_at?: string
           customer_email?: string | null
           customer_name?: string
