@@ -70,7 +70,7 @@ const Order = () => {
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
-  const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
+  const [lookupToken, setLookupToken] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
