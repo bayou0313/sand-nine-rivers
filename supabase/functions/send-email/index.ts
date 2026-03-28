@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +10,7 @@ const corsHeaders = {
 const BRAND_COLOR = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
-const DISPLAY_FROM = "River Sand <no_reply@riversand.net>";
+const FROM = "River Sand <no_reply@riversand.net>";
 const REPLY_TO = "no_reply@riversand.net";
 const INTERNAL_EMAIL = "cmo@haulogix.us";
 const PHONE = "1-855-GOT-WAYS";
@@ -72,7 +72,6 @@ function invoiceBlock(order: any): string {
   const qty = order.quantity || 1;
   const baseLine = basePrice * qty;
 
-  // Calculate distance fee
   const distanceMiles = Number(order.distance_miles || 0);
   const distanceFee = distanceMiles > 15 ? parseFloat(((distanceMiles - 15) * 3.49 * qty).toFixed(2)) : 0;
 
@@ -113,7 +112,6 @@ function invoiceBlock(order: any): string {
 
   return `
   <div style="margin-top:32px;border:1px solid #DDDDDD;border-radius:8px;overflow:hidden">
-    <!-- Invoice Header -->
     <div style="background:#F2F2F2;padding:24px;border-bottom:1px solid #DDDDDD">
       <h2 style="margin:0 0 16px;color:${BRAND_COLOR};font-size:22px;letter-spacing:2px">INVOICE</h2>
       <p style="margin:4px 0;color:${BRAND_COLOR};font-size:14px"><strong>Ways Materials, LLC</strong></p>
@@ -127,7 +125,6 @@ function invoiceBlock(order: any): string {
       </table>
     </div>
 
-    <!-- Bill To -->
     <div style="padding:20px 24px;border-bottom:1px solid #DDDDDD">
       <p style="margin:0 0 8px;font-weight:600;color:${BRAND_COLOR};font-size:13px;text-transform:uppercase;letter-spacing:1px">Bill To:</p>
       <p style="margin:2px 0;color:#555;font-size:14px">${order.customer_name || ""}</p>
@@ -136,7 +133,6 @@ function invoiceBlock(order: any): string {
       ${order.customer_phone ? `<p style="margin:2px 0;color:#555;font-size:14px">${order.customer_phone}</p>` : ""}
     </div>
 
-    <!-- Line Items -->
     <div style="padding:0">
       <table style="width:100%;border-collapse:collapse;font-size:14px">
         <thead>
@@ -157,7 +153,6 @@ function invoiceBlock(order: any): string {
       </table>
     </div>
 
-    <!-- Payment -->
     <div style="padding:20px 24px;border-top:1px solid #DDDDDD">
       <table style="font-size:14px;color:#555">
         <tr><td style="padding:3px 12px 3px 0;font-weight:600;color:${BRAND_COLOR}">Payment Method:</td><td>${paymentMethodLabel(order.payment_method)}</td></tr>
@@ -166,7 +161,6 @@ function invoiceBlock(order: any): string {
       </table>
     </div>
 
-    <!-- Footer -->
     <div style="background:#F2F2F2;padding:16px 24px;border-top:1px solid #DDDDDD">
       <p style="margin:0;color:#777;font-size:12px;line-height:1.5">This invoice is issued by Ways Materials, LLC operating as River Sand (riversand.net). For questions contact us at ${PHONE} or no_reply@riversand.net.</p>
       <p style="margin:8px 0 0;color:#999;font-size:11px">Powered by Haulogix, LLC</p>
@@ -252,31 +246,19 @@ function contactInternalEmail(contact: any) {
   `);
 }
 
-async function sendMail(to: string, subject: string, html: string) {
-  const client = new SMTPClient({
-    connection: {
-      hostname: "smtp.gmail.com",
-      port: 465,
-      tls: true,
-      auth: {
-        username: Deno.env.get("GMAIL_USER") || "cmo@haulogix.us",
-        password: Deno.env.get("GMAIL_APP_PASSWORD") || "",
-      },
-    },
-  });
-
-  await client.send({
-    from: DISPLAY_FROM,
+async function sendMail(resend: InstanceType<typeof Resend>, to: string, subject: string, html: string) {
+  const { data, error } = await resend.emails.send({
+    from: FROM,
     to,
+    replyTo: REPLY_TO,
     subject,
-    content: "Please view this email in an HTML-capable client.",
     html,
-    headers: {
-      "Reply-To": REPLY_TO,
-    },
   });
-
-  await client.close();
+  if (error) {
+    console.error("[email] Resend error:", error);
+    throw new Error(error.message || "Resend send failed");
+  }
+  console.log("[email] Sent to:", to, "| Resend ID:", data?.id);
 }
 
 serve(async (req) => {
@@ -287,12 +269,17 @@ serve(async (req) => {
   }
 
   try {
-    const gmailUser = Deno.env.get("GMAIL_USER");
-    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
-    console.log("[send-email] GMAIL_USER set:", !!gmailUser, "| GMAIL_APP_PASSWORD set:", !!gmailPass);
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    console.log("[send-email] RESEND_API_KEY set:", !!resendKey);
+    if (!resendKey) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
 
+    const resend = new Resend(resendKey);
     const { type, data } = await req.json();
     console.log("[send-email] Email type:", type);
+
+    const ownerEmail = Deno.env.get("GMAIL_USER") || INTERNAL_EMAIL;
 
     if (type === "order" || type === "order_confirmation") {
       const customerEmail = data.customer_email;
@@ -301,22 +288,26 @@ serve(async (req) => {
         : "Order Confirmed — WAYS River Sand";
 
       const promises: Promise<void>[] = [
-        sendMail(INTERNAL_EMAIL, `🔔 New Order ${data.order_number || ""}`.trim(), orderInternalEmail(data)),
+        sendMail(resend, ownerEmail, `🔔 New Order ${data.order_number || ""}`.trim(), orderInternalEmail(data)),
       ];
       if (customerEmail) {
-        promises.push(sendMail(customerEmail, subject, orderCustomerEmail(data)));
+        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data)));
       }
       await Promise.all(promises);
+      console.log("[email] Customer email sent to:", customerEmail);
+      console.log("[email] Owner email sent to:", ownerEmail);
 
     } else if (type === "contact") {
       const customerEmail = data.email;
       const promises: Promise<void>[] = [
-        sendMail(INTERNAL_EMAIL, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data)),
+        sendMail(resend, ownerEmail, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data)),
       ];
       if (customerEmail) {
-        promises.push(sendMail(customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data)));
+        promises.push(sendMail(resend, customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data)));
       }
       await Promise.all(promises);
+      console.log("[email] Customer email sent to:", customerEmail);
+      console.log("[email] Owner email sent to:", ownerEmail);
 
     } else if (type === "callback") {
       const rows = [
@@ -356,7 +347,8 @@ serve(async (req) => {
   </div>
 </div></body></html>`;
 
-      await sendMail(INTERNAL_EMAIL, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml);
+      await sendMail(resend, ownerEmail, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml);
+      console.log("[email] Callback email sent to:", ownerEmail);
 
     } else {
       return new Response(
