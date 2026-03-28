@@ -382,7 +382,7 @@ const Order = () => {
         ...buildOrderData(),
         payment_method: codSubOption,
         payment_status: "pending",
-      }).select("order_number, confirmation_token").single();
+      }).select("order_number, lookup_token").single();
 
       if (insertError) throw insertError;
       setOrderNumber(insertedOrder?.order_number || null);
