@@ -70,6 +70,7 @@ const Order = () => {
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
@@ -208,14 +209,15 @@ const Order = () => {
 
     const pollInterval = setInterval(async () => {
       try {
-        const { data } = await (supabase as any)
-          .from("orders")
-          .select("payment_status, order_number")
-          .eq("id", pendingOrderId)
-          .single();
+        if (!confirmationToken) return;
+        const { data } = await (supabase as any).rpc("get_order_status", {
+          p_order_id: pendingOrderId,
+          p_token: confirmationToken,
+        });
+        const row = data?.[0];
 
-        if (data?.payment_status === "paid") {
-          if (data.order_number) setOrderNumber(data.order_number);
+        if (row?.payment_status === "paid") {
+          if (row.order_number) setOrderNumber(row.order_number);
           setPendingOrderId(null);
           setSubmitting(false);
           setStep("success");
@@ -232,7 +234,7 @@ const Order = () => {
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [pendingOrderId, step, toast]);
+  }, [pendingOrderId, confirmationToken, step, toast]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
@@ -380,7 +382,7 @@ const Order = () => {
         ...buildOrderData(),
         payment_method: codSubOption,
         payment_status: "pending",
-      }).select("order_number").single();
+      }).select("order_number, confirmation_token").single();
 
       if (insertError) throw insertError;
       setOrderNumber(insertedOrder?.order_number || null);
@@ -421,7 +423,7 @@ const Order = () => {
       const { data: insertedOrder, error: insertError } = await (supabase as any)
         .from("orders")
         .insert(orderData)
-        .select("id, order_number")
+        .select("id, order_number, confirmation_token")
         .single();
 
       if (insertError) throw insertError;
@@ -445,8 +447,9 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
-      // Store order ID for DB polling
+      // Store order ID and token for DB polling
       setPendingOrderId(insertedOrder?.id || null);
+      setConfirmationToken(insertedOrder?.confirmation_token || null);
 
       if (isEmbedded) {
         const newTab = window.open(data.url, "_blank");
