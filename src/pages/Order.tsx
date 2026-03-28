@@ -813,7 +813,7 @@ const Order = () => {
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
-                          <span className="font-body text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}% — {taxInfo.parish})</span>
+                          <span className="font-body text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
                           <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
                         </div>
                         <Separator className="my-1" />
