@@ -206,39 +206,40 @@ const Order = () => {
     };
   }, [toast]);
 
-  // Poll DB for payment status as reliable fallback (webhook updates DB)
-  useEffect(() => {
-    if (!pendingOrderId || step === "success") return;
-
-    const pollInterval = setInterval(async () => {
-      try {
-        if (!lookupToken) return;
-        const { data, error } = await supabase.functions.invoke("get-order-status", {
-          body: { order_id: pendingOrderId, lookup_token: lookupToken },
-        });
-
-        if (error || !data) return;
-
-        if (data.payment_status === "paid") {
-          if (data.order_number) setOrderNumber(data.order_number);
-          if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
-          setPendingOrderId(null);
-          setSubmitting(false);
-          setStep("success");
-          toast({
-            title: "Payment successful",
-            description: data.order_number
-              ? `Order ${data.order_number} is confirmed.`
-              : "Your payment was completed successfully.",
-          });
-        }
-      } catch {
-        // Ignore polling errors
-      }
-    }, 3000);
-
-    return () => clearInterval(pollInterval);
-  }, [pendingOrderId, lookupToken, step, toast]);
+  // Helper: send order confirmation email
+  const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null) => {
+    if (!result) return;
+    const distanceFee = result.distance > BASE_MILES ? parseFloat(((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)) : 0;
+    const emailPayload = {
+      order_number: orderNum,
+      customer_name: form.name.trim(),
+      customer_email: form.email.trim() || null,
+      customer_phone: form.phone.trim(),
+      delivery_address: address,
+      delivery_date: selectedDeliveryDate?.iso || null,
+      delivery_day_of_week: selectedDeliveryDate?.dayOfWeek || null,
+      delivery_window: "8:00 AM – 5:00 PM",
+      quantity,
+      price: pMethod === "stripe-link" ? totalWithProcessingFee : totalPrice,
+      distance_miles: result.distance,
+      saturday_surcharge: selectedDeliveryDate?.isSaturday || false,
+      saturday_surcharge_amount: saturdaySurchargeTotal,
+      same_day_requested: selectedDeliveryDate?.isSameDay || false,
+      tax_rate: taxInfo.rate,
+      tax_amount: taxAmount,
+      payment_method: pMethod,
+      payment_status: pStatus,
+      stripe_payment_id: sPaymentId,
+      notes: form.notes.trim() || null,
+    };
+    console.log("[Order] Sending order confirmation email for", orderNum);
+    supabase.functions.invoke("send-email", {
+      body: { type: "order_confirmation", data: emailPayload },
+    }).then((res) => {
+      if (res.error) console.error("[Order] Email invoke error:", res.error);
+      else console.log("[Order] Email sent successfully:", res.data);
+    }).catch((err) => console.error("[Order] Email send exception:", err));
+  }, [result, form, address, selectedDeliveryDate, quantity, totalPrice, totalWithProcessingFee, saturdaySurchargeTotal, taxInfo, taxAmount]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
