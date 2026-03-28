@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import logoImg from "@/assets/riversand-logo.png";
+import waysLogoImg from "@/assets/ways-logo.png";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
