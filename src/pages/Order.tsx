@@ -209,15 +209,15 @@ const Order = () => {
 
     const pollInterval = setInterval(async () => {
       try {
-        if (!confirmationToken) return;
-        const { data } = await (supabase as any).rpc("get_order_status", {
-          p_order_id: pendingOrderId,
-          p_token: confirmationToken,
+        if (!lookupToken) return;
+        const { data, error } = await supabase.functions.invoke("get-order-status", {
+          body: { order_id: pendingOrderId, lookup_token: lookupToken },
         });
-        const row = data?.[0];
 
-        if (row?.payment_status === "paid") {
-          if (row.order_number) setOrderNumber(row.order_number);
+        if (error || !data) return;
+
+        if (data.payment_status === "paid") {
+          if (data.order_number) setOrderNumber(data.order_number);
           setPendingOrderId(null);
           setSubmitting(false);
           setStep("success");
