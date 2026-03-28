@@ -22,23 +22,22 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Parish-based Louisiana sales tax rates (state 4.45% + local)
+// Parish-based Louisiana sales tax rates (state + local)
 const PARISH_TAX_RATES: Record<string, number> = {
-  "orleans": 0.0945,
-  "jefferson": 0.0920,
-  "st. bernard": 0.0950,
-  "st. tammany": 0.0970,
-  "plaquemines": 0.0950,
-  "st. charles": 0.0920,
-  "st. john": 0.0945,
-  "lafourche": 0.1045,
-  "terrebonne": 0.1020,
-  "tangipahoa": 0.0995,
-  "washington": 0.0995,
+  "jefferson": 0.0975,
+  "orleans": 0.1000,
+  "st. bernard": 0.1000,
+  "st. charles": 0.1000,
+  "st. tammany": 0.0925,
+  "plaquemines": 0.0975,
+  "st. john the baptist": 0.1025,
+  "st. james": 0.0850,
+  "lafourche": 0.0970,
+  "tangipahoa": 0.0945,
 };
 
-// Default to Orleans Parish rate if we can't detect
-const DEFAULT_TAX_RATE = 0.0945;
+// Default rate when parish can't be detected
+const DEFAULT_TAX_RATE = 0.0975;
 
 export function getTaxRateFromAddress(address: string): { rate: number; parish: string } {
   const lower = address.toLowerCase();
@@ -76,8 +75,8 @@ export function getTaxRateFromAddress(address: string): { rate: number; parish: 
     "belle chasse": "plaquemines",
     "luling": "st. charles",
     "destrehan": "st. charles",
-    "laplace": "st. john",
-    "reserve": "st. john",
+    "laplace": "st. john the baptist",
+    "reserve": "st. john the baptist",
   };
 
   for (const [city, parish] of Object.entries(cityToParish)) {
@@ -86,5 +85,23 @@ export function getTaxRateFromAddress(address: string): { rate: number; parish: 
     }
   }
 
-  return { rate: DEFAULT_TAX_RATE, parish: "Orleans Parish (default)" };
+  return { rate: DEFAULT_TAX_RATE, parish: "Unknown Parish (default)" };
+}
+
+// Extract parish from Google Maps place result address_components
+export function getParishFromPlaceResult(
+  addressComponents: Array<{ long_name: string; short_name: string; types: string[] }>
+): string | null {
+  const county = addressComponents.find(c => c.types.includes("administrative_area_level_2"));
+  if (!county) return null;
+  return county.long_name.replace(/ Parish$/i, "").toLowerCase();
+}
+
+// Look up tax rate by parish name (from Google Maps structured data)
+export function getTaxRateByParish(parishName: string): { rate: number; parish: string } {
+  const key = parishName.toLowerCase();
+  if (PARISH_TAX_RATES[key] !== undefined) {
+    return { rate: PARISH_TAX_RATES[key], parish: key.replace(/\b\w/g, c => c.toUpperCase()) + " Parish" };
+  }
+  return { rate: DEFAULT_TAX_RATE, parish: key.replace(/\b\w/g, c => c.toUpperCase()) + " Parish (default rate)" };
 }

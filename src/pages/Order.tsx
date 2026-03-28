@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, Printer, Download } from "lucide-react";
 import { useCountdown } from "@/hooks/use-countdown";
-import { formatPhone, formatCurrency, getTaxRateFromAddress } from "@/lib/format";
+import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +88,12 @@ const Order = () => {
     notes: "",
   });
 
-  const taxInfo = useMemo(() => getTaxRateFromAddress(address), [address]);
+  const [detectedParish, setDetectedParish] = useState<string | null>(null);
+
+  const taxInfo = useMemo(() => {
+    if (detectedParish) return getTaxRateByParish(detectedParish);
+    return getTaxRateFromAddress(address);
+  }, [address, detectedParish]);
 
   const PROCESSING_FEE_RATE = 0.035;
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
@@ -231,6 +236,7 @@ const Order = () => {
       same_day_requested: selectedDeliveryDate?.isSameDay || false,
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,
+      tax_parish: taxInfo.parish,
       payment_method: pMethod,
       payment_status: pStatus,
       stripe_payment_id: sPaymentId,
@@ -290,6 +296,10 @@ const Order = () => {
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current?.getPlace();
       if (place?.formatted_address) setAddress(place.formatted_address);
+      if (place?.address_components) {
+        const parish = getParishFromPlaceResult(place.address_components);
+        setDetectedParish(parish);
+      }
     });
   }, [apiLoaded]);
 
@@ -804,7 +814,7 @@ const Order = () => {
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
-                          <span className="font-body text-muted-foreground">Sales Tax ({(taxInfo.rate * 100).toFixed(2)}% — {taxInfo.parish})</span>
+                          <span className="font-body text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
                           <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
                         </div>
                         <Separator className="my-1" />
@@ -992,7 +1002,7 @@ const Order = () => {
                       {selectedDeliveryDate.isSaturday && (
                         <ReceiptRow label={`Saturday Surcharge ($35 × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
                       )}
-                      <ReceiptRow label={`Sales Tax (${(taxInfo.rate * 100).toFixed(2)}%)`} value={`+${formatCurrency(taxAmount)}`} />
+                      <ReceiptRow label={`Sales tax — ${taxInfo.parish} (${(taxInfo.rate * 100).toFixed(2)}%)`} value={`+${formatCurrency(taxAmount)}`} />
 
                       {paymentMethod === "stripe-link" && (
                         <>
@@ -1209,7 +1219,7 @@ const Order = () => {
                     )}
                     {taxAmount > 0 && (
                       <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Tax ({(taxInfo.rate * 100).toFixed(2)}%)</span>
+                        <span className="font-body text-sm text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
                         <span className="font-body text-sm text-foreground">{formatCurrency(taxAmount)}</span>
                       </div>
                     )}

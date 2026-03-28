@@ -206,7 +206,7 @@ function orderInternalEmail(order: any) {
     ["Window", order.delivery_window || "8:00 AM – 5:00 PM"],
     ["Saturday Surcharge", order.saturday_surcharge ? `Yes ($${order.saturday_surcharge_amount})` : "No"],
     ["Same-Day", order.same_day_requested ? "Yes" : "No"],
-    ["Tax", `$${Number(order.tax_amount || 0).toFixed(2)} (${(Number(order.tax_rate || 0) * 100).toFixed(2)}%)`],
+    ["Tax", `$${Number(order.tax_amount || 0).toFixed(2)} (${(Number(order.tax_rate || 0) * 100).toFixed(2)}% — ${order.tax_parish || "N/A"})`],
     ["Total Price", `$${Number(order.price).toFixed(2)}`],
     ["Payment", order.payment_method],
     ["Payment Status", order.payment_status || "pending"],

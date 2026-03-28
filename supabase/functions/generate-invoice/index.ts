@@ -228,7 +228,7 @@ serve(async (req) => {
 
     if (order.tax_amount > 0) {
       lines.push({
-        desc: `Sales Tax (${(order.tax_rate * 100).toFixed(2)}%)`,
+        desc: `Sales Tax — ${order.tax_parish || ''} (${(order.tax_rate * 100).toFixed(2)}%)`,
         qty: "—",
         unit: "—",
         amt: fmt(order.tax_amount),
