@@ -234,7 +234,7 @@ const Order = () => {
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [pendingOrderId, step, toast]);
+  }, [pendingOrderId, confirmationToken, step, toast]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
