@@ -295,6 +295,10 @@ const Order = () => {
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current?.getPlace();
       if (place?.formatted_address) setAddress(place.formatted_address);
+      if (place?.address_components) {
+        const parish = getParishFromPlaceResult(place.address_components);
+        setDetectedParish(parish);
+      }
     });
   }, [apiLoaded]);
 
