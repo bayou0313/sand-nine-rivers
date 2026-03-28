@@ -476,6 +476,34 @@ const Order = () => {
     }
   };
 
+  const handleDownloadInvoice = async () => {
+    if (!confirmedOrderId || !lookupToken) {
+      toast({ title: "Unable to download", description: "Order information not available.", variant: "destructive" });
+      return;
+    }
+    setDownloadingInvoice(true);
+    try {
+      const response = await supabase.functions.invoke("generate-invoice", {
+        body: { order_id: confirmedOrderId, lookup_token: lookupToken },
+      });
+      if (response.error) throw new Error("Failed to generate invoice");
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${orderNumber || "order"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
+
   const stepLabels = ["Delivery Details", "Payment", "Confirm"];
 
   const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim() && form.email.trim();
