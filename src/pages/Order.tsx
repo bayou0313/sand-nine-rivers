@@ -1236,8 +1236,12 @@ const Order = () => {
 
                 {/* Bottom Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center print-hide">
+                  <Button onClick={handleDownloadInvoice} disabled={downloadingInvoice || !confirmedOrderId} variant="outline" className="font-display tracking-wider rounded-xl h-12">
+                    {downloadingInvoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                    DOWNLOAD INVOICE
+                  </Button>
                   <Button onClick={() => window.print()} variant="outline" className="font-display tracking-wider rounded-xl h-12">
-                    <Printer className="w-4 h-4 mr-2" /> PRINT / SAVE CONFIRMATION
+                    <Printer className="w-4 h-4 mr-2" /> PRINT CONFIRMATION
                   </Button>
                   <Button asChild className="font-display tracking-wider rounded-xl h-12">
                     <Link to="/">BACK TO HOME</Link>
