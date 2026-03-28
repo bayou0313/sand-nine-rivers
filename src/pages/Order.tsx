@@ -400,7 +400,7 @@ const Order = () => {
         ...buildOrderData(),
         payment_method: codSubOption,
         payment_status: "pending",
-        order_number: insertedOrder?.order_number,
+        order_number: inserted?.order_number,
       };
       supabase.functions.invoke("send-email", {
         body: { type: "order", data: emailData },
