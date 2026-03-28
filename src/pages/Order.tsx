@@ -1218,7 +1218,7 @@ const Order = () => {
                     )}
                     {taxAmount > 0 && (
                       <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Tax ({(taxInfo.rate * 100).toFixed(2)}%)</span>
+                        <span className="font-body text-sm text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
                         <span className="font-body text-sm text-foreground">{formatCurrency(taxAmount)}</span>
                       </div>
                     )}
