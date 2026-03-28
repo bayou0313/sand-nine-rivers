@@ -7,10 +7,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRAND_COLOR = "#041F38";
-const BRAND_GOLD = "#EAAB22";
+const BRAND_COLOR = "#0D2137";
+const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
-const FROM_EMAIL = "orders@riversand.net";
+const DISPLAY_FROM = "River Sand <no_reply@riversand.net>";
+const REPLY_TO = "no_reply@riversand.net";
+const INTERNAL_EMAIL = "cmo@haulogix.us";
 const PHONE = "1-855-GOT-WAYS";
 
 function emailWrapper(body: string) {
@@ -36,10 +38,140 @@ function emailWrapper(body: string) {
   <div class="body">${body}</div>
   <div class="footer">
     <p>WAYS River Sand &bull; Greater New Orleans, LA</p>
-    <p><a href="tel:+18554689297">${PHONE}</a> &bull; <a href="mailto:${FROM_EMAIL}">${FROM_EMAIL}</a></p>
+    <p><a href="tel:+18554689297">${PHONE}</a> &bull; <a href="mailto:no_reply@riversand.net">no_reply@riversand.net</a></p>
     <p><a href="https://riversand.net">riversand.net</a></p>
   </div>
 </div></body></html>`;
+}
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "TBD";
+  try {
+    const d = new Date(dateStr + (dateStr.includes("T") ? "" : "T12:00:00"));
+    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
+function paymentMethodLabel(method: string): string {
+  if (method === "stripe-link" || method === "card") return "Credit Card";
+  if (method === "check") return "Check";
+  return "Cash";
+}
+
+function invoiceBlock(order: any): string {
+  const orderNumber = order.order_number || "N/A";
+  const invoiceDate = formatDate(order.created_at);
+  const isCard = order.payment_method === "stripe-link" || order.payment_method === "card";
+  const dueDate = isCard
+    ? `Paid — ${invoiceDate}`
+    : `Due at delivery — ${formatDate(order.delivery_date)}`;
+
+  const basePrice = 195;
+  const qty = order.quantity || 1;
+  const baseLine = basePrice * qty;
+
+  // Calculate distance fee
+  const distanceMiles = Number(order.distance_miles || 0);
+  const distanceFee = distanceMiles > 15 ? parseFloat(((distanceMiles - 15) * 3.49 * qty).toFixed(2)) : 0;
+
+  const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 35) : 0;
+
+  const total = Number(order.price || 0).toFixed(2);
+
+  const paymentStatus = isCard ? "PAID — Thank you" : "PAYMENT DUE AT DELIVERY";
+  const amountDue = isCard ? "$0.00" : `$${total}`;
+
+  let lineItems = `
+    <tr>
+      <td style="padding:10px;border:1px solid #DDDDDD;color:${BRAND_COLOR}">River Sand — 9 cu/yd load, delivered</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:center">${qty}</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$195.00</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${baseLine.toFixed(2)}</td>
+    </tr>`;
+
+  if (distanceFee > 0) {
+    lineItems += `
+    <tr>
+      <td style="padding:10px;border:1px solid #DDDDDD;color:${BRAND_COLOR}">Distance delivery fee</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:center">1</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${distanceFee.toFixed(2)}</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${distanceFee.toFixed(2)}</td>
+    </tr>`;
+  }
+
+  if (satSurcharge > 0) {
+    lineItems += `
+    <tr>
+      <td style="padding:10px;border:1px solid #DDDDDD;color:${BRAND_COLOR}">Saturday delivery surcharge</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:center">1</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${Number(satSurcharge).toFixed(2)}</td>
+      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${Number(satSurcharge).toFixed(2)}</td>
+    </tr>`;
+  }
+
+  return `
+  <div style="margin-top:32px;border:1px solid #DDDDDD;border-radius:8px;overflow:hidden">
+    <!-- Invoice Header -->
+    <div style="background:#F2F2F2;padding:24px;border-bottom:1px solid #DDDDDD">
+      <h2 style="margin:0 0 16px;color:${BRAND_COLOR};font-size:22px;letter-spacing:2px">INVOICE</h2>
+      <p style="margin:4px 0;color:${BRAND_COLOR};font-size:14px"><strong>Ways Materials, LLC</strong></p>
+      <p style="margin:2px 0;color:#555;font-size:13px">Bridge City, Louisiana</p>
+      <p style="margin:2px 0;color:#555;font-size:13px">Phone: ${PHONE}</p>
+      <p style="margin:2px 0;color:#555;font-size:13px">Website: riversand.net</p>
+      <table style="margin-top:12px;font-size:13px;color:#555">
+        <tr><td style="padding:2px 12px 2px 0;font-weight:600;color:${BRAND_COLOR}">Invoice Number:</td><td>${orderNumber}</td></tr>
+        <tr><td style="padding:2px 12px 2px 0;font-weight:600;color:${BRAND_COLOR}">Invoice Date:</td><td>${invoiceDate}</td></tr>
+        <tr><td style="padding:2px 12px 2px 0;font-weight:600;color:${BRAND_COLOR}">Due Date:</td><td>${dueDate}</td></tr>
+      </table>
+    </div>
+
+    <!-- Bill To -->
+    <div style="padding:20px 24px;border-bottom:1px solid #DDDDDD">
+      <p style="margin:0 0 8px;font-weight:600;color:${BRAND_COLOR};font-size:13px;text-transform:uppercase;letter-spacing:1px">Bill To:</p>
+      <p style="margin:2px 0;color:#555;font-size:14px">${order.customer_name || ""}</p>
+      <p style="margin:2px 0;color:#555;font-size:14px">${order.delivery_address || ""}</p>
+      ${order.customer_email ? `<p style="margin:2px 0;color:#555;font-size:14px">${order.customer_email}</p>` : ""}
+      ${order.customer_phone ? `<p style="margin:2px 0;color:#555;font-size:14px">${order.customer_phone}</p>` : ""}
+    </div>
+
+    <!-- Line Items -->
+    <div style="padding:0">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="background:#F2F2F2">
+            <th style="padding:10px;border:1px solid #DDDDDD;text-align:left;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Description</th>
+            <th style="padding:10px;border:1px solid #DDDDDD;text-align:center;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Qty</th>
+            <th style="padding:10px;border:1px solid #DDDDDD;text-align:right;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Unit Price</th>
+            <th style="padding:10px;border:1px solid #DDDDDD;text-align:right;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lineItems}
+          <tr style="background:${BRAND_GOLD}15">
+            <td colspan="3" style="padding:12px 10px;border:1px solid #DDDDDD;font-weight:700;color:${BRAND_COLOR};text-align:right;font-size:15px">TOTAL</td>
+            <td style="padding:12px 10px;border:1px solid #DDDDDD;font-weight:700;color:${BRAND_GOLD};text-align:right;font-size:15px">$${total}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Payment -->
+    <div style="padding:20px 24px;border-top:1px solid #DDDDDD">
+      <table style="font-size:14px;color:#555">
+        <tr><td style="padding:3px 12px 3px 0;font-weight:600;color:${BRAND_COLOR}">Payment Method:</td><td>${paymentMethodLabel(order.payment_method)}</td></tr>
+        <tr><td style="padding:3px 12px 3px 0;font-weight:600;color:${BRAND_COLOR}">Payment Status:</td><td style="font-weight:600;color:${isCard ? "#22C55E" : BRAND_GOLD}">${paymentStatus}</td></tr>
+        <tr><td style="padding:3px 12px 3px 0;font-weight:600;color:${BRAND_COLOR}">Amount Due at Delivery:</td><td style="font-weight:600">${amountDue}</td></tr>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#F2F2F2;padding:16px 24px;border-top:1px solid #DDDDDD">
+      <p style="margin:0;color:#777;font-size:12px;line-height:1.5">This invoice is issued by Ways Materials, LLC operating as River Sand (riversand.net). For questions contact us at ${PHONE} or no_reply@riversand.net.</p>
+      <p style="margin:8px 0 0;color:#999;font-size:11px">Powered by Haulogix, LLC</p>
+    </div>
+  </div>`;
 }
 
 function orderCustomerEmail(order: any) {
@@ -47,10 +179,10 @@ function orderCustomerEmail(order: any) {
     ["Product", "River Sand — 9 cu yd load"],
     ["Quantity", `${order.quantity} load${order.quantity > 1 ? "s" : ""}`],
     ["Delivery Address", order.delivery_address],
-    ["Delivery Date", order.delivery_date || "TBD"],
+    ["Delivery Date", formatDate(order.delivery_date)],
     ["Delivery Window", order.delivery_window || "8:00 AM – 5:00 PM"],
     ["Total Price", `$${Number(order.price).toFixed(2)}`],
-    ["Payment Method", order.payment_method === "stripe-link" ? "Credit Card" : order.payment_method === "check" ? "Check on Delivery" : "Cash on Delivery"],
+    ["Payment Method", paymentMethodLabel(order.payment_method)],
   ];
   if (order.order_number) rows.unshift(["Order #", order.order_number]);
 
@@ -61,7 +193,8 @@ function orderCustomerEmail(order: any) {
     <p>Thank you for your order${order.customer_name ? ", " + order.customer_name : ""}! Here's your order summary:</p>
     <table class="info-table">${tableRows}</table>
     ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ""}
-    <p>If you have any questions, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
+    ${invoiceBlock(order)}
+    <p style="margin-top:24px">If you have any questions, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
   `);
 }
 
@@ -126,18 +259,21 @@ async function sendMail(to: string, subject: string, html: string) {
       port: 465,
       tls: true,
       auth: {
-        username: Deno.env.get("GMAIL_USER") || FROM_EMAIL,
+        username: Deno.env.get("GMAIL_USER") || "cmo@haulogix.us",
         password: Deno.env.get("GMAIL_APP_PASSWORD") || "",
       },
     },
   });
 
   await client.send({
-    from: FROM_EMAIL,
+    from: DISPLAY_FROM,
     to,
     subject,
     content: "Please view this email in an HTML-capable client.",
     html,
+    headers: {
+      "Reply-To": REPLY_TO,
+    },
   });
 
   await client.close();
@@ -158,7 +294,7 @@ serve(async (req) => {
         : "Order Confirmed — WAYS River Sand";
 
       const promises: Promise<void>[] = [
-        sendMail(FROM_EMAIL, `🔔 New Order ${data.order_number || ""}`.trim(), orderInternalEmail(data)),
+        sendMail(INTERNAL_EMAIL, `🔔 New Order ${data.order_number || ""}`.trim(), orderInternalEmail(data)),
       ];
       if (customerEmail) {
         promises.push(sendMail(customerEmail, subject, orderCustomerEmail(data)));
@@ -168,7 +304,7 @@ serve(async (req) => {
     } else if (type === "contact") {
       const customerEmail = data.email;
       const promises: Promise<void>[] = [
-        sendMail(FROM_EMAIL, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data)),
+        sendMail(INTERNAL_EMAIL, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data)),
       ];
       if (customerEmail) {
         promises.push(sendMail(customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data)));
@@ -213,7 +349,7 @@ serve(async (req) => {
   </div>
 </div></body></html>`;
 
-      await sendMail(FROM_EMAIL, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml);
+      await sendMail(INTERNAL_EMAIL, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml);
 
     } else {
       return new Response(
