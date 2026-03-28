@@ -132,6 +132,7 @@ const Order = () => {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
       if (returnedSessionId) setStripePaymentId(returnedSessionId);
       setStep("success");
+      // Email is sent by the Stripe webhook for same-tab returns
       toast({
         title: "Payment successful",
         description: returnedOrderNumber
