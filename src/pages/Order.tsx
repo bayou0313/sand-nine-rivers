@@ -163,6 +163,7 @@ const Order = () => {
         if (signal.status === "success") {
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
+          if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
           setPendingOrderId(null);
           setStep("success");
           toast({
