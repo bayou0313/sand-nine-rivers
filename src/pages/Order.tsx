@@ -244,6 +244,10 @@ const Order = () => {
     }).catch((err) => console.error("[Order] Email send exception:", err));
   }, [result, form, address, selectedDeliveryDate, quantity, totalPrice, totalWithProcessingFee, saturdaySurchargeTotal, taxInfo, taxAmount]);
 
+  // Keep a ref to avoid stale closure in Stripe signal listener
+  const sendOrderEmailRef = useRef(sendOrderEmail);
+  useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
+
   useEffect(() => {
     const paramAddress = searchParams.get("address");
     const paramDistance = searchParams.get("distance");
