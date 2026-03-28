@@ -27,6 +27,8 @@ export type Database = {
           delivery_window: string
           distance_miles: number
           id: string
+          lookup_token: string | null
+          lookup_token_used: boolean
           notes: string | null
           order_number: string | null
           payment_method: string
@@ -54,6 +56,8 @@ export type Database = {
           delivery_window?: string
           distance_miles: number
           id?: string
+          lookup_token?: string | null
+          lookup_token_used?: boolean
           notes?: string | null
           order_number?: string | null
           payment_method?: string
@@ -81,6 +85,8 @@ export type Database = {
           delivery_window?: string
           distance_miles?: number
           id?: string
+          lookup_token?: string | null
+          lookup_token_used?: boolean
           notes?: string | null
           order_number?: string | null
           payment_method?: string
@@ -156,13 +162,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_order_status: {
-        Args: { p_order_id: string; p_token: string }
-        Returns: {
-          order_number: string
-          payment_status: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
