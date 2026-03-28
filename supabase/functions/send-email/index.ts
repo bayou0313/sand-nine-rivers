@@ -280,12 +280,19 @@ async function sendMail(to: string, subject: string, html: string) {
 }
 
 serve(async (req) => {
+  console.log("[send-email] Function invoked, method:", req.method);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const gmailUser = Deno.env.get("GMAIL_USER");
+    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
+    console.log("[send-email] GMAIL_USER set:", !!gmailUser, "| GMAIL_APP_PASSWORD set:", !!gmailPass);
+
     const { type, data } = await req.json();
+    console.log("[send-email] Email type:", type);
 
     if (type === "order") {
       const customerEmail = data.customer_email;
