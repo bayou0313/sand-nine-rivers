@@ -12,7 +12,7 @@ const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
 const FROM = "River Sand <no_reply@riversand.net>";
 const REPLY_TO = "no_reply@riversand.net";
-const INTERNAL_EMAIL = "cmo@haulogix.us";
+const INTERNAL_EMAIL = "cmo@haulogix.com";
 const PHONE = "1-855-GOT-WAYS";
 
 function emailWrapper(body: string) {
