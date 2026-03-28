@@ -236,6 +236,7 @@ const Order = () => {
       same_day_requested: selectedDeliveryDate?.isSameDay || false,
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,
+      tax_parish: taxInfo.parish,
       payment_method: pMethod,
       payment_status: pStatus,
       stripe_payment_id: sPaymentId,
