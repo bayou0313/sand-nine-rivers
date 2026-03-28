@@ -40,8 +40,8 @@ const Footer = () => {
               alt="WAYS — We Are Your Source"
               className="w-[200px] h-auto object-contain ml-0 mt-2"
               loading="lazy"
-              whileHover={{ opacity: 0.7 }}
-              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.08, filter: "drop-shadow(0 0 12px hsl(41 83% 53% / 0.5))" }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
             />
           </motion.div>
 
