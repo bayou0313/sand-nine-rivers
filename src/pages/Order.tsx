@@ -168,7 +168,7 @@ const Order = () => {
           setPendingOrderId(null);
           setStep("success");
           // Send confirmation email for Stripe payment
-          sendOrderEmail(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
+          sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
           toast({
             title: "Payment successful",
             description: signal.order_number
@@ -211,7 +211,8 @@ const Order = () => {
 
   // Helper: send order confirmation email
   const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null) => {
-    if (!result) return;
+    console.log("[Order] sendOrderEmail called, result:", !!result, "orderNum:", orderNum, "pMethod:", pMethod);
+    if (!result) { console.warn("[Order] Email NOT sent — result is null"); return; }
     const distanceFee = result.distance > BASE_MILES ? parseFloat(((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)) : 0;
     const emailPayload = {
       order_number: orderNum,
@@ -243,6 +244,10 @@ const Order = () => {
       else console.log("[Order] Email sent successfully:", res.data);
     }).catch((err) => console.error("[Order] Email send exception:", err));
   }, [result, form, address, selectedDeliveryDate, quantity, totalPrice, totalWithProcessingFee, saturdaySurchargeTotal, taxInfo, taxAmount]);
+
+  // Keep a ref to avoid stale closure in Stripe signal listener
+  const sendOrderEmailRef = useRef(sendOrderEmail);
+  useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
