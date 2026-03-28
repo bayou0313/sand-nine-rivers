@@ -400,23 +400,8 @@ const Order = () => {
       setLookupToken(inserted?.lookup_token || null);
       setStep("success");
 
-      // Send order confirmation emails
-      const emailData = {
-        ...buildOrderData(),
-        payment_method: codSubOption,
-        payment_status: "pending",
-        order_number: inserted?.order_number,
-      };
-      console.log("[Order] Sending order confirmation email for", inserted?.order_number);
-      supabase.functions.invoke("send-email", {
-        body: { type: "order", data: emailData },
-      }).then((res) => {
-        if (res.error) {
-          console.error("[Order] Email invoke error:", res.error);
-        } else {
-          console.log("[Order] Email sent successfully:", res.data);
-        }
-      }).catch((err) => console.error("[Order] Email send exception:", err));
+      // Send order confirmation email
+      sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null);
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
     } finally {
