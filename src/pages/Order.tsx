@@ -211,7 +211,8 @@ const Order = () => {
 
   // Helper: send order confirmation email
   const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null) => {
-    if (!result) return;
+    console.log("[Order] sendOrderEmail called, result:", !!result, "orderNum:", orderNum, "pMethod:", pMethod);
+    if (!result) { console.warn("[Order] Email NOT sent — result is null"); return; }
     const distanceFee = result.distance > BASE_MILES ? parseFloat(((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)) : 0;
     const emailPayload = {
       order_number: orderNum,
