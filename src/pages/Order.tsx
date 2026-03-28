@@ -168,7 +168,7 @@ const Order = () => {
           setPendingOrderId(null);
           setStep("success");
           // Send confirmation email for Stripe payment
-          sendOrderEmail(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
+          sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
           toast({
             title: "Payment successful",
             description: signal.order_number
