@@ -427,13 +427,12 @@ const Order = () => {
         payment_status: "pending",
         price: totalWithProcessingFee,
       };
-      const { data: insertedOrder, error: insertError } = await (supabase as any)
-        .from("orders")
-        .insert(orderData)
-        .select("id, order_number, lookup_token")
-        .single();
+      const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
+        p_data: orderData,
+      });
 
       if (insertError) throw insertError;
+      const insertedOrder = rpcResult as any;
 
       const isEmbedded = window.self !== window.top;
       const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
