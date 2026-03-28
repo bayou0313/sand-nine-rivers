@@ -1010,89 +1010,201 @@ const Order = () => {
               </motion.div>
             )}
 
-            {/* SUCCESS */}
+            {/* SUCCESS — Full Confirmation Page */}
             {step === "success" && (
-              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-4">
+              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-5 print-confirmation">
+                {/* Header */}
                 <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                  {/* Logo header */}
                   <div className="bg-muted/50 py-4 flex justify-center border-b border-border/50">
                     <img src={logoImg} alt="RIVERSAND" className="h-[67px] lg:h-[80px] w-auto object-contain" />
                   </div>
-
-                  <div className="p-8 text-center space-y-5">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 }}
-                      className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto"
-                    >
-                      <CheckCircle2 className="w-8 h-8 text-primary" />
+                  <div className="p-8 text-center space-y-4">
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 }} className="w-16 h-16 bg-[#22C55E]/10 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-8 h-8 text-[#22C55E]" />
                     </motion.div>
+                    <h2 className="text-3xl font-display text-foreground">ORDER CONFIRMED</h2>
+                    {form.email && (
+                      <p className="font-body text-sm text-muted-foreground">A copy of this confirmation has been sent to <strong className="text-foreground">{form.email}</strong></p>
+                    )}
+                  </div>
+                </div>
 
-                    <h2 className="text-3xl font-display text-foreground">ORDER PLACED!</h2>
+                {/* Stripe Payment Block (card only) */}
+                {(paymentMethod === "stripe-link") && (
+                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
+                    <div className="bg-foreground px-6 py-3">
+                      <h3 className="font-display text-sm text-background tracking-wider">PAYMENT CONFIRMED</h3>
+                    </div>
+                    <div className="p-6 space-y-2">
+                      {stripePaymentId && (
+                        <div className="flex justify-between py-1.5">
+                          <span className="font-body text-sm text-muted-foreground">Payment ID</span>
+                          <span className="font-mono text-xs text-foreground">{stripePaymentId}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Amount Charged</span>
+                        <span className="font-display text-sm text-foreground">{formatCurrency(totalWithProcessingFee)}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Currency</span>
+                        <span className="font-display text-sm text-foreground">USD</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Status</span>
+                        <span className="font-display text-sm text-[#22C55E]">Succeeded ✓</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Payment Method</span>
+                        <span className="font-display text-sm text-foreground">Credit Card</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Payment Date</span>
+                        <span className="font-body text-sm text-foreground">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Processing Fee (3.5%)</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(processingFee)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
+                {/* Cash / Check Block */}
+                {(paymentMethod === "cash" || paymentMethod === "check" || codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
+                  <div className="bg-background rounded-2xl border border-[#F59E0B]/30 shadow-lg shadow-foreground/5 overflow-hidden">
+                    <div className="bg-[#F59E0B]/10 px-6 py-3 border-b border-[#F59E0B]/20">
+                      <h3 className="font-display text-sm text-[#F59E0B] tracking-wider">PAYMENT DUE AT DELIVERY</h3>
+                    </div>
+                    <div className="p-6 space-y-2">
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Method</span>
+                        <span className="font-display text-sm text-foreground capitalize">{codSubOption}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Amount Due</span>
+                        <span className="font-display text-sm text-foreground">{formatCurrency(totalPrice)}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Due</span>
+                        <span className="font-display text-sm text-foreground">At time of delivery</span>
+                      </div>
+                      <p className="font-body text-xs text-muted-foreground mt-3 bg-muted/50 rounded-lg p-3">Please have exact payment ready at delivery. Our driver will provide a receipt.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Order Details */}
+                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
+                  <div className="bg-foreground px-6 py-3">
+                    <h3 className="font-display text-sm text-background tracking-wider">ORDER DETAILS</h3>
+                  </div>
+                  <div className="p-6 space-y-2">
                     {orderNumber && (
-                      <div className="bg-card border-2 border-primary/20 rounded-xl p-4 max-w-xs mx-auto">
-                        <p className="font-body text-xs text-muted-foreground uppercase tracking-wider">Order Number</p>
-                        <p className="font-display text-2xl text-primary mt-1">{orderNumber}</p>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Order Number</span>
+                        <span className="font-display text-sm text-primary">{orderNumber}</span>
                       </div>
                     )}
-
-                    {stripePaymentId ? (
-                      <div className="flex items-center justify-center gap-2 text-primary">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <p className="font-display text-sm tracking-wider">PAYMENT CONFIRMED</p>
-                      </div>
-                    ) : (
-                      <p className="font-body text-sm text-muted-foreground max-w-sm mx-auto">
-                        Payment of <strong className="text-primary">{formatCurrency(totalPrice)}</strong> due at delivery by <strong className="text-foreground">{codSubOption}</strong>.
-                      </p>
-                    )}
-
+                    <div className="flex justify-between py-1.5">
+                      <span className="font-body text-sm text-muted-foreground">Order Date</span>
+                      <span className="font-body text-sm text-foreground">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex justify-between py-1.5">
+                      <span className="font-body text-sm text-muted-foreground">Product</span>
+                      <span className="font-body text-sm text-foreground">River Sand — 9 Cubic Yard Load</span>
+                    </div>
+                    <div className="flex justify-between py-1.5">
+                      <span className="font-body text-sm text-muted-foreground">Quantity</span>
+                      <span className="font-body text-sm text-foreground">{quantity} load{quantity > 1 ? "s" : ""}</span>
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex justify-between py-1.5">
+                      <span className="font-body text-sm text-muted-foreground">Delivery Address</span>
+                      <span className="font-body text-sm text-foreground text-right max-w-[60%]">{address}</span>
+                    </div>
                     {selectedDeliveryDate && (
-                      <div className="bg-card border border-border rounded-xl p-3 max-w-xs mx-auto">
-                        <p className="font-body text-xs text-muted-foreground uppercase tracking-wider">Scheduled Delivery</p>
-                        <p className="font-display text-lg text-foreground mt-1">{selectedDeliveryDate.fullLabel}</p>
-                        <p className="font-body text-xs text-muted-foreground">8:00 AM – 5:00 PM</p>
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Delivery Date</span>
+                        <span className="font-display text-sm text-foreground">{selectedDeliveryDate.fullLabel}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-1.5">
+                      <span className="font-body text-sm text-muted-foreground">Delivery Window</span>
+                      <span className="font-body text-sm text-foreground">8:00 AM – 5:00 PM</span>
+                    </div>
+
+                    {selectedDeliveryDate?.isSameDay && (
+                      <div className="mt-3 bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-lg p-3">
+                        <p className="font-body text-xs text-[#F59E0B]">⚡ Same-day delivery requested. Our team will call {form.phone} to confirm before dispatching.</p>
+                      </div>
+                    )}
+                    {selectedDeliveryDate?.isSaturday && (
+                      <div className="mt-3 bg-muted/50 border border-border rounded-lg p-3">
+                        <p className="font-body text-xs text-muted-foreground">📅 Saturday delivery — $35 surcharge applied.</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* What happens next timeline */}
-                <div className="bg-background rounded-2xl border border-border/50 p-6 shadow-lg shadow-foreground/5">
-                  <h3 className="font-display text-lg text-foreground tracking-wider mb-4">WHAT HAPPENS NEXT?</h3>
-                  <div className="space-y-4">
-                    {[
-                      { icon: CheckCircle2, title: "Order Confirmed", desc: "Your order has been received and logged." },
-                      { icon: Phone, title: "We'll Call You", desc: `We'll reach out to ${form.phone} to confirm details.` },
-                      { icon: Truck, title: "Delivery Day", desc: selectedDeliveryDate ? `${selectedDeliveryDate.fullLabel}, 8 AM – 5 PM` : "As scheduled" },
-                    ].map((item, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + i * 0.15 }}
-                        className="flex items-start gap-3"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <item.icon className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-display text-sm text-foreground">{item.title}</p>
-                          <p className="font-body text-xs text-muted-foreground">{item.desc}</p>
-                        </div>
-                      </motion.div>
-                    ))}
+                {/* Pricing Summary */}
+                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
+                  <div className="bg-foreground px-6 py-3">
+                    <h3 className="font-display text-sm text-background tracking-wider">PRICING SUMMARY</h3>
+                  </div>
+                  <div className="p-6 space-y-2">
+                    <div className="flex justify-between py-1.5">
+                      <span className="font-body text-sm text-muted-foreground">River Sand (×{quantity})</span>
+                      <span className="font-body text-sm text-foreground">{formatCurrency(BASE_PRICE * quantity)}</span>
+                    </div>
+                    {result && result.distance > BASE_MILES && (
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Distance fee</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}</span>
+                      </div>
+                    )}
+                    {selectedDeliveryDate?.isSaturday && (
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Saturday surcharge</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(saturdaySurchargeTotal)}</span>
+                      </div>
+                    )}
+                    {taxAmount > 0 && (
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Tax ({(taxInfo.rate * 100).toFixed(2)}%)</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(taxAmount)}</span>
+                      </div>
+                    )}
+                    {paymentMethod === "stripe-link" && (
+                      <div className="flex justify-between py-1.5">
+                        <span className="font-body text-sm text-muted-foreground">Processing fee (3.5%)</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(processingFee)}</span>
+                      </div>
+                    )}
+                    <Separator className="my-2" />
+                    <div className="flex justify-between py-2">
+                      <span className="font-display text-base text-foreground">Total</span>
+                      <span className="font-display text-base text-primary">{formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5">
+                      <span className="font-body text-sm text-muted-foreground">
+                        {paymentMethod === "stripe-link" ? "Card charged" : "Due at delivery"}
+                      </span>
+                      <span className="font-display text-sm text-foreground">
+                        {formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {/* Bottom Actions */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center print-hide">
+                  <Button onClick={() => window.print()} variant="outline" className="font-display tracking-wider rounded-xl h-12">
+                    <Printer className="w-4 h-4 mr-2" /> PRINT / SAVE CONFIRMATION
+                  </Button>
                   <Button asChild className="font-display tracking-wider rounded-xl h-12">
                     <Link to="/">BACK TO HOME</Link>
-                  </Button>
-                  <Button variant="outline" asChild className="font-display tracking-wider rounded-xl h-12">
-                    <a href="tel:+18554689297"><Phone className="w-4 h-4 mr-2" /> CALL US</a>
                   </Button>
                 </div>
               </motion.div>
