@@ -221,6 +221,7 @@ const Order = () => {
 
         if (data.payment_status === "paid") {
           if (data.order_number) setOrderNumber(data.order_number);
+          if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
           setPendingOrderId(null);
           setSubmitting(false);
           setStep("success");
