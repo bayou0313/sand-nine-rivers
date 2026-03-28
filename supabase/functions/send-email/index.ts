@@ -294,7 +294,7 @@ serve(async (req) => {
     const { type, data } = await req.json();
     console.log("[send-email] Email type:", type);
 
-    if (type === "order") {
+    if (type === "order" || type === "order_confirmation") {
       const customerEmail = data.customer_email;
       const subject = data.order_number
         ? `Order ${data.order_number} Confirmed — WAYS River Sand`
