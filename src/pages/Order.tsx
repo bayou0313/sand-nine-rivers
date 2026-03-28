@@ -88,7 +88,12 @@ const Order = () => {
     notes: "",
   });
 
-  const taxInfo = useMemo(() => getTaxRateFromAddress(address), [address]);
+  const [detectedParish, setDetectedParish] = useState<string | null>(null);
+
+  const taxInfo = useMemo(() => {
+    if (detectedParish) return getTaxRateByParish(detectedParish);
+    return getTaxRateFromAddress(address);
+  }, [address, detectedParish]);
 
   const PROCESSING_FEE_RATE = 0.035;
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
