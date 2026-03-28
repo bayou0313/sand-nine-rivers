@@ -38,7 +38,7 @@ const Footer = () => {
             <motion.img
               src={waysLogoImg}
               alt="WAYS — We Are Your Source"
-              className="w-[120px] h-auto object-contain brightness-0 invert opacity-40 ml-[51px] mt-2"
+              className="w-[200px] h-auto object-contain brightness-0 invert ml-[51px] mt-2"
               loading="lazy"
               whileHover={{ opacity: 0.7 }}
               transition={{ duration: 0.3 }}
