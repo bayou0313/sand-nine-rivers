@@ -421,7 +421,7 @@ const Order = () => {
       const { data: insertedOrder, error: insertError } = await (supabase as any)
         .from("orders")
         .insert(orderData)
-        .select("id, order_number")
+        .select("id, order_number, confirmation_token")
         .single();
 
       if (insertError) throw insertError;
