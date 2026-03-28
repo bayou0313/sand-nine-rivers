@@ -449,7 +449,7 @@ const Order = () => {
 
       // Store order ID and token for DB polling
       setPendingOrderId(insertedOrder?.id || null);
-      setConfirmationToken(insertedOrder?.confirmation_token || null);
+      setLookupToken(insertedOrder?.lookup_token || null);
 
       if (isEmbedded) {
         const newTab = window.open(data.url, "_blank");
