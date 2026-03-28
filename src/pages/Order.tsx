@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, Printer } from "lucide-react";
+import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, Printer, Download } from "lucide-react";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
@@ -71,6 +71,8 @@ const Order = () => {
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [lookupToken, setLookupToken] = useState<string | null>(null);
+  const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
@@ -161,6 +163,7 @@ const Order = () => {
         if (signal.status === "success") {
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
+          if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
           setPendingOrderId(null);
           setStep("success");
           toast({
@@ -218,6 +221,7 @@ const Order = () => {
 
         if (data.payment_status === "paid") {
           if (data.order_number) setOrderNumber(data.order_number);
+          if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
           setPendingOrderId(null);
           setSubmitting(false);
           setStep("success");
@@ -378,14 +382,19 @@ const Order = () => {
 
     setSubmitting(true);
     try {
-      const { data: insertedOrder, error: insertError } = await (supabase as any).from("orders").insert({
-        ...buildOrderData(),
-        payment_method: codSubOption,
-        payment_status: "pending",
-      }).select("order_number, lookup_token").single();
+      const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
+        p_data: {
+          ...buildOrderData(),
+          payment_method: codSubOption,
+          payment_status: "pending",
+        },
+      });
 
       if (insertError) throw insertError;
-      setOrderNumber(insertedOrder?.order_number || null);
+      const inserted = rpcResult as any;
+      setOrderNumber(inserted?.order_number || null);
+      setConfirmedOrderId(inserted?.id || null);
+      setLookupToken(inserted?.lookup_token || null);
       setStep("success");
 
       // Send order confirmation emails (fire-and-forget)
@@ -393,7 +402,7 @@ const Order = () => {
         ...buildOrderData(),
         payment_method: codSubOption,
         payment_status: "pending",
-        order_number: insertedOrder?.order_number,
+        order_number: inserted?.order_number,
       };
       supabase.functions.invoke("send-email", {
         body: { type: "order", data: emailData },
@@ -420,13 +429,12 @@ const Order = () => {
         payment_status: "pending",
         price: totalWithProcessingFee,
       };
-      const { data: insertedOrder, error: insertError } = await (supabase as any)
-        .from("orders")
-        .insert(orderData)
-        .select("id, order_number, lookup_token")
-        .single();
+      const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
+        p_data: orderData,
+      });
 
       if (insertError) throw insertError;
+      const insertedOrder = rpcResult as any;
 
       const isEmbedded = window.self !== window.top;
       const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
@@ -465,6 +473,34 @@ const Order = () => {
       toast({ title: "Payment link failed", description: err.message || "Please try another payment method.", variant: "destructive" });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    if (!confirmedOrderId || !lookupToken) {
+      toast({ title: "Unable to download", description: "Order information not available.", variant: "destructive" });
+      return;
+    }
+    setDownloadingInvoice(true);
+    try {
+      const response = await supabase.functions.invoke("generate-invoice", {
+        body: { order_id: confirmedOrderId, lookup_token: lookupToken },
+      });
+      if (response.error) throw new Error("Failed to generate invoice");
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${orderNumber || "order"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setDownloadingInvoice(false);
     }
   };
 
@@ -1200,8 +1236,12 @@ const Order = () => {
 
                 {/* Bottom Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center print-hide">
+                  <Button onClick={handleDownloadInvoice} disabled={downloadingInvoice || !confirmedOrderId} variant="outline" className="font-display tracking-wider rounded-xl h-12">
+                    {downloadingInvoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                    DOWNLOAD INVOICE
+                  </Button>
                   <Button onClick={() => window.print()} variant="outline" className="font-display tracking-wider rounded-xl h-12">
-                    <Printer className="w-4 h-4 mr-2" /> PRINT / SAVE CONFIRMATION
+                    <Printer className="w-4 h-4 mr-2" /> PRINT CONFIRMATION
                   </Button>
                   <Button asChild className="font-display tracking-wider rounded-xl h-12">
                     <Link to="/">BACK TO HOME</Link>
