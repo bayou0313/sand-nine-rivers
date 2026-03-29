@@ -185,6 +185,15 @@ const Leads = () => {
   const [editingPitId, setEditingPitId] = useState<string | null>(null);
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Activation modal state
+  const [activationLeads, setActivationLeads] = useState<Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }>>([]);
+  const [showActivationModal, setShowActivationModal] = useState(false);
+  const [activationPit, setActivationPit] = useState<Pit | null>(null);
+  const [activationChecked, setActivationChecked] = useState<Set<string>>(new Set());
+  const [activationSending, setActivationSending] = useState(false);
+  const [activationProgress, setActivationProgress] = useState({ current: 0, total: 0 });
 
   const [showProposal, setShowProposal] = useState(false);
   const [proposalSubject, setProposalSubject] = useState("");
