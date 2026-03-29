@@ -136,6 +136,13 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
         setOutOfAreaDistance(parseFloat(bestResult.distance.toFixed(1)));
         setNearestPitInfo({ id: bestResult.pit.id, name: bestResult.pit.name, distance: bestResult.distance });
         setShowOutOfAreaModal(true);
+        updateSession({
+          stage: "got_out_of_area",
+          delivery_address: address,
+          nearest_pit_name: bestResult.pit.name,
+          nearest_pit_id: bestResult.pit.id,
+          serviceable: false,
+        });
         setLoading(false); return;
       }
 
