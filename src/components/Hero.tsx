@@ -65,7 +65,7 @@ const Hero = ({ h1Override, subtitleOverride, trustBadges }: HeroProps = {}) => 
             transition={{ delay: 0.5 }}
             className="text-lg md:text-xl font-body text-primary-foreground/75 max-w-lg leading-relaxed"
           >
-            Quality river sand for landscaping, drainage, backfill, and construction projects across Greater New Orleans. Order before noon for same-day delivery.
+            {subtitleOverride || "Quality river sand for landscaping, drainage, backfill, and construction projects across Greater New Orleans. Order before noon for same-day delivery."}
           </motion.p>
 
           <motion.div
