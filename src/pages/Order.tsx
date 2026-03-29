@@ -1221,7 +1221,7 @@ const Order = () => {
               const displayTaxAmount = dt?.taxAmount ?? taxAmount;
               const displaySubtotal = dt?.subtotal ?? subtotal;
               const displaySaturdaySurcharge = dt?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
-              const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0);
+              const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0);
               const displayTaxInfo = dt?.taxInfo ?? taxInfo;
               return (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-5 print-confirmation">
