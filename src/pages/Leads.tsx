@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map, List, DollarSign, Zap, Users, Building2, LogOut, Menu } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
