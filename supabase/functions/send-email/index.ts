@@ -419,6 +419,45 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
       );
       console.log("[email] Pit proposal sent to:", data.customer_email);
 
+    } else if (type === "cash_payment_confirmed") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const method = data.payment_method === "check" ? "Check" : "Cash";
+      const total = Number(data.price || 0).toFixed(2);
+      const recordedAt = data.cash_collected_at ? new Date(data.cash_collected_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : new Date().toLocaleString("en-US");
+
+      const cashHtml = emailWrapper(`
+        <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+        <p style="font-size:15px;color:#555;line-height:1.6">We've received your payment for your River Sand delivery. Thank you!</p>
+
+        <div style="border:2px solid ${BRAND_GOLD};border-radius:12px;padding:24px;margin:24px 0">
+          <table style="width:100%;font-size:14px;color:#555">
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Order #</td><td>${data.order_number || "N/A"}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Payment method</td><td>${method}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Amount paid</td><td style="font-weight:700;color:${BRAND_GOLD}">$${total}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery address</td><td>${data.delivery_address || ""}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery date</td><td>${formatDate(data.delivery_date)}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Payment recorded</td><td>${recordedAt}</td></tr>
+          </table>
+        </div>
+
+        <p style="font-size:15px;color:#555;line-height:1.6">Your order is complete. We appreciate your business and look forward to serving you again.</p>
+
+        <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">Ways Materials, LLC</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+        </div>
+      `);
+
+      if (!data.customer_email) {
+        return new Response(JSON.stringify({ error: "No customer email" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      await sendMail(resend, data.customer_email, `Payment Confirmed — Order #${data.order_number || "N/A"}`, cashHtml);
+      console.log("[email] Cash payment confirmation sent to:", data.customer_email);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),
