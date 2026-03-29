@@ -1245,41 +1245,41 @@ const Order = () => {
                       <span className="font-body text-sm text-muted-foreground">River Sand (×{quantity})</span>
                       <span className="font-body text-sm text-foreground">{formatCurrency(BASE_PRICE * quantity)}</span>
                     </div>
-                    {result && result.distance > BASE_MILES && (
+                    {displayDistanceFee > 0 && (
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Distance fee</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayDistanceFee)}</span>
                       </div>
                     )}
                     {selectedDeliveryDate?.isSaturday && (
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Saturday surcharge</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(saturdaySurchargeTotal)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displaySaturdaySurcharge)}</span>
                       </div>
                     )}
-                    {taxAmount > 0 && (
+                    {displayTaxAmount > 0 && (
                       <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(taxAmount)}</span>
+                        <span className="font-body text-sm text-muted-foreground">Sales tax — {displayTaxInfo.parish} ({(displayTaxInfo.rate * 100).toFixed(2)}%)</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayTaxAmount)}</span>
                       </div>
                     )}
                     {paymentMethod === "stripe-link" && (
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Processing fee (3.5%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(processingFee)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayProcessingFee)}</span>
                       </div>
                     )}
                     <Separator className="my-2" />
                     <div className="flex justify-between py-2">
                       <span className="font-display text-base text-foreground">Total</span>
-                      <span className="font-display text-base text-primary">{formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}</span>
+                      <span className="font-display text-base text-primary">{formatCurrency(paymentMethod === "stripe-link" ? displayTotalWithFee : displayTotal)}</span>
                     </div>
                     <div className="flex justify-between py-1.5">
                       <span className="font-body text-sm text-muted-foreground">
                         {paymentMethod === "stripe-link" ? "Card charged" : "Due at delivery"}
                       </span>
                       <span className="font-display text-sm text-foreground">
-                        {formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}
+                        {formatCurrency(paymentMethod === "stripe-link" ? displayTotalWithFee : displayTotal)}
                       </span>
                     </div>
                   </div>
