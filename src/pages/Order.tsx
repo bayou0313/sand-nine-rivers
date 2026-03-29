@@ -472,6 +472,11 @@ const Order = () => {
         duration: "~30 min",
       });
       setStep("details");
+      trackEvent("begin_checkout", {
+        value: bestResult.price,
+        currency: "USD",
+        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }],
+      });
       updateSession({
         stage: "started_checkout",
         delivery_address: address,
