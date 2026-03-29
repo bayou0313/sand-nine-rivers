@@ -236,9 +236,18 @@ const Order = () => {
 
   // Helper: send order confirmation email
   const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null) => {
-    console.log("[Order] sendOrderEmail called, result:", !!result, "orderNum:", orderNum, "pMethod:", pMethod);
-    if (!result) { console.warn("[Order] Email NOT sent — result is null"); return; }
-    const distanceFee = result.distance > BASE_MILES ? parseFloat(((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity).toFixed(2)) : 0;
+    console.log("[Order] sendOrderEmail called, result:", !!result, "confirmedTotals:", !!confirmedTotals, "orderNum:", orderNum, "pMethod:", pMethod);
+    const distMiles = result?.distance ?? 0;
+    const ct = confirmedTotals;
+    const emailTotalPrice = ct?.totalPrice ?? totalPrice;
+    const emailTotalWithFee = ct?.totalWithProcessingFee ?? totalWithProcessingFee;
+    const emailSatSurcharge = ct?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
+    const emailTaxRate = ct?.taxInfo?.rate ?? taxInfo.rate;
+    const emailTaxAmount = ct?.taxAmount ?? taxAmount;
+    const emailTaxParish = ct?.taxInfo?.parish ?? taxInfo.parish;
+
+    if (!result && !confirmedTotals) { console.warn("[Order] Email NOT sent — no result or confirmedTotals"); return; }
+
     const emailPayload = {
       order_number: orderNum,
       customer_name: form.name.trim(),
@@ -249,14 +258,14 @@ const Order = () => {
       delivery_day_of_week: selectedDeliveryDate?.dayOfWeek || null,
       delivery_window: "8:00 AM – 5:00 PM",
       quantity,
-      price: pMethod === "stripe-link" ? totalWithProcessingFee : totalPrice,
-      distance_miles: result.distance,
+      price: pMethod === "stripe-link" ? emailTotalWithFee : emailTotalPrice,
+      distance_miles: distMiles,
       saturday_surcharge: selectedDeliveryDate?.isSaturday || false,
-      saturday_surcharge_amount: saturdaySurchargeTotal,
+      saturday_surcharge_amount: emailSatSurcharge,
       same_day_requested: selectedDeliveryDate?.isSameDay || false,
-      tax_rate: taxInfo.rate,
-      tax_amount: taxAmount,
-      tax_parish: taxInfo.parish,
+      tax_rate: emailTaxRate,
+      tax_amount: emailTaxAmount,
+      tax_parish: emailTaxParish,
       payment_method: pMethod,
       payment_status: pStatus,
       stripe_payment_id: sPaymentId,
@@ -269,7 +278,7 @@ const Order = () => {
       if (res.error) console.error("[Order] Email invoke error:", res.error);
       else console.log("[Order] Email sent successfully:", res.data);
     }).catch((err) => console.error("[Order] Email send exception:", err));
-  }, [result, form, address, selectedDeliveryDate, quantity, totalPrice, totalWithProcessingFee, saturdaySurchargeTotal, taxInfo, taxAmount]);
+  }, [result, confirmedTotals, form, address, selectedDeliveryDate, quantity, totalPrice, totalWithProcessingFee, saturdaySurchargeTotal, taxInfo, taxAmount]);
 
   // Keep a ref to avoid stale closure in Stripe signal listener
   const sendOrderEmailRef = useRef(sendOrderEmail);
