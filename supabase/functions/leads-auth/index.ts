@@ -194,6 +194,9 @@ serve(async (req) => {
         price_per_extra_mile: pit.price_per_extra_mile ?? null,
         max_distance: pit.max_distance ?? null,
         is_default: pit.is_default || false,
+        operating_days: pit.operating_days ?? null,
+        saturday_surcharge_override: pit.saturday_surcharge_override ?? null,
+        same_day_cutoff: pit.same_day_cutoff ?? null,
       };
 
       if (pit.id) {
