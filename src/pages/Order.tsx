@@ -497,6 +497,12 @@ const Order = () => {
     }
     setDateError("");
     setStep("confirm");
+    updateSession({
+      stage: "reached_payment",
+      customer_name: form.name.trim(),
+      customer_email: form.email.trim() || null,
+      customer_phone: form.phone.trim(),
+    });
   };
 
   const buildOrderData = () => ({
