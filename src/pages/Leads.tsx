@@ -811,11 +811,13 @@ const Leads = () => {
             <TH col="state" label="State" />
             <TH col="zip" label="ZIP" />
             <TH col="distance_miles" label="Miles" />
+            <TH col="nearest_pit_name" label="Nearest PIT" />
             <TH col="customer_name" label="Name" />
             <TH col="customer_email" label="Email" />
             <TH col="customer_phone" label="Phone" />
             {showStage && <TH col="stage" label="Stage" />}
             <TH col="contacted" label="Contacted" />
+            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: BRAND_NAVY, color: "white" }}>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -834,12 +836,26 @@ const Leads = () => {
               <td className="px-3 py-2 text-xs">{l.state}</td>
               <td className="px-3 py-2 text-xs">{l.zip}</td>
               <td className="px-3 py-2 text-xs">{l.distance_miles ? `${l.distance_miles.toFixed(1)} mi` : "—"}</td>
+              <td className="px-3 py-2 text-xs">{l.nearest_pit_name ? `${l.nearest_pit_name} (${l.nearest_pit_distance?.toFixed(1)} mi)` : "—"}</td>
               <td className="px-3 py-2 text-xs font-medium">{l.customer_name}</td>
               <td className="px-3 py-2 text-xs">{l.customer_email || "—"}</td>
               <td className="px-3 py-2 text-xs">{l.customer_phone || "—"}</td>
               {showStage && <td className="px-3 py-2"><StageBadge stage={l.stage} /></td>}
               <td className="px-3 py-2">
                 <ContactedBadge contacted={l.contacted} onClick={() => toggleContacted(l.id)} loading={toggling === l.id} />
+              </td>
+              <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
+                {l.customer_email ? (
+                  <button
+                    onClick={() => openQuickProposal(l)}
+                    className="px-2 py-1 rounded text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+                    style={{ border: `1px solid ${BRAND_GOLD}`, color: BRAND_GOLD }}
+                  >
+                    <Send className="w-3 h-3" /> Send Offer
+                  </button>
+                ) : (
+                  <span className="text-xs text-gray-400">No email</span>
+                )}
               </td>
             </tr>
           ))}
