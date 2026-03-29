@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      city_pages: {
+        Row: {
+          base_price: number | null
+          city_name: string
+          city_slug: string
+          content: string | null
+          content_generated_at: string | null
+          created_at: string | null
+          distance_from_pit: number | null
+          h1_text: string | null
+          id: string
+          last_viewed_at: string | null
+          lat: number | null
+          lng: number | null
+          meta_description: string | null
+          meta_title: string | null
+          page_views: number | null
+          pit_id: string | null
+          state: string
+          status: string | null
+          updated_at: string | null
+          zip_codes: string[] | null
+        }
+        Insert: {
+          base_price?: number | null
+          city_name: string
+          city_slug: string
+          content?: string | null
+          content_generated_at?: string | null
+          created_at?: string | null
+          distance_from_pit?: number | null
+          h1_text?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          page_views?: number | null
+          pit_id?: string | null
+          state?: string
+          status?: string | null
+          updated_at?: string | null
+          zip_codes?: string[] | null
+        }
+        Update: {
+          base_price?: number | null
+          city_name?: string
+          city_slug?: string
+          content?: string | null
+          content_generated_at?: string | null
+          created_at?: string | null
+          distance_from_pit?: number | null
+          h1_text?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          page_views?: number | null
+          pit_id?: string | null
+          state?: string
+          status?: string | null
+          updated_at?: string | null
+          zip_codes?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_pages_pit_id_fkey"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_leads: {
         Row: {
           address: string
@@ -249,6 +326,7 @@ export type Database = {
           price_per_extra_mile: number | null
           same_day_cutoff: string | null
           saturday_surcharge_override: number | null
+          served_cities: Json | null
           status: string
           updated_at: string
         }
@@ -268,6 +346,7 @@ export type Database = {
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
           saturday_surcharge_override?: number | null
+          served_cities?: Json | null
           status?: string
           updated_at?: string
         }
@@ -287,6 +366,7 @@ export type Database = {
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
           saturday_surcharge_override?: number | null
+          served_cities?: Json | null
           status?: string
           updated_at?: string
         }
@@ -414,6 +494,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_city_page_views: {
+        Args: { p_slug: string }
+        Returns: undefined
       }
       increment_visit_count: { Args: { p_token: string }; Returns: undefined }
     }
