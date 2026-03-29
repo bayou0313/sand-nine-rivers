@@ -1391,6 +1391,34 @@ const Leads = () => {
                       <p className="text-xs mt-2" style={{ color: hasOverride ? BRAND_GOLD : "#999" }}>
                         Effective: ${eff.base_price} base · {eff.free_miles}mi free · ${eff.extra_per_mile}/mi · {eff.max_distance}mi max
                       </p>
+                      {/* Operating Schedule */}
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {(() => {
+                          const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                          const days = p.operating_days;
+                          if (!days || days.length === 0) {
+                            return <span className="text-[10px] text-gray-400">All days available</span>;
+                          }
+                          return DAY_LABELS.map((label, idx) => {
+                            const isOpen = days.includes(idx);
+                            return (
+                              <span key={idx} className="text-[10px] px-1.5 py-0.5 rounded" style={{
+                                backgroundColor: isOpen ? BRAND_NAVY : "#F3F3F3",
+                                color: isOpen ? "white" : "#BBB",
+                                textDecoration: isOpen ? "none" : "line-through",
+                              }}>{label}</span>
+                            );
+                          });
+                        })()}
+                      </div>
+                      {p.operating_days?.includes(6) && (
+                        <p className="text-[10px] mt-0.5" style={{ color: BRAND_GOLD }}>
+                          Sat +${p.saturday_surcharge_override ?? globalSettings.saturday_surcharge ?? "35"}
+                        </p>
+                      )}
+                      {p.same_day_cutoff && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">Same-day cutoff: {p.same_day_cutoff} CT</p>
+                      )}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <Button size="sm" variant="outline" onClick={() => setSelectedPit(p)} className="text-xs h-7">Simulate</Button>
                         <Button size="sm" variant="outline" onClick={() => startEditPit(p)} className="text-xs h-7">
