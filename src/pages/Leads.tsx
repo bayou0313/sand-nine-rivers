@@ -699,6 +699,7 @@ const Leads = () => {
     const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, {
       types: ["address"],
       fields: ["formatted_address", "geometry"],
+      componentRestrictions: { country: "us" },
     });
     ac.addListener("place_changed", () => {
       const place = ac.getPlace();
@@ -708,7 +709,7 @@ const Leads = () => {
     });
     profileAutocompleteRef.current = ac;
     return () => { profileAutocompleteRef.current = null; };
-  }, [activePage]);
+  }, [activePage, googleLoaded]);
 
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
