@@ -232,6 +232,11 @@ const Order = () => {
             taxInfo,
           });
           setStep("success");
+          updateSession({
+            stage: "completed_order",
+            order_id: signal.order_number || null,
+            order_number: signal.order_number || null,
+          });
           // Send confirmation email for Stripe payment
           sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
           toast({
