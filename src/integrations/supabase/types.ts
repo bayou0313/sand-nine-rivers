@@ -103,6 +103,7 @@ export type Database = {
           delivery_date: string | null
           delivery_day_of_week: string | null
           delivery_window: string
+          discount_amount: number | null
           distance_miles: number
           id: string
           lead_reference: string | null
@@ -133,6 +134,7 @@ export type Database = {
           delivery_date?: string | null
           delivery_day_of_week?: string | null
           delivery_window?: string
+          discount_amount?: number | null
           distance_miles: number
           id?: string
           lead_reference?: string | null
@@ -163,6 +165,7 @@ export type Database = {
           delivery_date?: string | null
           delivery_day_of_week?: string | null
           delivery_window?: string
+          discount_amount?: number | null
           distance_miles?: number
           id?: string
           lead_reference?: string | null
@@ -298,6 +301,98 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_sessions: {
+        Row: {
+          address_lat: number | null
+          address_lng: number | null
+          calculated_price: number | null
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          delivery_address: string | null
+          email_1hr_sent: boolean | null
+          email_1hr_sent_at: string | null
+          email_24hr_sent: boolean | null
+          email_24hr_sent_at: string | null
+          email_72hr_sent: boolean | null
+          email_72hr_sent_at: string | null
+          id: string
+          last_seen_at: string | null
+          nearest_pit_id: string | null
+          nearest_pit_name: string | null
+          order_id: string | null
+          order_number: string | null
+          serviceable: boolean | null
+          session_token: string
+          stage: string | null
+          updated_at: string | null
+          visit_count: number | null
+        }
+        Insert: {
+          address_lat?: number | null
+          address_lng?: number | null
+          calculated_price?: number | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
+          email_1hr_sent?: boolean | null
+          email_1hr_sent_at?: string | null
+          email_24hr_sent?: boolean | null
+          email_24hr_sent_at?: string | null
+          email_72hr_sent?: boolean | null
+          email_72hr_sent_at?: string | null
+          id?: string
+          last_seen_at?: string | null
+          nearest_pit_id?: string | null
+          nearest_pit_name?: string | null
+          order_id?: string | null
+          order_number?: string | null
+          serviceable?: boolean | null
+          session_token: string
+          stage?: string | null
+          updated_at?: string | null
+          visit_count?: number | null
+        }
+        Update: {
+          address_lat?: number | null
+          address_lng?: number | null
+          calculated_price?: number | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_address?: string | null
+          email_1hr_sent?: boolean | null
+          email_1hr_sent_at?: string | null
+          email_24hr_sent?: boolean | null
+          email_24hr_sent_at?: string | null
+          email_72hr_sent?: boolean | null
+          email_72hr_sent_at?: string | null
+          id?: string
+          last_seen_at?: string | null
+          nearest_pit_id?: string | null
+          nearest_pit_name?: string | null
+          order_id?: string | null
+          order_number?: string | null
+          serviceable?: boolean | null
+          session_token?: string
+          stage?: string | null
+          updated_at?: string | null
+          visit_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_sessions_nearest_pit_id_fkey"
+            columns: ["nearest_pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -311,6 +406,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_visit_count: { Args: { p_token: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

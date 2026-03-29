@@ -109,7 +109,7 @@ const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "profile" | "settings";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "profile" | "settings";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -122,6 +122,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
       { id: "pipeline", label: "Pipeline", icon: List },
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
+      { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
     ],
   },
   {
@@ -218,6 +219,34 @@ const Leads = () => {
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
   const [savingProfile, setSavingProfile] = useState(false);
   const [googleLoaded, setGoogleLoaded] = useState(!!window.google?.maps?.places);
+
+  // Abandoned sessions state
+  const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
+  const [abandonedLoading, setAbandonedLoading] = useState(false);
+  const [runningEmailCheck, setRunningEmailCheck] = useState(false);
+
+  const fetchAbandonedSessions = useCallback(async () => {
+    setAbandonedLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_abandoned" },
+      });
+      if (!fnError && data?.sessions) setAbandonedSessions(data.sessions);
+    } catch (err) { console.warn("Failed to fetch abandoned sessions:", err); }
+    finally { setAbandonedLoading(false); }
+  }, []);
+
+  const runEmailCheck = useCallback(async () => {
+    setRunningEmailCheck(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("abandonment-emails");
+      if (fnError) throw fnError;
+      toast({ title: "Email check complete", description: `Sent: ${data?.email_1hr || 0} 1hr, ${data?.email_24hr || 0} 24hr, ${data?.email_72hr || 0} 72hr` });
+      fetchAbandonedSessions();
+    } catch (err: any) {
+      toast({ title: "Email check failed", description: err.message, variant: "destructive" });
+    } finally { setRunningEmailCheck(false); }
+  }, [fetchAbandonedSessions, toast]);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
   const basePrice = parseFloat(globalSettings.default_base_price || "195");
@@ -819,6 +848,13 @@ const Leads = () => {
     return () => { profileAutocompleteRef.current = null; };
   }, [activePage, googleLoaded]);
 
+  // Fetch abandoned sessions when navigating to that page
+  useEffect(() => {
+    if (activePage === "abandoned" && authenticated) {
+      fetchAbandonedSessions();
+    }
+  }, [activePage, authenticated, fetchAbandonedSessions]);
+
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
       setter({ ...current, [field]: Math.round(value * 100) / 100 });
@@ -1139,6 +1175,7 @@ const Leads = () => {
     zip: { title: "ZIP INTELLIGENCE", subtitle: `${zipData.length} unique ZIPs tracked` },
     pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
     revenue: { title: "REVENUE FORECAST" },
+    abandoned: { title: "ABANDONED SESSIONS", subtitle: "Checkout drop-offs" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
@@ -1797,6 +1834,69 @@ const Leads = () => {
               Save Business Profile
             </Button>
             <p className="text-xs text-gray-400 text-center mt-2">✓ Synced to: Emails · Invoices · Landing page · Order confirmations</p>
+          </>
+        );
+
+      case "abandoned":
+        return (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-500">{abandonedSessions.length} abandoned sessions with email</p>
+              <Button onClick={runEmailCheck} disabled={runningEmailCheck} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                {runningEmailCheck ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Run Email Check
+              </Button>
+            </div>
+            {abandonedLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : (
+              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      {["Date", "Address", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {abandonedSessions.map(s => (
+                      <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
+                        <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
+                        <td className="px-3 py-2">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{
+                            backgroundColor: s.stage === "reached_payment" ? "#EA580C" : "#F59E0B"
+                          }}>
+                            {s.stage === "reached_payment" ? "At Payment" : "Started"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">{s.calculated_price ? `$${Number(s.calculated_price).toFixed(0)}` : "—"}</td>
+                        <td className="px-3 py-2 text-xs">{s.customer_name || "—"}</td>
+                        <td className="px-3 py-2 text-xs">{s.customer_email || "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">
+                          <span>{s.email_1hr_sent ? "1hr ✓" : "1hr ○"}</span>
+                          <span className="mx-1">|</span>
+                          <span>{s.email_24hr_sent ? "24hr ✓" : "24hr ○"}</span>
+                          <span className="mx-1">|</span>
+                          <span>{s.email_72hr_sent ? "72hr ✓" : "72hr ○"}</span>
+                        </td>
+                        <td className="px-3 py-2">
+                          {s.visit_count > 1 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                              {s.visit_count}×
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {abandonedSessions.length === 0 && (
+                      <tr><td colSpan={8} className="px-3 py-8 text-center text-gray-400">No abandoned sessions found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         );
 

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
+import { updateSession } from "@/lib/session";
 import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,6 @@ import OutOfAreaModal from "@/components/OutOfAreaModal";
 import { supabase } from "@/integrations/supabase/client";
 import { type PitData, type GlobalPricing, findBestPit, parseGlobalSettings, getEffectivePrice, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 
-declare global {
-  interface Window {
-    google: any;
-  }
-}
-
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
 type EstimateResult = {
@@ -24,7 +19,8 @@ type EstimateResult = {
   address: string;
 } | null;
 
-const DeliveryEstimator = () => {
+const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
+  const { prefillAddress } = props;
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EstimateResult>(null);
@@ -79,7 +75,15 @@ const DeliveryEstimator = () => {
     });
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current?.getPlace();
-      if (place?.formatted_address) setAddress(place.formatted_address);
+      if (place?.formatted_address) {
+        setAddress(place.formatted_address);
+        updateSession({
+          stage: "entered_address",
+          delivery_address: place.formatted_address,
+          address_lat: place.geometry?.location?.lat(),
+          address_lng: place.geometry?.location?.lng(),
+        });
+      }
       if (place?.geometry?.location) {
         setCustomerCoords({
           lat: place.geometry.location.lat(),
@@ -88,6 +92,18 @@ const DeliveryEstimator = () => {
       }
     });
   }, [apiLoaded]);
+  // Prefill address from return visitor banner
+  useEffect(() => {
+    if (prefillAddress && apiLoaded) {
+      setAddress(prefillAddress);
+      // Trigger geocode + price calculation after setting address
+      setTimeout(() => {
+        const btn = document.querySelector('[data-estimator-btn]') as HTMLButtonElement;
+        btn?.click();
+      }, 500);
+    }
+  }, [prefillAddress, apiLoaded]);
+
 
   const calculateDistance = useCallback(async () => {
     if (!address.trim()) { setError("Please enter a delivery address."); return; }
@@ -132,6 +148,13 @@ const DeliveryEstimator = () => {
         setOutOfAreaDistance(parseFloat(bestResult.distance.toFixed(1)));
         setNearestPitInfo({ id: bestResult.pit.id, name: bestResult.pit.name, distance: bestResult.distance });
         setShowOutOfAreaModal(true);
+        updateSession({
+          stage: "got_out_of_area",
+          delivery_address: address,
+          nearest_pit_name: bestResult.pit.name,
+          nearest_pit_id: bestResult.pit.id,
+          serviceable: false,
+        });
         setLoading(false); return;
       }
 
@@ -146,6 +169,13 @@ const DeliveryEstimator = () => {
         distance: parseFloat(bestResult.distance.toFixed(1)),
         price: bestResult.price,
         address: `${bestResult.distance.toFixed(1)} mi away`,
+      });
+      updateSession({
+        stage: "got_price",
+        calculated_price: bestResult.price,
+        nearest_pit_id: bestResult.pit.id,
+        nearest_pit_name: bestResult.pit.name,
+        serviceable: true,
       });
     } catch {
       setError("Something went wrong. Please try again or call us directly.");
@@ -187,7 +217,7 @@ const DeliveryEstimator = () => {
                   maxLength={500}
                   onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
                 />
-                <Button onClick={calculateDistance} disabled={loading} className="h-12 font-display tracking-wider text-base px-8 rounded-xl">
+                <Button data-estimator-btn onClick={calculateDistance} disabled={loading} className="h-12 font-display tracking-wider text-base px-8 rounded-xl">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
                 </Button>
               </div>

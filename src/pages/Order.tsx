@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { updateSession } from "@/lib/session";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, Printer, Download } from "lucide-react";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish } from "@/lib/format";
@@ -124,7 +125,9 @@ const Order = () => {
   const [dateError, setDateError] = useState("");
 
   const qtyParam = parseInt(searchParams.get("qty") || "1", 10);
+  const discountParam = parseFloat(searchParams.get("discount") || "0");
   const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
+  const [discountAmount] = useState(isNaN(discountParam) ? 0 : Math.max(0, discountParam));
 
   const [form, setForm] = useState({
     name: "",
@@ -143,7 +146,8 @@ const Order = () => {
   const PROCESSING_FEE_RATE = 0.035;
   const effectiveSatSurcharge = getEffectiveSaturdaySurcharge(matchedPitSchedule, globalSaturdaySurcharge);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
-  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal : 0;
+  const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
+  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal - effectiveDiscount : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
   const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
@@ -228,6 +232,11 @@ const Order = () => {
             taxInfo,
           });
           setStep("success");
+          updateSession({
+            stage: "completed_order",
+            order_id: signal.order_number || null,
+            order_number: signal.order_number || null,
+          });
           // Send confirmation email for Stripe payment
           sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
           toast({
@@ -462,6 +471,14 @@ const Order = () => {
         duration: "~30 min",
       });
       setStep("details");
+      updateSession({
+        stage: "started_checkout",
+        delivery_address: address,
+        calculated_price: bestResult.price,
+        nearest_pit_id: bestResult.pit.id,
+        nearest_pit_name: bestResult.pit.name,
+        serviceable: true,
+      });
     } catch {
       setError("Something went wrong. Please try again or call us.");
     } finally {
@@ -485,6 +502,12 @@ const Order = () => {
     }
     setDateError("");
     setStep("confirm");
+    updateSession({
+      stage: "reached_payment",
+      customer_name: form.name.trim(),
+      customer_email: form.email.trim() || null,
+      customer_phone: form.phone.trim(),
+    });
   };
 
   const buildOrderData = () => ({
@@ -541,6 +564,11 @@ const Order = () => {
       };
       setConfirmedTotals(snapshotTotals);
       setStep("success");
+      updateSession({
+        stage: "completed_order",
+        order_id: inserted?.id || null,
+        order_number: inserted?.order_number || null,
+      });
 
       // Send order confirmation email with totals passed directly (state not yet updated)
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
@@ -815,7 +843,7 @@ const Order = () => {
 
                 <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                   {[
-                    { top: "LOCAL AREA", bot: "Starting at $195" },
+                    { top: "LOCAL AREA", bot: "Included delivery" },
                     { top: "EXTENDED", bot: "Surcharge applies" },
                     { top: "9 YDS", bot: "Per load" },
                   ].map((item, i) => (
@@ -953,6 +981,13 @@ const Order = () => {
                         <>
                           <div className="border-b border-dashed border-border" />
                           <ReceiptRow label={`Saturday Surcharge ($35 × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                        </>
+                      )}
+
+                      {effectiveDiscount > 0 && (
+                        <>
+                          <div className="border-b border-dashed border-border" />
+                          <ReceiptRow label="Loyalty discount" value={`-${formatCurrency(effectiveDiscount)}`} accent />
                         </>
                       )}
 
