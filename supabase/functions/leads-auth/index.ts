@@ -675,13 +675,42 @@ serve(async (req) => {
 
     // ── BULK DELETE CITY PAGES ──
     if (action === "delete_city_pages") {
-      const ids = (await Promise.resolve()).constructor === Promise ? [] : [];
-      // ids comes from request body already destructured — need to get it
-      const bodyIds = cities; // reuse 'cities' param slot or use dedicated param
-      // Actually let's parse from the original body — ids is passed as 'ids' in the body
-      // We need to add 'ids' to the destructured params at the top. For now, use a workaround:
-      return new Response(JSON.stringify({ error: "Use delete_city_pages_bulk action" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return new Response(JSON.stringify({ error: "Missing ids array" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error, count } = await supabase.from("city_pages").delete().in("id", ids);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ success: true, deleted: count || ids.length }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── RESET ALL CITY PAGES ──
+    if (action === "reset_city_pages") {
+      const { error: delErr, count } = await supabase.from("city_pages").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (delErr) throw delErr;
+      const { error: pitErr } = await supabase.from("pits").update({ served_cities: null }).neq("id", "00000000-0000-0000-0000-000000000000");
+      if (pitErr) throw pitErr;
+      return new Response(
+        JSON.stringify({ success: true, deleted: count || 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── BULK TOGGLE CITY PAGES ──
+    if (action === "deactivate_city_pages") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return new Response(JSON.stringify({ error: "Missing ids array" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error } = await supabase.from("city_pages").update({ status: "inactive" }).in("id", ids);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
