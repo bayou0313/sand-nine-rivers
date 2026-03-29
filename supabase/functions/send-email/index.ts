@@ -350,6 +350,30 @@ serve(async (req) => {
       await sendMail(resend, ownerEmail, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml);
       console.log("[email] Callback email sent to:", ownerEmail);
 
+    } else if (type === "out_of_area_lead") {
+      const leadHtml = `
+NEW OUT-OF-AREA DELIVERY LEAD
+─────────────────────────────
+Address:  ${data.address || "N/A"}
+Distance: ${data.distance_miles || "?"} miles
+
+CONTACT
+Name:  ${data.customer_name || "N/A"}
+Email: ${data.customer_email || "Not provided"}
+Phone: ${data.customer_phone || "Not provided"}
+
+Submitted: ${data.created_at ? new Date(data.created_at).toLocaleString("en-US") : "N/A"}
+─────────────────────────────
+riversand.net | ${PHONE} | Haulogix, LLC`.trim();
+
+      await sendMail(
+        resend,
+        ownerEmail,
+        `New Out-of-Area Lead — ${data.address || "Unknown"}`,
+        `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap">${leadHtml}</pre>`
+      );
+      console.log("[email] Out-of-area lead notification sent to:", ownerEmail);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),

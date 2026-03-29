@@ -3,5 +3,6 @@ Allow: /
 Disallow: /order
 Disallow: /admin
 Disallow: /admin/
+Disallow: /leads
 
 Sitemap: https://riversand.net/sitemap.xml
