@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map, List, DollarSign, Zap, Users, Building2, LogOut, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -15,11 +14,14 @@ declare global {
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
+const SIDEBAR_HOVER = "#142845";
+const CONTENT_BG = "#F8F7F2";
+const CARD_BORDER = "#E8E5DC";
+const SECTION_LABEL = "#4A6A8A";
 const PAGE_SIZE = 25;
 const HQ_LAT = 29.9308;
 const HQ_LON = -90.1685;
 
-// Defaults used as fallback if DB fetch fails
 const DEFAULT_SETTINGS: Record<string, string> = {
   default_base_price: "195.00",
   default_free_miles: "15",
@@ -104,9 +106,36 @@ const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "profile" | "settings";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
+
+const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: any }[] }[] = [
+  {
+    section: "OPERATIONS",
+    items: [
+      { id: "overview", label: "Overview", icon: BarChart3 },
+      { id: "zip", label: "ZIP Intelligence", icon: Map },
+      { id: "pipeline", label: "Pipeline", icon: List },
+      { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
+    ],
+  },
+  {
+    section: "EXPANSION",
+    items: [
+      { id: "pit", label: "PIT Simulator", icon: Zap },
+      { id: "all", label: "All Leads", icon: Users },
+    ],
+  },
+  {
+    section: "SETTINGS",
+    items: [
+      { id: "profile", label: "Business Profile", icon: Building2 },
+      { id: "settings", label: "Global Settings", icon: Settings },
+    ],
+  },
+];
 
 const Leads = () => {
   const { toast } = useToast();
@@ -128,18 +157,15 @@ const Leads = () => {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
 
-  // Detail modal
   const [selectedLead, setSelectedLead] = useState<ParsedLead | null>(null);
   const [detailStage, setDetailStage] = useState("");
   const [detailNote, setDetailNote] = useState("");
   const [savingDetail, setSavingDetail] = useState(false);
 
-  // Global settings
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [editSettings, setEditSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [savingSettings, setSavingSettings] = useState(false);
 
-  // PIT simulator — DB-backed
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
   const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null });
@@ -153,19 +179,18 @@ const Leads = () => {
   const editPitInputRef = useRef<HTMLInputElement>(null);
   const addPitAutocompleteRef = useRef<any>(null);
   const editPitAutocompleteRef = useRef<any>(null);
+  const profileAddressRef = useRef<HTMLInputElement>(null);
+  const profileAutocompleteRef = useRef<any>(null);
 
-  // PIT edit mode
   const [editingPitId, setEditingPitId] = useState<string | null>(null);
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
 
-  // Bulk proposal modal (PIT sim)
   const [showProposal, setShowProposal] = useState(false);
   const [proposalSubject, setProposalSubject] = useState("");
   const [sendingProposals, setSendingProposals] = useState(false);
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
 
-  // Quick Proposal Modal
   const [quickProposalLead, setQuickProposalLead] = useState<ParsedLead | null>(null);
   const [qpPitId, setQpPitId] = useState<string>("");
   const [qpPrice, setQpPrice] = useState("");
@@ -173,8 +198,15 @@ const Leads = () => {
   const [qpSending, setQpSending] = useState(false);
   const [qpShowPreview, setQpShowPreview] = useState(false);
 
-  const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
+  // Sidebar nav
+  const [activePage, setActivePage] = useState<NavPage>("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Business profile state
+  const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
   const basePrice = parseFloat(globalSettings.default_base_price || "195");
 
   const fetchLeads = useCallback(async (pw: string) => {
@@ -204,6 +236,7 @@ const Leads = () => {
       if (data?.settings) {
         setGlobalSettings(data.settings);
         setEditSettings(data.settings);
+        setProfileSettings(data.settings);
       }
     } catch (err: any) {
       console.error("Failed to fetch settings:", err);
@@ -239,6 +272,13 @@ const Leads = () => {
     }
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem("leads_pw");
+    setAuthenticated(false);
+    setLeads([]);
+    setPassword("");
+  };
+
   const saveGlobalSettings = async () => {
     setSavingSettings(true);
     try {
@@ -255,6 +295,25 @@ const Leads = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const saveBusinessProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "save_settings", settings: profileSettings },
+      });
+      if (fnError) throw fnError;
+      if (data?.settings) {
+        setGlobalSettings(data.settings);
+        setProfileSettings(data.settings);
+      }
+      toast({ title: "Business profile saved — updates apply to all emails and invoices" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -302,13 +361,11 @@ const Leads = () => {
     }
   };
 
-  // Parsed leads
   const parsedLeads = useMemo<ParsedLead[]>(() =>
     leads.map(l => ({ ...l, ...parseAddress(l.address) })),
     [leads]
   );
 
-  // Filters
   const filteredLeads = useMemo(() => {
     const now = new Date();
     return parsedLeads.filter(l => {
@@ -339,7 +396,6 @@ const Leads = () => {
     });
   }, [parsedLeads, search, statusFilter, stageFilter, stateFilter, dateFilter, distanceFilter]);
 
-  // Sort
   const sortedLeads = useMemo(() => {
     const sorted = [...filteredLeads].sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1;
@@ -363,7 +419,6 @@ const Leads = () => {
 
   const states = useMemo(() => [...new Set(parsedLeads.map(l => l.state).filter(s => s !== "—"))].sort(), [parsedLeads]);
 
-  // Metrics
   const metrics = useMemo(() => {
     const now = new Date();
     const thisMonth = parsedLeads.filter(l => { const d = new Date(l.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
@@ -382,7 +437,6 @@ const Leads = () => {
     };
   }, [parsedLeads, basePrice]);
 
-  // ZIP intelligence
   const zipData = useMemo(() => {
     const map = new Map<string, ParsedLead[]>();
     parsedLeads.forEach(l => { if (l.zip !== "—") { if (!map.has(l.zip)) map.set(l.zip, []); map.get(l.zip)!.push(l); } });
@@ -397,7 +451,6 @@ const Leads = () => {
 
   const maxZipCount = useMemo(() => Math.max(...zipData.map(z => z.count), 1), [zipData]);
 
-  // Export CSV
   const exportCSV = () => {
     const header = ["Lead #", "Date", "Address", "State", "ZIP", "Miles", "Name", "Email", "Phone", "Stage", "Contacted", "IP Address", "Notes"];
     const rows = sortedLeads.map((l, i) => [
@@ -426,7 +479,6 @@ const Leads = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Sort handler
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortKey(key); setSortDir("asc"); }
@@ -541,7 +593,6 @@ const Leads = () => {
       const originalPit = pits.find(p => p.id === editingPitId);
       let lat = editPitData.lat!;
       let lon = editPitData.lon!;
-      // Only geocode if address changed AND coords weren't already updated by Places autocomplete
       if (originalPit && editPitData.address !== originalPit.address && (lat === originalPit.lat && lon === originalPit.lon)) {
         const coords = await geocodeAddress(editPitData.address!);
         if (!coords) { toast({ title: "Geocode failed", variant: "destructive" }); setSavingPit(false); return; }
@@ -622,6 +673,24 @@ const Leads = () => {
     return () => { editPitAutocompleteRef.current = null; };
   }, [editingPitId]);
 
+  // Google Places Autocomplete for Business Profile address
+  useEffect(() => {
+    if (activePage !== "profile" || !profileAddressRef.current || !window.google?.maps?.places) return;
+    if (profileAutocompleteRef.current) return;
+    const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, {
+      types: ["address"],
+      fields: ["formatted_address", "geometry"],
+    });
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (place?.formatted_address) {
+        setProfileSettings(prev => ({ ...prev, business_address: place.formatted_address }));
+      }
+    });
+    profileAutocompleteRef.current = ac;
+    return () => { profileAutocompleteRef.current = null; };
+  }, [activePage]);
+
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
       setter({ ...current, [field]: Math.round(value * 100) / 100 });
@@ -657,18 +726,15 @@ const Leads = () => {
     toast({ title: "Geocoding complete" });
   };
 
-  // Proposal sending
   const sendProposals = async () => {
     const selected = simData.filter(d => simSelected.has(d.lead.id) && d.lead.customer_email);
     if (selected.length === 0) { toast({ title: "No leads with email selected", variant: "destructive" }); return; }
     setSendingProposals(true);
     setSendProgress({ current: 0, total: selected.length });
-
     for (let i = 0; i < selected.length; i++) {
       const d = selected[i];
       const { zip } = parseAddress(d.lead.address);
       const orderUrl = `https://riversand.net/order?address=${encodeURIComponent(d.lead.address)}&price=${d.newPrice.toFixed(2)}&zip=${zip}&lead=${encodeURIComponent(d.lead.lead_number || "")}&utm_source=proposal&utm_medium=email&utm_campaign=pit_expansion`;
-
       try {
         await supabase.functions.invoke("send-email", {
           body: {
@@ -692,7 +758,6 @@ const Leads = () => {
       }
       setSendProgress({ current: i + 1, total: selected.length });
     }
-
     setSendingProposals(false);
     setShowProposal(false);
     setSimSelected(new Set());
@@ -705,7 +770,6 @@ const Leads = () => {
     setQuickProposalLead(lead);
     const defaultPitId = lead.nearest_pit_id || pits.find(p => p.is_default)?.id || "";
     setQpPitId(defaultPitId);
-    // Calculate price for default PIT
     const pit = pits.find(p => p.id === defaultPitId);
     if (pit && lead.nearest_pit_distance != null) {
       const eff = getEffectivePrice(pit, globalSettings);
@@ -723,17 +787,14 @@ const Leads = () => {
 
   const qpDistance = useMemo(() => {
     if (!quickProposalLead || !qpSelectedPit) return null;
-    // If this is the same as nearest_pit, use stored distance
     if (quickProposalLead.nearest_pit_id === qpPitId && quickProposalLead.nearest_pit_distance != null) {
       return quickProposalLead.nearest_pit_distance;
     }
-    // Otherwise calculate from geocache
     const cached = geocodeCache[quickProposalLead.address];
     if (!cached) return null;
     return haversine(qpSelectedPit.lat, qpSelectedPit.lon, cached.lat, cached.lon);
   }, [quickProposalLead, qpSelectedPit, qpPitId, geocodeCache]);
 
-  // Recalculate price when PIT changes
   useEffect(() => {
     if (!qpSelectedPit || qpDistance == null) return;
     const eff = getEffectivePrice(qpSelectedPit, globalSettings);
@@ -768,7 +829,6 @@ const Leads = () => {
           },
         },
       });
-      // Update lead stage + contacted + note
       await updateStage(quickProposalLead.id, "quoted");
       if (!quickProposalLead.contacted) {
         await supabase.functions.invoke("leads-auth", {
@@ -777,7 +837,6 @@ const Leads = () => {
       }
       const timestamp = new Date().toLocaleString("en-US");
       await appendNote(quickProposalLead.id, `Offer sent ${timestamp} from ${qpSelectedPit?.name || "HQ"} at $${qpPrice}. Order link: ${qpOrderUrl}`);
-      // Update local state
       setLeads(prev => prev.map(l => l.id === quickProposalLead.id ? { ...l, stage: "quoted", contacted: true } : l));
       toast({ title: `Offer sent to ${quickProposalLead.customer_email}` });
       setQuickProposalLead(null);
@@ -788,6 +847,7 @@ const Leads = () => {
     }
   };
 
+  // Sub-components
   const StageBadge = ({ stage }: { stage: string }) => (
     <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: STAGE_COLORS[stage] || "#999" }}>
       {stage.toUpperCase()}
@@ -815,7 +875,6 @@ const Leads = () => {
     return <span className="text-xs px-2 py-0.5 rounded-full font-bold inline-block" style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.text}` }}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>;
   };
 
-  // Detail modal
   const openDetail = (l: ParsedLead) => { setSelectedLead(l); setDetailStage(l.stage); setDetailNote(""); };
 
   const saveDetail = async () => {
@@ -828,15 +887,13 @@ const Leads = () => {
     await fetchLeads(storedPassword());
   };
 
-  // Metric card
   const MetricCard = ({ label, value }: { label: string; value: string | number }) => (
-    <div className="rounded-lg p-3 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: BRAND_NAVY }}>
       <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{value}</p>
       <p className="text-xs text-white/80 mt-1">{label}</p>
     </div>
   );
 
-  // Filter select
   const FilterSelect = ({ value, onChange, options, label }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; label: string }) => (
     <select
       value={value}
@@ -849,7 +906,6 @@ const Leads = () => {
     </select>
   );
 
-  // Table header
   const TH = ({ col, label, className = "" }: { col: SortKey; label: string; className?: string }) => (
     <th
       className={`px-3 py-2 text-left text-xs font-bold uppercase tracking-wider cursor-pointer select-none ${className}`}
@@ -860,7 +916,6 @@ const Leads = () => {
     </th>
   );
 
-  // Leads table
   const LeadsTable = ({ data, showStage = true }: { data: ParsedLead[]; showStage?: boolean }) => (
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse">
@@ -925,6 +980,43 @@ const Leads = () => {
     </div>
   );
 
+  const Pagination = () => (
+    <div className="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-500">
+      <span>Showing {Math.min((page - 1) * PAGE_SIZE + 1, sortedLeads.length)}–{Math.min(page * PAGE_SIZE, sortedLeads.length)} of {sortedLeads.length} leads</span>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+        <span>Page {page} of {totalPages}</span>
+        <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+      </div>
+    </div>
+  );
+
+  const SearchAndFilters = () => (
+    <div className="flex flex-wrap gap-2 mb-4">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input placeholder="Search leads..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
+        {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2"><X className="w-4 h-4 text-gray-400" /></button>}
+      </div>
+      <FilterSelect value={stageFilter} onChange={setStageFilter} label="Stage" options={[{ value: "all", label: "All stages" }, ...STAGES.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} />
+      <FilterSelect value={stateFilter} onChange={setStateFilter} label="State" options={[{ value: "all", label: "All states" }, ...states.map(s => ({ value: s, label: s }))]} />
+      <FilterSelect value={dateFilter} onChange={setDateFilter} label="Date" options={[{ value: "all", label: "All time" }, { value: "today", label: "Today" }, { value: "week", label: "This week" }, { value: "month", label: "This month" }, { value: "year", label: "This year" }]} />
+      <FilterSelect value={distanceFilter} onChange={setDistanceFilter} label="Distance" options={[{ value: "all", label: "All distances" }, { value: "30-50", label: "30-50 mi" }, { value: "50-75", label: "50-75 mi" }, { value: "75-100", label: "75-100 mi" }, { value: "100+", label: "100+ mi" }]} />
+    </div>
+  );
+
+  // ─── PAGE TITLE LABELS ───
+  const PAGE_TITLES: Record<NavPage, { title: string; subtitle?: string }> = {
+    overview: { title: "OVERVIEW", subtitle: `${metrics.total} total leads` },
+    zip: { title: "ZIP INTELLIGENCE", subtitle: `${zipData.length} unique ZIPs tracked` },
+    pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
+    revenue: { title: "REVENUE FORECAST" },
+    pit: { title: "PIT SIMULATOR", subtitle: `${pits.length} locations` },
+    all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
+    profile: { title: "BUSINESS PROFILE" },
+    settings: { title: "GLOBAL SETTINGS" },
+  };
+
   // Login screen
   if (!authenticated) {
     return (
@@ -954,86 +1046,45 @@ const Leads = () => {
 
   if (loading && leads.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f4f4" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: CONTENT_BG }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} />
       </div>
     );
   }
 
   const livePricing = `$${globalSettings.default_base_price} base · $${globalSettings.default_extra_per_mile}/mi · ${globalSettings.default_max_distance}mi max`;
+  const currentPage = PAGE_TITLES[activePage];
 
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f4f4f4" }}>
-      {/* Header */}
-      <div className="px-4 py-4" style={{ backgroundColor: BRAND_NAVY }}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-wider" style={{ color: BRAND_GOLD }}>DELIVERY LEADS</h1>
-            <p className="text-white/60 text-sm">{metrics.total} total leads · Live pricing: {livePricing}</p>
-          </div>
-          <Button onClick={exportCSV} variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
-            <Download className="w-4 h-4 mr-1" /> Export CSV
-          </Button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <Tabs defaultValue="overview">
-          <TabsList className="w-full justify-start overflow-x-auto mb-4 bg-white border">
-            {["overview", "zip", "pipeline", "revenue", "pit", "all"].map(t => (
-              <TabsTrigger
-                key={t}
-                value={t}
-                className="text-xs uppercase tracking-wider data-[state=active]:text-[#C07A00] data-[state=active]:border-b-2 data-[state=active]:border-[#C07A00]"
-              >
-                {t === "overview" ? "Overview" : t === "zip" ? "ZIP Intelligence" : t === "pipeline" ? "Pipeline" : t === "revenue" ? "Revenue Forecast" : t === "pit" ? "PIT Simulator" : "All Leads"}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {/* OVERVIEW TAB */}
-          <TabsContent value="overview">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+  // ─── RENDER PAGES ───
+  const renderPageContent = () => {
+    switch (activePage) {
+      case "overview":
+        return (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
               <MetricCard label="Pipeline Value" value={`$${metrics.pipelineValue.toLocaleString()}`} />
               <MetricCard label="Hot ZIPs (2+)" value={zipData.filter(z => z.priority === "hot").length} />
               <MetricCard label="Not Contacted" value={metrics.notContacted} />
               <MetricCard label="Proposals Sent" value={metrics.quoted} />
               <MetricCard label="Converted" value={metrics.won} />
             </div>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search leads..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
-                {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2"><X className="w-4 h-4 text-gray-400" /></button>}
-              </div>
-              <FilterSelect value={stageFilter} onChange={setStageFilter} label="Stage" options={[{ value: "all", label: "All stages" }, ...STAGES.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} />
-              <FilterSelect value={stateFilter} onChange={setStateFilter} label="State" options={[{ value: "all", label: "All states" }, ...states.map(s => ({ value: s, label: s }))]} />
-              <FilterSelect value={dateFilter} onChange={setDateFilter} label="Date" options={[{ value: "all", label: "All time" }, { value: "today", label: "Today" }, { value: "week", label: "This week" }, { value: "month", label: "This month" }, { value: "year", label: "This year" }]} />
-              <FilterSelect value={distanceFilter} onChange={setDistanceFilter} label="Distance" options={[{ value: "all", label: "All distances" }, { value: "30-50", label: "30-50 mi" }, { value: "50-75", label: "50-75 mi" }, { value: "75-100", label: "75-100 mi" }, { value: "100+", label: "100+ mi" }]} />
-            </div>
-
-            <div className="bg-white rounded-lg border shadow-sm">
+            <SearchAndFilters />
+            <div className="bg-white rounded-xl border shadow-sm" style={{ borderColor: CARD_BORDER }}>
               <LeadsTable data={paginatedLeads} />
-              <div className="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-500">
-                <span>Showing {Math.min((page - 1) * PAGE_SIZE + 1, sortedLeads.length)}–{Math.min(page * PAGE_SIZE, sortedLeads.length)} of {sortedLeads.length} leads</span>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-                  <span>Page {page} of {totalPages}</span>
-                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
-                </div>
-              </div>
+              <Pagination />
             </div>
-          </TabsContent>
+          </>
+        );
 
-          {/* ZIP INTELLIGENCE TAB */}
-          <TabsContent value="zip">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      case "zip":
+        return (
+          <>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
               <p className="text-sm" style={{ color: BRAND_NAVY }}>
                 <strong>💡 ZIPs with 2+ leads = confirmed unserved demand.</strong> These are your next expansion markets.
               </p>
             </div>
-            <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
+            <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: BRAND_NAVY }}>
@@ -1066,10 +1117,12 @@ const Leads = () => {
                 </tbody>
               </table>
             </div>
-          </TabsContent>
+          </>
+        );
 
-          {/* PIPELINE TAB */}
-          <TabsContent value="pipeline">
+      case "pipeline":
+        return (
+          <>
             <div className="mb-4 text-center">
               <p className="text-lg font-bold" style={{ color: BRAND_NAVY }}>
                 Active pipeline: <span style={{ color: BRAND_GOLD }}>${metrics.pipelineValue.toLocaleString()}</span>
@@ -1079,7 +1132,7 @@ const Leads = () => {
               {STAGES.map(stage => {
                 const stageLeads = parsedLeads.filter(l => l.stage === stage);
                 return (
-                  <div key={stage} className="rounded-lg border overflow-hidden" style={{ borderColor: STAGE_COLORS[stage] + "40" }}>
+                  <div key={stage} className="rounded-xl border overflow-hidden" style={{ borderColor: STAGE_COLORS[stage] + "40" }}>
                     <div className="px-3 py-2 flex items-center justify-between" style={{ backgroundColor: STAGE_COLORS[stage] }}>
                       <span className="text-white text-xs font-bold uppercase tracking-wider">{stage}</span>
                       <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">{stageLeads.length}</span>
@@ -1098,24 +1151,25 @@ const Leads = () => {
                 );
               })}
             </div>
-          </TabsContent>
+          </>
+        );
 
-          {/* REVENUE FORECAST TAB */}
-          <TabsContent value="revenue">
+      case "revenue":
+        return (
+          <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="rounded-lg p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
                 <p className="text-white/60 text-sm">Immediate Opportunity</p>
                 <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.notContacted * basePrice).toLocaleString()}</p>
                 <p className="text-white/40 text-xs mt-1">{metrics.notContacted} uncontacted leads × ${basePrice}</p>
               </div>
-              <div className="rounded-lg p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
                 <p className="text-white/60 text-sm">Total Pipeline</p>
                 <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.total * basePrice).toLocaleString()}</p>
                 <p className="text-white/40 text-xs mt-1">{metrics.total} total leads × ${basePrice}</p>
               </div>
             </div>
-
-            <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
+            <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: BRAND_NAVY }}>
@@ -1140,8 +1194,7 @@ const Leads = () => {
                 </tbody>
               </table>
             </div>
-
-            <div className="bg-white rounded-lg border shadow-sm mt-4 p-6">
+            <div className="bg-white rounded-xl border shadow-sm mt-4 p-6" style={{ borderColor: CARD_BORDER }}>
               <h3 className="text-sm font-bold mb-4" style={{ color: BRAND_NAVY }}>Projected Monthly Revenue by Market</h3>
               <div className="space-y-3">
                 {zipData.filter(z => z.priority === "hot").map(z => {
@@ -1159,90 +1212,27 @@ const Leads = () => {
                 })}
               </div>
             </div>
-          </TabsContent>
+          </>
+        );
 
-          {/* PIT SIMULATOR TAB */}
-          <TabsContent value="pit">
-            {/* Global Settings Panel */}
-            <div className="bg-white rounded-lg border shadow-sm p-4 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Settings className="w-5 h-5" style={{ color: BRAND_GOLD }} />
-                <div>
-                  <h3 className="font-bold text-sm" style={{ color: BRAND_NAVY }}>Global Pricing Defaults</h3>
-                  <p className="text-xs text-gray-500">These apply to all PITs unless overridden individually</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Base price per load</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                    <Input
-                      className="pl-6 h-9"
-                      value={editSettings.default_base_price || ""}
-                      onChange={e => setEditSettings({ ...editSettings, default_base_price: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Free delivery radius</label>
-                  <div className="relative">
-                    <Input
-                      className="pr-12 h-9"
-                      value={editSettings.default_free_miles || ""}
-                      onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Extra per mile</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                    <Input
-                      className="pl-6 pr-12 h-9"
-                      value={editSettings.default_extra_per_mile || ""}
-                      onChange={e => setEditSettings({ ...editSettings, default_extra_per_mile: e.target.value })}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">/mile</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Max delivery distance</label>
-                  <div className="relative">
-                    <Input
-                      className="pr-12 h-9"
-                      value={editSettings.default_max_distance || ""}
-                      onChange={e => setEditSettings({ ...editSettings, default_max_distance: e.target.value })}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                    <Input
-                      className="pl-6 h-9"
-                      value={editSettings.saturday_surcharge || ""}
-                      onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-3">
-                <p className="text-xs text-gray-400">Changes here instantly update pricing across all PITs that don't have their own override. The landing page price will also update automatically.</p>
-                <Button onClick={saveGlobalSettings} disabled={savingSettings} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
-                  Save Global Settings
-                </Button>
-              </div>
+      case "pit":
+        return (
+          <>
+            {/* Link to Global Settings */}
+            <div className="mb-4">
+              <button
+                onClick={() => setActivePage("settings")}
+                className="text-sm flex items-center gap-1 hover:underline"
+                style={{ color: BRAND_GOLD }}
+              >
+                Global pricing defaults → <Settings className="w-4 h-4" />
+              </button>
             </div>
 
             {/* PIT Manager */}
-            <div className="bg-white rounded-lg border shadow-sm p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-sm" style={{ color: BRAND_NAVY }}>PIT Manager</h3>
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-4" style={{ borderColor: CARD_BORDER }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold" style={{ color: BRAND_NAVY }}>PIT Manager</h3>
                 <div className="flex gap-2">
                   <Button onClick={geocodeAllLeads} disabled={geocoding} variant="outline" size="sm">
                     {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
@@ -1261,9 +1251,8 @@ const Leads = () => {
                   const hasOverride = p.base_price != null || p.free_miles != null || p.price_per_extra_mile != null || p.max_distance != null;
 
                   if (editingPitId === p.id) {
-                    // Edit mode
                     return (
-                      <div key={p.id} className="border-2 rounded-lg p-4 flex-1 min-w-[280px]" style={{ borderColor: BRAND_GOLD }}>
+                      <div key={p.id} className="border-2 rounded-xl p-4 flex-1 min-w-[280px]" style={{ borderColor: BRAND_GOLD }}>
                         <div className="space-y-3">
                           <Input placeholder="PIT Name" value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
                           <div className="relative">
@@ -1275,11 +1264,7 @@ const Leads = () => {
                               <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
                             )}
                           </div>
-                          <select
-                            value={editPitData.status || "active"}
-                            onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })}
-                            className="w-full h-10 px-3 rounded-md border"
-                          >
+                          <select value={editPitData.status || "active"} onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })} className="w-full h-10 px-3 rounded-md border">
                             <option value="active">Active</option>
                             <option value="planning">Planning</option>
                             <option value="inactive">Inactive</option>
@@ -1289,45 +1274,19 @@ const Leads = () => {
                             <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <label className="text-xs text-gray-400">Base price</label>
-                                <Input
-                                  placeholder="e.g. 195.00"
-                                  value={editPitData.base_price ?? ""}
-                                  onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })}
-                                  onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)}
-                                  type="number"
-                                  className="h-8 text-sm"
-                                />
+                                <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-8 text-sm" />
                               </div>
                               <div>
                                 <label className="text-xs text-gray-400">Free miles</label>
-                                <Input
-                                  placeholder="e.g. 15"
-                                  value={editPitData.free_miles ?? ""}
-                                  onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
-                                  type="number"
-                                  className="h-8 text-sm"
-                                />
+                                <Input placeholder="e.g. 15" value={editPitData.free_miles ?? ""} onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
                               </div>
                               <div>
                                 <label className="text-xs text-gray-400">Extra per mile</label>
-                                <Input
-                                  placeholder="e.g. 5.00"
-                                  value={editPitData.price_per_extra_mile ?? ""}
-                                  onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
-                                  onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)}
-                                  type="number"
-                                  className="h-8 text-sm"
-                                />
+                                <Input placeholder="e.g. 5.00" value={editPitData.price_per_extra_mile ?? ""} onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)} type="number" className="h-8 text-sm" />
                               </div>
                               <div>
                                 <label className="text-xs text-gray-400">Max distance</label>
-                                <Input
-                                  placeholder="e.g. 30"
-                                  value={editPitData.max_distance ?? ""}
-                                  onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
-                                  type="number"
-                                  className="h-8 text-sm"
-                                />
+                                <Input placeholder="e.g. 30" value={editPitData.max_distance ?? ""} onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
                               </div>
                             </div>
                           </div>
@@ -1342,9 +1301,8 @@ const Leads = () => {
                     );
                   }
 
-                  // Read-only card
                   return (
-                    <div key={p.id} className="border rounded-lg p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : BRAND_NAVY + "30" }}>
+                    <div key={p.id} className="border rounded-xl p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : CARD_BORDER }}>
                       <div className="flex items-center justify-between mb-1">
                         <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{p.name}</p>
                         {p.is_default && <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Default</span>}
@@ -1361,15 +1319,8 @@ const Leads = () => {
                         <Button size="sm" variant="outline" onClick={() => startEditPit(p)} className="text-xs h-7">
                           <Edit2 className="w-3 h-3 mr-1" />Edit
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => togglePitStatus(p)}
-                          className="text-xs h-7"
-                          style={{
-                            borderColor: p.status === "active" ? "#EF444430" : "#22C55E30",
-                            color: p.status === "active" ? "#EF4444" : "#22C55E",
-                          }}
+                        <Button size="sm" variant="outline" onClick={() => togglePitStatus(p)} className="text-xs h-7"
+                          style={{ borderColor: p.status === "active" ? "#EF444430" : "#22C55E30", color: p.status === "active" ? "#EF4444" : "#22C55E" }}
                         >
                           <Power className="w-3 h-3 mr-1" />
                           {p.status === "active" ? "Deactivate" : "Activate"}
@@ -1385,7 +1336,7 @@ const Leads = () => {
 
               {/* Add PIT form */}
               {showAddPit && (
-                <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                <div className="mt-4 p-4 border rounded-xl bg-gray-50" style={{ borderColor: CARD_BORDER }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input placeholder="PIT Name" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
                     <div className="relative">
@@ -1395,11 +1346,7 @@ const Leads = () => {
                         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
                       )}
                     </div>
-                    <select
-                      value={newPit.status}
-                      onChange={e => setNewPit({ ...newPit, status: e.target.value as any })}
-                      className="h-10 px-3 rounded-md border"
-                    >
+                    <select value={newPit.status} onChange={e => setNewPit({ ...newPit, status: e.target.value as any })} className="h-10 px-3 rounded-md border">
                       <option value="planning">Planning</option>
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -1411,45 +1358,19 @@ const Leads = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       <div>
                         <label className="text-xs text-gray-400">Base price</label>
-                        <Input
-                          placeholder="e.g. 195.00"
-                          value={newPit.base_price ?? ""}
-                          onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })}
-                          onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }}
-                          type="number"
-                          className="h-8 text-sm"
-                        />
+                        <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-8 text-sm" />
                       </div>
                       <div>
                         <label className="text-xs text-gray-400">Free miles</label>
-                        <Input
-                          placeholder="e.g. 15"
-                          value={newPit.free_miles ?? ""}
-                          onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
-                          type="number"
-                          className="h-8 text-sm"
-                        />
+                        <Input placeholder="e.g. 15" value={newPit.free_miles ?? ""} onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
                       </div>
                       <div>
                         <label className="text-xs text-gray-400">Extra per mile</label>
-                        <Input
-                          placeholder="e.g. 5.00"
-                          value={newPit.price_per_extra_mile ?? ""}
-                          onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
-                          onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }}
-                          type="number"
-                          className="h-8 text-sm"
-                        />
+                        <Input placeholder="e.g. 5.00" value={newPit.price_per_extra_mile ?? ""} onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }} type="number" className="h-8 text-sm" />
                       </div>
                       <div>
                         <label className="text-xs text-gray-400">Max distance</label>
-                        <Input
-                          placeholder="e.g. 30"
-                          value={newPit.max_distance ?? ""}
-                          onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
-                          type="number"
-                          className="h-8 text-sm"
-                        />
+                        <Input placeholder="e.g. 30" value={newPit.max_distance ?? ""} onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
                       </div>
                     </div>
                   </div>
@@ -1464,7 +1385,7 @@ const Leads = () => {
               )}
             </div>
 
-            {/* ROI Summary */}
+            {/* ROI Summary + Simulation Table */}
             {selectedPit && (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -1485,33 +1406,21 @@ const Leads = () => {
                   })()}
                 </div>
 
-                {/* Simulation table */}
-                <div className="bg-white rounded-lg border shadow-sm mb-4">
-                  <div className="px-4 py-3 border-b flex items-center justify-between">
+                <div className="bg-white rounded-xl border shadow-sm" style={{ borderColor: CARD_BORDER }}>
+                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
                     <h3 className="font-bold text-sm" style={{ color: BRAND_NAVY }}>
-                      Simulation from: {selectedPit.name}
+                      Simulation: {selectedPit.name} — {simData.filter(d => d.status === "serviceable").length} newly serviceable
                     </h3>
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const serviceableIds = new Set(simData.filter(d => d.status === "serviceable").map(d => d.lead.id));
-                          setSimSelected(serviceableIds);
-                        }}
-                      >
-                        Select All Serviceable
-                      </Button>
-                      <Button
-                        size="sm"
-                        disabled={simSelected.size === 0}
-                        onClick={() => {
-                          const first = simData.find(d => simSelected.has(d.lead.id));
-                          if (first) setProposalSubject(`River Sand is now available near ${parseAddress(first.lead.address).zip} — Your price: $${first.newPrice.toFixed(2)}`);
-                          setShowProposal(true);
-                        }}
-                        style={{ backgroundColor: BRAND_GOLD, color: "white" }}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => {
+                        const serviceableIds = new Set(simData.filter(d => d.status === "serviceable" && d.lead.customer_email).map(d => d.lead.id));
+                        setSimSelected(serviceableIds);
+                      }}>Select All Serviceable</Button>
+                      <Button size="sm" disabled={simSelected.size === 0} onClick={() => {
+                        const first = simData.find(d => simSelected.has(d.lead.id));
+                        if (first) setProposalSubject(`River Sand is now available near ${parseAddress(first.lead.address).zip} — Your price: $${first.newPrice.toFixed(2)}`);
+                        setShowProposal(true);
+                      }} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                         <Send className="w-4 h-4 mr-1" /> Send Proposal ({simSelected.size})
                       </Button>
                     </div>
@@ -1559,35 +1468,386 @@ const Leads = () => {
                 </div>
               </>
             )}
-          </TabsContent>
+          </>
+        );
 
-          {/* ALL LEADS TAB */}
-          <TabsContent value="all">
-            <div className="flex flex-wrap gap-2 mb-4">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input placeholder="Search leads..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
-                {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2"><X className="w-4 h-4 text-gray-400" /></button>}
-              </div>
-              <FilterSelect value={stageFilter} onChange={setStageFilter} label="Stage" options={[{ value: "all", label: "All stages" }, ...STAGES.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} />
-              <FilterSelect value={stateFilter} onChange={setStateFilter} label="State" options={[{ value: "all", label: "All states" }, ...states.map(s => ({ value: s, label: s }))]} />
-              <FilterSelect value={dateFilter} onChange={setDateFilter} label="Date" options={[{ value: "all", label: "All time" }, { value: "today", label: "Today" }, { value: "week", label: "This week" }, { value: "month", label: "This month" }, { value: "year", label: "This year" }]} />
-              <FilterSelect value={distanceFilter} onChange={setDistanceFilter} label="Distance" options={[{ value: "all", label: "All distances" }, { value: "30-50", label: "30-50 mi" }, { value: "50-75", label: "50-75 mi" }, { value: "75-100", label: "75-100 mi" }, { value: "100+", label: "100+ mi" }]} />
-            </div>
-            <div className="bg-white rounded-lg border shadow-sm">
+      case "all":
+        return (
+          <>
+            <SearchAndFilters />
+            <div className="bg-white rounded-xl border shadow-sm" style={{ borderColor: CARD_BORDER }}>
               <LeadsTable data={paginatedLeads} />
-              <div className="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-500">
-                <span>Showing {Math.min((page - 1) * PAGE_SIZE + 1, sortedLeads.length)}–{Math.min(page * PAGE_SIZE, sortedLeads.length)} of {sortedLeads.length} leads</span>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-                  <span>Page {page} of {totalPages}</span>
-                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+              <Pagination />
+            </div>
+          </>
+        );
+
+      case "settings":
+        return (
+          <>
+            {/* Pricing Defaults */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Global Pricing Defaults</h3>
+              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Apply to all PITs unless overridden</p>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Base price per load</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <Input className="pl-6 h-9" value={editSettings.default_base_price || ""} onChange={e => setEditSettings({ ...editSettings, default_base_price: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Free delivery radius</label>
+                  <div className="relative">
+                    <Input className="pr-12 h-9" value={editSettings.default_free_miles || ""} onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Extra per mile</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <Input className="pl-6 pr-12 h-9" value={editSettings.default_extra_per_mile || ""} onChange={e => setEditSettings({ ...editSettings, default_extra_per_mile: e.target.value })} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">/mile</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Max delivery distance</label>
+                  <div className="relative">
+                    <Input className="pr-12 h-9" value={editSettings.default_max_distance || ""} onChange={e => setEditSettings({ ...editSettings, default_max_distance: e.target.value })} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                  Save Pricing Settings
+                </Button>
+              </div>
+            </div>
+
+            {/* Delivery Schedule */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Delivery Schedule</h3>
+              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Configure delivery days and cutoff times</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Same-day cutoff</label>
+                  <Input className="h-9" value={editSettings.sameday_cutoff || "10:00 AM"} onChange={e => setEditSettings({ ...editSettings, sameday_cutoff: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Max same-day orders/day</label>
+                  <Input className="h-9" type="number" value={editSettings.max_sameday_orders || ""} onChange={e => setEditSettings({ ...editSettings, max_sameday_orders: e.target.value })} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className="text-xs text-gray-500 block mb-2">Operating days</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => {
+                    const key = `operating_${day.toLowerCase()}`;
+                    const active = editSettings[key] !== "false";
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => setEditSettings({ ...editSettings, [key]: active ? "false" : "true" })}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                        style={{
+                          backgroundColor: active ? BRAND_NAVY : "#f3f3f3",
+                          color: active ? "white" : "#999",
+                        }}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                  Save Schedule Settings
+                </Button>
+              </div>
+            </div>
+
+            {/* Notifications */}
+            <div className="bg-white rounded-xl border shadow-sm p-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Notifications</h3>
+              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Email alerts and notifications</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Owner dispatch email</label>
+                  <Input className="h-9" value={editSettings.dispatch_email || "cmo@haulogix.com"} onChange={e => setEditSettings({ ...editSettings, dispatch_email: e.target.value })} />
+                </div>
+                {[
+                  { key: "alert_new_lead", label: "Alert on new lead" },
+                  { key: "alert_new_order", label: "Alert on new order" },
+                  { key: "daily_summary", label: "Daily summary email" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between py-2">
+                    <span className="text-sm" style={{ color: BRAND_NAVY }}>{label}</span>
+                    <button
+                      onClick={() => setEditSettings({ ...editSettings, [key]: editSettings[key] === "true" ? "false" : "true" })}
+                      className="w-10 h-5 rounded-full transition-colors relative"
+                      style={{ backgroundColor: editSettings[key] === "true" ? BRAND_GOLD : "#ddd" }}
+                    >
+                      <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: editSettings[key] === "true" ? "22px" : "2px" }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                  Save Notification Settings
+                </Button>
+              </div>
+            </div>
+          </>
+        );
+
+      case "profile":
+        return (
+          <>
+            {/* Brand Identity */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Brand Identity</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Legal business name</label>
+                  <Input className="h-9" value={profileSettings.legal_name || ""} onChange={e => setProfileSettings({ ...profileSettings, legal_name: e.target.value })} placeholder="Ways Materials, LLC" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Brand name</label>
+                  <Input className="h-9" value={profileSettings.site_name || ""} onChange={e => setProfileSettings({ ...profileSettings, site_name: e.target.value })} placeholder="River Sand" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Tagline</label>
+                  <Input className="h-9" value={profileSettings.tagline || ""} onChange={e => setProfileSettings({ ...profileSettings, tagline: e.target.value })} placeholder="Real Sand. Real People." />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Website</label>
+                  <Input className="h-9" value={profileSettings.website || ""} onChange={e => setProfileSettings({ ...profileSettings, website: e.target.value })} placeholder="https://riversand.net" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Primary phone</label>
+                  <Input className="h-9" value={profileSettings.phone || ""} onChange={e => setProfileSettings({ ...profileSettings, phone: e.target.value })} placeholder="1-855-GOT-WAYS" />
                 </div>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+
+            {/* Contact & Address */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Contact Information</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Customer email (display)</label>
+                  <Input className="h-9" value={profileSettings.customer_email || ""} onChange={e => setProfileSettings({ ...profileSettings, customer_email: e.target.value })} placeholder="no_reply@riversand.net" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Owner email (dispatch)</label>
+                  <Input className="h-9" value={profileSettings.dispatch_email || ""} onChange={e => setProfileSettings({ ...profileSettings, dispatch_email: e.target.value })} placeholder="cmo@haulogix.com" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Business address</label>
+                  <Input ref={profileAddressRef} className="h-9" value={profileSettings.business_address || ""} onChange={e => setProfileSettings({ ...profileSettings, business_address: e.target.value })} placeholder="1215 River Rd, Bridge City, LA 70094" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Display city (customer-facing)</label>
+                  <Input className="h-9" value={profileSettings.display_city || ""} onChange={e => setProfileSettings({ ...profileSettings, display_city: e.target.value })} placeholder="New Orleans, Louisiana" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-3">Business address is used for internal dispatch only. Display city appears in customer emails and invoices.</p>
+            </div>
+
+            {/* Branding Assets */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Branding Assets</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="text-xs text-gray-500 block mb-1">Logo URL</label>
+                  <div className="flex gap-2">
+                    <Input className="h-9 flex-1" value={profileSettings.logo_url || ""} onChange={e => setProfileSettings({ ...profileSettings, logo_url: e.target.value })} placeholder="https://..." />
+                    {profileSettings.logo_url && (
+                      <div className="h-9 w-9 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                        <img src={profileSettings.logo_url} alt="Logo" className="max-h-8 max-w-8 object-contain" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Upload</label>
+                  <Button variant="outline" size="sm" disabled className="h-9 w-full opacity-50">Coming soon</Button>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Primary color</label>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.primary_color || BRAND_NAVY, borderColor: CARD_BORDER }} />
+                    <Input className="h-9 flex-1" value={profileSettings.primary_color || BRAND_NAVY} onChange={e => setProfileSettings({ ...profileSettings, primary_color: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Accent color</label>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.accent_color || BRAND_GOLD, borderColor: CARD_BORDER }} />
+                    <Input className="h-9 flex-1" value={profileSettings.accent_color || BRAND_GOLD} onChange={e => setProfileSettings({ ...profileSettings, accent_color: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Legal */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Legal Information</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Legal entity</label>
+                  <Input className="h-9" value={profileSettings.legal_name || ""} onChange={e => setProfileSettings({ ...profileSettings, legal_name: e.target.value })} placeholder="Ways Materials, LLC" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">State of incorporation</label>
+                  <Input className="h-9" value={profileSettings.state_of_incorporation || ""} onChange={e => setProfileSettings({ ...profileSettings, state_of_incorporation: e.target.value })} placeholder="Louisiana" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Copyright year</label>
+                  <Input className="h-9" value={profileSettings.copyright_year || "2026"} onChange={e => setProfileSettings({ ...profileSettings, copyright_year: e.target.value })} />
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="text-xs text-gray-500 block mb-1">Invoice footer text</label>
+                <Textarea rows={3} value={profileSettings.invoice_footer || ""} onChange={e => setProfileSettings({ ...profileSettings, invoice_footer: e.target.value })} placeholder="This invoice is issued by Ways Materials, LLC..." />
+              </div>
+            </div>
+
+            {/* Save */}
+            <Button onClick={saveBusinessProfile} disabled={savingProfile} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+              {savingProfile ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+              Save Business Profile
+            </Button>
+            <p className="text-xs text-gray-400 text-center mt-2">✓ Synced to: Emails · Invoices · Landing page · Order confirmations</p>
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex" style={{ backgroundColor: CONTENT_BG }}>
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed md:sticky top-0 left-0 z-50 md:z-auto h-screen flex flex-col transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ width: 220, minWidth: 220, backgroundColor: BRAND_NAVY }}
+      >
+        <div className="px-4 py-4">
+          <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>DELIVERY LEADS</h2>
+          <p className="text-xs mt-0.5" style={{ color: SECTION_LABEL }}>Live: {livePricing}</p>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-2">
+          {NAV_ITEMS.map(section => (
+            <div key={section.section} className="mb-3">
+              <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: SECTION_LABEL }}>
+                {section.section}
+              </p>
+              {section.items.map(item => {
+                const Icon = item.icon;
+                const isActive = activePage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
+                    style={{
+                      height: 40,
+                      fontSize: 13,
+                      color: isActive ? BRAND_GOLD : "white",
+                      backgroundColor: isActive ? SIDEBAR_HOVER : "transparent",
+                      borderLeft: isActive ? `3px solid ${BRAND_GOLD}` : "3px solid transparent",
+                    }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                  >
+                    <Icon className="w-[18px] h-[18px]" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Logout + Footer */}
+        <div className="px-2 pb-2">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
+            style={{ height: 40, fontSize: 13, color: "#999" }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = SIDEBAR_HOVER)}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+          >
+            <LogOut className="w-[18px] h-[18px]" />
+            <span>Logout</span>
+          </button>
+          <p className="text-center py-3 text-[10px]" style={{ color: SECTION_LABEL }}>Powered by Haulogix, LLC</p>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 min-w-0">
+        {/* Top bar */}
+        <div className="sticky top-0 z-30 px-4 md:px-6 lg:px-8 py-3 flex items-center justify-between border-b bg-white" style={{ borderColor: CARD_BORDER }}>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1">
+              <Menu className="w-5 h-5" style={{ color: BRAND_NAVY }} />
+            </button>
+            <div>
+              <h1 className="text-lg font-medium tracking-wider" style={{ color: BRAND_GOLD }}>{currentPage.title}</h1>
+              {currentPage.subtitle && <p className="text-xs text-gray-500">{currentPage.subtitle}</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {(activePage === "overview" || activePage === "all") && (
+              <Button onClick={exportCSV} variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-1" /> Export CSV
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Page content */}
+        <div className="px-4 md:px-6 lg:px-8 py-6">
+          {renderPageContent()}
+        </div>
+      </main>
+
+      {/* ─── MODALS ─── */}
 
       {/* Detail Modal */}
       {selectedLead && (
@@ -1610,32 +1870,27 @@ const Leads = () => {
                   <ContactedBadge contacted={selectedLead.contacted} onClick={() => { toggleContacted(selectedLead.id); setSelectedLead({ ...selectedLead, contacted: !selectedLead.contacted }); }} loading={toggling === selectedLead.id} />
                 </div>
               </div>
-
               {selectedLead.stage === "won" && (
                 <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-center">
                   <span className="text-green-700 font-bold text-sm">✅ ORDER PLACED</span>
                 </div>
               )}
-
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Stage</label>
                 <select value={detailStage} onChange={e => setDetailStage(e.target.value)} className="w-full h-10 px-3 rounded-md border">
                   {STAGES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                 </select>
               </div>
-
               {selectedLead.notes && (
                 <div>
                   <p className="text-xs text-gray-400 mb-1">History</p>
                   <pre className="text-xs bg-gray-50 p-3 rounded border whitespace-pre-wrap max-h-32 overflow-y-auto">{selectedLead.notes}</pre>
                 </div>
               )}
-
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Add Note</label>
                 <Textarea rows={2} value={detailNote} onChange={e => setDetailNote(e.target.value)} placeholder="Type a note..." />
               </div>
-
               <div className="flex gap-2">
                 <Button onClick={saveDetail} disabled={savingDetail} className="flex-1" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                   {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
@@ -1713,11 +1968,7 @@ const Leads = () => {
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Select PIT</label>
-                <select
-                  value={qpPitId}
-                  onChange={e => setQpPitId(e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border text-sm"
-                >
+                <select value={qpPitId} onChange={e => setQpPitId(e.target.value)} className="w-full h-10 px-3 rounded-md border text-sm">
                   {pits.filter(p => p.status === "active").map(p => {
                     const dist = quickProposalLead.nearest_pit_id === p.id && quickProposalLead.nearest_pit_distance != null
                       ? quickProposalLead.nearest_pit_distance.toFixed(1)
@@ -1732,24 +1983,12 @@ const Leads = () => {
                 <label className="text-xs text-gray-400 block mb-1">Price (editable)</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl" style={{ color: BRAND_GOLD }}>$</span>
-                  <input
-                    type="number"
-                    value={qpPrice}
-                    onChange={e => setQpPrice(e.target.value)}
-                    className="w-full h-14 pl-10 text-center text-2xl font-bold rounded-lg border-2"
-                    style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}
-                    step="0.01"
-                  />
+                  <input type="number" value={qpPrice} onChange={e => setQpPrice(e.target.value)} className="w-full h-14 pl-10 text-center text-2xl font-bold rounded-lg border-2" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }} step="0.01" />
                 </div>
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Custom note (optional)</label>
-                <Textarea
-                  value={qpNote}
-                  onChange={e => setQpNote(e.target.value)}
-                  placeholder="Add a personal note... (e.g. We're expanding to your area soon!)"
-                  rows={2}
-                />
+                <Textarea value={qpNote} onChange={e => setQpNote(e.target.value)} placeholder="Add a personal note... (e.g. We're expanding to your area soon!)" rows={2} />
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Order link</label>
@@ -1775,25 +2014,14 @@ const Leads = () => {
                 Send Offer
               </Button>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => { navigator.clipboard.writeText(qpOrderUrl); toast({ title: "Order link copied!" }); }}
-                >
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => { navigator.clipboard.writeText(qpOrderUrl); toast({ title: "Order link copied!" }); }}>
                   <Copy className="w-3 h-3 mr-1" /> Copy Link
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  style={{ borderColor: "#22C55E30", color: "#22C55E" }}
-                  onClick={() => {
-                    const msg = `Hi ${quickProposalLead.customer_name.split(" ")[0]}, River Sand can deliver to your area! Here is your quote:\n\nRiver Sand — 9 Cubic Yards\nDelivered to: ${quickProposalLead.address}\nYour price: $${qpPrice}\n\nOrder here (address pre-filled):\n${qpOrderUrl}\n\nQuestions? Call 1-855-GOT-WAYS`;
-                    const phone = quickProposalLead.customer_phone?.replace(/\D/g, "") || "";
-                    window.open(`https://wa.me/${phone ? "1" + phone : ""}?text=${encodeURIComponent(msg)}`, "_blank");
-                  }}
-                >
+                <Button variant="outline" size="sm" className="flex-1" style={{ borderColor: "#22C55E30", color: "#22C55E" }} onClick={() => {
+                  const msg = `Hi ${quickProposalLead.customer_name.split(" ")[0]}, River Sand can deliver to your area! Here is your quote:\n\nRiver Sand — 9 Cubic Yards\nDelivered to: ${quickProposalLead.address}\nYour price: $${qpPrice}\n\nOrder here (address pre-filled):\n${qpOrderUrl}\n\nQuestions? Call 1-855-GOT-WAYS`;
+                  const phone = quickProposalLead.customer_phone?.replace(/\D/g, "") || "";
+                  window.open(`https://wa.me/${phone ? "1" + phone : ""}?text=${encodeURIComponent(msg)}`, "_blank");
+                }}>
                   <MessageCircle className="w-3 h-3 mr-1" /> WhatsApp
                 </Button>
               </div>
@@ -1802,9 +2030,6 @@ const Leads = () => {
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <div className="text-center py-4 text-xs text-gray-400">Powered by Haulogix, LLC</div>
     </div>
   );
 };
