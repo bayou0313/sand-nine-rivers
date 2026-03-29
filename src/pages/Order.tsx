@@ -979,6 +979,13 @@ const Order = () => {
                         </>
                       )}
 
+                      {effectiveDiscount > 0 && (
+                        <>
+                          <div className="border-b border-dashed border-border" />
+                          <ReceiptRow label="Loyalty discount" value={`-${formatCurrency(effectiveDiscount)}`} accent />
+                        </>
+                      )}
+
                       {/* Totals area */}
                       <div className="mt-3 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 space-y-1.5">
                         <div className="flex justify-between text-sm">
