@@ -403,10 +403,14 @@ serve(async (req) => {
       if (pitErr) throw pitErr;
 
       const maxDist = pitData.max_distance || 30;
-      const radiusMeters = maxDist * 1609;
+      const radiusMeters = Math.round(maxDist * 1609.34);
       const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "GOOGLE_MAPS_SERVER_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
-      // Haversine helper
+      // Haversine helper (miles)
       const R = 3958.8;
       const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -415,70 +419,85 @@ serve(async (req) => {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       };
 
-      // Run multiple place type searches
-      const placeTypes = ["locality", "sublocality", "neighborhood"];
-      const allPlaces = new Map<string, any>();
+      // Deduplicated place collector keyed by place_id then by lowercase name
+      const byPlaceId = new Map<string, any>();
+      const byName = new Map<string, any>();
+      const addPlace = (place: any) => {
+        if (place.place_id && !byPlaceId.has(place.place_id)) {
+          byPlaceId.set(place.place_id, place);
+          byName.set(place.name?.toLowerCase(), place);
+        } else if (!place.place_id && place.name && !byName.has(place.name.toLowerCase())) {
+          byName.set(place.name.toLowerCase(), place);
+        }
+      };
 
-      for (const pType of placeTypes) {
+      // ── STRATEGY 1: Multiple place type Nearby Searches ──
+      const placeTypes = ["locality", "sublocality", "neighborhood", "administrative_area_level_3"];
+      const nearbyPromises = placeTypes.map(async (pType) => {
         try {
           const resp = await fetch(
             `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${pitData.lat},${pitData.lon}&radius=${radiusMeters}&type=${pType}&key=${apiKey}`
           );
           const data = await resp.json();
-          for (const place of (data.results || [])) {
-            const name = place.name;
-            if (!allPlaces.has(name.toLowerCase())) {
-              allPlaces.set(name.toLowerCase(), place);
-            }
-          }
+          return data.results || [];
         } catch (e) {
-          console.error(`Places search failed for type=${pType}:`, e);
+          console.error(`Nearby search failed for type=${pType}:`, e);
+          return [];
         }
+      });
+      const nearbyResults = await Promise.all(nearbyPromises);
+      for (const results of nearbyResults) {
+        for (const place of results) addPlace(place);
       }
+      console.log(`Strategy 1 (nearby types): ${byPlaceId.size} unique places`);
 
-      // Fallback: if fewer than 5 results, use hardcoded LA community list + geocoding
-      const FALLBACK_CITIES = [
-        "Metairie","Kenner","Gretna","Harvey","Westwego","Marrero","Terrytown","Algiers",
-        "Chalmette","Arabi","Meraux","Violet","Slidell","Mandeville","Covington",
-        "Hammond","Houma","Thibodaux","Laplace","Reserve","Lutcher","Gramercy",
-        "Destrehan","Norco","Hahnville","Boutte","Luling","Paradis","Des Allemands",
-        "Belle Chasse","Buras","Empire","Morgan City","Raceland","Lockport",
-        "Golden Meadow","Cut Off","Galliano","Napoleonville","Donaldsonville",
-        "Plaquemine","Port Allen","Baker","Zachary","Central","Denham Springs",
-        "Gonzales","Prairieville","Sorrento","Vacherie"
+      // ── STRATEGY 2: Grid-based Text Search for better coverage ──
+      const offset = (maxDist / 69) * 0.5; // miles to degrees approx
+      const gridPoints = [
+        { lat: pitData.lat, lng: pitData.lon },
+        { lat: pitData.lat + offset, lng: pitData.lon },
+        { lat: pitData.lat - offset, lng: pitData.lon },
+        { lat: pitData.lat, lng: pitData.lon + offset },
+        { lat: pitData.lat, lng: pitData.lon - offset },
+        { lat: pitData.lat + offset, lng: pitData.lon + offset },
+        { lat: pitData.lat + offset, lng: pitData.lon - offset },
+        { lat: pitData.lat - offset, lng: pitData.lon + offset },
+        { lat: pitData.lat - offset, lng: pitData.lon - offset },
       ];
+      const gridRadius = Math.round(radiusMeters / 3);
+      const textPromises = gridPoints.map(async (pt) => {
+        try {
+          const resp = await fetch(
+            `https://maps.googleapis.com/maps/api/place/textsearch/json?query=city+town+community&location=${pt.lat},${pt.lng}&radius=${gridRadius}&key=${apiKey}`
+          );
+          const data = await resp.json();
+          return data.results || [];
+        } catch (e) {
+          console.error(`Text search failed for grid point:`, e);
+          return [];
+        }
+      });
+      const textResults = await Promise.all(textPromises);
+      for (const results of textResults) {
+        for (const place of results) addPlace(place);
+      }
+      console.log(`After Strategy 2 (grid text): ${byPlaceId.size + byName.size} total places`);
 
-      if (allPlaces.size < 5 && apiKey) {
-        console.log(`Only ${allPlaces.size} places found via API, using fallback list`);
-        for (const cityName of FALLBACK_CITIES) {
-          if (allPlaces.has(cityName.toLowerCase())) continue;
-          try {
-            const geoResp = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cityName + ", Louisiana")}&key=${apiKey}`
-            );
-            const geoData = await geoResp.json();
-            const result = geoData.results?.[0];
-            if (result) {
-              const loc = result.geometry.location;
-              const dist = hav(pitData.lat, pitData.lon, loc.lat, loc.lng);
-              if (dist <= maxDist) {
-                allPlaces.set(cityName.toLowerCase(), {
-                  name: cityName,
-                  geometry: { location: loc },
-                });
-              }
-            }
-          } catch (e) {
-            console.error(`Geocode failed for ${cityName}:`, e);
+      // ── Extract city info with geocoding for precise address components ──
+      const allPlaces = [...byPlaceId.values()];
+      // Also add any name-only entries not already covered
+      for (const [name, place] of byName) {
+        if (!place.place_id || !byPlaceId.has(place.place_id)) {
+          if (!allPlaces.find(p => p.name?.toLowerCase() === name)) {
+            allPlaces.push(place);
           }
         }
       }
 
-      // Get existing city slugs
+      // Get existing city slugs for duplicate detection
       const { data: existingPages } = await supabase
         .from("city_pages")
         .select("city_slug, pit_id, pits(name)");
-
       const existingSlugs = new Map();
       for (const p of existingPages || []) {
         existingSlugs.set(p.city_slug, { pit_id: p.pit_id, pit_name: (p as any).pits?.name || "" });
@@ -488,33 +507,68 @@ serve(async (req) => {
       const { data: gsData } = await supabase.from("global_settings").select("key, value");
       const gs: Record<string, string> = {};
       for (const row of gsData || []) gs[row.key] = row.value;
-
       const bPrice = pitData.base_price ?? parseFloat(gs.default_base_price || "195");
       const freeMiles = pitData.free_miles ?? parseFloat(gs.default_free_miles || "15");
       const extraPerMile = pitData.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
 
-      const discovered = Array.from(allPlaces.values()).map((place: any) => {
-        const cityName = place.name;
-        const slug = cityName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const lat = place.geometry.location.lat;
-        const lng = place.geometry.location.lng;
+      // Extract city name from address_components or place name
+      const extractCityName = (place: any): { cityName: string; stateCode: string } => {
+        const components = place.address_components || [];
+        const priorities = ["locality", "sublocality_level_1", "sublocality", "neighborhood", "administrative_area_level_3"];
+        let cityName = "";
+        let stateCode = "";
+        for (const prio of priorities) {
+          const comp = components.find((c: any) => c.types?.includes(prio));
+          if (comp && !cityName) cityName = comp.long_name;
+        }
+        const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
+        if (stateComp) stateCode = stateComp.short_name;
+        if (!cityName) cityName = place.name || "";
+        return { cityName, stateCode };
+      };
+
+      const discovered: any[] = [];
+      const seenSlugs = new Set<string>();
+
+      for (const place of allPlaces) {
+        const { cityName, stateCode } = extractCityName(place);
+        if (!cityName) continue;
+
+        const lat = place.geometry?.location?.lat;
+        const lng = place.geometry?.location?.lng;
+        if (!lat || !lng) continue;
+
         const distance = hav(pitData.lat, pitData.lon, lat, lng);
+        if (distance > maxDist) continue;
+
+        let slug = cityName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+        // Handle duplicate slug from different states
+        if (seenSlugs.has(slug) || (existingSlugs.has(slug) && existingSlugs.get(slug).pit_id !== pit_id)) {
+          slug = `${slug}-${(stateCode || "us").toLowerCase()}`;
+        }
+        if (seenSlugs.has(slug)) continue;
+        seenSlugs.add(slug);
+
         const extra = distance > freeMiles ? (distance - freeMiles) * extraPerMile : 0;
         const price = bPrice + extra;
         const existing = existingSlugs.get(slug);
 
-        return {
+        discovered.push({
           city_name: cityName,
           city_slug: slug,
+          state: stateCode || "US",
           lat,
           lng,
           distance: Math.round(distance * 10) / 10,
           price: Math.round(price * 100) / 100,
           duplicate: !!existing,
           existing_pit_name: existing?.pit_name || null,
-        };
-      }).filter((c: any) => c.distance <= maxDist)
-        .sort((a: any, b: any) => a.distance - b.distance);
+        });
+      }
+
+      discovered.sort((a: any, b: any) => a.distance - b.distance);
+      console.log(`Discover complete: ${discovered.length} cities found for PIT ${pitData.name}`);
 
       return new Response(
         JSON.stringify({ cities: discovered, pit: pitData }),
