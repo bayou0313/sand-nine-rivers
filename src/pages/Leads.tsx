@@ -1221,7 +1221,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Base price</label>
                                 <Input
-                                  placeholder={`Global: $${globalSettings.default_base_price}`}
+                                  placeholder="Enter base price"
                                   value={editPitData.base_price ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
