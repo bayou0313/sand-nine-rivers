@@ -225,6 +225,29 @@ const Leads = () => {
   const [abandonedLoading, setAbandonedLoading] = useState(false);
   const [runningEmailCheck, setRunningEmailCheck] = useState(false);
 
+  const fetchAbandonedSessions = useCallback(async () => {
+    setAbandonedLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_abandoned" },
+      });
+      if (!fnError && data?.sessions) setAbandonedSessions(data.sessions);
+    } catch (err) { console.warn("Failed to fetch abandoned sessions:", err); }
+    finally { setAbandonedLoading(false); }
+  }, []);
+
+  const runEmailCheck = useCallback(async () => {
+    setRunningEmailCheck(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("abandonment-emails");
+      if (fnError) throw fnError;
+      toast({ title: "Email check complete", description: `Sent: ${data?.email_1hr || 0} 1hr, ${data?.email_24hr || 0} 24hr, ${data?.email_72hr || 0} 72hr` });
+      fetchAbandonedSessions();
+    } catch (err: any) {
+      toast({ title: "Email check failed", description: err.message, variant: "destructive" });
+    } finally { setRunningEmailCheck(false); }
+  }, [fetchAbandonedSessions, toast]);
+
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
   const basePrice = parseFloat(globalSettings.default_base_price || "195");
 
