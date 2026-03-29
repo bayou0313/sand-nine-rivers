@@ -217,7 +217,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
                   maxLength={500}
                   onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
                 />
-                <Button onClick={calculateDistance} disabled={loading} className="h-12 font-display tracking-wider text-base px-8 rounded-xl">
+                <Button data-estimator-btn onClick={calculateDistance} disabled={loading} className="h-12 font-display tracking-wider text-base px-8 rounded-xl">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
                 </Button>
               </div>
