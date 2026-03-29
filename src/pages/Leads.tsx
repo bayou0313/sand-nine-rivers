@@ -939,6 +939,24 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchCashOrders]);
 
+  // Fetch city pages
+  const fetchCityPages = useCallback(async () => {
+    setCityPagesLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_city_pages" },
+      });
+      if (!fnError && data?.city_pages) setCityPages(data.city_pages);
+    } catch (err) { console.warn("Failed to fetch city pages:", err); }
+    finally { setCityPagesLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (activePage === "city_pages" && authenticated) {
+      fetchCityPages();
+    }
+  }, [activePage, authenticated, fetchCityPages]);
+
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
       setter({ ...current, [field]: Math.round(value * 100) / 100 });
