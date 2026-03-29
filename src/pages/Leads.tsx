@@ -328,6 +328,20 @@ const Leads = () => {
         setGlobalSettings(data.settings);
         setEditSettings(data.settings);
         setProfileSettings(data.settings);
+        // Populate SEO settings
+        const seo: Record<string, string> = {};
+        Object.keys(data.settings).filter(k => k.startsWith("seo_")).forEach(k => { seo[k] = data.settings[k]; });
+        setSeoSettings(seo);
+        // Parse checklist
+        try {
+          const cl = JSON.parse(data.settings.seo_checklist || "{}");
+          setSeoChecklist(cl);
+        } catch { setSeoChecklist({}); }
+        // Parse audit
+        try {
+          const au = JSON.parse(data.settings.seo_last_audit || "null");
+          setSeoAuditResults(au);
+        } catch { /* ignore */ }
       }
     } catch (err: any) {
       console.error("Failed to fetch settings:", err);
