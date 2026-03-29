@@ -472,6 +472,16 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      // Get PIT details for AI generation
+      const { data: pitForGen } = await supabase.from("pits").select("*").eq("id", pit_id).single();
+      const { data: gsForGen } = await supabase.from("global_settings").select("key, value");
+      const gsMap: Record<string, string> = {};
+      for (const row of gsForGen || []) gsMap[row.key] = row.value;
+
+      const pitFreeMiles = pitForGen?.free_miles ?? parseFloat(gsMap.default_free_miles || "15");
+      const satAvailable = pitForGen?.operating_days ? pitForGen.operating_days.includes(6) : true;
+      const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
+
       const created: string[] = [];
       for (const city of cities) {
         const { data: inserted, error: insertErr } = await supabase
@@ -494,6 +504,34 @@ serve(async (req) => {
           console.error("Insert city page error:", insertErr);
           continue;
         }
+
+        // Auto-generate AI content
+        try {
+          const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-city-page`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
+            body: JSON.stringify({
+              password: leadsPasswordForGen,
+              city_page_id: inserted.id,
+              city_name: city.city_name,
+              state: city.state || "LA",
+              pit_name: pitForGen?.name || "Dispatch",
+              distance: city.distance,
+              price: city.price,
+              free_miles: pitFreeMiles,
+              saturday_available: satAvailable,
+            }),
+          });
+          if (genResp.ok) {
+            // Set to active after successful generation
+            await supabase.from("city_pages").update({ status: "active" }).eq("id", inserted.id);
+          } else {
+            console.error("AI generation failed for", city.city_name, await genResp.text());
+          }
+        } catch (genErr) {
+          console.error("AI generation error for", city.city_name, genErr);
+        }
+
         created.push(inserted.id);
       }
 
