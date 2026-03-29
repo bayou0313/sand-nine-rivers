@@ -1427,6 +1427,7 @@ const Order = () => {
       onClose={() => setShowOutOfAreaModal(false)}
       address={outOfAreaAddress}
       distanceMiles={outOfAreaDistance}
+      nearestPit={nearestPitInfo}
     />
   </>
   );
