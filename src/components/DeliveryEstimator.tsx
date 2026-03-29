@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { updateSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
+import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ type EstimateResult = {
   distance: number;
   price: number;
   address: string;
+  sameDayCutoff?: string | null;
 } | null;
 
 const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
@@ -34,6 +35,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   // Dynamic data from DB
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
@@ -94,11 +96,11 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
       }
     });
   }, [apiLoaded]);
+
   // Prefill address from return visitor banner
   useEffect(() => {
     if (prefillAddress && apiLoaded) {
       setAddress(prefillAddress);
-      // Trigger geocode + price calculation after setting address
       setTimeout(() => {
         const btn = document.querySelector('[data-estimator-btn]') as HTMLButtonElement;
         btn?.click();
@@ -106,6 +108,42 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
     }
   }, [prefillAddress, apiLoaded]);
 
+  // Scroll to result on mobile after price is calculated
+  useEffect(() => {
+    if (result && resultRef.current) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 200);
+    }
+  }, [result]);
+
+  const isSameDayAvailable = (cutoff: string | null | undefined): boolean => {
+    if (!cutoff) return false;
+    try {
+      const now = new Date();
+      const [hours, minutes] = cutoff.split(":").map(Number);
+      const cutoffDate = new Date();
+      cutoffDate.setHours(hours, minutes, 0, 0);
+      // Check if today is a weekday (Mon-Sat)
+      const day = now.getDay();
+      if (day === 0) return false; // Sunday
+      return now < cutoffDate;
+    } catch {
+      return false;
+    }
+  };
+
+  const formatCutoffTime = (cutoff: string | null | undefined): string => {
+    if (!cutoff) return "";
+    try {
+      const [hours, minutes] = cutoff.split(":").map(Number);
+      const period = hours >= 12 ? "PM" : "AM";
+      const displayHour = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+      return `${displayHour}:${minutes.toString().padStart(2, "0")} ${period}`;
+    } catch {
+      return cutoff;
+    }
+  };
 
   const calculateDistance = useCallback(async () => {
     if (!address.trim()) { setError("Please enter a delivery address."); return; }
@@ -115,7 +153,6 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
       let custLat = customerCoords?.lat;
       let custLng = customerCoords?.lng;
 
-      // Fallback geocode if coords not captured from Places
       if (custLat == null || custLng == null) {
         if (!GOOGLE_MAPS_API_KEY) {
           setError("Google Maps API key not configured.");
@@ -175,6 +212,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
         distance: parseFloat(bestResult.distance.toFixed(1)),
         price: bestResult.price,
         address: `${bestResult.distance.toFixed(1)} mi away`,
+        sameDayCutoff: (bestResult.pit as any).same_day_cutoff || null,
       });
       trackEvent("price_calculated", {
         price: bestResult.price,
@@ -218,6 +256,9 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
               <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-primary" /> DELIVERY ADDRESS
               </label>
+              <p className="text-sm text-muted-foreground font-body">
+                Get an exact delivery price in seconds — no account needed.
+              </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                   ref={inputRef}
@@ -251,6 +292,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
 
             {result && (
               <motion.div
+                ref={resultRef}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-6 p-6 bg-primary/5 border border-primary/20 rounded-2xl space-y-4"
@@ -265,6 +307,17 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
                     {formatCurrency(result.price)}
                   </p>
                 </div>
+
+                {/* Same-day urgency signal */}
+                {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
+                  <div className="flex items-center gap-2 justify-center text-green-600">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm font-body font-medium">
+                      ✓ Same-day delivery available — order by {formatCutoffTime(result.sameDayCutoff)}
+                    </span>
+                  </div>
+                )}
+
                 <p className="font-body text-sm text-muted-foreground text-center">
                   9 cubic yards of river sand • {matchedEffective && result.distance > matchedEffective.free_miles
                     ? `Includes ${formatCurrency((result.distance - matchedEffective.free_miles) * matchedEffective.extra_per_mile)} extended-area surcharge`
@@ -273,7 +326,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
-                    <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}`}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER ONLINE</Link>
+                    <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}`}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
                   </Button>
                   <Button variant="outline" className="flex-1 h-12 font-display tracking-wider text-lg rounded-xl" asChild>
                     <a href="tel:+18554689297">CALL TO ORDER</a>

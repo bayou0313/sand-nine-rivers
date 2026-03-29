@@ -19,6 +19,30 @@ import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
 
+const DEFAULT_TITLE = "Same-Day River Sand Delivery | New Orleans Metro & Gulf South | River Sand";
+const DEFAULT_DESCRIPTION = "Get same-day bulk river sand delivered anywhere in the Gulf South. Instant price quote by address. Cash or card accepted. Order online in minutes.";
+
+const localBusinessJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "River Sand",
+  "url": "https://riversand.net",
+  "telephone": "+18554689297",
+  "description": "Same-day bulk river sand delivery serving the Gulf South region. Instant price quotes, cash or card payment.",
+  "areaServed": {
+    "@type": "GeoCircle",
+    "geoMidpoint": {
+      "@type": "GeoCoordinates",
+      "latitude": 29.95,
+      "longitude": -90.07,
+    },
+    "geoRadius": "80000",
+  },
+  "priceRange": "$$",
+  "paymentAccepted": "Cash, Credit Card",
+  "openingHours": "Mo-Sa 07:00-17:00",
+});
+
 const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [returnAddress, setReturnAddress] = useState<string | null>(null);
@@ -58,23 +82,6 @@ const Index = () => {
   }, []);
 
   // Build schema markup
-  const localBusinessSchema = seoSettings.seo_schema_localbusiness === "true" ? JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "River Sand",
-    "description": "Same-day river sand delivery in Greater New Orleans",
-    "url": seoSettings.seo_canonical || "https://riversand.net/",
-    "telephone": "1-855-GOT-WAYS",
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "New Orleans",
-      "addressRegion": "LA",
-      "addressCountry": "US"
-    },
-    "areaServed": "Greater New Orleans",
-    "priceRange": "$$"
-  }) : null;
-
   const productSchema = seoSettings.seo_schema_product === "true" ? JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Product",
@@ -88,25 +95,43 @@ const Index = () => {
     }
   }) : null;
 
+  const faqSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How quickly can you deliver river sand?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Same-day delivery for orders placed before noon, Monday through Saturday." }
+      },
+      {
+        "@type": "Question",
+        "name": "What areas do you serve?",
+        "acceptedAnswer": { "@type": "Answer", "text": "We serve the greater Gulf South region including Metairie, Kenner, Gretna, and surrounding areas." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I pay with cash?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. We offer cash on delivery (COD) at no extra charge. You can also pay by card online." }
+      },
+    ]
+  });
+
   return (
     <div className="min-h-screen pb-14 lg:pb-0">
       <Helmet>
-        {seoSettings.seo_meta_title && <title>{seoSettings.seo_meta_title}</title>}
-        {seoSettings.seo_meta_description && <meta name="description" content={seoSettings.seo_meta_description} />}
+        <title>{seoSettings.seo_meta_title || DEFAULT_TITLE}</title>
+        <meta name="description" content={seoSettings.seo_meta_description || DEFAULT_DESCRIPTION} />
         {seoSettings.seo_robots && <meta name="robots" content={seoSettings.seo_robots} />}
-        {seoSettings.seo_canonical && <link rel="canonical" href={seoSettings.seo_canonical} />}
+        <link rel="canonical" href={seoSettings.seo_canonical || "https://riversand.net/"} />
         {seoSettings.seo_og_title && <meta property="og:title" content={seoSettings.seo_og_title} />}
         {seoSettings.seo_og_description && <meta property="og:description" content={seoSettings.seo_og_description} />}
         {seoSettings.seo_og_image && <meta property="og:image" content={seoSettings.seo_og_image} />}
         {seoSettings.seo_gsc_id && <meta name="google-site-verification" content={seoSettings.seo_gsc_id} />}
-        {/* GA4 scripts handled by GTM — no injection needed */}
+        <script type="application/ld+json">{localBusinessJsonLd}</script>
+        <script type="application/ld+json">{faqSchema}</script>
+        {productSchema && <script type="application/ld+json">{productSchema}</script>}
       </Helmet>
-      {localBusinessSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: localBusinessSchema }} />
-      )}
-      {productSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productSchema }} />
-      )}
       <Navbar />
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
       <Hero />

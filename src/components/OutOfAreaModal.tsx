@@ -92,10 +92,10 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <MapPin className="w-5 h-5 text-primary" />
-            We're Not There Yet
+            We're not in your area yet — but we're expanding
           </DialogTitle>
           <DialogDescription>
-            That address is outside our current delivery area. Leave your info and we'll reach out when we expand to your area.
+            Leave your info and you'll be first to know when we reach your area. No spam, just one email when we go live near you.
           </DialogDescription>
         </DialogHeader>
 
