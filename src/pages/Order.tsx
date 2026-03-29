@@ -405,104 +405,61 @@ const Order = () => {
     setError("");
     setResult(null);
 
-    if (!apiLoaded) {
-      setError("Google Maps API is not loaded. Please check API key configuration.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const service = new window.google.maps.DistanceMatrixService();
-      const response = await service.getDistanceMatrix({
-        origins: [ORIGIN],
-        destinations: [address],
-        travelMode: window.google.maps.TravelMode.DRIVING,
-        unitSystem: window.google.maps.UnitSystem.IMPERIAL,
-      });
+      let custLat = customerCoords?.lat;
+      let custLng = customerCoords?.lng;
 
-      const element = response.rows[0]?.elements[0];
-      if (!element || element.status !== "OK") {
-        setError("Could not calculate distance. Please check the address.");
-        setLoading(false);
-        return;
+      // Fallback geocode if coords not captured from Places
+      if (custLat == null || custLng == null) {
+        if (!GOOGLE_MAPS_API_KEY) {
+          setError("Google Maps API key not configured.");
+          setLoading(false); return;
+        }
+        const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
+        const geocodeData = await geocodeResp.json();
+        if (geocodeData.results?.[0]) {
+          custLat = geocodeData.results[0].geometry.location.lat;
+          custLng = geocodeData.results[0].geometry.location.lng;
+        } else {
+          setError("Could not locate that address. Please try again.");
+          setLoading(false); return;
+        }
       }
 
-      const distanceMiles = element.distance.value / 1609.34;
-      if (distanceMiles > MAX_MILES) {
+      if (allPits.length === 0) {
+        setError("No delivery locations configured. Please call us for pricing.");
+        setLoading(false); return;
+      }
+
+      const bestResult = findBestPit(allPits, custLat!, custLng!, globalPricing);
+
+      if (!bestResult) {
+        setError("No delivery locations available. Please call us.");
+        setLoading(false); return;
+      }
+
+      if (!bestResult.serviceable) {
         setError("That address is outside our delivery area. Please call us for options.");
         setOutOfAreaAddress(address);
-        setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
-        // Find nearest PIT
-        try {
-          const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
-          if (pitsData && pitsData.length > 0) {
-            const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
-            const geocodeData = await geocodeResp.json();
-            if (geocodeData.results?.[0]) {
-              const custLat = geocodeData.results[0].geometry.location.lat;
-              const custLon = geocodeData.results[0].geometry.location.lng;
-              const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-                const R = 3958.8;
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              };
-              let best: { id: string; name: string; distance: number } | null = null;
-              for (const p of pitsData) {
-                const d = haversine(Number(p.lat), Number(p.lon), custLat, custLon);
-                if (!best || d < best.distance) best = { id: p.id, name: p.name, distance: d };
-              }
-              setNearestPitInfo(best);
-            }
-          }
-        } catch (e) { console.error("Nearest PIT lookup error:", e); }
+        setOutOfAreaDistance(parseFloat(bestResult.distance.toFixed(1)));
+        setNearestPitInfo({ id: bestResult.pit.id, name: bestResult.pit.name, distance: bestResult.distance });
         setShowOutOfAreaModal(true);
-        setLoading(false);
-        return;
+        setLoading(false); return;
       }
 
-      let price = BASE_PRICE;
-      if (distanceMiles > BASE_MILES) price += (distanceMiles - BASE_MILES) * PER_MILE_EXTRA;
-
-      // Find nearest active PIT to set schedule for date picker
-      try {
-        const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
-        if (pitsData && pitsData.length > 0) {
-          const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
-          const geocodeData = await geocodeResp.json();
-          if (geocodeData.results?.[0]) {
-            const custLat = geocodeData.results[0].geometry.location.lat;
-            const custLon = geocodeData.results[0].geometry.location.lng;
-            const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-              const R = 3958.8;
-              const dLat2 = (lat2 - lat1) * Math.PI / 180;
-              const dLon2 = (lon2 - lon1) * Math.PI / 180;
-              const a2 = Math.sin(dLat2 / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon2 / 2) ** 2;
-              return R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1 - a2));
-            };
-            let bestPit: any = null;
-            let bestDist = Infinity;
-            for (const p of pitsData) {
-              const d = hav(Number(p.lat), Number(p.lon), custLat, custLon);
-              if (d < bestDist) { bestPit = p; bestDist = d; }
-            }
-            if (bestPit) {
-              setMatchedPitSchedule({
-                operating_days: bestPit.operating_days,
-                saturday_surcharge_override: bestPit.saturday_surcharge_override != null ? Number(bestPit.saturday_surcharge_override) : null,
-                same_day_cutoff: bestPit.same_day_cutoff,
-              });
-            }
-          }
-        }
-      } catch (e) { console.error("PIT schedule lookup error:", e); }
+      // Store matched PIT for pricing and schedule
+      setMatchedPit(bestResult.pit);
+      setMatchedPitSchedule({
+        operating_days: bestResult.pit.operating_days,
+        saturday_surcharge_override: bestResult.pit.saturday_surcharge_override != null ? Number(bestResult.pit.saturday_surcharge_override) : null,
+        same_day_cutoff: bestResult.pit.same_day_cutoff,
+      });
 
       setResult({
-        distance: parseFloat(distanceMiles.toFixed(1)),
-        price: parseFloat(price.toFixed(2)),
-        address: element.distance.text + " away",
-        duration: element.duration.text,
+        distance: parseFloat(bestResult.distance.toFixed(1)),
+        price: bestResult.price,
+        address: `${bestResult.distance.toFixed(1)} mi away`,
+        duration: "~30 min",
       });
       setStep("details");
     } catch {
@@ -510,7 +467,7 @@ const Order = () => {
     } finally {
       setLoading(false);
     }
-  }, [address, apiLoaded]);
+  }, [address, customerCoords, allPits, globalPricing]);
 
   const goToStep2 = () => {
     if (!selectedDeliveryDate) {
