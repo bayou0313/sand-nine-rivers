@@ -75,7 +75,15 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
     });
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current?.getPlace();
-      if (place?.formatted_address) setAddress(place.formatted_address);
+      if (place?.formatted_address) {
+        setAddress(place.formatted_address);
+        updateSession({
+          stage: "entered_address",
+          delivery_address: place.formatted_address,
+          address_lat: place.geometry?.location?.lat(),
+          address_lng: place.geometry?.location?.lng(),
+        });
+      }
       if (place?.geometry?.location) {
         setCustomerCoords({
           lat: place.geometry.location.lat(),
