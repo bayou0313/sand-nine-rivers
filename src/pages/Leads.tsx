@@ -470,7 +470,7 @@ const Leads = () => {
       });
       if (fnError) throw fnError;
       if (data?.pit) setPits(prev => [...prev, data.pit]);
-      setNewPit({ name: "", address: "", status: "planning", notes: "" });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
