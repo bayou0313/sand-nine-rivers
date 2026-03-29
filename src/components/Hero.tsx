@@ -6,7 +6,13 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { useCountdown } from "@/hooks/use-countdown";
 
-const Hero = () => {
+interface HeroProps {
+  h1Override?: string;
+  subtitleOverride?: string;
+  trustBadges?: { icon: any; text: string }[];
+}
+
+const Hero = ({ h1Override, subtitleOverride, trustBadges }: HeroProps = {}) => {
   const { timeLeft, label } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
@@ -48,7 +54,7 @@ const Hero = () => {
             transition={{ delay: 0.3, duration: 0.6 }}
           >
             <h1 className="text-5xl md:text-6xl lg:text-[4.3rem] leading-[0.9] text-primary-foreground tracking-wide">
-              SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS
+              {h1Override || "SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS"}
             </h1>
             <div className="w-32 h-1 bg-accent mt-3 rounded-full" />
           </motion.div>
@@ -59,7 +65,7 @@ const Hero = () => {
             transition={{ delay: 0.5 }}
             className="text-lg md:text-xl font-body text-primary-foreground/75 max-w-lg leading-relaxed"
           >
-            Quality river sand for landscaping, drainage, backfill, and construction projects across Greater New Orleans. Order before noon for same-day delivery.
+            {subtitleOverride || "Quality river sand for landscaping, drainage, backfill, and construction projects across Greater New Orleans. Order before noon for same-day delivery."}
           </motion.p>
 
           <motion.div
@@ -104,11 +110,11 @@ const Hero = () => {
             transition={{ delay: 0.9 }}
             className="flex flex-wrap gap-6 pt-2"
           >
-            {[
+            {(trustBadges || [
               { icon: ShieldCheck, text: "Same-day delivery available" },
               { icon: MapPin, text: "GPS-tracked loads" },
               { icon: Truck, text: "Local New Orleans team" },
-            ].map((item) => (
+            ]).map((item) => (
               <div key={item.text} className="flex items-center gap-2 text-primary-foreground/50 font-body text-sm">
                 <item.icon className="w-4 h-4 text-accent/80" />
                 {item.text}
