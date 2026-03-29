@@ -2323,6 +2323,45 @@ const Leads = () => {
 
               <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
 
+              {/* Operating Schedule */}
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Operating Schedule</p>
+                <p className="text-xs text-gray-500 mb-3">
+                  {!editPitData.operating_days || (editPitData.operating_days as number[]).length === 0
+                    ? "No schedule set — all days currently available"
+                    : "Check the days this PIT is open. Leave all unchecked to allow all days."}
+                </p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
+                    const days = (editPitData.operating_days as number[] | null) || [];
+                    const checked = days.includes(idx);
+                    return (
+                      <label key={idx} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                        <input type="checkbox" checked={checked} onChange={e => {
+                          const newDays = [...days];
+                          if (e.target.checked) { if (!newDays.includes(idx)) newDays.push(idx); }
+                          else { const i = newDays.indexOf(idx); if (i >= 0) newDays.splice(i, 1); }
+                          setEditPitData({ ...editPitData, operating_days: newDays.length > 0 ? newDays : null });
+                        }} className="w-4 h-4 rounded" />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+                {(editPitData.operating_days as number[] | null)?.includes(6) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday surcharge for this PIT</label>
+                    <Input placeholder="e.g. 35.00" value={editPitData.saturday_surcharge_override ?? ""} onChange={e => setEditPitData({ ...editPitData, saturday_surcharge_override: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
+                  <Input placeholder="e.g. 10:00" value={editPitData.same_day_cutoff ?? ""} onChange={e => setEditPitData({ ...editPitData, same_day_cutoff: e.target.value })} className="h-9 text-sm w-40" />
+                  <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
+                </div>
+              </div>
+
               {/* Live Price Preview */}
               {(() => {
                 const effBase = (editPitData.base_price as number | null) ?? parseFloat(globalSettings.default_base_price || "195");
