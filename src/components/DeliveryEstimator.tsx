@@ -222,7 +222,7 @@ const DeliveryEstimator = () => {
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             {[
-              { label: "LOCAL AREA", sub: "Starting at $195 per load" },
+              { label: "LOCAL AREA", sub: `Starting at $${pricing.basePrice} per load` },
               { label: "EXTENDED AREA", sub: "Additional surcharge applies" },
               { label: "9 YDS", sub: "Per load delivered" },
             ].map((item) => (
