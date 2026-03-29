@@ -46,6 +46,12 @@ const CityPage = () => {
 
       setCityPage(data);
 
+      trackEvent("city_page_view", {
+        city_name: data.city_name,
+        state: data.state,
+        page_price: data.base_price,
+      });
+
       // Increment views
       try {
         await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });

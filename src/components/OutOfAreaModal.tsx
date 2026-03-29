@@ -68,6 +68,11 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
         },
       }).catch((err) => console.error("[lead-email] Error:", err));
 
+      trackEvent("generate_lead", {
+        address,
+        nearest_pit: nearestPit?.name || "unknown",
+        distance_miles: distanceMiles,
+      });
       toast.success("Thanks! We'll contact you when we expand to your area.");
       setName("");
       setEmail("");
