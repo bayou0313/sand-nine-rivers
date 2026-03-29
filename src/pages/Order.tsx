@@ -493,6 +493,18 @@ const Order = () => {
 
       // Send order confirmation email with totals passed directly (state not yet updated)
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
+
+      // Mark lead as converted if this order came from a proposal
+      if (leadReference) {
+        supabase.functions.invoke("leads-auth", {
+          body: {
+            password: "system",
+            action: "mark_converted",
+            lead_number: leadReference,
+            order_number: inserted?.order_number || null,
+          },
+        }).catch((err: any) => console.warn("[Order] Lead conversion tracking failed:", err));
+      }
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
     } finally {
