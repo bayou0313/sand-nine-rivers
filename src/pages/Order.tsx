@@ -62,24 +62,34 @@ const Order = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
-  // Dynamic pricing from global_settings
-  const [BASE_PRICE, setBASE_PRICE] = useState(FALLBACK_BASE_PRICE);
-  const [BASE_MILES, setBASE_MILES] = useState(FALLBACK_BASE_MILES);
-  const [MAX_MILES, setMAX_MILES] = useState(FALLBACK_MAX_MILES);
-  const [PER_MILE_EXTRA, setPER_MILE_EXTRA] = useState(FALLBACK_PER_MILE_EXTRA);
+  // Dynamic pricing from global_settings + PITs
+  const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
+  const [allPits, setAllPits] = useState<PitData[]>([]);
+  const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
+  const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Derived pricing from matched PIT (or global fallback)
+  const effectivePricing = useMemo(() => {
+    if (matchedPit) return getEffectivePrice(matchedPit, globalPricing);
+    return { base_price: globalPricing.base_price, free_miles: globalPricing.free_miles, extra_per_mile: globalPricing.extra_per_mile, max_distance: globalPricing.max_distance, saturday_surcharge: globalPricing.saturday_surcharge };
+  }, [matchedPit, globalPricing]);
 
   useEffect(() => {
-    supabase.from("global_settings").select("key, value").then(({ data }) => {
-      if (data) {
-        const map: Record<string, string> = {};
-        data.forEach((r: any) => { map[r.key] = r.value; });
-        if (map.default_base_price) setBASE_PRICE(parseFloat(map.default_base_price));
-        if (map.default_free_miles) setBASE_MILES(parseFloat(map.default_free_miles));
-        if (map.default_max_distance) setMAX_MILES(parseFloat(map.default_max_distance));
-        if (map.default_extra_per_mile) setPER_MILE_EXTRA(parseFloat(map.default_extra_per_mile));
-        if (map.saturday_surcharge) setGlobalSaturdaySurcharge(parseFloat(map.saturday_surcharge));
+    const fetchData = async () => {
+      const [settingsRes, pitsRes] = await Promise.all([
+        supabase.from("global_settings").select("key, value"),
+        supabase.from("pits").select("id, name, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active"),
+      ]);
+      if (settingsRes.data) {
+        const gp = parseGlobalSettings(settingsRes.data as any);
+        setGlobalPricing(gp);
+        setGlobalSaturdaySurcharge(gp.saturday_surcharge);
       }
-    });
+      if (pitsRes.data) {
+        setAllPits(pitsRes.data as any);
+      }
+    };
+    fetchData();
   }, []);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
