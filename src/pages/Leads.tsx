@@ -670,7 +670,12 @@ const Leads = () => {
         body: { password: storedPassword(), action: "save_pit", pit: { ...pit, status: newStatus } },
       });
       if (fnError) throw fnError;
-      if (data?.pit) setPits(prev => prev.map(p => p.id === pit.id ? data.pit : p));
+      if (data?.pit) {
+        setPits(prev => prev.map(p => p.id === pit.id ? data.pit : p));
+        if (newStatus === "active") {
+          checkActivationLeads(data.pit);
+        }
+      }
       toast({ title: newStatus === "active" ? "PIT activated" : "PIT deactivated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
