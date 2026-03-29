@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { password, action, id, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id } = await req.json();
+    const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id } = await req.json();
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
