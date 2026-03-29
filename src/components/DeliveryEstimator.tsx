@@ -117,6 +117,32 @@ const DeliveryEstimator = () => {
         setError("That address is outside our delivery area. Call us for options.");
         setOutOfAreaAddress(address);
         setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
+        // Find nearest PIT
+        try {
+          const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon").eq("status", "active");
+          if (pitsData && pitsData.length > 0) {
+            // Geocode the customer address to get lat/lon
+            const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
+            const geocodeData = await geocodeResp.json();
+            if (geocodeData.results?.[0]) {
+              const custLat = geocodeData.results[0].geometry.location.lat;
+              const custLon = geocodeData.results[0].geometry.location.lng;
+              const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+                const R = 3958.8;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              };
+              let best: { id: string; name: string; distance: number } | null = null;
+              for (const p of pitsData) {
+                const d = haversine(Number(p.lat), Number(p.lon), custLat, custLon);
+                if (!best || d < best.distance) best = { id: p.id, name: p.name, distance: d };
+              }
+              setNearestPitInfo(best);
+            }
+          }
+        } catch (e) { console.error("Nearest PIT lookup error:", e); }
         setShowOutOfAreaModal(true);
         setLoading(false); return;
       }
