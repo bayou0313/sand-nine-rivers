@@ -112,7 +112,7 @@ const DeliveryEstimator = () => {
       }
 
       const distanceMiles = element.distance.value / 1609.34;
-      if (distanceMiles > MAX_MILES) {
+      if (distanceMiles > pricing.maxMiles) {
         setError("That address is outside our delivery area. Call us for options.");
         setOutOfAreaAddress(address);
         setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
@@ -120,8 +120,8 @@ const DeliveryEstimator = () => {
         setLoading(false); return;
       }
 
-      let price = BASE_PRICE;
-      if (distanceMiles > BASE_MILES) price += (distanceMiles - BASE_MILES) * PER_MILE_EXTRA;
+      let price = pricing.basePrice;
+      if (distanceMiles > pricing.baseMiles) price += (distanceMiles - pricing.baseMiles) * pricing.perMileExtra;
 
       setResult({
         distance: parseFloat(distanceMiles.toFixed(1)),
