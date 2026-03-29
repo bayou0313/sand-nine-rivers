@@ -236,6 +236,14 @@ const Leads = () => {
   const [cashSendEmail, setCashSendEmail] = useState(true);
   const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
 
+  // SEO state
+  const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo">("pricing");
+  const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
+  const [savingSeo, setSavingSeo] = useState(false);
+  const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
+  const [seoAuditResults, setSeoAuditResults] = useState<any>(null);
+  const [seoAuditing, setSeoAuditing] = useState(false);
+
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
     try {
@@ -320,6 +328,20 @@ const Leads = () => {
         setGlobalSettings(data.settings);
         setEditSettings(data.settings);
         setProfileSettings(data.settings);
+        // Populate SEO settings
+        const seo: Record<string, string> = {};
+        Object.keys(data.settings).filter(k => k.startsWith("seo_")).forEach(k => { seo[k] = data.settings[k]; });
+        setSeoSettings(seo);
+        // Parse checklist
+        try {
+          const cl = JSON.parse(data.settings.seo_checklist || "{}");
+          setSeoChecklist(cl);
+        } catch { setSeoChecklist({}); }
+        // Parse audit
+        try {
+          const au = JSON.parse(data.settings.seo_last_audit || "null");
+          setSeoAuditResults(au);
+        } catch { /* ignore */ }
       }
     } catch (err: any) {
       console.error("Failed to fetch settings:", err);
@@ -1620,145 +1642,519 @@ const Leads = () => {
           </>
         );
 
-      case "settings":
+      case "settings": {
+        const SEO_CHECKLIST_ITEMS = [
+          { section: "E-E-A-T SIGNALS", items: [
+            { id: "eeat_credentials", label: "Business credentials visible on site" },
+            { id: "eeat_sourcing", label: "Real sand sourcing story present" },
+            { id: "eeat_sameday_proof", label: "Same-day delivery claim supported with proof" },
+            { id: "eeat_trust", label: "Local trust signals present" },
+            { id: "eeat_contact", label: "Contact info prominently displayed" },
+            { id: "eeat_owner", label: "Owner name and photo present" },
+          ]},
+          { section: "LOCAL SEO", items: [
+            { id: "local_gbp_created", label: "Google Business Profile created" },
+            { id: "local_gbp_verified", label: "GBP verified" },
+            { id: "local_nap", label: "NAP consistent sitewide (Name, Address, Phone)" },
+            { id: "local_area", label: "Service area clearly stated" },
+            { id: "local_parishes", label: "Louisiana parishes mentioned" },
+            { id: "local_schema", label: "Local schema markup added" },
+          ]},
+          { section: "CONTENT QUALITY", items: [
+            { id: "content_faq", label: "FAQ section present" },
+            { id: "content_faq_detailed", label: "FAQ answers are detailed" },
+            { id: "content_use_cases", label: "River sand use cases explained" },
+            { id: "content_comparison", label: "Comparison vs other materials present" },
+            { id: "content_delivery", label: "Delivery process explained" },
+          ]},
+          { section: "INTERNAL LINKS", items: [
+            { id: "links_order", label: "Homepage links to order page" },
+            { id: "links_faq", label: "FAQ links to relevant sections" },
+            { id: "links_footer", label: "Footer links complete" },
+            { id: "links_city", label: "City pages link back to homepage" },
+          ]},
+          { section: "TECHNICAL", items: [
+            { id: "tech_sitemap", label: "Sitemap submitted to GSC" },
+            { id: "tech_broken", label: "No broken links" },
+            { id: "tech_alt", label: "Images have alt text" },
+            { id: "tech_speed", label: "Page loads under 3 seconds" },
+            { id: "tech_mobile", label: "Mobile friendly confirmed" },
+          ]},
+        ];
+
+        const allChecklistItems = SEO_CHECKLIST_ITEMS.flatMap(s => s.items);
+        const checklistDone = allChecklistItems.filter(i => seoChecklist[i.id]?.done).length;
+        const checklistTotal = allChecklistItems.length;
+
+        const saveSeoSettings = async () => {
+          setSavingSeo(true);
+          try {
+            const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "save_settings", settings: seoSettings },
+            });
+            if (fnError) throw fnError;
+            if (data?.settings) {
+              setGlobalSettings(data.settings);
+              const seo: Record<string, string> = {};
+              Object.keys(data.settings).filter(k => k.startsWith("seo_")).forEach(k => { seo[k] = data.settings[k]; });
+              setSeoSettings(seo);
+            }
+            toast({ title: "SEO settings saved — live site updated" });
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          } finally { setSavingSeo(false); }
+        };
+
+        const saveChecklist = async (updated: Record<string, { done: boolean; notes: string }>) => {
+          setSeoChecklist(updated);
+          const json = JSON.stringify(updated);
+          try {
+            await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "save_settings", settings: { seo_checklist: json } },
+            });
+          } catch { /* silent */ }
+        };
+
+        const runSeoAudit = async () => {
+          setSeoAuditing(true);
+          try {
+            const res = await fetch("https://riversand.net/");
+            const html = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+
+            // Title
+            const title = doc.querySelector("title")?.textContent || "";
+            const titleLen = title.length;
+            let titleScore = titleLen >= 50 && titleLen <= 60 ? 100 : titleLen >= 45 && titleLen <= 65 ? 80 : 50;
+            if (!title) titleScore = 0;
+            if (title.toLowerCase().includes("river sand")) titleScore = Math.min(100, titleScore + 10);
+            if (title.toLowerCase().includes("new orleans") || title.toLowerCase().includes("louisiana")) titleScore = Math.min(100, titleScore + 10);
+
+            // Meta desc
+            const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+            const descLen = metaDesc.length;
+            let descScore = descLen >= 150 && descLen <= 160 ? 100 : descLen >= 130 && descLen <= 170 ? 80 : descLen > 0 ? 50 : 0;
+
+            // Headings
+            const h1s = doc.querySelectorAll("h1");
+            const h2s = doc.querySelectorAll("h2");
+            let headingScore = 0;
+            if (h1s.length === 1) headingScore += 40;
+            else if (h1s.length > 1) headingScore += 20;
+            if (h2s.length > 0) headingScore += 30;
+            if (h1s.length > 0 && h1s[0].textContent?.toLowerCase().includes("river sand")) headingScore += 30;
+
+            // Technical
+            const canonical = doc.querySelector('link[rel="canonical"]');
+            const robots = doc.querySelector('meta[name="robots"]');
+            const viewport = doc.querySelector('meta[name="viewport"]');
+            let techScore = 0;
+            if (canonical) techScore += 25;
+            if (robots) techScore += 25;
+            if (viewport) techScore += 25;
+            techScore += 25; // HTTPS always true
+
+            // Structured data
+            const jsonLds = doc.querySelectorAll('script[type="application/ld+json"]');
+            let schemaScore = 0;
+            const schemaTypes: string[] = [];
+            jsonLds.forEach(el => {
+              try {
+                const j = JSON.parse(el.textContent || "");
+                const t = j["@type"];
+                if (t) schemaTypes.push(t);
+              } catch { /* skip */ }
+            });
+            schemaScore = Math.min(100, schemaTypes.length * 33);
+
+            const overall = Math.round((titleScore + descScore + headingScore + techScore + schemaScore) / 5);
+            const grade = overall >= 90 ? "A" : overall >= 80 ? "B" : overall >= 70 ? "C" : overall >= 60 ? "D" : "F";
+
+            const results = {
+              scannedAt: new Date().toISOString(),
+              overall, grade,
+              categories: [
+                { name: "Title Tag", score: titleScore, found: title, issues: titleScore < 80 ? [`Title is ${titleLen} chars (ideal: 50-60)`] : [] },
+                { name: "Meta Description", score: descScore, found: metaDesc, issues: descScore < 80 ? [`Description is ${descLen} chars (ideal: 150-160)`] : [] },
+                { name: "Heading Structure", score: headingScore, found: `${h1s.length} H1, ${h2s.length} H2`, issues: h1s.length !== 1 ? ["Should have exactly 1 H1"] : [] },
+                { name: "Technical SEO", score: techScore, found: `Canonical: ${!!canonical}, Robots: ${!!robots}, Viewport: ${!!viewport}`, issues: [] },
+                { name: "Structured Data", score: schemaScore, found: schemaTypes.join(", ") || "None", issues: schemaTypes.length === 0 ? ["No JSON-LD schemas found"] : [] },
+              ],
+            };
+
+            setSeoAuditResults(results);
+            await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "save_settings", settings: { seo_last_audit: JSON.stringify(results) } },
+            });
+            toast({ title: "SEO audit complete", description: `Overall: ${grade} (${overall}/100)` });
+          } catch (err: any) {
+            toast({ title: "Audit failed", description: err.message, variant: "destructive" });
+          } finally { setSeoAuditing(false); }
+        };
+
+        const scoreColor = (s: number) => s >= 80 ? "#22C55E" : s >= 50 ? "#F59E0B" : "#EF4444";
+
         return (
           <>
-            {/* Pricing Defaults */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Global Pricing Defaults</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Apply to all PITs unless overridden</p>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Base price per load</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                    <Input className="pl-6 h-9" value={editSettings.default_base_price || ""} onChange={e => setEditSettings({ ...editSettings, default_base_price: e.target.value })} />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Free delivery radius</label>
-                  <div className="relative">
-                    <Input className="pr-12 h-9" value={editSettings.default_free_miles || ""} onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Extra per mile</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                    <Input className="pl-6 pr-12 h-9" value={editSettings.default_extra_per_mile || ""} onChange={e => setEditSettings({ ...editSettings, default_extra_per_mile: e.target.value })} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">/mile</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Max delivery distance</label>
-                  <div className="relative">
-                    <Input className="pr-12 h-9" value={editSettings.default_max_distance || ""} onChange={e => setEditSettings({ ...editSettings, default_max_distance: e.target.value })} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                    <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
-                <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
-                  Save Pricing Settings
-                </Button>
-              </div>
+            {/* Tabs */}
+            <div className="flex gap-1 mb-6" style={{ borderBottom: `2px solid ${CARD_BORDER}` }}>
+              {([["pricing", "Pricing"], ["profile", "Business Profile"], ["seo", "SEO"]] as const).map(([id, label]) => (
+                <button key={id} onClick={() => setSettingsTab(id as any)} className="px-4 py-2 text-sm font-medium transition-colors -mb-[2px]" style={{
+                  color: settingsTab === id ? BRAND_GOLD : "#666",
+                  borderBottom: settingsTab === id ? `2px solid ${BRAND_GOLD}` : "2px solid transparent",
+                }}>
+                  {label}
+                </button>
+              ))}
             </div>
 
-            {/* Delivery Schedule */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Delivery Schedule</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Configure delivery days and cutoff times</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Same-day cutoff</label>
-                  <Input className="h-9" value={editSettings.sameday_cutoff || "10:00 AM"} onChange={e => setEditSettings({ ...editSettings, sameday_cutoff: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                    <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
+            {settingsTab === "pricing" && (
+              <>
+                {/* Pricing Defaults */}
+                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Global Pricing Defaults</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Apply to all PITs unless overridden</p>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Base price per load</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 h-9" value={editSettings.default_base_price || ""} onChange={e => setEditSettings({ ...editSettings, default_base_price: e.target.value })} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Free delivery radius</label>
+                      <div className="relative">
+                        <Input className="pr-12 h-9" value={editSettings.default_free_miles || ""} onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Extra per mile</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 pr-12 h-9" value={editSettings.default_extra_per_mile || ""} onChange={e => setEditSettings({ ...editSettings, default_extra_per_mile: e.target.value })} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">/mile</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Max delivery distance</label>
+                      <div className="relative">
+                        <Input className="pr-12 h-9" value={editSettings.default_max_distance || ""} onChange={e => setEditSettings({ ...editSettings, default_max_distance: e.target.value })} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                    <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                      {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                      Save Pricing Settings
+                    </Button>
                   </div>
                 </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Max same-day orders/day</label>
-                  <Input className="h-9" type="number" value={editSettings.max_sameday_orders || ""} onChange={e => setEditSettings({ ...editSettings, max_sameday_orders: e.target.value })} />
+
+                {/* Delivery Schedule */}
+                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Delivery Schedule</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Configure delivery days and cutoff times</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Same-day cutoff</label>
+                      <Input className="h-9" value={editSettings.sameday_cutoff || ""} onChange={e => setEditSettings({ ...editSettings, sameday_cutoff: e.target.value })} placeholder="10:00 AM" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Max same-day orders/day</label>
+                      <Input className="h-9" type="number" value={editSettings.max_sameday_orders || ""} onChange={e => setEditSettings({ ...editSettings, max_sameday_orders: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="text-xs text-gray-500 block mb-2">Operating days</label>
+                    <div className="flex flex-wrap gap-2">
+                      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => {
+                        const key = `operating_${day.toLowerCase()}`;
+                        const active = editSettings[key] !== "false";
+                        return (
+                          <button key={day} onClick={() => setEditSettings({ ...editSettings, [key]: active ? "false" : "true" })} className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors" style={{ backgroundColor: active ? BRAND_NAVY : "#f3f3f3", color: active ? "white" : "#999" }}>
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                    <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                      {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                      Save Schedule Settings
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3">
-                <label className="text-xs text-gray-500 block mb-2">Operating days</label>
-                <div className="flex flex-wrap gap-2">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => {
-                    const key = `operating_${day.toLowerCase()}`;
-                    const active = editSettings[key] !== "false";
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => setEditSettings({ ...editSettings, [key]: active ? "false" : "true" })}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
-                        style={{
-                          backgroundColor: active ? BRAND_NAVY : "#f3f3f3",
-                          color: active ? "white" : "#999",
-                        }}
-                      >
-                        {day}
+
+                {/* Notifications */}
+                <div className="bg-white rounded-xl border shadow-sm p-6" style={{ borderColor: CARD_BORDER }}>
+                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Notifications</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Email alerts and notifications</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Owner dispatch email</label>
+                      <Input className="h-9" value={editSettings.dispatch_email || ""} onChange={e => setEditSettings({ ...editSettings, dispatch_email: e.target.value })} placeholder="cmo@haulogix.com" />
+                    </div>
+                    {[
+                      { key: "alert_new_lead", label: "Alert on new lead" },
+                      { key: "alert_new_order", label: "Alert on new order" },
+                      { key: "daily_summary", label: "Daily summary email" },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center justify-between py-2">
+                        <span className="text-sm" style={{ color: BRAND_NAVY }}>{label}</span>
+                        <button onClick={() => setEditSettings({ ...editSettings, [key]: editSettings[key] === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: editSettings[key] === "true" ? BRAND_GOLD : "#ddd" }}>
+                          <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: editSettings[key] === "true" ? "22px" : "2px" }} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                    <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                      {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                      Save Notification Settings
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {settingsTab === "profile" && (
+              <>
+                {/* Redirect to profile page */}
+                <div className="bg-white rounded-xl border shadow-sm p-6" style={{ borderColor: CARD_BORDER }}>
+                  <p className="text-sm text-gray-500">Business profile settings are available in the <button onClick={() => setActivePage("profile")} className="font-medium underline" style={{ color: BRAND_GOLD }}>Business Profile</button> page.</p>
+                </div>
+              </>
+            )}
+
+            {settingsTab === "seo" && (
+              <>
+                {/* ─── SECTION 1: SITE AUDIT ─── */}
+                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-medium" style={{ color: BRAND_NAVY }}>Site Audit</h3>
+                    <Button onClick={runSeoAudit} disabled={seoAuditing} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                      {seoAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Search className="w-4 h-4 mr-1" />}
+                      Scan riversand.net
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Automated scan based on Art of SEO framework</p>
+
+                  {seoAuditResults && (
+                    <>
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-20 h-20 rounded-xl flex items-center justify-center text-3xl font-black text-white" style={{ backgroundColor: scoreColor(seoAuditResults.overall) }}>
+                          {seoAuditResults.grade}
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{seoAuditResults.overall}/100</p>
+                          <p className="text-xs text-gray-400">Last scanned: {new Date(seoAuditResults.scannedAt).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        {seoAuditResults.categories?.map((cat: any) => (
+                          <div key={cat.name} className="rounded-xl p-3 border" style={{ borderColor: scoreColor(cat.score), borderWidth: 2 }}>
+                            <p className="text-xs font-bold mb-1" style={{ color: BRAND_NAVY }}>{cat.name}</p>
+                            <p className="text-2xl font-black" style={{ color: scoreColor(cat.score) }}>{cat.score}</p>
+                            <p className="text-[10px] text-gray-500 mt-1 truncate" title={cat.found}>{cat.found || "—"}</p>
+                            {cat.issues?.map((issue: string, i: number) => (
+                              <p key={i} className="text-[10px] mt-1" style={{ color: "#EF4444" }}>• {issue}</p>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* ─── SECTION 2: MANUAL CHECKLIST ─── */}
+                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-medium" style={{ color: BRAND_NAVY }}>Manual Checklist</h3>
+                    <span className="text-xs font-bold" style={{ color: BRAND_GOLD }}>{checklistDone} of {checklistTotal} complete</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Items requiring human judgment</p>
+                  <div className="w-full h-2 rounded-full overflow-hidden mb-4" style={{ backgroundColor: "#f3f3f3" }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${(checklistDone / checklistTotal) * 100}%`, backgroundColor: BRAND_GOLD }} />
+                  </div>
+
+                  {SEO_CHECKLIST_ITEMS.map(section => (
+                    <div key={section.section} className="mb-4">
+                      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: SECTION_LABEL }}>{section.section}</p>
+                      {section.items.map(item => {
+                        const state = seoChecklist[item.id] || { done: false, notes: "" };
+                        return (
+                          <div key={item.id} className="flex items-start gap-2 py-1.5">
+                            <input type="checkbox" checked={state.done} onChange={e => {
+                              const u = { ...seoChecklist, [item.id]: { ...state, done: e.target.checked } };
+                              saveChecklist(u);
+                            }} className="w-4 h-4 mt-0.5 rounded accent-current" style={{ accentColor: BRAND_GOLD }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm" style={{ color: state.done ? "#22C55E" : BRAND_NAVY, textDecoration: state.done ? "line-through" : "none" }}>{item.label}</p>
+                              <input type="text" placeholder="Add notes..." value={state.notes} onChange={e => {
+                                const u = { ...seoChecklist, [item.id]: { ...state, notes: e.target.value } };
+                                saveChecklist(u);
+                              }} className="w-full text-[10px] text-gray-400 border-0 border-b bg-transparent px-0 py-0.5 focus:outline-none focus:border-gray-300" style={{ borderColor: state.notes ? CARD_BORDER : "transparent" }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* ─── SECTION 3: SEO SETTINGS ─── */}
+                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>SEO Settings</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Editable fields — changes apply to live site</p>
+
+                  {/* Homepage Meta */}
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: SECTION_LABEL }}>HOMEPAGE META</p>
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <label className="text-xs text-gray-500">Meta Title</label>
+                        <span className="text-[10px]" style={{ color: (seoSettings.seo_meta_title || "").length > 60 ? "#EF4444" : "#999" }}>{(seoSettings.seo_meta_title || "").length}/60</span>
+                      </div>
+                      <Input className="h-9" value={seoSettings.seo_meta_title || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_meta_title: e.target.value })} />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <label className="text-xs text-gray-500">Meta Description</label>
+                        <span className="text-[10px]" style={{ color: (seoSettings.seo_meta_description || "").length > 160 ? "#EF4444" : "#999" }}>{(seoSettings.seo_meta_description || "").length}/160</span>
+                      </div>
+                      <Textarea rows={3} value={seoSettings.seo_meta_description || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_meta_description: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">H1 Tag</label>
+                      <Input className="h-9" value={seoSettings.seo_h1 || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_h1: e.target.value })} />
+                    </div>
+                  </div>
+
+                  {/* Open Graph */}
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>OPEN GRAPH</p>
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">OG Title</label>
+                      <Input className="h-9" value={seoSettings.seo_og_title || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_og_title: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">OG Description</label>
+                      <Textarea rows={2} value={seoSettings.seo_og_description || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_og_description: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">OG Image URL</label>
+                      <div className="flex gap-2">
+                        <Input className="h-9 flex-1" value={seoSettings.seo_og_image || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_og_image: e.target.value })} placeholder="https://..." />
+                        {seoSettings.seo_og_image && (
+                          <div className="h-9 w-16 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                            <img src={seoSettings.seo_og_image} alt="OG" className="max-h-8 object-contain" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Schema Markup */}
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>SCHEMA MARKUP</p>
+                  <div className="space-y-2 mb-6">
+                    {[
+                      { key: "seo_schema_localbusiness", label: "LocalBusiness schema" },
+                      { key: "seo_schema_product", label: "Product schema" },
+                      { key: "seo_schema_faq", label: "FAQPage schema" },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center justify-between py-1.5">
+                        <span className="text-sm" style={{ color: BRAND_NAVY }}>{label}</span>
+                        <button onClick={() => setSeoSettings({ ...seoSettings, [key]: seoSettings[key] === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: seoSettings[key] === "true" ? BRAND_GOLD : "#ddd" }}>
+                          <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: seoSettings[key] === "true" ? "22px" : "2px" }} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Technical */}
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>TECHNICAL</p>
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Canonical URL</label>
+                      <Input className="h-9" value={seoSettings.seo_canonical || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_canonical: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Robots</label>
+                      <select value={seoSettings.seo_robots || "index, follow"} onChange={e => setSeoSettings({ ...seoSettings, seo_robots: e.target.value })} className="w-full h-9 rounded-md border px-3 text-sm" style={{ borderColor: CARD_BORDER }}>
+                        <option value="index, follow">index, follow</option>
+                        <option value="noindex, nofollow">noindex, nofollow</option>
+                        <option value="noindex, follow">noindex, follow</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Sitemap URL</label>
+                      <Input className="h-9 bg-gray-50" value={seoSettings.seo_sitemap_url || ""} readOnly />
+                    </div>
+                  </div>
+
+                  {/* Google Integrations */}
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>GOOGLE INTEGRATIONS</p>
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Google Search Console ID</label>
+                      <Input className="h-9" value={seoSettings.seo_gsc_id || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_gsc_id: e.target.value })} placeholder="google-site-verification=XXXXX" />
+                      <p className="text-[10px] text-gray-400 mt-0.5">Paste verification meta content value only</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Google Analytics 4 ID</label>
+                      <Input className="h-9" value={seoSettings.seo_ga4_id || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_ga4_id: e.target.value })} placeholder="G-XXXXXXXXXX" />
+                      <p className="text-[10px] text-gray-400 mt-0.5">Enter your GA4 Measurement ID</p>
+                    </div>
+                  </div>
+
+                  {/* Google Business Profile */}
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>GOOGLE BUSINESS PROFILE</p>
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">GBP URL</label>
+                      <Input className="h-9" value={seoSettings.seo_gbp_url || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_gbp_url: e.target.value })} placeholder="https://g.page/..." />
+                    </div>
+                    <div className="flex items-center justify-between py-1.5">
+                      <div>
+                        <span className="text-sm" style={{ color: BRAND_NAVY }}>Show Google Reviews on landing page</span>
+                        <p className="text-[10px] text-gray-400">Activate when you have 5+ reviews</p>
+                      </div>
+                      <button onClick={() => setSeoSettings({ ...seoSettings, seo_gbp_reviews_enabled: seoSettings.seo_gbp_reviews_enabled === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: seoSettings.seo_gbp_reviews_enabled === "true" ? BRAND_GOLD : "#ddd" }}>
+                        <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: seoSettings.seo_gbp_reviews_enabled === "true" ? "22px" : "2px" }} />
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
-                <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
-                  Save Schedule Settings
-                </Button>
-              </div>
-            </div>
-
-            {/* Notifications */}
-            <div className="bg-white rounded-xl border shadow-sm p-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Notifications</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Email alerts and notifications</p>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Owner dispatch email</label>
-                  <Input className="h-9" value={editSettings.dispatch_email || "cmo@haulogix.com"} onChange={e => setEditSettings({ ...editSettings, dispatch_email: e.target.value })} />
-                </div>
-                {[
-                  { key: "alert_new_lead", label: "Alert on new lead" },
-                  { key: "alert_new_order", label: "Alert on new order" },
-                  { key: "daily_summary", label: "Daily summary email" },
-                ].map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between py-2">
-                    <span className="text-sm" style={{ color: BRAND_NAVY }}>{label}</span>
-                    <button
-                      onClick={() => setEditSettings({ ...editSettings, [key]: editSettings[key] === "true" ? "false" : "true" })}
-                      className="w-10 h-5 rounded-full transition-colors relative"
-                      style={{ backgroundColor: editSettings[key] === "true" ? BRAND_GOLD : "#ddd" }}
-                    >
-                      <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: editSettings[key] === "true" ? "22px" : "2px" }} />
-                    </button>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
-                <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
-                  Save Notification Settings
-                </Button>
-              </div>
-            </div>
+
+                  {/* Save */}
+                  <Button onClick={saveSeoSettings} disabled={savingSeo} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                    {savingSeo ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                    Save SEO Settings
+                  </Button>
+                </div>
+              </>
+            )}
           </>
         );
+      }
 
       case "profile":
         return (
