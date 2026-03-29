@@ -1368,7 +1368,7 @@ const Order = () => {
                   <div className="p-6 space-y-2">
                     <div className="flex justify-between py-1.5">
                       <span className="font-body text-sm text-muted-foreground">River Sand (×{quantity})</span>
-                      <span className="font-body text-sm text-foreground">{formatCurrency(BASE_PRICE * quantity)}</span>
+                      <span className="font-body text-sm text-foreground">{formatCurrency(effectivePricing.base_price * quantity)}</span>
                     </div>
                     {displayDistanceFee > 0 && (
                       <div className="flex justify-between py-1.5">
