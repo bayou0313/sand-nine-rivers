@@ -205,6 +205,7 @@ const Leads = () => {
   // Business profile state
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
   const [savingProfile, setSavingProfile] = useState(false);
+  const [googleLoaded, setGoogleLoaded] = useState(!!window.google?.maps?.places);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
   const basePrice = parseFloat(globalSettings.default_base_price || "195");
