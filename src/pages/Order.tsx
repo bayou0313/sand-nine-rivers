@@ -235,10 +235,10 @@ const Order = () => {
   }, [toast]);
 
   // Helper: send order confirmation email
-  const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null) => {
-    console.log("[Order] sendOrderEmail called, result:", !!result, "confirmedTotals:", !!confirmedTotals, "orderNum:", orderNum, "pMethod:", pMethod);
+  const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null, totalsOverride?: any) => {
+    console.log("[Order] sendOrderEmail called, result:", !!result, "confirmedTotals:", !!confirmedTotals, "totalsOverride:", !!totalsOverride, "orderNum:", orderNum, "pMethod:", pMethod);
     const distMiles = result?.distance ?? 0;
-    const ct = confirmedTotals;
+    const ct = totalsOverride || confirmedTotals;
     const emailTotalPrice = ct?.totalPrice ?? totalPrice;
     const emailTotalWithFee = ct?.totalWithProcessingFee ?? totalWithProcessingFee;
     const emailSatSurcharge = ct?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
@@ -246,7 +246,7 @@ const Order = () => {
     const emailTaxAmount = ct?.taxAmount ?? taxAmount;
     const emailTaxParish = ct?.taxInfo?.parish ?? taxInfo.parish;
 
-    if (!result && !confirmedTotals) { console.warn("[Order] Email NOT sent — no result or confirmedTotals"); return; }
+    if (!result && !ct) { console.warn("[Order] Email NOT sent — no result or totals"); return; }
 
     const emailPayload = {
       order_number: orderNum,
@@ -271,7 +271,7 @@ const Order = () => {
       stripe_payment_id: sPaymentId,
       notes: form.notes.trim() || null,
     };
-    console.log("[Order] Sending order confirmation email for", orderNum);
+    console.log("[Order] Sending order confirmation email for", orderNum, "payload:", JSON.stringify(emailPayload));
     supabase.functions.invoke("send-email", {
       body: { type: "order_confirmation", data: emailPayload },
     }).then((res) => {
@@ -443,7 +443,7 @@ const Order = () => {
       setOrderNumber(inserted?.order_number || null);
       setConfirmedOrderId(inserted?.id || null);
       setLookupToken(inserted?.lookup_token || null);
-      setConfirmedTotals({
+      const snapshotTotals = {
         totalPrice,
         totalWithProcessingFee,
         processingFee,
@@ -452,11 +452,12 @@ const Order = () => {
         saturdaySurchargeTotal,
         distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
         taxInfo,
-      });
+      };
+      setConfirmedTotals(snapshotTotals);
       setStep("success");
 
-      // Send order confirmation email
-      sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null);
+      // Send order confirmation email with totals passed directly (state not yet updated)
+      sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
     } finally {
