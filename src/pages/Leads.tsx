@@ -122,6 +122,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
       { id: "pipeline", label: "Pipeline", icon: List },
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
+      { id: "cash_orders", label: "Cash Orders", icon: DollarSign },
       { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
     ],
   },
