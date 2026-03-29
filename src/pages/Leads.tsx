@@ -150,6 +150,9 @@ const Leads = () => {
   const [geocoding, setGeocoding] = useState(false);
   const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
   const pitInputRef = useRef<HTMLInputElement>(null);
+  const editPitInputRef = useRef<HTMLInputElement>(null);
+  const addPitAutocompleteRef = useRef<any>(null);
+  const editPitAutocompleteRef = useRef<any>(null);
 
   // PIT edit mode
   const [editingPitId, setEditingPitId] = useState<string | null>(null);
