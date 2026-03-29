@@ -1290,9 +1290,10 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Base price</label>
                                 <Input
-                                  placeholder="Enter base price"
+                                  placeholder="e.g. 195.00"
                                   value={editPitData.base_price ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })}
+                                  onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)}
                                   type="number"
                                   className="h-8 text-sm"
                                 />
@@ -1300,7 +1301,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Free miles</label>
                                 <Input
-                                  placeholder="Enter free miles"
+                                  placeholder="e.g. 15"
                                   value={editPitData.free_miles ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
@@ -1310,9 +1311,10 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Extra per mile</label>
                                 <Input
-                                  placeholder="Enter price per mile"
+                                  placeholder="e.g. 5.00"
                                   value={editPitData.price_per_extra_mile ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
+                                  onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)}
                                   type="number"
                                   className="h-8 text-sm"
                                 />
@@ -1320,7 +1322,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Max distance</label>
                                 <Input
-                                  placeholder="Enter max distance"
+                                  placeholder="e.g. 30"
                                   value={editPitData.max_distance ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
