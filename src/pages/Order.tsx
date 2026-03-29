@@ -27,10 +27,10 @@ declare global {
 }
 
 const ORIGIN = "1215 River Rd, Bridge City, LA 70094";
-const BASE_PRICE = 195;
-const BASE_MILES = 15;
-const MAX_MILES = 30;
-const PER_MILE_EXTRA = 3.49;
+const FALLBACK_BASE_PRICE = 195;
+const FALLBACK_BASE_MILES = 15;
+const FALLBACK_MAX_MILES = 30;
+const FALLBACK_PER_MILE_EXTRA = 5;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
 type EstimateResult = {
@@ -65,6 +65,25 @@ const Order = () => {
   const [apiLoaded, setApiLoaded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+
+  // Dynamic pricing from global_settings
+  const [BASE_PRICE, setBASE_PRICE] = useState(FALLBACK_BASE_PRICE);
+  const [BASE_MILES, setBASE_MILES] = useState(FALLBACK_BASE_MILES);
+  const [MAX_MILES, setMAX_MILES] = useState(FALLBACK_MAX_MILES);
+  const [PER_MILE_EXTRA, setPER_MILE_EXTRA] = useState(FALLBACK_PER_MILE_EXTRA);
+
+  useEffect(() => {
+    supabase.from("global_settings").select("key, value").then(({ data }) => {
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((r: any) => { map[r.key] = r.value; });
+        if (map.default_base_price) setBASE_PRICE(parseFloat(map.default_base_price));
+        if (map.default_free_miles) setBASE_MILES(parseFloat(map.default_free_miles));
+        if (map.default_max_distance) setMAX_MILES(parseFloat(map.default_max_distance));
+        if (map.default_extra_per_mile) setPER_MILE_EXTRA(parseFloat(map.default_extra_per_mile));
+      }
+    });
+  }, []);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");

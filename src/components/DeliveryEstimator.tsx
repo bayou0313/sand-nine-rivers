@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
+import { supabase } from "@/integrations/supabase/client";
 
 declare global {
   interface Window {
@@ -15,10 +16,10 @@ declare global {
 }
 
 const ORIGIN = "1215 River Rd, Bridge City, LA 70094";
-const BASE_PRICE = 195;
-const BASE_MILES = 15;
-const MAX_MILES = 30;
-const PER_MILE_EXTRA = 3.49;
+const FALLBACK_BASE_PRICE = 195;
+const FALLBACK_BASE_MILES = 15;
+const FALLBACK_MAX_MILES = 30;
+const FALLBACK_PER_MILE_EXTRA = 5;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
 type EstimateResult = {
@@ -39,6 +40,29 @@ const DeliveryEstimator = () => {
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+
+  // Dynamic pricing from global_settings
+  const [pricing, setPricing] = useState({
+    basePrice: FALLBACK_BASE_PRICE,
+    baseMiles: FALLBACK_BASE_MILES,
+    maxMiles: FALLBACK_MAX_MILES,
+    perMileExtra: FALLBACK_PER_MILE_EXTRA,
+  });
+
+  useEffect(() => {
+    supabase.from("global_settings").select("key, value").then(({ data }) => {
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((r: any) => { map[r.key] = r.value; });
+        setPricing({
+          basePrice: parseFloat(map.default_base_price) || FALLBACK_BASE_PRICE,
+          baseMiles: parseFloat(map.default_free_miles) || FALLBACK_BASE_MILES,
+          maxMiles: parseFloat(map.default_max_distance) || FALLBACK_MAX_MILES,
+          perMileExtra: parseFloat(map.default_extra_per_mile) || FALLBACK_PER_MILE_EXTRA,
+        });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!GOOGLE_MAPS_API_KEY) return;
@@ -88,7 +112,7 @@ const DeliveryEstimator = () => {
       }
 
       const distanceMiles = element.distance.value / 1609.34;
-      if (distanceMiles > MAX_MILES) {
+      if (distanceMiles > pricing.maxMiles) {
         setError("That address is outside our delivery area. Call us for options.");
         setOutOfAreaAddress(address);
         setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
@@ -96,8 +120,8 @@ const DeliveryEstimator = () => {
         setLoading(false); return;
       }
 
-      let price = BASE_PRICE;
-      if (distanceMiles > BASE_MILES) price += (distanceMiles - BASE_MILES) * PER_MILE_EXTRA;
+      let price = pricing.basePrice;
+      if (distanceMiles > pricing.baseMiles) price += (distanceMiles - pricing.baseMiles) * pricing.perMileExtra;
 
       setResult({
         distance: parseFloat(distanceMiles.toFixed(1)),
@@ -110,7 +134,7 @@ const DeliveryEstimator = () => {
     } finally {
       setLoading(false);
     }
-  }, [address, apiLoaded]);
+  }, [address, apiLoaded, pricing]);
 
   return (
     <section id="estimator" className="py-24 bg-background">
@@ -182,7 +206,7 @@ const DeliveryEstimator = () => {
                   </p>
                 </div>
                 <p className="font-body text-sm text-muted-foreground text-center">
-                  9 cubic yards of river sand • {result.distance <= BASE_MILES ? "Local delivery included" : `Includes ${formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA)} extended-area surcharge`} • Saturday +$35
+                  9 cubic yards of river sand • {result.distance <= pricing.baseMiles ? "Local delivery included" : `Includes ${formatCurrency((result.distance - pricing.baseMiles) * pricing.perMileExtra)} extended-area surcharge`} • Saturday +$35
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
@@ -198,7 +222,7 @@ const DeliveryEstimator = () => {
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             {[
-              { label: "LOCAL AREA", sub: "Starting at $195 per load" },
+              { label: "LOCAL AREA", sub: `Starting at $${pricing.basePrice} per load` },
               { label: "EXTENDED AREA", sub: "Additional surcharge applies" },
               { label: "9 YDS", sub: "Per load delivered" },
             ].map((item) => (
