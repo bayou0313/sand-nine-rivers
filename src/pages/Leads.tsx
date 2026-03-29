@@ -156,11 +156,19 @@ const Leads = () => {
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
 
-  // Proposal modal
+  // Bulk proposal modal (PIT sim)
   const [showProposal, setShowProposal] = useState(false);
   const [proposalSubject, setProposalSubject] = useState("");
   const [sendingProposals, setSendingProposals] = useState(false);
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
+
+  // Quick Proposal Modal
+  const [quickProposalLead, setQuickProposalLead] = useState<ParsedLead | null>(null);
+  const [qpPitId, setQpPitId] = useState<string>("");
+  const [qpPrice, setQpPrice] = useState("");
+  const [qpNote, setQpNote] = useState("");
+  const [qpSending, setQpSending] = useState(false);
+  const [qpShowPreview, setQpShowPreview] = useState(false);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
 
