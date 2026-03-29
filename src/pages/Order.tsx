@@ -18,6 +18,7 @@ import Navbar from "@/components/Navbar";
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
+import { type PitData, type GlobalPricing, findBestPit, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -26,11 +27,6 @@ declare global {
   }
 }
 
-const ORIGIN = "1215 River Rd, Bridge City, LA 70094";
-const FALLBACK_BASE_PRICE = 195;
-const FALLBACK_BASE_MILES = 15;
-const FALLBACK_MAX_MILES = 30;
-const FALLBACK_PER_MILE_EXTRA = 5;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
 type EstimateResult = {
@@ -66,24 +62,34 @@ const Order = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
-  // Dynamic pricing from global_settings
-  const [BASE_PRICE, setBASE_PRICE] = useState(FALLBACK_BASE_PRICE);
-  const [BASE_MILES, setBASE_MILES] = useState(FALLBACK_BASE_MILES);
-  const [MAX_MILES, setMAX_MILES] = useState(FALLBACK_MAX_MILES);
-  const [PER_MILE_EXTRA, setPER_MILE_EXTRA] = useState(FALLBACK_PER_MILE_EXTRA);
+  // Dynamic pricing from global_settings + PITs
+  const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
+  const [allPits, setAllPits] = useState<PitData[]>([]);
+  const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
+  const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Derived pricing from matched PIT (or global fallback)
+  const effectivePricing = useMemo(() => {
+    if (matchedPit) return getEffectivePrice(matchedPit, globalPricing);
+    return { base_price: globalPricing.base_price, free_miles: globalPricing.free_miles, extra_per_mile: globalPricing.extra_per_mile, max_distance: globalPricing.max_distance, saturday_surcharge: globalPricing.saturday_surcharge };
+  }, [matchedPit, globalPricing]);
 
   useEffect(() => {
-    supabase.from("global_settings").select("key, value").then(({ data }) => {
-      if (data) {
-        const map: Record<string, string> = {};
-        data.forEach((r: any) => { map[r.key] = r.value; });
-        if (map.default_base_price) setBASE_PRICE(parseFloat(map.default_base_price));
-        if (map.default_free_miles) setBASE_MILES(parseFloat(map.default_free_miles));
-        if (map.default_max_distance) setMAX_MILES(parseFloat(map.default_max_distance));
-        if (map.default_extra_per_mile) setPER_MILE_EXTRA(parseFloat(map.default_extra_per_mile));
-        if (map.saturday_surcharge) setGlobalSaturdaySurcharge(parseFloat(map.saturday_surcharge));
+    const fetchData = async () => {
+      const [settingsRes, pitsRes] = await Promise.all([
+        supabase.from("global_settings").select("key, value"),
+        supabase.from("pits").select("id, name, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active"),
+      ]);
+      if (settingsRes.data) {
+        const gp = parseGlobalSettings(settingsRes.data as any);
+        setGlobalPricing(gp);
+        setGlobalSaturdaySurcharge(gp.saturday_surcharge);
       }
-    });
+      if (pitsRes.data) {
+        setAllPits(pitsRes.data as any);
+      }
+    };
+    fetchData();
   }, []);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
@@ -218,7 +224,7 @@ const Order = () => {
             taxAmount,
             subtotal,
             saturdaySurchargeTotal,
-            distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
+            distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
             taxInfo,
           });
           setStep("success");
@@ -328,10 +334,10 @@ const Order = () => {
     if (paramAddress && paramPrice) {
       setAddress(paramAddress);
       const price = parseFloat(paramPrice);
-      const dist = paramDistance ? parseFloat(paramDistance) : (price > BASE_PRICE ? ((price - BASE_PRICE) / PER_MILE_EXTRA) + BASE_MILES : 10);
+      const dist = paramDistance ? parseFloat(paramDistance) : (price > globalPricing.base_price ? ((price - globalPricing.base_price) / globalPricing.extra_per_mile) + globalPricing.free_miles : 10);
       setResult({
         distance: parseFloat(dist.toFixed(1)),
-        price: isNaN(price) ? BASE_PRICE : price,
+        price: isNaN(price) ? globalPricing.base_price : price,
         address: `${dist.toFixed(1)} miles away`,
         duration: paramDuration || "~30 min",
       });
@@ -340,7 +346,7 @@ const Order = () => {
       setAddress(paramAddress);
       setResult({
         distance: parseFloat(paramDistance),
-        price: parseFloat(paramPrice || String(BASE_PRICE)),
+        price: parseFloat(paramPrice || String(globalPricing.base_price)),
         address: `${paramDistance} miles away`,
         duration: paramDuration,
       });
@@ -380,6 +386,12 @@ const Order = () => {
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current?.getPlace();
       if (place?.formatted_address) setAddress(place.formatted_address);
+      if (place?.geometry?.location) {
+        setCustomerCoords({
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        });
+      }
       if (place?.address_components) {
         const parish = getParishFromPlaceResult(place.address_components);
         setDetectedParish(parish);
@@ -393,104 +405,61 @@ const Order = () => {
     setError("");
     setResult(null);
 
-    if (!apiLoaded) {
-      setError("Google Maps API is not loaded. Please check API key configuration.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const service = new window.google.maps.DistanceMatrixService();
-      const response = await service.getDistanceMatrix({
-        origins: [ORIGIN],
-        destinations: [address],
-        travelMode: window.google.maps.TravelMode.DRIVING,
-        unitSystem: window.google.maps.UnitSystem.IMPERIAL,
-      });
+      let custLat = customerCoords?.lat;
+      let custLng = customerCoords?.lng;
 
-      const element = response.rows[0]?.elements[0];
-      if (!element || element.status !== "OK") {
-        setError("Could not calculate distance. Please check the address.");
-        setLoading(false);
-        return;
+      // Fallback geocode if coords not captured from Places
+      if (custLat == null || custLng == null) {
+        if (!GOOGLE_MAPS_API_KEY) {
+          setError("Google Maps API key not configured.");
+          setLoading(false); return;
+        }
+        const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
+        const geocodeData = await geocodeResp.json();
+        if (geocodeData.results?.[0]) {
+          custLat = geocodeData.results[0].geometry.location.lat;
+          custLng = geocodeData.results[0].geometry.location.lng;
+        } else {
+          setError("Could not locate that address. Please try again.");
+          setLoading(false); return;
+        }
       }
 
-      const distanceMiles = element.distance.value / 1609.34;
-      if (distanceMiles > MAX_MILES) {
+      if (allPits.length === 0) {
+        setError("No delivery locations configured. Please call us for pricing.");
+        setLoading(false); return;
+      }
+
+      const bestResult = findBestPit(allPits, custLat!, custLng!, globalPricing);
+
+      if (!bestResult) {
+        setError("No delivery locations available. Please call us.");
+        setLoading(false); return;
+      }
+
+      if (!bestResult.serviceable) {
         setError("That address is outside our delivery area. Please call us for options.");
         setOutOfAreaAddress(address);
-        setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
-        // Find nearest PIT
-        try {
-          const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
-          if (pitsData && pitsData.length > 0) {
-            const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
-            const geocodeData = await geocodeResp.json();
-            if (geocodeData.results?.[0]) {
-              const custLat = geocodeData.results[0].geometry.location.lat;
-              const custLon = geocodeData.results[0].geometry.location.lng;
-              const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-                const R = 3958.8;
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              };
-              let best: { id: string; name: string; distance: number } | null = null;
-              for (const p of pitsData) {
-                const d = haversine(Number(p.lat), Number(p.lon), custLat, custLon);
-                if (!best || d < best.distance) best = { id: p.id, name: p.name, distance: d };
-              }
-              setNearestPitInfo(best);
-            }
-          }
-        } catch (e) { console.error("Nearest PIT lookup error:", e); }
+        setOutOfAreaDistance(parseFloat(bestResult.distance.toFixed(1)));
+        setNearestPitInfo({ id: bestResult.pit.id, name: bestResult.pit.name, distance: bestResult.distance });
         setShowOutOfAreaModal(true);
-        setLoading(false);
-        return;
+        setLoading(false); return;
       }
 
-      let price = BASE_PRICE;
-      if (distanceMiles > BASE_MILES) price += (distanceMiles - BASE_MILES) * PER_MILE_EXTRA;
-
-      // Find nearest active PIT to set schedule for date picker
-      try {
-        const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
-        if (pitsData && pitsData.length > 0) {
-          const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
-          const geocodeData = await geocodeResp.json();
-          if (geocodeData.results?.[0]) {
-            const custLat = geocodeData.results[0].geometry.location.lat;
-            const custLon = geocodeData.results[0].geometry.location.lng;
-            const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-              const R = 3958.8;
-              const dLat2 = (lat2 - lat1) * Math.PI / 180;
-              const dLon2 = (lon2 - lon1) * Math.PI / 180;
-              const a2 = Math.sin(dLat2 / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon2 / 2) ** 2;
-              return R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1 - a2));
-            };
-            let bestPit: any = null;
-            let bestDist = Infinity;
-            for (const p of pitsData) {
-              const d = hav(Number(p.lat), Number(p.lon), custLat, custLon);
-              if (d < bestDist) { bestPit = p; bestDist = d; }
-            }
-            if (bestPit) {
-              setMatchedPitSchedule({
-                operating_days: bestPit.operating_days,
-                saturday_surcharge_override: bestPit.saturday_surcharge_override != null ? Number(bestPit.saturday_surcharge_override) : null,
-                same_day_cutoff: bestPit.same_day_cutoff,
-              });
-            }
-          }
-        }
-      } catch (e) { console.error("PIT schedule lookup error:", e); }
+      // Store matched PIT for pricing and schedule
+      setMatchedPit(bestResult.pit);
+      setMatchedPitSchedule({
+        operating_days: bestResult.pit.operating_days,
+        saturday_surcharge_override: bestResult.pit.saturday_surcharge_override != null ? Number(bestResult.pit.saturday_surcharge_override) : null,
+        same_day_cutoff: bestResult.pit.same_day_cutoff,
+      });
 
       setResult({
-        distance: parseFloat(distanceMiles.toFixed(1)),
-        price: parseFloat(price.toFixed(2)),
-        address: element.distance.text + " away",
-        duration: element.duration.text,
+        distance: parseFloat(bestResult.distance.toFixed(1)),
+        price: bestResult.price,
+        address: `${bestResult.distance.toFixed(1)} mi away`,
+        duration: "~30 min",
       });
       setStep("details");
     } catch {
@@ -498,7 +467,7 @@ const Order = () => {
     } finally {
       setLoading(false);
     }
-  }, [address, apiLoaded]);
+  }, [address, customerCoords, allPits, globalPricing]);
 
   const goToStep2 = () => {
     if (!selectedDeliveryDate) {
@@ -567,7 +536,7 @@ const Order = () => {
         taxAmount,
         subtotal,
         saturdaySurchargeTotal,
-        distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
+        distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
         taxInfo,
       };
       setConfirmedTotals(snapshotTotals);
@@ -962,11 +931,11 @@ const Order = () => {
 
                       <ReceiptRow label={`River Sand (9 cu yds × ${quantity})`} value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
                       <div className="border-b border-dashed border-border" />
-                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(195 * quantity)} />
-                      {result.distance > BASE_MILES && (
+                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(effectivePricing.base_price * quantity)} />
+                      {result.distance > effectivePricing.free_miles && (
                         <>
                           <div className="border-b border-dashed border-border" />
-                          <ReceiptRow label={`Extended delivery surcharge × ${quantity}`} value={`+${formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}`} />
+                          <ReceiptRow label={`Extended delivery surcharge × ${quantity}`} value={`+${formatCurrency((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity)}`} />
                         </>
                       )}
                       <div className="border-b border-dashed border-border" />
@@ -1252,7 +1221,7 @@ const Order = () => {
               const displayTaxAmount = dt?.taxAmount ?? taxAmount;
               const displaySubtotal = dt?.subtotal ?? subtotal;
               const displaySaturdaySurcharge = dt?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
-              const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0);
+              const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0);
               const displayTaxInfo = dt?.taxInfo ?? taxInfo;
               return (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-5 print-confirmation">
@@ -1399,7 +1368,7 @@ const Order = () => {
                   <div className="p-6 space-y-2">
                     <div className="flex justify-between py-1.5">
                       <span className="font-body text-sm text-muted-foreground">River Sand (×{quantity})</span>
-                      <span className="font-body text-sm text-foreground">{formatCurrency(BASE_PRICE * quantity)}</span>
+                      <span className="font-body text-sm text-foreground">{formatCurrency(effectivePricing.base_price * quantity)}</span>
                     </div>
                     {displayDistanceFee > 0 && (
                       <div className="flex justify-between py-1.5">

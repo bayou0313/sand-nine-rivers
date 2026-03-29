@@ -1,0 +1,159 @@
+/**
+ * Shared PIT (Point of Interest / Distribution) utilities.
+ * Haversine distance, effective pricing, price calculation, and best-PIT selection.
+ */
+
+export interface PitData {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  status: string;
+  base_price: number | null;
+  free_miles: number | null;
+  price_per_extra_mile: number | null;
+  max_distance: number | null;
+  operating_days: number[] | null;
+  saturday_surcharge_override: number | null;
+  same_day_cutoff: string | null;
+}
+
+export interface GlobalPricing {
+  base_price: number;
+  free_miles: number;
+  extra_per_mile: number;
+  max_distance: number;
+  saturday_surcharge: number;
+}
+
+export interface EffectivePricing {
+  base_price: number;
+  free_miles: number;
+  extra_per_mile: number;
+  max_distance: number;
+  saturday_surcharge: number;
+}
+
+export interface FindBestPitResult {
+  pit: PitData;
+  distance: number;
+  price: number;
+  serviceable: boolean;
+}
+
+// Last-resort fallbacks if DB fetch fails entirely
+const FALLBACK_BASE_PRICE = 195;
+const FALLBACK_FREE_MILES = 15;
+const FALLBACK_EXTRA_PER_MILE = 5;
+const FALLBACK_MAX_DISTANCE = 30;
+const FALLBACK_SATURDAY_SURCHARGE = 35;
+
+export const FALLBACK_GLOBAL_PRICING: GlobalPricing = {
+  base_price: FALLBACK_BASE_PRICE,
+  free_miles: FALLBACK_FREE_MILES,
+  extra_per_mile: FALLBACK_EXTRA_PER_MILE,
+  max_distance: FALLBACK_MAX_DISTANCE,
+  saturday_surcharge: FALLBACK_SATURDAY_SURCHARGE,
+};
+
+/**
+ * Parse global_settings rows into a GlobalPricing object.
+ */
+export function parseGlobalSettings(rows: { key: string; value: string }[]): GlobalPricing {
+  const map: Record<string, string> = {};
+  rows.forEach((r) => { map[r.key] = r.value; });
+  return {
+    base_price: parseFloat(map.default_base_price) || FALLBACK_BASE_PRICE,
+    free_miles: parseFloat(map.default_free_miles) || FALLBACK_FREE_MILES,
+    extra_per_mile: parseFloat(map.default_extra_per_mile) || FALLBACK_EXTRA_PER_MILE,
+    max_distance: parseFloat(map.default_max_distance) || FALLBACK_MAX_DISTANCE,
+    saturday_surcharge: parseFloat(map.saturday_surcharge) || FALLBACK_SATURDAY_SURCHARGE,
+  };
+}
+
+/**
+ * Haversine distance in miles between two lat/lon points.
+ */
+export function haversineDistance(
+  lat1: number, lon1: number,
+  lat2: number, lon2: number
+): number {
+  const R = 3958.8; // Earth radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Merge PIT-level overrides with global pricing.
+ * NULL PIT fields fall back to global values.
+ */
+export function getEffectivePrice(pit: PitData, global: GlobalPricing): EffectivePricing {
+  return {
+    base_price: pit.base_price ?? global.base_price,
+    free_miles: pit.free_miles ?? global.free_miles,
+    extra_per_mile: pit.price_per_extra_mile ?? global.extra_per_mile,
+    max_distance: pit.max_distance ?? global.max_distance,
+    saturday_surcharge: pit.saturday_surcharge_override ?? global.saturday_surcharge,
+  };
+}
+
+/**
+ * Calculate the delivery price for a given distance and quantity.
+ */
+export function calcPitPrice(effective: EffectivePricing, distance: number, qty: number): number {
+  let unitPrice = effective.base_price;
+  if (distance > effective.free_miles) {
+    unitPrice += (distance - effective.free_miles) * effective.extra_per_mile;
+  }
+  return parseFloat((unitPrice * qty).toFixed(2));
+}
+
+/**
+ * Find the best PIT for a customer location.
+ * Returns nearest serviceable PIT (tie-break on price).
+ * If none serviceable, returns nearest with serviceable=false for lead capture.
+ */
+export function findBestPit(
+  pits: PitData[],
+  customerLat: number,
+  customerLng: number,
+  globalPricing: GlobalPricing
+): FindBestPitResult | null {
+  const activePits = pits.filter(p => p.status === "active");
+  if (activePits.length === 0) return null;
+
+  const results = activePits.map(pit => {
+    const distance = haversineDistance(
+      Number(pit.lat), Number(pit.lon),
+      customerLat, customerLng
+    );
+    const effective = getEffectivePrice(pit, globalPricing);
+    const price = calcPitPrice(effective, distance, 1);
+    const serviceable = distance <= effective.max_distance;
+    return { pit, distance, price, serviceable };
+  });
+
+  // Only serviceable PITs
+  const serviceable = results.filter(r => r.serviceable);
+
+  if (serviceable.length === 0) {
+    // Return nearest PIT even if out of range (for lead capture)
+    results.sort((a, b) => a.distance - b.distance);
+    return { ...results[0], serviceable: false };
+  }
+
+  // Primary: shortest distance. Tie-breaker: lowest price
+  serviceable.sort((a, b) => {
+    if (Math.abs(a.distance - b.distance) < 0.1) {
+      return a.price - b.price;
+    }
+    return a.distance - b.distance;
+  });
+
+  return { ...serviceable[0], serviceable: true };
+}
