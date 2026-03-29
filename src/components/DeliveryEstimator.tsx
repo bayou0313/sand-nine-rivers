@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
+import { updateSession } from "@/lib/session";
 import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
