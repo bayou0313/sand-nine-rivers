@@ -403,7 +403,6 @@ serve(async (req) => {
       if (pitErr) throw pitErr;
 
       const maxDist = pitData.max_distance || 30;
-      const radiusMeters = Math.round(maxDist * 1609.34);
       const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
       if (!apiKey) {
         return new Response(JSON.stringify({ error: "GOOGLE_MAPS_SERVER_KEY not configured" }),
@@ -419,80 +418,119 @@ serve(async (req) => {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       };
 
-      // Deduplicated place collector keyed by place_id then by lowercase name
-      const byPlaceId = new Map<string, any>();
-      const byName = new Map<string, any>();
-      const addPlace = (place: any) => {
-        if (place.place_id && !byPlaceId.has(place.place_id)) {
-          byPlaceId.set(place.place_id, place);
-          byName.set(place.name?.toLowerCase(), place);
-        } else if (!place.place_id && place.name && !byName.has(place.name.toLowerCase())) {
-          byName.set(place.name.toLowerCase(), place);
-        }
+      // Clean city name helper
+      const cleanCityName = (name: string): string => {
+        return name
+          .replace(/^City of /i, "")
+          .replace(/^Town of /i, "")
+          .replace(/^Village of /i, "")
+          .replace(/\/.+$/, "")
+          .replace(/\s+Area$/i, "")
+          .replace(/\s+District$/i, "")
+          .replace(/\s+CDP$/i, "")
+          .trim();
       };
 
-      // ── STRATEGY 1: Multiple place type Nearby Searches ──
-      const placeTypes = ["locality", "sublocality", "neighborhood", "administrative_area_level_3"];
-      const nearbyPromises = placeTypes.map(async (pType) => {
-        try {
-          const resp = await fetch(
-            `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${pitData.lat},${pitData.lon}&radius=${radiusMeters}&type=${pType}&key=${apiKey}`
-          );
-          const data = await resp.json();
-          return data.results || [];
-        } catch (e) {
-          console.error(`Nearby search failed for type=${pType}:`, e);
-          return [];
-        }
-      });
-      const nearbyResults = await Promise.all(nearbyPromises);
-      for (const results of nearbyResults) {
-        for (const place of results) addPlace(place);
-      }
-      console.log(`Strategy 1 (nearby types): ${byPlaceId.size} unique places`);
-
-      // ── STRATEGY 2: Grid-based Text Search for better coverage ──
-      const offset = (maxDist / 69) * 0.5; // miles to degrees approx
-      const gridPoints = [
-        { lat: pitData.lat, lng: pitData.lon },
-        { lat: pitData.lat + offset, lng: pitData.lon },
-        { lat: pitData.lat - offset, lng: pitData.lon },
-        { lat: pitData.lat, lng: pitData.lon + offset },
-        { lat: pitData.lat, lng: pitData.lon - offset },
-        { lat: pitData.lat + offset, lng: pitData.lon + offset },
-        { lat: pitData.lat + offset, lng: pitData.lon - offset },
-        { lat: pitData.lat - offset, lng: pitData.lon + offset },
-        { lat: pitData.lat - offset, lng: pitData.lon - offset },
+      // Exclusion words — organizations, businesses, POIs
+      const EXCLUDE_WORDS = [
+        "inc", "llc", "corp", "association", "club", "center", "centre",
+        "park", "farm", "commission", "community", "fitness", "beach",
+        "golf", "volleyball", "action", "development", "recreation",
+        "school", "church", "hospital", "museum", "library", "university",
+        "college", "foundation", "institute", "authority", "department",
+        "council", "services", "group", "company", "studio", "restaurant",
+        "hotel", "motel", "plaza", "mall", "shop", "store", "market",
+        "yacht", "marina", "gym", "theater", "theatre", "arena",
       ];
-      const gridRadius = Math.round(radiusMeters / 3);
-      const textPromises = gridPoints.map(async (pt) => {
-        try {
-          const resp = await fetch(
-            `https://maps.googleapis.com/maps/api/place/textsearch/json?query=city+town+community&location=${pt.lat},${pt.lng}&radius=${gridRadius}&key=${apiKey}`
-          );
-          const data = await resp.json();
-          return data.results || [];
-        } catch (e) {
-          console.error(`Text search failed for grid point:`, e);
-          return [];
-        }
-      });
-      const textResults = await Promise.all(textPromises);
-      for (const results of textResults) {
-        for (const place of results) addPlace(place);
-      }
-      console.log(`After Strategy 2 (grid text): ${byPlaceId.size + byName.size} total places`);
 
-      // ── Extract city info with geocoding for precise address components ──
-      const allPlaces = [...byPlaceId.values()];
-      // Also add any name-only entries not already covered
-      for (const [name, place] of byName) {
-        if (!place.place_id || !byPlaceId.has(place.place_id)) {
-          if (!allPlaces.find(p => p.name?.toLowerCase() === name)) {
-            allPlaces.push(place);
+      const isValidCityName = (name: string): boolean => {
+        if (!name) return false;
+        const lower = name.toLowerCase();
+        // Exclude if contains organization words
+        for (const word of EXCLUDE_WORDS) {
+          if (lower.includes(word)) return false;
+        }
+        // Exclude if more than 4 words
+        const words = name.split(/\s+/);
+        if (words.length > 4) return false;
+        // Exclude if any word is longer than 20 chars
+        if (words.some(w => w.length > 20)) return false;
+        return true;
+      };
+
+      // Valid geocoding result types for real cities/towns
+      const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
+
+      // ── STRATEGY: Reverse geocode from radial grid points ──
+      // Generate sample points at various distances and directions
+      const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= maxDist);
+      const directions = [0, 45, 90, 135, 180, 225, 270, 315]; // N, NE, E, SE, S, SW, W, NW
+      const samplePoints: { lat: number; lng: number }[] = [
+        { lat: pitData.lat, lng: pitData.lon }, // center point
+      ];
+      for (const dist of distances) {
+        for (const dir of directions) {
+          const rad = dir * Math.PI / 180;
+          const dLat = (dist / 69) * Math.cos(rad);
+          const dLng = (dist / (69 * Math.cos(pitData.lat * Math.PI / 180))) * Math.sin(rad);
+          samplePoints.push({ lat: pitData.lat + dLat, lng: pitData.lon + dLng });
+        }
+      }
+      console.log(`Sampling ${samplePoints.length} points for reverse geocoding`);
+
+      // Reverse geocode each point — collect unique cities
+      const cityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
+
+      // Process in batches of 10 to avoid rate limits
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
+        const batch = samplePoints.slice(i, i + BATCH_SIZE);
+        const promises = batch.map(async (pt) => {
+          try {
+            const resp = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${pt.lat},${pt.lng}&result_type=locality|sublocality_level_1|administrative_area_level_3&key=${apiKey}`
+            );
+            const data = await resp.json();
+            return data.results || [];
+          } catch (e) {
+            console.error("Reverse geocode failed:", e);
+            return [];
+          }
+        });
+        const batchResults = await Promise.all(promises);
+        for (const results of batchResults) {
+          for (const result of results) {
+            // Only accept results whose primary type is a valid city type
+            const types = result.types || [];
+            const hasValidType = types.some((t: string) => VALID_TYPES.includes(t));
+            if (!hasValidType) continue;
+
+            // Extract city name and state from address_components
+            const components = result.address_components || [];
+            let cityName = "";
+            let stateCode = "";
+            for (const prio of VALID_TYPES) {
+              const comp = components.find((c: any) => c.types?.includes(prio));
+              if (comp && !cityName) cityName = comp.long_name;
+            }
+            const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
+            if (stateComp) stateCode = stateComp.short_name;
+
+            if (!cityName) continue;
+            cityName = cleanCityName(cityName);
+            if (!isValidCityName(cityName)) continue;
+
+            const key = cityName.toLowerCase();
+            if (!cityMap.has(key)) {
+              const loc = result.geometry?.location;
+              if (loc) {
+                cityMap.set(key, { name: cityName, state: stateCode, lat: loc.lat, lng: loc.lng });
+              }
+            }
           }
         }
       }
+      console.log(`Reverse geocoding found ${cityMap.size} unique cities`);
 
       // Get existing city slugs for duplicate detection
       const { data: existingPages } = await supabase
@@ -511,41 +549,19 @@ serve(async (req) => {
       const freeMiles = pitData.free_miles ?? parseFloat(gs.default_free_miles || "15");
       const extraPerMile = pitData.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
 
-      // Extract city name from address_components or place name
-      const extractCityName = (place: any): { cityName: string; stateCode: string } => {
-        const components = place.address_components || [];
-        const priorities = ["locality", "sublocality_level_1", "sublocality", "neighborhood", "administrative_area_level_3"];
-        let cityName = "";
-        let stateCode = "";
-        for (const prio of priorities) {
-          const comp = components.find((c: any) => c.types?.includes(prio));
-          if (comp && !cityName) cityName = comp.long_name;
-        }
-        const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
-        if (stateComp) stateCode = stateComp.short_name;
-        if (!cityName) cityName = place.name || "";
-        return { cityName, stateCode };
-      };
-
+      // Build final results
       const discovered: any[] = [];
       const seenSlugs = new Set<string>();
 
-      for (const place of allPlaces) {
-        const { cityName, stateCode } = extractCityName(place);
-        if (!cityName) continue;
-
-        const lat = place.geometry?.location?.lat;
-        const lng = place.geometry?.location?.lng;
-        if (!lat || !lng) continue;
-
-        const distance = hav(pitData.lat, pitData.lon, lat, lng);
+      for (const [, city] of cityMap) {
+        const distance = hav(pitData.lat, pitData.lon, city.lat, city.lng);
         if (distance > maxDist) continue;
 
-        let slug = cityName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        let slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
         // Handle duplicate slug from different states
         if (seenSlugs.has(slug) || (existingSlugs.has(slug) && existingSlugs.get(slug).pit_id !== pit_id)) {
-          slug = `${slug}-${(stateCode || "us").toLowerCase()}`;
+          slug = `${slug}-${(city.state || "us").toLowerCase()}`;
         }
         if (seenSlugs.has(slug)) continue;
         seenSlugs.add(slug);
@@ -555,11 +571,11 @@ serve(async (req) => {
         const existing = existingSlugs.get(slug);
 
         discovered.push({
-          city_name: cityName,
+          city_name: city.name,
           city_slug: slug,
-          state: stateCode || "US",
-          lat,
-          lng,
+          state: city.state || "US",
+          lat: city.lat,
+          lng: city.lng,
           distance: Math.round(distance * 10) / 10,
           price: Math.round(price * 100) / 100,
           duplicate: !!existing,
