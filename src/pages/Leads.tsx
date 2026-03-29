@@ -635,7 +635,7 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
-      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "" });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
