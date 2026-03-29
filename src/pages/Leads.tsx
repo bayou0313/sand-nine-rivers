@@ -1231,7 +1231,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Free miles</label>
                                 <Input
-                                  placeholder={`Global: ${globalSettings.default_free_miles} mi`}
+                                  placeholder="Enter free miles"
                                   value={editPitData.free_miles ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
