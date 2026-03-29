@@ -116,7 +116,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
     section: "OPERATIONS",
     items: [
       { id: "overview", label: "Overview", icon: BarChart3 },
-      { id: "zip", label: "ZIP Intelligence", icon: Map },
+      { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
       { id: "pipeline", label: "Pipeline", icon: List },
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
     ],
