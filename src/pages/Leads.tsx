@@ -226,6 +226,16 @@ const Leads = () => {
   const [abandonedLoading, setAbandonedLoading] = useState(false);
   const [runningEmailCheck, setRunningEmailCheck] = useState(false);
 
+  // Cash orders state
+  const [cashOrders, setCashOrders] = useState<any[]>([]);
+  const [cashLoading, setCashLoading] = useState(false);
+  const [cashFilter, setCashFilter] = useState<"all" | "pending" | "overdue" | "collected">("all");
+  const [cashOrderToMark, setCashOrderToMark] = useState<any | null>(null);
+  const [markingPaid, setMarkingPaid] = useState(false);
+  const [cashCollectedBy, setCashCollectedBy] = useState("");
+  const [cashSendEmail, setCashSendEmail] = useState(true);
+  const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
+
   const fetchAbandonedSessions = useCallback(async () => {
     setAbandonedLoading(true);
     try {
