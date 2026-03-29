@@ -233,7 +233,10 @@ export type Database = {
           max_distance: number | null
           name: string
           notes: string | null
+          operating_days: number[] | null
           price_per_extra_mile: number | null
+          same_day_cutoff: string | null
+          saturday_surcharge_override: number | null
           status: string
           updated_at: string
         }
@@ -249,7 +252,10 @@ export type Database = {
           max_distance?: number | null
           name: string
           notes?: string | null
+          operating_days?: number[] | null
           price_per_extra_mile?: number | null
+          same_day_cutoff?: string | null
+          saturday_surcharge_override?: number | null
           status?: string
           updated_at?: string
         }
@@ -265,7 +271,10 @@ export type Database = {
           max_distance?: number | null
           name?: string
           notes?: string | null
+          operating_days?: number[] | null
           price_per_extra_mile?: number | null
+          same_day_cutoff?: string | null
+          saturday_surcharge_override?: number | null
           status?: string
           updated_at?: string
         }
