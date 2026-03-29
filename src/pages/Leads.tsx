@@ -458,14 +458,20 @@ const Leads = () => {
   const addPit = async () => {
     if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     setGeocoding(true);
-    const coords = await geocodeAddress(newPit.address);
-    if (!coords) { toast({ title: "Geocode failed", description: "Could not find coordinates for that address", variant: "destructive" }); setGeocoding(false); return; }
+    let lat = newPit.lat;
+    let lon = newPit.lon;
+    if (lat == null || lon == null) {
+      const coords = await geocodeAddress(newPit.address);
+      if (!coords) { toast({ title: "Geocode failed", description: "Could not find coordinates for that address", variant: "destructive" }); setGeocoding(false); return; }
+      lat = coords.lat;
+      lon = coords.lon;
+    }
     try {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat: coords.lat, lon: coords.lon, status: newPit.status, notes: newPit.notes },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance },
         },
       });
       if (fnError) throw fnError;
