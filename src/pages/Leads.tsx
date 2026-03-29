@@ -639,7 +639,94 @@ const Leads = () => {
     await fetchLeads(storedPassword());
   };
 
-  // Stage badge
+  // Quick Proposal functions
+  const openQuickProposal = (lead: ParsedLead) => {
+    setQuickProposalLead(lead);
+    const defaultPitId = lead.nearest_pit_id || pits.find(p => p.is_default)?.id || "";
+    setQpPitId(defaultPitId);
+    // Calculate price for default PIT
+    const pit = pits.find(p => p.id === defaultPitId);
+    if (pit && lead.nearest_pit_distance != null) {
+      const eff = getEffectivePrice(pit, globalSettings);
+      const dist = lead.nearest_pit_distance;
+      const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
+      setQpPrice((eff.base_price + extra).toFixed(2));
+    } else {
+      setQpPrice(basePrice.toFixed(2));
+    }
+    setQpNote("");
+    setQpShowPreview(false);
+  };
+
+  const qpSelectedPit = useMemo(() => pits.find(p => p.id === qpPitId), [pits, qpPitId]);
+
+  const qpDistance = useMemo(() => {
+    if (!quickProposalLead || !qpSelectedPit) return null;
+    // If this is the same as nearest_pit, use stored distance
+    if (quickProposalLead.nearest_pit_id === qpPitId && quickProposalLead.nearest_pit_distance != null) {
+      return quickProposalLead.nearest_pit_distance;
+    }
+    // Otherwise calculate from geocache
+    const cached = geocodeCache[quickProposalLead.address];
+    if (!cached) return null;
+    return haversine(qpSelectedPit.lat, qpSelectedPit.lon, cached.lat, cached.lon);
+  }, [quickProposalLead, qpSelectedPit, qpPitId, geocodeCache]);
+
+  // Recalculate price when PIT changes
+  useEffect(() => {
+    if (!qpSelectedPit || qpDistance == null) return;
+    const eff = getEffectivePrice(qpSelectedPit, globalSettings);
+    const extra = qpDistance > eff.free_miles ? (qpDistance - eff.free_miles) * eff.extra_per_mile : 0;
+    setQpPrice((eff.base_price + extra).toFixed(2));
+  }, [qpPitId, qpDistance, globalSettings]);
+
+  const qpOrderUrl = useMemo(() => {
+    if (!quickProposalLead) return "";
+    const { zip } = parseAddress(quickProposalLead.address);
+    return `https://riversand.net/order?address=${encodeURIComponent(quickProposalLead.address)}&price=${qpPrice}&zip=${zip}&lead=${encodeURIComponent(quickProposalLead.lead_number || "")}&utm_source=proposal&utm_medium=email&utm_campaign=direct_offer`;
+  }, [quickProposalLead, qpPrice]);
+
+  const sendQuickProposal = async () => {
+    if (!quickProposalLead?.customer_email) return;
+    setQpSending(true);
+    try {
+      const { zip } = parseAddress(quickProposalLead.address);
+      await supabase.functions.invoke("send-email", {
+        body: {
+          type: "pit_proposal",
+          data: {
+            lead_number: quickProposalLead.lead_number,
+            customer_name: quickProposalLead.customer_name,
+            customer_email: quickProposalLead.customer_email,
+            delivery_address: quickProposalLead.address,
+            zip_code: zip,
+            new_price: qpPrice,
+            pit_name: qpSelectedPit?.name || "HQ",
+            order_url: qpOrderUrl,
+            custom_note: qpNote.trim() || undefined,
+          },
+        },
+      });
+      // Update lead stage + contacted + note
+      await updateStage(quickProposalLead.id, "quoted");
+      if (!quickProposalLead.contacted) {
+        await supabase.functions.invoke("leads-auth", {
+          body: { password: storedPassword(), action: "toggle_contacted", id: quickProposalLead.id },
+        });
+      }
+      const timestamp = new Date().toLocaleString("en-US");
+      await appendNote(quickProposalLead.id, `Offer sent ${timestamp} from ${qpSelectedPit?.name || "HQ"} at $${qpPrice}. Order link: ${qpOrderUrl}`);
+      // Update local state
+      setLeads(prev => prev.map(l => l.id === quickProposalLead.id ? { ...l, stage: "quoted", contacted: true } : l));
+      toast({ title: `Offer sent to ${quickProposalLead.customer_email}` });
+      setQuickProposalLead(null);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setQpSending(false);
+    }
+  };
+
   const StageBadge = ({ stage }: { stage: string }) => (
     <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: STAGE_COLORS[stage] || "#999" }}>
       {stage.toUpperCase()}
