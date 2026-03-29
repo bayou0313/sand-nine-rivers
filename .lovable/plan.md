@@ -1,110 +1,63 @@
 
 
-## Update Parish Tax Rates — Dynamic Lookup from Google Maps
+## Fix — Cash/Check Orders Showing $0.00 on Confirmation Page
 
-### Overview
-Replace the hardcoded tax rates with the user-provided parish rates, and extract the parish directly from the Google Maps `administrative_area_level_2` component for accurate matching.
+### Root Cause
+The confirmation page displays `totalPrice`, which is derived from `result` (the distance estimate state). If `result` becomes null or the component re-renders and loses state, `subtotal` falls to 0 (line 100), making `totalPrice` = $0.00.
 
----
+### Fix
+Store the final computed totals in state when the order is submitted, so the confirmation page uses a snapshot rather than depending on `result` still being available.
 
-### Step 1 — Update `src/lib/format.ts`
+### Changes — `src/pages/Order.tsx`
 
-**A. Replace `PARISH_TAX_RATES` with the new rates:**
-```
-"jefferson": 0.0975,
-"orleans": 0.1000,
-"st. bernard": 0.1000,
-"st. charles": 0.1000,
-"st. tammany": 0.0925,
-"plaquemines": 0.0975,
-"st. john the baptist": 0.1025,
-"st. james": 0.0850,
-"lafourche": 0.0970,
-"tangipahoa": 0.0945,
-```
-Remove `terrebonne` and `washington` (not in the new list).
-
-**B. Update `DEFAULT_TAX_RATE`** to `0.0975` (9.75%).
-
-**C. Update default parish label** to `"Unknown Parish (default)"`.
-
-**D. Add new exported function `getParishFromPlaceResult`:**
+**A. Add new state to capture confirmed totals (near line 74):**
 ```typescript
-export function getParishFromPlaceResult(
-  addressComponents: Array<{ long_name: string; short_name: string; types: string[] }>
-): string | null {
-  const county = addressComponents.find(c => c.types.includes("administrative_area_level_2"));
-  if (!county) return null;
-  // Google returns "Jefferson Parish" — strip " Parish" suffix for lookup
-  return county.long_name.replace(/ Parish$/i, "").toLowerCase();
-}
+const [confirmedTotals, setConfirmedTotals] = useState<{
+  totalPrice: number;
+  totalWithProcessingFee: number;
+  processingFee: number;
+  taxAmount: number;
+  subtotal: number;
+  saturdaySurchargeTotal: number;
+  distanceFee: number;
+} | null>(null);
 ```
 
-**E. Add `getTaxRateByParish(parishName: string)` function** that looks up the rate by parish key (used when we have the structured parish name from Google).
-
-**F. Update city-to-parish mapping** — change `"st. john"` entries to `"st. john the baptist"` to match the new key.
-
----
-
-### Step 2 — Update `src/pages/Order.tsx`
-
-**A. Extract parish from Google Places autocomplete** (line ~290):
-In the `place_changed` listener, extract `administrative_area_level_2` from `place.address_components` and store it in a new state variable `detectedParish`.
-
+**B. Capture totals in `handleCodSubmit` (before `setStep("success")`, ~line 417):**
 ```typescript
-const [detectedParish, setDetectedParish] = useState<string | null>(null);
-
-// In place_changed listener:
-autocompleteRef.current.addListener("place_changed", () => {
-  const place = autocompleteRef.current?.getPlace();
-  if (place?.formatted_address) setAddress(place.formatted_address);
-  if (place?.address_components) {
-    const parish = getParishFromPlaceResult(place.address_components);
-    setDetectedParish(parish);
-  }
+setConfirmedTotals({
+  totalPrice,
+  totalWithProcessingFee,
+  processingFee,
+  taxAmount,
+  subtotal,
+  saturdaySurchargeTotal,
+  distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
 });
+setStep("success");
 ```
 
-**B. Update `taxInfo` memo** to prefer `detectedParish` (structured Google data) over address string matching:
+**C. Capture totals in Stripe success handler (~line 172):**
+Same `setConfirmedTotals(...)` call before `setStep("success")`.
+
+**D. Use `confirmedTotals` on the success page:**
+Create display variables at the top of the success block:
 ```typescript
-const taxInfo = useMemo(() => {
-  if (detectedParish) return getTaxRateByParish(detectedParish);
-  return getTaxRateFromAddress(address);
-}, [address, detectedParish]);
+const displayTotal = confirmedTotals?.totalPrice ?? totalPrice;
+const displayTotalWithFee = confirmedTotals?.totalWithProcessingFee ?? totalWithProcessingFee;
+const displayProcessingFee = confirmedTotals?.processingFee ?? processingFee;
 ```
 
-**C. Update tax display labels** — already shows `taxInfo.parish` in three places (lines ~807, ~995, ~1212). Update the format to: `"Sales tax — Jefferson Parish (9.75%)"` instead of `"Sales Tax (9.20% — Jefferson Parish)"`.
+Replace all `totalPrice`, `totalWithProcessingFee`, and `processingFee` references in the success section (lines 1060–1246) with these display variables.
 
-**D. Pass `tax_parish` to order data** — add `tax_parish: taxInfo.parish` to the order insert and email payloads so it's available in emails/invoices.
+Key lines affected:
+- **Line 1094** (Amount Charged): use `displayTotalWithFee`
+- **Line 1114** (Processing Fee): use `displayProcessingFee`
+- **Line 1133** (Amount Due for cash/check): use `displayTotal`
+- **Line 1206–1231** (Pricing Summary line items): use confirmed values
+- **Line 1235** (Total): use display variables
+- **Line 1242** (Due at delivery): use display variables
 
----
-
-### Step 3 — Update `supabase/functions/send-email/index.ts`
-
-Update the tax display line (~line 209) to show parish name with rate:
-```
-`Sales tax — ${order.tax_parish || 'N/A'} (${(Number(order.tax_rate) * 100).toFixed(2)}%)`
-```
-
----
-
-### Step 4 — Update `supabase/functions/generate-invoice/index.ts`
-
-Same label update (~line 231):
-```
-`Sales Tax — ${order.tax_parish || ''} (${(order.tax_rate * 100).toFixed(2)}%)`
-```
-
----
-
-### Files Changed
-| File | Change |
-|------|--------|
-| `src/lib/format.ts` | New rates, new `getParishFromPlaceResult()` and `getTaxRateByParish()` functions |
-| `src/pages/Order.tsx` | Extract parish from Google Places, update tax display labels, pass `tax_parish` |
-| `supabase/functions/send-email/index.ts` | Show parish name in tax label |
-| `supabase/functions/generate-invoice/index.ts` | Show parish name in tax label |
-
-### No database migration needed
-The `tax_parish` can be stored in the existing `notes` or passed as email-only data. If you want a dedicated column, a small migration would add `tax_parish text` to the orders table — but this is optional.
+### No other files changed
+This is a frontend-only fix in `src/pages/Order.tsx`.
 
