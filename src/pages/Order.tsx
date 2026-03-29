@@ -66,6 +66,25 @@ const Order = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
+  // Dynamic pricing from global_settings
+  const [BASE_PRICE, setBASE_PRICE] = useState(FALLBACK_BASE_PRICE);
+  const [BASE_MILES, setBASE_MILES] = useState(FALLBACK_BASE_MILES);
+  const [MAX_MILES, setMAX_MILES] = useState(FALLBACK_MAX_MILES);
+  const [PER_MILE_EXTRA, setPER_MILE_EXTRA] = useState(FALLBACK_PER_MILE_EXTRA);
+
+  useEffect(() => {
+    supabase.from("global_settings").select("key, value").then(({ data }) => {
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((r: any) => { map[r.key] = r.value; });
+        if (map.default_base_price) setBASE_PRICE(parseFloat(map.default_base_price));
+        if (map.default_free_miles) setBASE_MILES(parseFloat(map.default_free_miles));
+        if (map.default_max_distance) setMAX_MILES(parseFloat(map.default_max_distance));
+        if (map.default_extra_per_mile) setPER_MILE_EXTRA(parseFloat(map.default_extra_per_mile));
+      }
+    });
+  }, []);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
