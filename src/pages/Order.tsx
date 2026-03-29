@@ -1088,7 +1088,17 @@ const Order = () => {
             )}
 
             {/* SUCCESS — Full Confirmation Page */}
-            {step === "success" && (
+            {step === "success" && (() => {
+              const dt = confirmedTotals;
+              const displayTotal = dt?.totalPrice ?? totalPrice;
+              const displayTotalWithFee = dt?.totalWithProcessingFee ?? totalWithProcessingFee;
+              const displayProcessingFee = dt?.processingFee ?? processingFee;
+              const displayTaxAmount = dt?.taxAmount ?? taxAmount;
+              const displaySubtotal = dt?.subtotal ?? subtotal;
+              const displaySaturdaySurcharge = dt?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
+              const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0);
+              const displayTaxInfo = dt?.taxInfo ?? taxInfo;
+              return (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-5 print-confirmation">
                 {/* Header */}
                 <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
