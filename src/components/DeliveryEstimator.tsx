@@ -158,6 +158,13 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
         price: bestResult.price,
         address: `${bestResult.distance.toFixed(1)} mi away`,
       });
+      updateSession({
+        stage: "got_price",
+        calculated_price: bestResult.price,
+        nearest_pit_id: bestResult.pit.id,
+        nearest_pit_name: bestResult.pit.name,
+        serviceable: true,
+      });
     } catch {
       setError("Something went wrong. Please try again or call us directly.");
     } finally {
