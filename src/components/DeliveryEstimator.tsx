@@ -134,7 +134,7 @@ const DeliveryEstimator = () => {
     } finally {
       setLoading(false);
     }
-  }, [address, apiLoaded]);
+  }, [address, apiLoaded, pricing]);
 
   return (
     <section id="estimator" className="py-24 bg-background">
