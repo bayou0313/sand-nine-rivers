@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/analytics";
 import Index from "./pages/Index.tsx";
 import Order from "./pages/Order.tsx";
 import Admin from "./pages/Admin.tsx";
@@ -14,6 +16,18 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+const PageViewTracker = () => {
+  const location = useLocation();
+  useEffect(() => {
+    trackEvent("page_view", {
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: location.pathname,
+    });
+  }, [location.pathname]);
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -21,6 +35,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <PageViewTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/products/river-sand" element={<Navigate to="/" replace />} />

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/analytics";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import DeliveryEstimator from "@/components/DeliveryEstimator";
@@ -44,6 +45,12 @@ const CityPage = () => {
       }
 
       setCityPage(data);
+
+      trackEvent("city_page_view", {
+        city_name: data.city_name,
+        state: data.state,
+        page_price: data.base_price,
+      });
 
       // Increment views
       try {

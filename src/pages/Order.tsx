@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { updateSession } from "@/lib/session";
+import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, Printer, Download } from "lucide-react";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish } from "@/lib/format";
@@ -471,6 +472,11 @@ const Order = () => {
         duration: "~30 min",
       });
       setStep("details");
+      trackEvent("begin_checkout", {
+        value: bestResult.price,
+        currency: "USD",
+        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }],
+      });
       updateSession({
         stage: "started_checkout",
         delivery_address: address,
@@ -502,6 +508,11 @@ const Order = () => {
     }
     setDateError("");
     setStep("confirm");
+    trackEvent("add_payment_info", {
+      value: totalPrice,
+      currency: "USD",
+      payment_type: paymentMethod,
+    });
     updateSession({
       stage: "reached_payment",
       customer_name: form.name.trim(),
@@ -564,6 +575,13 @@ const Order = () => {
       };
       setConfirmedTotals(snapshotTotals);
       setStep("success");
+      trackEvent("purchase", {
+        transaction_id: inserted?.order_number || "",
+        value: totalPrice,
+        currency: "USD",
+        tax: taxAmount,
+        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result?.price || 0, quantity }],
+      });
       updateSession({
         stage: "completed_order",
         order_id: inserted?.id || null,

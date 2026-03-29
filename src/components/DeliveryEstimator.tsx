@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { updateSession } from "@/lib/session";
+import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
           address_lat: place.geometry?.location?.lat(),
           address_lng: place.geometry?.location?.lng(),
         });
+        trackEvent("address_entered", { address: place.formatted_address });
       }
       if (place?.geometry?.location) {
         setCustomerCoords({
@@ -148,6 +150,10 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
         setOutOfAreaDistance(parseFloat(bestResult.distance.toFixed(1)));
         setNearestPitInfo({ id: bestResult.pit.id, name: bestResult.pit.name, distance: bestResult.distance });
         setShowOutOfAreaModal(true);
+        trackEvent("out_of_area", {
+          nearest_pit: bestResult.pit.name,
+          distance_miles: parseFloat(bestResult.distance.toFixed(1)),
+        });
         updateSession({
           stage: "got_out_of_area",
           delivery_address: address,
@@ -169,6 +175,12 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
         distance: parseFloat(bestResult.distance.toFixed(1)),
         price: bestResult.price,
         address: `${bestResult.distance.toFixed(1)} mi away`,
+      });
+      trackEvent("price_calculated", {
+        price: bestResult.price,
+        pit_name: bestResult.pit.name,
+        distance_miles: parseFloat(bestResult.distance.toFixed(1)),
+        currency: "USD",
       });
       updateSession({
         stage: "got_price",
