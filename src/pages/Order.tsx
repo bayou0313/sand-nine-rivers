@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import DeliveryDatePicker, { type DeliveryDate, SATURDAY_SURCHARGE } from "@/components/DeliveryDatePicker";
+import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
 
@@ -81,6 +81,7 @@ const Order = () => {
         if (map.default_free_miles) setBASE_MILES(parseFloat(map.default_free_miles));
         if (map.default_max_distance) setMAX_MILES(parseFloat(map.default_max_distance));
         if (map.default_extra_per_mile) setPER_MILE_EXTRA(parseFloat(map.default_extra_per_mile));
+        if (map.saturday_surcharge) setGlobalSaturdaySurcharge(parseFloat(map.saturday_surcharge));
       }
     });
   }, []);
@@ -98,6 +99,8 @@ const Order = () => {
   const [nearestPitInfo, setNearestPitInfo] = useState<{ id: string; name: string; distance: number } | null>(null);
   const [leadReference, setLeadReference] = useState<string | null>(null);
   const [showProposalBanner, setShowProposalBanner] = useState(false);
+  const [matchedPitSchedule, setMatchedPitSchedule] = useState<PitSchedule | null>(null);
+  const [globalSaturdaySurcharge, setGlobalSaturdaySurcharge] = useState<number>(SATURDAY_SURCHARGE);
   const [confirmedTotals, setConfirmedTotals] = useState<{
     totalPrice: number;
     totalWithProcessingFee: number;
@@ -132,7 +135,8 @@ const Order = () => {
   }, [address, detectedParish]);
 
   const PROCESSING_FEE_RATE = 0.035;
-  const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? SATURDAY_SURCHARGE * quantity : 0;
+  const effectiveSatSurcharge = getEffectiveSaturdaySurcharge(matchedPitSchedule, globalSaturdaySurcharge);
+  const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
@@ -418,7 +422,7 @@ const Order = () => {
         setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
         // Find nearest PIT
         try {
-          const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon").eq("status", "active");
+          const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
           if (pitsData && pitsData.length > 0) {
             const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
             const geocodeData = await geocodeResp.json();
@@ -448,6 +452,39 @@ const Order = () => {
 
       let price = BASE_PRICE;
       if (distanceMiles > BASE_MILES) price += (distanceMiles - BASE_MILES) * PER_MILE_EXTRA;
+
+      // Find nearest active PIT to set schedule for date picker
+      try {
+        const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
+        if (pitsData && pitsData.length > 0) {
+          const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
+          const geocodeData = await geocodeResp.json();
+          if (geocodeData.results?.[0]) {
+            const custLat = geocodeData.results[0].geometry.location.lat;
+            const custLon = geocodeData.results[0].geometry.location.lng;
+            const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+              const R = 3958.8;
+              const dLat2 = (lat2 - lat1) * Math.PI / 180;
+              const dLon2 = (lon2 - lon1) * Math.PI / 180;
+              const a2 = Math.sin(dLat2 / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon2 / 2) ** 2;
+              return R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1 - a2));
+            };
+            let bestPit: any = null;
+            let bestDist = Infinity;
+            for (const p of pitsData) {
+              const d = hav(Number(p.lat), Number(p.lon), custLat, custLon);
+              if (d < bestDist) { bestPit = p; bestDist = d; }
+            }
+            if (bestPit) {
+              setMatchedPitSchedule({
+                operating_days: bestPit.operating_days,
+                saturday_surcharge_override: bestPit.saturday_surcharge_override != null ? Number(bestPit.saturday_surcharge_override) : null,
+                same_day_cutoff: bestPit.same_day_cutoff,
+              });
+            }
+          }
+        }
+      } catch (e) { console.error("PIT schedule lookup error:", e); }
 
       setResult({
         distance: parseFloat(distanceMiles.toFixed(1)),
@@ -493,7 +530,7 @@ const Order = () => {
     delivery_date: selectedDeliveryDate!.iso,
     delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
     saturday_surcharge: selectedDeliveryDate!.isSaturday,
-    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? SATURDAY_SURCHARGE * quantity : 0,
+    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? effectiveSatSurcharge * quantity : 0,
     delivery_window: "8:00 AM – 5:00 PM",
     same_day_requested: selectedDeliveryDate!.isSameDay,
     tax_rate: taxInfo.rate,
@@ -862,6 +899,8 @@ const Order = () => {
                         setSelectedDeliveryDate(d);
                         setDateError("");
                       }}
+                      pitSchedule={matchedPitSchedule}
+                      globalSaturdaySurcharge={globalSaturdaySurcharge}
                     />
                     {dateError && (
                       <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">

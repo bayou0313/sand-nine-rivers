@@ -69,6 +69,9 @@ interface Pit {
   free_miles: number | null;
   price_per_extra_mile: number | null;
   max_distance: number | null;
+  operating_days: number[] | null;
+  saturday_surcharge_override: number | null;
+  same_day_cutoff: string | null;
 }
 
 interface GlobalSettings {
@@ -168,7 +171,7 @@ const Leads = () => {
 
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "" });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
@@ -622,7 +625,7 @@ const Leads = () => {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null },
         },
       });
       if (fnError) throw fnError;
@@ -632,7 +635,7 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
-      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "" });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -722,6 +725,9 @@ const Leads = () => {
         free_miles: editPitData.free_miles || null,
         price_per_extra_mile: editPitData.price_per_extra_mile || null,
         max_distance: editPitData.max_distance || null,
+        operating_days: editPitData.operating_days ?? null,
+        saturday_surcharge_override: editPitData.saturday_surcharge_override ?? null,
+        same_day_cutoff: editPitData.same_day_cutoff || null,
       };
       const wasActive = originalPit?.status === "active";
       const nowActive = editPitData.status === "active";
@@ -1385,6 +1391,34 @@ const Leads = () => {
                       <p className="text-xs mt-2" style={{ color: hasOverride ? BRAND_GOLD : "#999" }}>
                         Effective: ${eff.base_price} base · {eff.free_miles}mi free · ${eff.extra_per_mile}/mi · {eff.max_distance}mi max
                       </p>
+                      {/* Operating Schedule */}
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {(() => {
+                          const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                          const days = p.operating_days;
+                          if (!days || days.length === 0) {
+                            return <span className="text-[10px] text-gray-400">All days available</span>;
+                          }
+                          return DAY_LABELS.map((label, idx) => {
+                            const isOpen = days.includes(idx);
+                            return (
+                              <span key={idx} className="text-[10px] px-1.5 py-0.5 rounded" style={{
+                                backgroundColor: isOpen ? BRAND_NAVY : "#F3F3F3",
+                                color: isOpen ? "white" : "#BBB",
+                                textDecoration: isOpen ? "none" : "line-through",
+                              }}>{label}</span>
+                            );
+                          });
+                        })()}
+                      </div>
+                      {p.operating_days?.includes(6) && (
+                        <p className="text-[10px] mt-0.5" style={{ color: BRAND_GOLD }}>
+                          Sat +${p.saturday_surcharge_override ?? globalSettings.saturday_surcharge ?? "35"}
+                        </p>
+                      )}
+                      {p.same_day_cutoff && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">Same-day cutoff: {p.same_day_cutoff} CT</p>
+                      )}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <Button size="sm" variant="outline" onClick={() => setSelectedPit(p)} className="text-xs h-7">Simulate</Button>
                         <Button size="sm" variant="outline" onClick={() => startEditPit(p)} className="text-xs h-7">
@@ -2130,6 +2164,40 @@ const Leads = () => {
 
               <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
 
+              {/* Section 2.5 — Operating Schedule */}
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Operating Schedule</p>
+                <p className="text-xs text-gray-500 mb-3">Set the days this PIT accepts deliveries. Leave all unchecked to allow all days.</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
+                    const checked = newPit.operating_days?.includes(idx) ?? false;
+                    return (
+                      <label key={idx} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                        <input type="checkbox" checked={checked} onChange={e => {
+                          const days = newPit.operating_days ? [...newPit.operating_days] : [];
+                          if (e.target.checked) { if (!days.includes(idx)) days.push(idx); }
+                          else { const i = days.indexOf(idx); if (i >= 0) days.splice(i, 1); }
+                          setNewPit({ ...newPit, operating_days: days.length > 0 ? days : null });
+                        }} className="w-4 h-4 rounded" />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+                {newPit.operating_days?.includes(6) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday surcharge for this PIT</label>
+                    <Input placeholder="e.g. 35.00" value={newPit.saturday_surcharge_override ?? ""} onChange={e => setNewPit({ ...newPit, saturday_surcharge_override: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
+                  <Input placeholder="e.g. 10:00" value={newPit.same_day_cutoff} onChange={e => setNewPit({ ...newPit, same_day_cutoff: e.target.value })} className="h-9 text-sm w-40" />
+                  <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
+                </div>
+              </div>
+
               {/* Section 3 — Live Price Preview */}
               {(() => {
                 const effBase = newPit.base_price ?? parseFloat(globalSettings.default_base_price || "195");
@@ -2254,6 +2322,45 @@ const Leads = () => {
               </div>
 
               <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+
+              {/* Operating Schedule */}
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Operating Schedule</p>
+                <p className="text-xs text-gray-500 mb-3">
+                  {!editPitData.operating_days || (editPitData.operating_days as number[]).length === 0
+                    ? "No schedule set — all days currently available"
+                    : "Check the days this PIT is open. Leave all unchecked to allow all days."}
+                </p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
+                    const days = (editPitData.operating_days as number[] | null) || [];
+                    const checked = days.includes(idx);
+                    return (
+                      <label key={idx} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                        <input type="checkbox" checked={checked} onChange={e => {
+                          const newDays = [...days];
+                          if (e.target.checked) { if (!newDays.includes(idx)) newDays.push(idx); }
+                          else { const i = newDays.indexOf(idx); if (i >= 0) newDays.splice(i, 1); }
+                          setEditPitData({ ...editPitData, operating_days: newDays.length > 0 ? newDays : null });
+                        }} className="w-4 h-4 rounded" />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+                {(editPitData.operating_days as number[] | null)?.includes(6) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday surcharge for this PIT</label>
+                    <Input placeholder="e.g. 35.00" value={editPitData.saturday_surcharge_override ?? ""} onChange={e => setEditPitData({ ...editPitData, saturday_surcharge_override: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
+                  <Input placeholder="e.g. 10:00" value={editPitData.same_day_cutoff ?? ""} onChange={e => setEditPitData({ ...editPitData, same_day_cutoff: e.target.value })} className="h-9 text-sm w-40" />
+                  <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
+                </div>
+              </div>
 
               {/* Live Price Preview */}
               {(() => {
