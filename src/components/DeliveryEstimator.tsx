@@ -90,6 +90,9 @@ const DeliveryEstimator = () => {
       const distanceMiles = element.distance.value / 1609.34;
       if (distanceMiles > MAX_MILES) {
         setError("That address is outside our delivery area. Call us for options.");
+        setOutOfAreaAddress(address);
+        setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
+        setShowOutOfAreaModal(true);
         setLoading(false); return;
       }
 
