@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -142,7 +142,7 @@ const Leads = () => {
   // PIT simulator — DB-backed
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "" });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
@@ -150,6 +150,9 @@ const Leads = () => {
   const [geocoding, setGeocoding] = useState(false);
   const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
   const pitInputRef = useRef<HTMLInputElement>(null);
+  const editPitInputRef = useRef<HTMLInputElement>(null);
+  const addPitAutocompleteRef = useRef<any>(null);
+  const editPitAutocompleteRef = useRef<any>(null);
 
   // PIT edit mode
   const [editingPitId, setEditingPitId] = useState<string | null>(null);
@@ -455,19 +458,25 @@ const Leads = () => {
   const addPit = async () => {
     if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     setGeocoding(true);
-    const coords = await geocodeAddress(newPit.address);
-    if (!coords) { toast({ title: "Geocode failed", description: "Could not find coordinates for that address", variant: "destructive" }); setGeocoding(false); return; }
+    let lat = newPit.lat;
+    let lon = newPit.lon;
+    if (lat == null || lon == null) {
+      const coords = await geocodeAddress(newPit.address);
+      if (!coords) { toast({ title: "Geocode failed", description: "Could not find coordinates for that address", variant: "destructive" }); setGeocoding(false); return; }
+      lat = coords.lat;
+      lon = coords.lon;
+    }
     try {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat: coords.lat, lon: coords.lon, status: newPit.status, notes: newPit.notes },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance },
         },
       });
       if (fnError) throw fnError;
       if (data?.pit) setPits(prev => [...prev, data.pit]);
-      setNewPit({ name: "", address: "", status: "planning", notes: "" });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -529,11 +538,11 @@ const Leads = () => {
     }
     setSavingPit(true);
     try {
-      // Geocode if address changed
       const originalPit = pits.find(p => p.id === editingPitId);
       let lat = editPitData.lat!;
       let lon = editPitData.lon!;
-      if (originalPit && editPitData.address !== originalPit.address) {
+      // Only geocode if address changed AND coords weren't already updated by Places autocomplete
+      if (originalPit && editPitData.address !== originalPit.address && (lat === originalPit.lat && lon === originalPit.lon)) {
         const coords = await geocodeAddress(editPitData.address!);
         if (!coords) { toast({ title: "Geocode failed", variant: "destructive" }); setSavingPit(false); return; }
         lat = coords.lat;
@@ -564,6 +573,58 @@ const Leads = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSavingPit(false);
+    }
+  };
+
+  // Google Places Autocomplete for Add PIT
+  useEffect(() => {
+    if (!showAddPit || !pitInputRef.current || !window.google?.maps?.places) return;
+    if (addPitAutocompleteRef.current) return;
+    const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, {
+      types: ["address"],
+      fields: ["formatted_address", "geometry"],
+    });
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (place?.geometry?.location) {
+        setNewPit(prev => ({
+          ...prev,
+          address: place.formatted_address || prev.address,
+          lat: place.geometry!.location.lat(),
+          lon: place.geometry!.location.lng(),
+        }));
+      }
+    });
+    addPitAutocompleteRef.current = ac;
+    return () => { addPitAutocompleteRef.current = null; };
+  }, [showAddPit]);
+
+  // Google Places Autocomplete for Edit PIT
+  useEffect(() => {
+    if (!editingPitId || !editPitInputRef.current || !window.google?.maps?.places) return;
+    if (editPitAutocompleteRef.current) return;
+    const ac = new window.google.maps.places.Autocomplete(editPitInputRef.current, {
+      types: ["address"],
+      fields: ["formatted_address", "geometry"],
+    });
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (place?.geometry?.location) {
+        setEditPitData(prev => ({
+          ...prev,
+          address: place.formatted_address || prev.address,
+          lat: place.geometry!.location.lat(),
+          lon: place.geometry!.location.lng(),
+        }));
+      }
+    });
+    editPitAutocompleteRef.current = ac;
+    return () => { editPitAutocompleteRef.current = null; };
+  }, [editingPitId]);
+
+  const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
+    if (value != null && !isNaN(value)) {
+      setter({ ...current, [field]: Math.round(value * 100) / 100 });
     }
   };
 
@@ -1205,7 +1266,15 @@ const Leads = () => {
                       <div key={p.id} className="border-2 rounded-lg p-4 flex-1 min-w-[280px]" style={{ borderColor: BRAND_GOLD }}>
                         <div className="space-y-3">
                           <Input placeholder="PIT Name" value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
-                          <Input placeholder="PIT Address" value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value })} />
+                          <div className="relative">
+                            <Input ref={editPitInputRef} placeholder="PIT Address" value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
+                            {editPitData.lat != null && editPitData.lat !== pits.find(pp => pp.id === editingPitId)?.lat && (
+                              <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />
+                            )}
+                            {editPitData.address && editPitData.address !== pits.find(pp => pp.id === editingPitId)?.address && editPitData.lat === pits.find(pp => pp.id === editingPitId)?.lat && (
+                              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
+                            )}
+                          </div>
                           <select
                             value={editPitData.status || "active"}
                             onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })}
@@ -1221,9 +1290,10 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Base price</label>
                                 <Input
-                                  placeholder="Enter base price"
+                                  placeholder="e.g. 195.00"
                                   value={editPitData.base_price ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })}
+                                  onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)}
                                   type="number"
                                   className="h-8 text-sm"
                                 />
@@ -1231,7 +1301,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Free miles</label>
                                 <Input
-                                  placeholder="Enter free miles"
+                                  placeholder="e.g. 15"
                                   value={editPitData.free_miles ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
@@ -1241,9 +1311,10 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Extra per mile</label>
                                 <Input
-                                  placeholder="Enter price per mile"
+                                  placeholder="e.g. 5.00"
                                   value={editPitData.price_per_extra_mile ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
+                                  onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)}
                                   type="number"
                                   className="h-8 text-sm"
                                 />
@@ -1251,7 +1322,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Max distance</label>
                                 <Input
-                                  placeholder="Enter max distance"
+                                  placeholder="e.g. 30"
                                   value={editPitData.max_distance ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
@@ -1317,7 +1388,13 @@ const Leads = () => {
                 <div className="mt-4 p-4 border rounded-lg bg-gray-50">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input placeholder="PIT Name" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
-                    <Input ref={pitInputRef} placeholder="PIT Address" value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value })} />
+                    <div className="relative">
+                      <Input ref={pitInputRef} placeholder="PIT Address" value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
+                      {newPit.lat != null && <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />}
+                      {newPit.address && newPit.lat == null && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
+                      )}
+                    </div>
                     <select
                       value={newPit.status}
                       onChange={e => setNewPit({ ...newPit, status: e.target.value as any })}
@@ -1328,6 +1405,53 @@ const Leads = () => {
                       <option value="inactive">Inactive</option>
                     </select>
                     <Input placeholder="Notes" value={newPit.notes} onChange={e => setNewPit({ ...newPit, notes: e.target.value })} />
+                  </div>
+                  <div className="border-t mt-3 pt-3">
+                    <p className="text-xs font-bold mb-2" style={{ color: BRAND_NAVY }}>Pricing Overrides (leave blank to use global)</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div>
+                        <label className="text-xs text-gray-400">Base price</label>
+                        <Input
+                          placeholder="e.g. 195.00"
+                          value={newPit.base_price ?? ""}
+                          onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })}
+                          onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400">Free miles</label>
+                        <Input
+                          placeholder="e.g. 15"
+                          value={newPit.free_miles ?? ""}
+                          onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400">Extra per mile</label>
+                        <Input
+                          placeholder="e.g. 5.00"
+                          value={newPit.price_per_extra_mile ?? ""}
+                          onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
+                          onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400">Max distance</label>
+                        <Input
+                          placeholder="e.g. 30"
+                          value={newPit.max_distance ?? ""}
+                          onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-2 mt-3">
                     <Button onClick={addPit} disabled={geocoding} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
