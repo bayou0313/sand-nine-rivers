@@ -576,6 +576,58 @@ const Leads = () => {
     }
   };
 
+  // Google Places Autocomplete for Add PIT
+  useEffect(() => {
+    if (!showAddPit || !pitInputRef.current || !window.google?.maps?.places) return;
+    if (addPitAutocompleteRef.current) return;
+    const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, {
+      types: ["address"],
+      fields: ["formatted_address", "geometry"],
+    });
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (place?.geometry?.location) {
+        setNewPit(prev => ({
+          ...prev,
+          address: place.formatted_address || prev.address,
+          lat: place.geometry!.location.lat(),
+          lon: place.geometry!.location.lng(),
+        }));
+      }
+    });
+    addPitAutocompleteRef.current = ac;
+    return () => { addPitAutocompleteRef.current = null; };
+  }, [showAddPit]);
+
+  // Google Places Autocomplete for Edit PIT
+  useEffect(() => {
+    if (!editingPitId || !editPitInputRef.current || !window.google?.maps?.places) return;
+    if (editPitAutocompleteRef.current) return;
+    const ac = new window.google.maps.places.Autocomplete(editPitInputRef.current, {
+      types: ["address"],
+      fields: ["formatted_address", "geometry"],
+    });
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (place?.geometry?.location) {
+        setEditPitData(prev => ({
+          ...prev,
+          address: place.formatted_address || prev.address,
+          lat: place.geometry!.location.lat(),
+          lon: place.geometry!.location.lng(),
+        }));
+      }
+    });
+    editPitAutocompleteRef.current = ac;
+    return () => { editPitAutocompleteRef.current = null; };
+  }, [editingPitId]);
+
+  const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
+    if (value != null && !isNaN(value)) {
+      setter({ ...current, [field]: Math.round(value * 100) / 100 });
+    }
+  };
+
   // Simulation data
   const simData = useMemo(() => {
     if (!selectedPit) return [];
