@@ -171,7 +171,7 @@ const Leads = () => {
 
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "" });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
