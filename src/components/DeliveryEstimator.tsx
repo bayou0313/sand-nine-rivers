@@ -105,6 +105,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
   }, [prefillAddress, apiLoaded]);
 
 
+  const calculateDistance = useCallback(async () => {
     if (!address.trim()) { setError("Please enter a delivery address."); return; }
     setLoading(true); setError(""); setResult(null); setMatchedEffective(null);
 
