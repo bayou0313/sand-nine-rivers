@@ -59,6 +59,30 @@ export type Database = {
         }
         Relationships: []
       }
+      global_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           confirmation_token: string
@@ -186,6 +210,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pits: {
+        Row: {
+          address: string
+          base_price: number | null
+          created_at: string
+          free_miles: number | null
+          id: string
+          is_default: boolean
+          lat: number
+          lon: number
+          max_distance: number | null
+          name: string
+          notes: string | null
+          price_per_extra_mile: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          base_price?: number | null
+          created_at?: string
+          free_miles?: number | null
+          id?: string
+          is_default?: boolean
+          lat: number
+          lon: number
+          max_distance?: number | null
+          name: string
+          notes?: string | null
+          price_per_extra_mile?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          base_price?: number | null
+          created_at?: string
+          free_miles?: number | null
+          id?: string
+          is_default?: boolean
+          lat?: number
+          lon?: number
+          max_distance?: number | null
+          name?: string
+          notes?: string | null
+          price_per_extra_mile?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
