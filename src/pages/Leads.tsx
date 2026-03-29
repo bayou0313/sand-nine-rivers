@@ -245,6 +245,19 @@ const Leads = () => {
   const [seoAuditResults, setSeoAuditResults] = useState<any>(null);
   const [seoAuditing, setSeoAuditing] = useState(false);
 
+  // City pages state
+  const [cityPages, setCityPages] = useState<any[]>([]);
+  const [cityPagesLoading, setCityPagesLoading] = useState(false);
+  const [cityPageFilter, setCityPageFilter] = useState("all");
+  const [editingCityPage, setEditingCityPage] = useState<any | null>(null);
+  const [discoverPitId, setDiscoverPitId] = useState("");
+  const [discoveredCities, setDiscoveredCities] = useState<any[]>([]);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [showDiscoverModal, setShowDiscoverModal] = useState(false);
+  const [discoverChecked, setDiscoverChecked] = useState<Set<number>>(new Set());
+  const [creatingPages, setCreatingPages] = useState(false);
+  const [generatingContent, setGeneratingContent] = useState<string | null>(null);
+
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
     try {
