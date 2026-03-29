@@ -257,6 +257,8 @@ const Leads = () => {
   const [discoverChecked, setDiscoverChecked] = useState<Set<number>>(new Set());
   const [creatingPages, setCreatingPages] = useState(false);
   const [generatingContent, setGeneratingContent] = useState<string | null>(null);
+  const [selectedCityPages, setSelectedCityPages] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
@@ -1814,6 +1816,64 @@ const Leads = () => {
               </select>
             </div>
 
+            {/* Bulk Actions Bar */}
+            {selectedCityPages.size > 0 && (
+              <div className="mb-4 flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: BRAND_NAVY + "08", borderColor: BRAND_NAVY + "20" }}>
+                <span className="text-sm font-bold" style={{ color: BRAND_NAVY }}>{selectedCityPages.size} selected</span>
+                <button
+                  onClick={() => setShowBulkDeleteConfirm(true)}
+                  className="text-xs px-3 py-1.5 rounded border font-bold hover:bg-red-50"
+                  style={{ borderColor: "#EF444440", color: "#EF4444" }}
+                >Delete Selected</button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await supabase.functions.invoke("leads-auth", {
+                        body: { password: storedPassword(), action: "deactivate_city_pages", ids: Array.from(selectedCityPages) },
+                      });
+                      toast({ title: `${selectedCityPages.size} pages deactivated` });
+                      setSelectedCityPages(new Set());
+                      fetchCityPages();
+                    } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+                  }}
+                  className="text-xs px-3 py-1.5 rounded border font-bold hover:bg-amber-50"
+                  style={{ borderColor: "#F59E0B40", color: "#F59E0B" }}
+                >Deactivate Selected</button>
+                <button
+                  onClick={() => setSelectedCityPages(new Set())}
+                  className="text-xs px-3 py-1.5 rounded border hover:bg-gray-50"
+                  style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}
+                >Clear Selection</button>
+              </div>
+            )}
+
+            {/* Bulk Delete Confirmation Modal */}
+            {showBulkDeleteConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Delete {selectedCityPages.size} city pages?</h3>
+                  <p className="text-sm text-gray-600">This cannot be undone. All selected pages and their content will be permanently deleted.</p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setShowBulkDeleteConfirm(false)}>Cancel</Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      onClick={async () => {
+                        try {
+                          const { data } = await supabase.functions.invoke("leads-auth", {
+                            body: { password: storedPassword(), action: "delete_city_pages", ids: Array.from(selectedCityPages) },
+                          });
+                          toast({ title: `${data?.deleted || selectedCityPages.size} pages deleted` });
+                          setSelectedCityPages(new Set());
+                          setShowBulkDeleteConfirm(false);
+                          fetchCityPages();
+                        } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+                      }}
+                    >Confirm Delete</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Table */}
             <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
               {cityPagesLoading ? (
@@ -1822,6 +1882,20 @@ const Leads = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      <th className="px-3 py-2 text-left">
+                        <input
+                          type="checkbox"
+                          checked={filteredCityPages.length > 0 && filteredCityPages.every((cp: any) => selectedCityPages.has(cp.id))}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setSelectedCityPages(new Set(filteredCityPages.map((cp: any) => cp.id)));
+                            } else {
+                              setSelectedCityPages(new Set());
+                            }
+                          }}
+                          className="rounded"
+                        />
+                      </th>
                       {["City", "State", "URL", "PIT", "Distance", "Price", "Status", "Views", "Actions"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
                       ))}
@@ -1829,7 +1903,19 @@ const Leads = () => {
                   </thead>
                   <tbody>
                     {filteredCityPages.map((cp: any, i: number) => (
-                      <tr key={cp.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                      <tr key={cp.id} style={{ backgroundColor: selectedCityPages.has(cp.id) ? BRAND_GOLD + "10" : i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedCityPages.has(cp.id)}
+                            onChange={e => {
+                              const next = new Set(selectedCityPages);
+                              e.target.checked ? next.add(cp.id) : next.delete(cp.id);
+                              setSelectedCityPages(next);
+                            }}
+                            className="rounded"
+                          />
+                        </td>
                         <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
                         <td className="px-3 py-2 text-xs">
@@ -1864,7 +1950,7 @@ const Leads = () => {
                       </tr>
                     ))}
                     {filteredCityPages.length === 0 && (
-                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
+                      <tr><td colSpan={10} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
                     )}
                   </tbody>
                 </table>

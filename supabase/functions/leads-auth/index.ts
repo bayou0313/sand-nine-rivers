@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { password, action, id, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id } = await req.json();
+    const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id } = await req.json();
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
@@ -669,6 +669,46 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, created_ids: created, count: created.length, generated, failed }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── BULK DELETE CITY PAGES ──
+    if (action === "delete_city_pages") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return new Response(JSON.stringify({ error: "Missing ids array" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error, count } = await supabase.from("city_pages").delete().in("id", ids);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ success: true, deleted: count || ids.length }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── RESET ALL CITY PAGES ──
+    if (action === "reset_city_pages") {
+      const { error: delErr, count } = await supabase.from("city_pages").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (delErr) throw delErr;
+      const { error: pitErr } = await supabase.from("pits").update({ served_cities: null }).neq("id", "00000000-0000-0000-0000-000000000000");
+      if (pitErr) throw pitErr;
+      return new Response(
+        JSON.stringify({ success: true, deleted: count || 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── BULK TOGGLE CITY PAGES ──
+    if (action === "deactivate_city_pages") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return new Response(JSON.stringify({ error: "Missing ids array" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error } = await supabase.from("city_pages").update({ status: "inactive" }).in("id", ids);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
