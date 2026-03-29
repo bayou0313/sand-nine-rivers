@@ -26,6 +26,9 @@ export type Database = {
           id: string
           ip_address: string | null
           lead_number: string | null
+          nearest_pit_distance: number | null
+          nearest_pit_id: string | null
+          nearest_pit_name: string | null
           notes: string | null
           stage: string | null
         }
@@ -40,6 +43,9 @@ export type Database = {
           id?: string
           ip_address?: string | null
           lead_number?: string | null
+          nearest_pit_distance?: number | null
+          nearest_pit_id?: string | null
+          nearest_pit_name?: string | null
           notes?: string | null
           stage?: string | null
         }
@@ -54,6 +60,9 @@ export type Database = {
           id?: string
           ip_address?: string | null
           lead_number?: string | null
+          nearest_pit_distance?: number | null
+          nearest_pit_id?: string | null
+          nearest_pit_name?: string | null
           notes?: string | null
           stage?: string | null
         }

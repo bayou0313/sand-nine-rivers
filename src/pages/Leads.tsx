@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -43,6 +43,9 @@ interface Lead {
   stage: string;
   ip_address: string | null;
   notes: string | null;
+  nearest_pit_name: string | null;
+  nearest_pit_id: string | null;
+  nearest_pit_distance: number | null;
 }
 
 interface ParsedLead extends Lead {
@@ -99,7 +102,7 @@ const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage";
+type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
@@ -153,11 +156,19 @@ const Leads = () => {
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
 
-  // Proposal modal
+  // Bulk proposal modal (PIT sim)
   const [showProposal, setShowProposal] = useState(false);
   const [proposalSubject, setProposalSubject] = useState("");
   const [sendingProposals, setSendingProposals] = useState(false);
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
+
+  // Quick Proposal Modal
+  const [quickProposalLead, setQuickProposalLead] = useState<ParsedLead | null>(null);
+  const [qpPitId, setQpPitId] = useState<string>("");
+  const [qpPrice, setQpPrice] = useState("");
+  const [qpNote, setQpNote] = useState("");
+  const [qpSending, setQpSending] = useState(false);
+  const [qpShowPreview, setQpShowPreview] = useState(false);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
 
@@ -628,7 +639,94 @@ const Leads = () => {
     await fetchLeads(storedPassword());
   };
 
-  // Stage badge
+  // Quick Proposal functions
+  const openQuickProposal = (lead: ParsedLead) => {
+    setQuickProposalLead(lead);
+    const defaultPitId = lead.nearest_pit_id || pits.find(p => p.is_default)?.id || "";
+    setQpPitId(defaultPitId);
+    // Calculate price for default PIT
+    const pit = pits.find(p => p.id === defaultPitId);
+    if (pit && lead.nearest_pit_distance != null) {
+      const eff = getEffectivePrice(pit, globalSettings);
+      const dist = lead.nearest_pit_distance;
+      const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
+      setQpPrice((eff.base_price + extra).toFixed(2));
+    } else {
+      setQpPrice(basePrice.toFixed(2));
+    }
+    setQpNote("");
+    setQpShowPreview(false);
+  };
+
+  const qpSelectedPit = useMemo(() => pits.find(p => p.id === qpPitId), [pits, qpPitId]);
+
+  const qpDistance = useMemo(() => {
+    if (!quickProposalLead || !qpSelectedPit) return null;
+    // If this is the same as nearest_pit, use stored distance
+    if (quickProposalLead.nearest_pit_id === qpPitId && quickProposalLead.nearest_pit_distance != null) {
+      return quickProposalLead.nearest_pit_distance;
+    }
+    // Otherwise calculate from geocache
+    const cached = geocodeCache[quickProposalLead.address];
+    if (!cached) return null;
+    return haversine(qpSelectedPit.lat, qpSelectedPit.lon, cached.lat, cached.lon);
+  }, [quickProposalLead, qpSelectedPit, qpPitId, geocodeCache]);
+
+  // Recalculate price when PIT changes
+  useEffect(() => {
+    if (!qpSelectedPit || qpDistance == null) return;
+    const eff = getEffectivePrice(qpSelectedPit, globalSettings);
+    const extra = qpDistance > eff.free_miles ? (qpDistance - eff.free_miles) * eff.extra_per_mile : 0;
+    setQpPrice((eff.base_price + extra).toFixed(2));
+  }, [qpPitId, qpDistance, globalSettings]);
+
+  const qpOrderUrl = useMemo(() => {
+    if (!quickProposalLead) return "";
+    const { zip } = parseAddress(quickProposalLead.address);
+    return `https://riversand.net/order?address=${encodeURIComponent(quickProposalLead.address)}&price=${qpPrice}&zip=${zip}&lead=${encodeURIComponent(quickProposalLead.lead_number || "")}&utm_source=proposal&utm_medium=email&utm_campaign=direct_offer`;
+  }, [quickProposalLead, qpPrice]);
+
+  const sendQuickProposal = async () => {
+    if (!quickProposalLead?.customer_email) return;
+    setQpSending(true);
+    try {
+      const { zip } = parseAddress(quickProposalLead.address);
+      await supabase.functions.invoke("send-email", {
+        body: {
+          type: "pit_proposal",
+          data: {
+            lead_number: quickProposalLead.lead_number,
+            customer_name: quickProposalLead.customer_name,
+            customer_email: quickProposalLead.customer_email,
+            delivery_address: quickProposalLead.address,
+            zip_code: zip,
+            new_price: qpPrice,
+            pit_name: qpSelectedPit?.name || "HQ",
+            order_url: qpOrderUrl,
+            custom_note: qpNote.trim() || undefined,
+          },
+        },
+      });
+      // Update lead stage + contacted + note
+      await updateStage(quickProposalLead.id, "quoted");
+      if (!quickProposalLead.contacted) {
+        await supabase.functions.invoke("leads-auth", {
+          body: { password: storedPassword(), action: "toggle_contacted", id: quickProposalLead.id },
+        });
+      }
+      const timestamp = new Date().toLocaleString("en-US");
+      await appendNote(quickProposalLead.id, `Offer sent ${timestamp} from ${qpSelectedPit?.name || "HQ"} at $${qpPrice}. Order link: ${qpOrderUrl}`);
+      // Update local state
+      setLeads(prev => prev.map(l => l.id === quickProposalLead.id ? { ...l, stage: "quoted", contacted: true } : l));
+      toast({ title: `Offer sent to ${quickProposalLead.customer_email}` });
+      setQuickProposalLead(null);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setQpSending(false);
+    }
+  };
+
   const StageBadge = ({ stage }: { stage: string }) => (
     <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: STAGE_COLORS[stage] || "#999" }}>
       {stage.toUpperCase()}
@@ -713,11 +811,13 @@ const Leads = () => {
             <TH col="state" label="State" />
             <TH col="zip" label="ZIP" />
             <TH col="distance_miles" label="Miles" />
+            <TH col="nearest_pit_name" label="Nearest PIT" />
             <TH col="customer_name" label="Name" />
             <TH col="customer_email" label="Email" />
             <TH col="customer_phone" label="Phone" />
             {showStage && <TH col="stage" label="Stage" />}
             <TH col="contacted" label="Contacted" />
+            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: BRAND_NAVY, color: "white" }}>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -736,12 +836,26 @@ const Leads = () => {
               <td className="px-3 py-2 text-xs">{l.state}</td>
               <td className="px-3 py-2 text-xs">{l.zip}</td>
               <td className="px-3 py-2 text-xs">{l.distance_miles ? `${l.distance_miles.toFixed(1)} mi` : "—"}</td>
+              <td className="px-3 py-2 text-xs">{l.nearest_pit_name ? `${l.nearest_pit_name} (${l.nearest_pit_distance?.toFixed(1)} mi)` : "—"}</td>
               <td className="px-3 py-2 text-xs font-medium">{l.customer_name}</td>
               <td className="px-3 py-2 text-xs">{l.customer_email || "—"}</td>
               <td className="px-3 py-2 text-xs">{l.customer_phone || "—"}</td>
               {showStage && <td className="px-3 py-2"><StageBadge stage={l.stage} /></td>}
               <td className="px-3 py-2">
                 <ContactedBadge contacted={l.contacted} onClick={() => toggleContacted(l.id)} loading={toggling === l.id} />
+              </td>
+              <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
+                {l.customer_email ? (
+                  <button
+                    onClick={() => openQuickProposal(l)}
+                    className="px-2 py-1 rounded text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+                    style={{ border: `1px solid ${BRAND_GOLD}`, color: BRAND_GOLD }}
+                  >
+                    <Send className="w-3 h-3" /> Send Offer
+                  </button>
+                ) : (
+                  <span className="text-xs text-gray-400">No email</span>
+                )}
               </td>
             </tr>
           ))}
@@ -1455,6 +1569,111 @@ const Leads = () => {
                 </Button>
                 <Button onClick={() => setShowProposal(false)} disabled={sendingProposals} variant="outline">Cancel</Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Proposal Modal */}
+      {quickProposalLead && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !qpSending && setQuickProposalLead(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
+              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Send Delivery Offer</h2>
+              <p className="text-white/60 text-sm">{quickProposalLead.lead_number || "—"} — {quickProposalLead.customer_name}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Delivery address</label>
+                <p className="text-sm font-medium bg-gray-50 p-2 rounded border">{quickProposalLead.address}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Select PIT</label>
+                <select
+                  value={qpPitId}
+                  onChange={e => setQpPitId(e.target.value)}
+                  className="w-full h-10 px-3 rounded-md border text-sm"
+                >
+                  {pits.filter(p => p.status === "active").map(p => {
+                    const dist = quickProposalLead.nearest_pit_id === p.id && quickProposalLead.nearest_pit_distance != null
+                      ? quickProposalLead.nearest_pit_distance.toFixed(1)
+                      : geocodeCache[quickProposalLead.address]
+                        ? haversine(p.lat, p.lon, geocodeCache[quickProposalLead.address].lat, geocodeCache[quickProposalLead.address].lon).toFixed(1)
+                        : "?";
+                    return <option key={p.id} value={p.id}>{p.name} — {dist} mi away</option>;
+                  })}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Price (editable)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl" style={{ color: BRAND_GOLD }}>$</span>
+                  <input
+                    type="number"
+                    value={qpPrice}
+                    onChange={e => setQpPrice(e.target.value)}
+                    className="w-full h-14 pl-10 text-center text-2xl font-bold rounded-lg border-2"
+                    style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}
+                    step="0.01"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Custom note (optional)</label>
+                <Textarea
+                  value={qpNote}
+                  onChange={e => setQpNote(e.target.value)}
+                  placeholder="Add a personal note... (e.g. We're expanding to your area soon!)"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Order link</label>
+                <p className="text-xs font-mono bg-gray-50 p-2 rounded border truncate" title={qpOrderUrl}>{qpOrderUrl}</p>
+              </div>
+              <button onClick={() => setQpShowPreview(!qpShowPreview)} className="text-xs flex items-center gap-1" style={{ color: BRAND_GOLD }}>
+                {qpShowPreview ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} Preview email
+              </button>
+              {qpShowPreview && (
+                <div className="bg-gray-50 rounded-lg p-4 border text-sm space-y-2">
+                  <p>Hi {quickProposalLead.customer_name.split(" ")[0]},</p>
+                  <p>Good news — River Sand now delivers near {quickProposalLead.zip}!</p>
+                  <div className="border-2 rounded-lg p-4 text-center" style={{ borderColor: BRAND_GOLD }}>
+                    <p className="text-xs uppercase text-gray-500">River Sand — 9 Cubic Yards</p>
+                    <p className="text-xs text-gray-400">Delivered to: {quickProposalLead.address}</p>
+                    <p className="text-2xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${qpPrice}</p>
+                  </div>
+                  {qpNote && <p className="bg-yellow-50 p-3 rounded border-l-4" style={{ borderColor: BRAND_GOLD }}>{qpNote}</p>}
+                </div>
+              )}
+              <Button onClick={sendQuickProposal} disabled={qpSending || !quickProposalLead.customer_email} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                {qpSending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Send Offer
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => { navigator.clipboard.writeText(qpOrderUrl); toast({ title: "Order link copied!" }); }}
+                >
+                  <Copy className="w-3 h-3 mr-1" /> Copy Link
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  style={{ borderColor: "#22C55E30", color: "#22C55E" }}
+                  onClick={() => {
+                    const msg = `Hi ${quickProposalLead.customer_name.split(" ")[0]}, River Sand can deliver to your area! Here is your quote:\n\nRiver Sand — 9 Cubic Yards\nDelivered to: ${quickProposalLead.address}\nYour price: $${qpPrice}\n\nOrder here (address pre-filled):\n${qpOrderUrl}\n\nQuestions? Call 1-855-GOT-WAYS`;
+                    const phone = quickProposalLead.customer_phone?.replace(/\D/g, "") || "";
+                    window.open(`https://wa.me/${phone ? "1" + phone : ""}?text=${encodeURIComponent(msg)}`, "_blank");
+                  }}
+                >
+                  <MessageCircle className="w-3 h-3 mr-1" /> WhatsApp
+                </Button>
+              </div>
+              <button onClick={() => setQuickProposalLead(null)} className="w-full text-center text-sm text-gray-400 hover:text-gray-600">Cancel</button>
             </div>
           </div>
         </div>

@@ -376,6 +376,9 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
 
     } else if (type === "pit_proposal") {
       const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const customNoteHtml = data.custom_note
+        ? `<p style="font-size:15px;color:#555;line-height:1.6;background:#FFF8E7;padding:16px;border-radius:8px;border-left:4px solid ${BRAND_GOLD};margin:16px 0">${data.custom_note}</p>`
+        : "";
       const proposalHtml = emailWrapper(`
         <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
         <p style="font-size:16px;color:#555;line-height:1.6">Good news — <strong>River Sand now delivers near ${data.zip_code || "your area"}</strong>!</p>
@@ -386,6 +389,8 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
           <p style="margin:16px 0 0;font-size:32px;font-weight:700;color:${BRAND_GOLD}">$${Number(data.new_price || 195).toFixed(2)}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#999">Your price, delivered</p>
         </div>
+
+        ${customNoteHtml}
 
         <div style="text-align:center;margin:24px 0">
           <a href="${data.order_url || "https://riversand.net/order"}" style="display:inline-block;background:${BRAND_GOLD};color:#fff!important;padding:16px 48px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:1px">ORDER NOW — $${Number(data.new_price || 195).toFixed(2)} DELIVERED</a>

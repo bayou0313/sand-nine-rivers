@@ -12,6 +12,7 @@ interface OutOfAreaModalProps {
   onClose: () => void;
   address: string;
   distanceMiles: number;
+  nearestPit?: { id: string; name: string; distance: number } | null;
 }
 
 function formatPhone(value: string): string {
@@ -21,7 +22,7 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-const OutOfAreaModal = ({ open, onClose, address, distanceMiles }: OutOfAreaModalProps) => {
+const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: OutOfAreaModalProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -34,14 +35,21 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles }: OutOfAreaModa
     setSubmitting(true);
 
     try {
-      const { error } = await supabase.from("delivery_leads").insert({
+      const insertData: any = {
         address,
         distance_miles: parseFloat(distanceMiles.toFixed(1)),
         customer_name: name.trim(),
         customer_email: email.trim() || null,
         customer_phone: phone.trim() || null,
-      });
+      };
 
+      if (nearestPit) {
+        insertData.nearest_pit_id = nearestPit.id;
+        insertData.nearest_pit_name = nearestPit.name;
+        insertData.nearest_pit_distance = parseFloat(nearestPit.distance.toFixed(1));
+      }
+
+      const { error } = await supabase.from("delivery_leads").insert(insertData as any);
       if (error) throw error;
 
       // Send email notification (fire-and-forget)
@@ -88,35 +96,15 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles }: OutOfAreaModa
         <div className="space-y-4 pt-2">
           <div>
             <Label htmlFor="lead-name">Name *</Label>
-            <Input
-              id="lead-name"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-            />
+            <Input id="lead-name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
           </div>
           <div>
             <Label htmlFor="lead-email">Email</Label>
-            <Input
-              id="lead-email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              maxLength={255}
-            />
+            <Input id="lead-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} />
           </div>
           <div>
             <Label htmlFor="lead-phone">Phone</Label>
-            <Input
-              id="lead-phone"
-              type="tel"
-              placeholder="(xxx) xxx-xxxx"
-              value={phone}
-              onChange={(e) => setPhone(formatPhone(e.target.value))}
-              maxLength={14}
-            />
+            <Input id="lead-phone" type="tel" placeholder="(xxx) xxx-xxxx" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} maxLength={14} />
           </div>
           <p className="text-xs text-muted-foreground">* At least one of email or phone is required.</p>
 
