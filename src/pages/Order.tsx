@@ -453,6 +453,7 @@ const Order = () => {
     same_day_requested: selectedDeliveryDate!.isSameDay,
     tax_rate: taxInfo.rate,
     tax_amount: taxAmount,
+    ...(leadReference ? { lead_reference: leadReference } : {}),
   });
 
   const handleCodSubmit = async () => {
