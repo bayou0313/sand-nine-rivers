@@ -24,7 +24,11 @@ type EstimateResult = {
   address: string;
 } | null;
 
-const DeliveryEstimator = () => {
+interface DeliveryEstimatorProps {
+  prefillAddress?: string | null;
+}
+
+const DeliveryEstimator = ({ prefillAddress }: DeliveryEstimatorProps = {}) => {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EstimateResult>(null);
