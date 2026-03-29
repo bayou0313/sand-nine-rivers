@@ -124,7 +124,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
   {
     section: "EXPANSION",
     items: [
-      { id: "pit", label: "PIT Simulator", icon: Zap },
+      { id: "pit", label: "PIT", icon: Zap },
       { id: "all", label: "All Leads", icon: Users },
     ],
   },
@@ -185,6 +185,15 @@ const Leads = () => {
   const [editingPitId, setEditingPitId] = useState<string | null>(null);
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Activation modal state
+  const [activationLeads, setActivationLeads] = useState<Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }>>([]);
+  const [showActivationModal, setShowActivationModal] = useState(false);
+  const [activationPit, setActivationPit] = useState<Pit | null>(null);
+  const [activationChecked, setActivationChecked] = useState<Set<string>>(new Set());
+  const [activationSending, setActivationSending] = useState(false);
+  const [activationProgress, setActivationProgress] = useState({ current: 0, total: 0 });
 
   const [showProposal, setShowProposal] = useState(false);
   const [proposalSubject, setProposalSubject] = useState("");
@@ -524,6 +533,79 @@ const Leads = () => {
     return null;
   };
 
+  const checkActivationLeads = (pit: Pit) => {
+    const eff = getEffectivePrice(pit, globalSettings);
+    const reachable: Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }> = [];
+    for (const l of parsedLeads) {
+      const cached = geocodeCache[l.address];
+      if (!cached) continue;
+      const dist = haversine(pit.lat, pit.lon, cached.lat, cached.lon);
+      if (dist <= eff.max_distance) {
+        const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
+        const price = eff.base_price + extra;
+        reachable.push({ lead: l, distance: dist, price, hasEmail: !!l.customer_email });
+      }
+    }
+    if (reachable.length === 0) {
+      toast({ title: "PIT activated. No leads in range." });
+      return;
+    }
+    setActivationPit(pit);
+    setActivationLeads(reachable);
+    const checkedSet = new Set(reachable.filter(r => r.hasEmail).map(r => r.lead.id));
+    setActivationChecked(checkedSet);
+    setShowActivationModal(true);
+  };
+
+  const sendActivationProposals = async () => {
+    if (!activationPit) return;
+    const toSend = activationLeads.filter(r => activationChecked.has(r.lead.id) && r.hasEmail);
+    if (toSend.length === 0) { toast({ title: "No leads with email selected", variant: "destructive" }); return; }
+    setActivationSending(true);
+    setActivationProgress({ current: 0, total: toSend.length });
+    const pitSlug = activationPit.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    for (let i = 0; i < toSend.length; i++) {
+      const d = toSend[i];
+      const { zip } = parseAddress(d.lead.address);
+      const orderUrl = `https://riversand.net/order?address=${encodeURIComponent(d.lead.address)}&price=${d.price.toFixed(2)}&zip=${zip}&lead=${encodeURIComponent(d.lead.lead_number || "")}&utm_source=pit_activation&utm_medium=email&utm_campaign=${pitSlug}`;
+      try {
+        await supabase.functions.invoke("send-email", {
+          body: {
+            type: "pit_proposal",
+            data: {
+              lead_number: d.lead.lead_number,
+              customer_name: d.lead.customer_name,
+              customer_email: d.lead.customer_email,
+              delivery_address: d.lead.address,
+              zip_code: zip,
+              new_price: d.price.toFixed(2),
+              pit_name: activationPit.name,
+              order_url: orderUrl,
+              custom_note: "Great news — we now deliver to your area!",
+            },
+          },
+        });
+        await updateStage(d.lead.id, "quoted");
+        const timestamp = new Date().toLocaleString("en-US");
+        await appendNote(d.lead.id, `Auto-proposal sent ${timestamp} on PIT activation: ${activationPit.name} at $${d.price.toFixed(2)}. Link: ${orderUrl}`);
+        if (!d.lead.contacted) {
+          await supabase.functions.invoke("leads-auth", {
+            body: { password: storedPassword(), action: "toggle_contacted", id: d.lead.id },
+          });
+        }
+      } catch (err: any) {
+        console.error("Activation proposal error:", err);
+      }
+      setActivationProgress({ current: i + 1, total: toSend.length });
+    }
+    const skipped = activationLeads.filter(r => activationChecked.has(r.lead.id) && !r.hasEmail).length;
+    toast({ title: `${toSend.length} proposals sent${skipped > 0 ? ` · ${skipped} skipped (no email)` : ""}` });
+    setActivationSending(false);
+    setShowActivationModal(false);
+    setActivationLeads([]);
+    await fetchLeads(storedPassword());
+  };
+
   const addPit = async () => {
     if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     setGeocoding(true);
@@ -544,7 +626,12 @@ const Leads = () => {
         },
       });
       if (fnError) throw fnError;
-      if (data?.pit) setPits(prev => [...prev, data.pit]);
+      if (data?.pit) {
+        setPits(prev => [...prev, data.pit]);
+        if (newPit.status === "active") {
+          checkActivationLeads(data.pit);
+        }
+      }
       setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
@@ -583,7 +670,12 @@ const Leads = () => {
         body: { password: storedPassword(), action: "save_pit", pit: { ...pit, status: newStatus } },
       });
       if (fnError) throw fnError;
-      if (data?.pit) setPits(prev => prev.map(p => p.id === pit.id ? data.pit : p));
+      if (data?.pit) {
+        setPits(prev => prev.map(p => p.id === pit.id ? data.pit : p));
+        if (newStatus === "active") {
+          checkActivationLeads(data.pit);
+        }
+      }
       toast({ title: newStatus === "active" ? "PIT activated" : "PIT deactivated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -593,11 +685,13 @@ const Leads = () => {
   const startEditPit = (pit: Pit) => {
     setEditingPitId(pit.id);
     setEditPitData({ ...pit });
+    setShowDeleteConfirm(false);
   };
 
   const cancelEditPit = () => {
     setEditingPitId(null);
     setEditPitData({});
+    setShowDeleteConfirm(false);
   };
 
   const saveEditPit = async () => {
@@ -629,13 +723,21 @@ const Leads = () => {
         price_per_extra_mile: editPitData.price_per_extra_mile || null,
         max_distance: editPitData.max_distance || null,
       };
+      const wasActive = originalPit?.status === "active";
+      const nowActive = editPitData.status === "active";
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: { password: storedPassword(), action: "save_pit", pit: pitPayload },
       });
       if (fnError) throw fnError;
-      if (data?.pit) setPits(prev => prev.map(p => p.id === editingPitId ? data.pit : p));
+      if (data?.pit) {
+        setPits(prev => prev.map(p => p.id === editingPitId ? data.pit : p));
+        if (!wasActive && nowActive) {
+          checkActivationLeads(data.pit);
+        }
+      }
       setEditingPitId(null);
       setEditPitData({});
+      setShowDeleteConfirm(false);
       toast({ title: "PIT updated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -1031,7 +1133,7 @@ const Leads = () => {
     zip: { title: "ZIP INTELLIGENCE", subtitle: `${zipData.length} unique ZIPs tracked` },
     pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
     revenue: { title: "REVENUE FORECAST" },
-    pit: { title: "PIT SIMULATOR", subtitle: `${pits.length} locations` },
+    pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
     settings: { title: "GLOBAL SETTINGS" },
@@ -1270,57 +1372,6 @@ const Leads = () => {
                   const eff = getEffectivePrice(p, globalSettings);
                   const hasOverride = p.base_price != null || p.free_miles != null || p.price_per_extra_mile != null || p.max_distance != null;
 
-                  if (editingPitId === p.id) {
-                    return (
-                      <div key={p.id} className="border-2 rounded-xl p-4 flex-1 min-w-[280px]" style={{ borderColor: BRAND_GOLD }}>
-                        <div className="space-y-3">
-                          <Input placeholder="PIT Name" value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
-                          <div className="relative">
-                            <Input ref={editPitInputRef} placeholder="PIT Address" value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
-                            {editPitData.lat != null && editPitData.lat !== pits.find(pp => pp.id === editingPitId)?.lat && (
-                              <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />
-                            )}
-                            {editPitData.address && editPitData.address !== pits.find(pp => pp.id === editingPitId)?.address && editPitData.lat === pits.find(pp => pp.id === editingPitId)?.lat && (
-                              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
-                            )}
-                          </div>
-                          <select value={editPitData.status || "active"} onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })} className="w-full h-10 px-3 rounded-md border">
-                            <option value="active">Active</option>
-                            <option value="planning">Planning</option>
-                            <option value="inactive">Inactive</option>
-                          </select>
-                          <div className="border-t pt-3">
-                            <p className="text-xs font-bold mb-2" style={{ color: BRAND_NAVY }}>Pricing Overrides (leave blank to use global)</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-xs text-gray-400">Base price</label>
-                                <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-8 text-sm" />
-                              </div>
-                              <div>
-                                <label className="text-xs text-gray-400">Free miles</label>
-                                <Input placeholder="e.g. 15" value={editPitData.free_miles ?? ""} onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                              </div>
-                              <div>
-                                <label className="text-xs text-gray-400">Extra per mile</label>
-                                <Input placeholder="e.g. 5.00" value={editPitData.price_per_extra_mile ?? ""} onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)} type="number" className="h-8 text-sm" />
-                              </div>
-                              <div>
-                                <label className="text-xs text-gray-400">Max distance</label>
-                                <Input placeholder="e.g. 30" value={editPitData.max_distance ?? ""} onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button onClick={saveEditPit} disabled={savingPit} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                              {savingPit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
-                            </Button>
-                            <Button onClick={cancelEditPit} variant="outline" size="sm">Cancel</Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
                   return (
                     <div key={p.id} className="border rounded-xl p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : CARD_BORDER }}>
                       <div className="flex items-center justify-between mb-1">
@@ -1345,64 +1396,11 @@ const Leads = () => {
                           <Power className="w-3 h-3 mr-1" />
                           {p.status === "active" ? "Deactivate" : "Activate"}
                         </Button>
-                        {!p.is_default && (
-                          <Button size="sm" variant="outline" onClick={() => deletePit(p.id)} className="text-xs h-7 text-red-500 border-red-200">Delete</Button>
-                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-
-              {/* Add PIT form */}
-              {showAddPit && (
-                <div className="mt-4 p-4 border rounded-xl bg-gray-50" style={{ borderColor: CARD_BORDER }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input placeholder="PIT Name" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
-                    <div className="relative">
-                      <Input ref={pitInputRef} placeholder="PIT Address" value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
-                      {newPit.lat != null && <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />}
-                      {newPit.address && newPit.lat == null && (
-                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
-                      )}
-                    </div>
-                    <select value={newPit.status} onChange={e => setNewPit({ ...newPit, status: e.target.value as any })} className="h-10 px-3 rounded-md border">
-                      <option value="planning">Planning</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                    <Input placeholder="Notes" value={newPit.notes} onChange={e => setNewPit({ ...newPit, notes: e.target.value })} />
-                  </div>
-                  <div className="border-t mt-3 pt-3">
-                    <p className="text-xs font-bold mb-2" style={{ color: BRAND_NAVY }}>Pricing Overrides (leave blank to use global)</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      <div>
-                        <label className="text-xs text-gray-400">Base price</label>
-                        <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-8 text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-400">Free miles</label>
-                        <Input placeholder="e.g. 15" value={newPit.free_miles ?? ""} onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-400">Extra per mile</label>
-                        <Input placeholder="e.g. 5.00" value={newPit.price_per_extra_mile ?? ""} onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }} type="number" className="h-8 text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-400">Max distance</label>
-                        <Input placeholder="e.g. 30" value={newPit.max_distance ?? ""} onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button onClick={addPit} disabled={geocoding} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                      {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                      Add PIT
-                    </Button>
-                    <Button onClick={() => setShowAddPit(false)} variant="outline" size="sm">Cancel</Button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ROI Summary + Simulation Table */}
@@ -2046,6 +2044,340 @@ const Leads = () => {
                 </Button>
               </div>
               <button onClick={() => setQuickProposalLead(null)} className="w-full text-center text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ADD PIT MODAL ─── */}
+      {showAddPit && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-0" onClick={() => setShowAddPit(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto md:my-auto" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>Add New PIT</h2>
+                <p className="text-xs text-gray-500">Point of Dispatch — delivery origin</p>
+              </div>
+              <button onClick={() => setShowAddPit(false)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {/* Section 1 — Location */}
+              <div>
+                <p className="text-sm font-medium mb-3" style={{ color: BRAND_NAVY }}>Location</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
+                    <Input placeholder="e.g. Denham Springs Yard" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
+                    <div className="relative">
+                      <Input ref={pitInputRef} placeholder="Start typing an address..." value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
+                      {newPit.lat != null && <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />}
+                      {newPit.address && newPit.lat == null && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
+                    <select value={newPit.status} onChange={e => setNewPit({ ...newPit, status: e.target.value as any })} className="w-full h-10 px-3 rounded-md border text-sm">
+                      <option value="planning">Planning</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Notes (optional)</label>
+                    <Textarea placeholder="Internal notes" rows={3} value={newPit.notes} onChange={e => setNewPit({ ...newPit, notes: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+
+              {/* Section 2 — Pricing Overrides */}
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing Overrides</p>
+                <p className="text-xs text-gray-500 mb-3">Leave blank to use global defaults</p>
+                <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: "#F8F7F2", border: `1px solid ${CARD_BORDER}` }}>
+                  <p className="text-xs text-gray-500">
+                    Global defaults: ${globalSettings.default_base_price} base · {globalSettings.default_free_miles}mi free · ${globalSettings.default_extra_per_mile}/mi · {globalSettings.default_max_distance}mi max
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load</label>
+                    <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery radius (miles)</label>
+                    <Input placeholder="e.g. 15" value={newPit.free_miles ?? ""} onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Extra per mile</label>
+                    <Input placeholder="e.g. 5.00" value={newPit.price_per_extra_mile ?? ""} onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Max delivery distance (miles)</label>
+                    <Input placeholder="e.g. 30" value={newPit.max_distance ?? ""} onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+
+              {/* Section 3 — Live Price Preview */}
+              {(() => {
+                const effBase = newPit.base_price ?? parseFloat(globalSettings.default_base_price || "195");
+                const effFree = newPit.free_miles ?? parseFloat(globalSettings.default_free_miles || "15");
+                const effEpm = newPit.price_per_extra_mile ?? parseFloat(globalSettings.default_extra_per_mile || "5");
+                const effMax = newPit.max_distance ?? parseFloat(globalSettings.default_max_distance || "30");
+                const hasAnyOverride = newPit.base_price != null || newPit.free_miles != null || newPit.price_per_extra_mile != null || newPit.max_distance != null;
+                const at20 = 20 > effFree ? effBase + (20 - effFree) * effEpm : effBase;
+                const atMax = effMax > effFree ? effBase + (effMax - effFree) * effEpm : effBase;
+                return (
+                  <div>
+                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <div className="text-xs space-y-1" style={{ color: hasAnyOverride ? BRAND_GOLD : "#999" }}>
+                      <p>Within {effFree} mi: ${effBase.toFixed(2)}</p>
+                      <p>At 20 mi: ${at20.toFixed(2)}</p>
+                      <p>At {effMax} mi: ${atMax.toFixed(2)}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Section 4 — Activation Warning */}
+              {newPit.status === "active" && (
+                <div className="rounded-lg p-3 border" style={{ backgroundColor: "#FEF3C7", borderColor: "#F59E0B40" }}>
+                  <p className="text-xs" style={{ color: "#92400E" }}>
+                    <strong>⚠️ Active status:</strong> Setting status to Active will immediately make this PIT available for deliveries. If leads exist in this area, you will be prompted to send proposals automatically.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 flex flex-col gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+              <Button onClick={addPit} disabled={geocoding} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                Add PIT
+              </Button>
+              <Button onClick={() => setShowAddPit(false)} variant="outline" className="w-full">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── EDIT PIT MODAL ─── */}
+      {editingPitId && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-0" onClick={() => cancelEditPit()}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto md:my-auto" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>Edit PIT — {editPitData.name || ""}</h2>
+              </div>
+              <button onClick={cancelEditPit} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {/* Location */}
+              <div>
+                <p className="text-sm font-medium mb-3" style={{ color: BRAND_NAVY }}>Location</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
+                    <Input value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
+                    <div className="relative">
+                      <Input ref={editPitInputRef} value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
+                      {editPitData.lat != null && editPitData.lat !== pits.find(pp => pp.id === editingPitId)?.lat && (
+                        <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />
+                      )}
+                      {editPitData.address && editPitData.address !== pits.find(pp => pp.id === editingPitId)?.address && editPitData.lat === pits.find(pp => pp.id === editingPitId)?.lat && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
+                    <select value={editPitData.status || "active"} onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })} className="w-full h-10 px-3 rounded-md border text-sm">
+                      <option value="active">Active</option>
+                      <option value="planning">Planning</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Notes</label>
+                    <Textarea rows={3} value={editPitData.notes || ""} onChange={e => setEditPitData({ ...editPitData, notes: e.target.value })} placeholder="Internal notes" />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+
+              {/* Pricing Overrides */}
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing Overrides</p>
+                <p className="text-xs text-gray-500 mb-3">Leave blank to use global defaults</p>
+                <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: "#F8F7F2", border: `1px solid ${CARD_BORDER}` }}>
+                  <p className="text-xs text-gray-500">
+                    Global defaults: ${globalSettings.default_base_price} base · {globalSettings.default_free_miles}mi free · ${globalSettings.default_extra_per_mile}/mi · {globalSettings.default_max_distance}mi max
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load</label>
+                    <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery radius (miles)</label>
+                    <Input placeholder="e.g. 15" value={editPitData.free_miles ?? ""} onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Extra per mile</label>
+                    <Input placeholder="e.g. 5.00" value={editPitData.price_per_extra_mile ?? ""} onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)} type="number" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Max delivery distance (miles)</label>
+                    <Input placeholder="e.g. 30" value={editPitData.max_distance ?? ""} onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+
+              {/* Live Price Preview */}
+              {(() => {
+                const effBase = (editPitData.base_price as number | null) ?? parseFloat(globalSettings.default_base_price || "195");
+                const effFree = (editPitData.free_miles as number | null) ?? parseFloat(globalSettings.default_free_miles || "15");
+                const effEpm = (editPitData.price_per_extra_mile as number | null) ?? parseFloat(globalSettings.default_extra_per_mile || "5");
+                const effMax = (editPitData.max_distance as number | null) ?? parseFloat(globalSettings.default_max_distance || "30");
+                const hasAnyOverride = editPitData.base_price != null || editPitData.free_miles != null || editPitData.price_per_extra_mile != null || editPitData.max_distance != null;
+                const at20 = 20 > effFree ? effBase + (20 - effFree) * effEpm : effBase;
+                const atMax = effMax > effFree ? effBase + (effMax - effFree) * effEpm : effBase;
+                return (
+                  <div>
+                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <div className="text-xs space-y-1" style={{ color: hasAnyOverride ? BRAND_GOLD : "#999" }}>
+                      <p>Within {effFree} mi: ${effBase.toFixed(2)}</p>
+                      <p>At 20 mi: ${at20.toFixed(2)}</p>
+                      <p>At {effMax} mi: ${atMax.toFixed(2)}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Activation Warning */}
+              {editPitData.status === "active" && pits.find(p => p.id === editingPitId)?.status !== "active" && (
+                <div className="rounded-lg p-3 border" style={{ backgroundColor: "#FEF3C7", borderColor: "#F59E0B40" }}>
+                  <p className="text-xs" style={{ color: "#92400E" }}>
+                    <strong>⚠️ Activating PIT:</strong> Setting status to Active will immediately make this PIT available for deliveries. If leads exist in this area, you will be prompted to send proposals.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 space-y-3" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+              <Button onClick={saveEditPit} disabled={savingPit} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                {savingPit ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                Save Changes
+              </Button>
+              <Button onClick={cancelEditPit} variant="outline" className="w-full">Cancel</Button>
+              {!editPitData.is_default && (
+                <div className="pt-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                  {!showDeleteConfirm ? (
+                    <button onClick={() => setShowDeleteConfirm(true)} className="text-sm text-red-500 hover:text-red-700 w-full text-center">Delete PIT</button>
+                  ) : (
+                    <div className="text-center space-y-2">
+                      <p className="text-sm text-red-600 font-medium">Are you sure? This cannot be undone.</p>
+                      <div className="flex gap-2 justify-center">
+                        <Button size="sm" variant="destructive" onClick={() => { deletePit(editingPitId!); cancelEditPit(); }}>Confirm Delete</Button>
+                        <Button size="sm" variant="outline" onClick={() => setShowDeleteConfirm(false)}>Keep PIT</Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ACTIVATION LEADS MODAL ─── */}
+      {showActivationModal && activationPit && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !activationSending && setShowActivationModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>PIT Activated — {activationLeads.length} Leads in Range</h2>
+              <p className="text-white/60 text-sm">{activationPit.name} can now serve {activationLeads.length} leads that were out of area.</p>
+            </div>
+            <div className="p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: "#F3F3F3" }}>
+                      <th className="px-2 py-2 w-8"><input type="checkbox" checked={activationChecked.size === activationLeads.filter(r => r.hasEmail).length && activationLeads.filter(r => r.hasEmail).length > 0} onChange={e => { if (e.target.checked) { setActivationChecked(new Set(activationLeads.filter(r => r.hasEmail).map(r => r.lead.id))); } else { setActivationChecked(new Set()); } }} /></th>
+                      <th className="px-2 py-2 text-left text-xs font-bold uppercase">Lead #</th>
+                      <th className="px-2 py-2 text-left text-xs font-bold uppercase">Name</th>
+                      <th className="px-2 py-2 text-left text-xs font-bold uppercase">Address</th>
+                      <th className="px-2 py-2 text-left text-xs font-bold uppercase">Distance</th>
+                      <th className="px-2 py-2 text-left text-xs font-bold uppercase">Price</th>
+                      <th className="px-2 py-2 text-left text-xs font-bold uppercase">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activationLeads.map((r, i) => (
+                      <tr key={r.lead.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                        <td className="px-2 py-2">
+                          {r.hasEmail ? (
+                            <input type="checkbox" checked={activationChecked.has(r.lead.id)} onChange={e => { const s = new Set(activationChecked); e.target.checked ? s.add(r.lead.id) : s.delete(r.lead.id); setActivationChecked(s); }} />
+                          ) : null}
+                        </td>
+                        <td className="px-2 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{r.lead.lead_number || "—"}</td>
+                        <td className="px-2 py-2 text-xs font-medium">{r.lead.customer_name}</td>
+                        <td className="px-2 py-2 text-xs max-w-[150px] truncate">{r.lead.address}</td>
+                        <td className="px-2 py-2 text-xs">{r.distance.toFixed(1)} mi</td>
+                        <td className="px-2 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${r.price.toFixed(2)}</td>
+                        <td className="px-2 py-2 text-xs">
+                          {r.hasEmail ? r.lead.customer_email : <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[10px]">No email — manual follow-up</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {activationSending && (
+                <div className="mt-4">
+                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full transition-all" style={{ width: `${(activationProgress.current / activationProgress.total) * 100}%`, backgroundColor: BRAND_GOLD }} />
+                  </div>
+                  <p className="text-xs text-center mt-1 text-gray-500">Sending proposals... {activationProgress.current} of {activationProgress.total}</p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 flex flex-wrap gap-2 items-center justify-between" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+              <div className="flex gap-2">
+                <Button onClick={() => { setActivationChecked(new Set(activationLeads.filter(r => r.hasEmail).map(r => r.lead.id))); sendActivationProposals(); }} disabled={activationSending} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  {activationSending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                  Send Proposals to All ({activationLeads.filter(r => r.hasEmail).length})
+                </Button>
+                <Button onClick={sendActivationProposals} disabled={activationSending || activationChecked.size === 0} variant="outline" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}>
+                  Send to Selected ({activationChecked.size})
+                </Button>
+              </div>
+              <button onClick={() => { setShowActivationModal(false); setActivationLeads([]); }} disabled={activationSending} className="text-sm text-gray-400 hover:text-gray-600">
+                Skip — I'll contact manually
+              </button>
             </div>
           </div>
         </div>
