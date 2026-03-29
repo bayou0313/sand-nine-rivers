@@ -466,6 +466,14 @@ const Order = () => {
         duration: "~30 min",
       });
       setStep("details");
+      updateSession({
+        stage: "started_checkout",
+        delivery_address: address,
+        calculated_price: bestResult.price,
+        nearest_pit_id: bestResult.pit.id,
+        nearest_pit_name: bestResult.pit.name,
+        serviceable: true,
+      });
     } catch {
       setError("Something went wrong. Please try again or call us.");
     } finally {
