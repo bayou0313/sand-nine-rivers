@@ -256,6 +256,22 @@ const Leads = () => {
     }
   }, []);
 
+  // Load Google Maps Places library
+  useEffect(() => {
+    if (window.google?.maps?.places) { setGoogleLoaded(true); return; }
+    const existing = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existing) {
+      existing.addEventListener("load", () => setGoogleLoaded(true));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleLoaded(true);
+    document.head.appendChild(script);
+  }, []);
+
   useEffect(() => {
     const saved = storedPassword();
     if (saved) {
