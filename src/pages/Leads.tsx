@@ -1664,6 +1664,309 @@ const Leads = () => {
           </>
         );
 
+      case "city_pages": {
+        const filteredCityPages = cityPageFilter === "all" ? cityPages : cityPages.filter((cp: any) => cp.pit_id === cityPageFilter);
+        const activeCount = cityPages.filter((cp: any) => cp.status === "active").length;
+        const totalViews = cityPages.reduce((sum: number, cp: any) => sum + (cp.page_views || 0), 0);
+        const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
+        const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
+
+        const discoverCities = async (pitId: string) => {
+          setDiscoverLoading(true);
+          try {
+            const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "discover_cities", pit_id: pitId },
+            });
+            if (fnError) throw fnError;
+            if (data?.cities) {
+              setDiscoveredCities(data.cities);
+              const nonDuplicates = new Set(data.cities.map((_: any, i: number) => i).filter((i: number) => !data.cities[i].duplicate));
+              setDiscoverChecked(nonDuplicates);
+              setShowDiscoverModal(true);
+            }
+          } catch (err: any) {
+            toast({ title: "Discovery failed", description: err.message, variant: "destructive" });
+          } finally { setDiscoverLoading(false); }
+        };
+
+        const createPages = async () => {
+          const selected = discoveredCities.filter((_: any, i: number) => discoverChecked.has(i));
+          if (selected.length === 0) return;
+          setCreatingPages(true);
+          try {
+            const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "create_city_pages", pit_id: discoverPitId, cities: selected },
+            });
+            if (fnError) throw fnError;
+            toast({ title: `${data?.count || 0} city pages created`, description: "Content generation will happen when you click Regenerate." });
+            setShowDiscoverModal(false);
+            setDiscoveredCities([]);
+            fetchCityPages();
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          } finally { setCreatingPages(false); }
+        };
+
+        const regenerateContent = async (cp: any) => {
+          setGeneratingContent(cp.id);
+          try {
+            const pitData = pits.find(p => p.id === cp.pit_id);
+            const { data, error: fnError } = await supabase.functions.invoke("generate-city-page", {
+              body: {
+                password: storedPassword(),
+                city_page_id: cp.id,
+                city_name: cp.city_name,
+                state: cp.state,
+                pit_name: pitData?.name || "HQ",
+                distance: cp.distance_from_pit || 0,
+                price: cp.base_price || 195,
+                free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
+                saturday_available: pitData?.operating_days?.includes(6) ?? false,
+              },
+            });
+            if (fnError) throw fnError;
+            toast({ title: `Content generated for ${cp.city_name}` });
+            fetchCityPages();
+          } catch (err: any) {
+            toast({ title: "Generation failed", description: err.message, variant: "destructive" });
+          } finally { setGeneratingContent(null); }
+        };
+
+        const toggleCityPage = async (cpId: string) => {
+          try {
+            const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "toggle_city_page", id: cpId },
+            });
+            if (fnError) throw fnError;
+            toast({ title: `Status changed to ${data?.status}` });
+            fetchCityPages();
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          }
+        };
+
+        const saveCityPage = async () => {
+          if (!editingCityPage) return;
+          try {
+            const { error: fnError } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "save_city_page", city_page_id: editingCityPage.id, city_page: editingCityPage },
+            });
+            if (fnError) throw fnError;
+            toast({ title: "City page saved" });
+            setEditingCityPage(null);
+            fetchCityPages();
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          }
+        };
+
+        return (
+          <>
+            {/* Header buttons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <select
+                value={discoverPitId || ""}
+                onChange={e => setDiscoverPitId(e.target.value)}
+                className="h-9 px-3 rounded-md border text-sm"
+                style={{ borderColor: BRAND_NAVY + "40" }}
+              >
+                <option value="">Select PIT to discover...</option>
+                {pits.filter(p => p.status === "active").map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <Button
+                onClick={() => discoverPitId && discoverCities(discoverPitId)}
+                disabled={!discoverPitId || discoverLoading}
+                size="sm"
+                style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+              >
+                {discoverLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
+                Discover Cities
+              </Button>
+            </div>
+
+            {/* Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <MetricCard label="Active Pages" value={activeCount} />
+              <MetricCard label="Total Views" value={totalViews} />
+              <MetricCard label="Cities Covered" value={citiesCovered} />
+              <MetricCard label="States Covered" value={statesCovered} />
+            </div>
+
+            {/* PIT Filter */}
+            <div className="mb-4">
+              <select
+                value={cityPageFilter}
+                onChange={e => setCityPageFilter(e.target.value)}
+                className="h-9 px-3 rounded-md border text-sm"
+                style={{ borderColor: BRAND_NAVY + "40" }}
+              >
+                <option value="all">All PITs</option>
+                {pits.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+              {cityPagesLoading ? (
+                <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: BRAND_GOLD }} /></div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      {["City", "State", "URL", "PIT", "Distance", "Price", "Status", "Views", "Actions"].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCityPages.map((cp: any, i: number) => (
+                      <tr key={cp.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                        <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
+                        <td className="px-3 py-2 text-xs">{cp.state}</td>
+                        <td className="px-3 py-2 text-xs">
+                          <a href={`/${cp.city_slug}/river-sand-delivery`} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: BRAND_GOLD }}>
+                            /{cp.city_slug}/river-sand-delivery
+                          </a>
+                        </td>
+                        <td className="px-3 py-2 text-xs">{cp.pits?.name || "—"}</td>
+                        <td className="px-3 py-2 text-xs">{cp.distance_from_pit ? `${Number(cp.distance_from_pit).toFixed(1)} mi` : "—"}</td>
+                        <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>{cp.base_price ? `$${Number(cp.base_price).toFixed(2)}` : "—"}</td>
+                        <td className="px-3 py-2">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{
+                            backgroundColor: cp.status === "active" ? "#22C55E20" : cp.status === "draft" ? "#F59E0B20" : "#99999920",
+                            color: cp.status === "active" ? "#22C55E" : cp.status === "draft" ? "#F59E0B" : "#999",
+                          }}>
+                            {cp.status?.charAt(0).toUpperCase() + cp.status?.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs">{cp.page_views || 0}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex gap-1">
+                            <button onClick={() => window.open(`/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}>View</button>
+                            <button onClick={() => setEditingCityPage({ ...cp })} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_GOLD + "30", color: BRAND_GOLD }}>Edit</button>
+                            <button onClick={() => regenerateContent(cp)} disabled={generatingContent === cp.id} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_GOLD + "30", color: BRAND_GOLD }}>
+                              {generatingContent === cp.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Regen"}
+                            </button>
+                            <button onClick={() => toggleCityPage(cp.id)} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: cp.status === "active" ? "#EF444430" : "#22C55E30", color: cp.status === "active" ? "#EF4444" : "#22C55E" }}>
+                              {cp.status === "active" ? "Deactivate" : "Activate"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredCityPages.length === 0 && (
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Discover Cities Modal */}
+            {showDiscoverModal && (
+              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !creatingPages && setShowDiscoverModal(false)}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+                    <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Discovered {discoveredCities.length} Cities</h2>
+                    <p className="text-white/60 text-sm">Select cities to create landing pages for</p>
+                  </div>
+                  <div className="p-4 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ backgroundColor: "#F3F3F3" }}>
+                          <th className="px-2 py-2 w-8"><input type="checkbox" checked={discoverChecked.size === discoveredCities.filter(c => !c.duplicate).length} onChange={e => { if (e.target.checked) { setDiscoverChecked(new Set(discoveredCities.map((_, i) => i).filter(i => !discoveredCities[i].duplicate))); } else { setDiscoverChecked(new Set()); } }} /></th>
+                          <th className="px-2 py-2 text-left text-xs font-bold uppercase">City</th>
+                          <th className="px-2 py-2 text-left text-xs font-bold uppercase">Distance</th>
+                          <th className="px-2 py-2 text-left text-xs font-bold uppercase">Price</th>
+                          <th className="px-2 py-2 text-left text-xs font-bold uppercase">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {discoveredCities.map((c, i) => (
+                          <tr key={i} style={{ backgroundColor: c.duplicate ? "#F9F9F9" : "white", opacity: c.duplicate ? 0.5 : 1 }}>
+                            <td className="px-2 py-2">
+                              {!c.duplicate && <input type="checkbox" checked={discoverChecked.has(i)} onChange={e => { const s = new Set(discoverChecked); e.target.checked ? s.add(i) : s.delete(i); setDiscoverChecked(s); }} />}
+                            </td>
+                            <td className="px-2 py-2 font-medium" style={{ color: BRAND_NAVY }}>{c.city_name}</td>
+                            <td className="px-2 py-2 text-xs">{c.distance} mi</td>
+                            <td className="px-2 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${c.price}</td>
+                            <td className="px-2 py-2 text-xs">
+                              {c.duplicate ? (
+                                <span className="text-gray-400">Already served by {c.existing_pit_name}</span>
+                              ) : (
+                                <span style={{ color: "#22C55E" }}>Available</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                    <Button onClick={createPages} disabled={creatingPages || discoverChecked.size === 0} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                      {creatingPages ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                      Generate Pages for Selected ({discoverChecked.size})
+                    </Button>
+                    <Button onClick={() => setShowDiscoverModal(false)} disabled={creatingPages} variant="outline">Cancel</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit City Page Modal */}
+            {editingCityPage && (
+              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingCityPage(null)}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="px-6 py-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                    <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>Edit — {editingCityPage.city_name}</h2>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>City Name</label>
+                      <Input value={editingCityPage.city_name || ""} onChange={e => setEditingCityPage({ ...editingCityPage, city_name: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Meta Title <span className="float-right" style={{ color: (editingCityPage.meta_title?.length || 0) > 60 ? "#EF4444" : "#999" }}>{editingCityPage.meta_title?.length || 0}/60</span></label>
+                      <Input value={editingCityPage.meta_title || ""} onChange={e => setEditingCityPage({ ...editingCityPage, meta_title: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Meta Description <span className="float-right" style={{ color: (editingCityPage.meta_description?.length || 0) > 160 ? "#EF4444" : "#999" }}>{editingCityPage.meta_description?.length || 0}/160</span></label>
+                      <Textarea rows={3} value={editingCityPage.meta_description || ""} onChange={e => setEditingCityPage({ ...editingCityPage, meta_description: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>H1 Text</label>
+                      <Input value={editingCityPage.h1_text || ""} onChange={e => setEditingCityPage({ ...editingCityPage, h1_text: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
+                      <select value={editingCityPage.status || "draft"} onChange={e => setEditingCityPage({ ...editingCityPage, status: e.target.value })} className="w-full h-10 px-3 rounded-md border text-sm">
+                        <option value="active">Active</option>
+                        <option value="draft">Draft</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Content (HTML)</label>
+                      <Textarea rows={10} value={editingCityPage.content || ""} onChange={e => setEditingCityPage({ ...editingCityPage, content: e.target.value })} className="font-mono text-xs" />
+                    </div>
+                    <Button onClick={() => regenerateContent(editingCityPage)} disabled={generatingContent === editingCityPage.id} variant="outline" className="w-full" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}>
+                      {generatingContent === editingCityPage.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                      Regenerate with AI
+                    </Button>
+                  </div>
+                  <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                    <Button onClick={saveCityPage} className="flex-1" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>Save Changes</Button>
+                    <Button onClick={() => setEditingCityPage(null)} variant="outline" className="flex-1">Cancel</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      }
+
       case "all":
         return (
           <>
