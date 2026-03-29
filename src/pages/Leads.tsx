@@ -1251,7 +1251,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Max distance</label>
                                 <Input
-                                  placeholder={`Global: ${globalSettings.default_max_distance} mi`}
+                                  placeholder="Enter max distance"
                                   value={editPitData.max_distance ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
