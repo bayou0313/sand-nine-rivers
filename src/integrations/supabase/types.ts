@@ -24,6 +24,10 @@ export type Database = {
           customer_phone: string | null
           distance_miles: number | null
           id: string
+          ip_address: string | null
+          lead_number: string | null
+          notes: string | null
+          stage: string | null
         }
         Insert: {
           address: string
@@ -34,6 +38,10 @@ export type Database = {
           customer_phone?: string | null
           distance_miles?: number | null
           id?: string
+          ip_address?: string | null
+          lead_number?: string | null
+          notes?: string | null
+          stage?: string | null
         }
         Update: {
           address?: string
@@ -44,6 +52,10 @@ export type Database = {
           customer_phone?: string | null
           distance_miles?: number | null
           id?: string
+          ip_address?: string | null
+          lead_number?: string | null
+          notes?: string | null
+          stage?: string | null
         }
         Relationships: []
       }
@@ -60,6 +72,7 @@ export type Database = {
           delivery_window: string
           distance_miles: number
           id: string
+          lead_reference: string | null
           lookup_token: string | null
           lookup_token_used: boolean
           notes: string | null
@@ -89,6 +102,7 @@ export type Database = {
           delivery_window?: string
           distance_miles: number
           id?: string
+          lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
           notes?: string | null
@@ -118,6 +132,7 @@ export type Database = {
           delivery_window?: string
           distance_miles?: number
           id?: string
+          lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
           notes?: string | null
