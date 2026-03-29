@@ -658,6 +658,20 @@ const Order = () => {
       <Navbar solid />
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
+        {/* Proposal banner for leads coming from email */}
+        {showProposalBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 rounded-xl flex items-center justify-between"
+            style={{ backgroundColor: "#FFF8E7", border: "1px solid #C07A00" }}
+          >
+            <p className="font-body text-sm" style={{ color: "#0D2137" }}>
+              <strong>Welcome back!</strong> River Sand is now delivering to your area. Your price is locked in below.
+            </p>
+            <button onClick={() => setShowProposalBanner(false)} className="ml-4 text-lg font-bold" style={{ color: "#0D2137" }}>×</button>
+          </motion.div>
+        )}
         {/* Sticky countdown + progress */}
         <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-accent/10 -mx-4 px-4 mb-4">
           <CountdownBar />
