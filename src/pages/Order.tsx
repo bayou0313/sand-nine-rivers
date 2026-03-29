@@ -899,6 +899,8 @@ const Order = () => {
                         setSelectedDeliveryDate(d);
                         setDateError("");
                       }}
+                      pitSchedule={matchedPitSchedule}
+                      globalSaturdaySurcharge={globalSaturdaySurcharge}
                     />
                     {dateError && (
                       <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
