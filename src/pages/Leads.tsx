@@ -533,6 +533,79 @@ const Leads = () => {
     return null;
   };
 
+  const checkActivationLeads = (pit: Pit) => {
+    const eff = getEffectivePrice(pit, globalSettings);
+    const reachable: Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }> = [];
+    for (const l of parsedLeads) {
+      const cached = geocodeCache[l.address];
+      if (!cached) continue;
+      const dist = haversine(pit.lat, pit.lon, cached.lat, cached.lon);
+      if (dist <= eff.max_distance) {
+        const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
+        const price = eff.base_price + extra;
+        reachable.push({ lead: l, distance: dist, price, hasEmail: !!l.customer_email });
+      }
+    }
+    if (reachable.length === 0) {
+      toast({ title: "PIT activated. No leads in range." });
+      return;
+    }
+    setActivationPit(pit);
+    setActivationLeads(reachable);
+    const checkedSet = new Set(reachable.filter(r => r.hasEmail).map(r => r.lead.id));
+    setActivationChecked(checkedSet);
+    setShowActivationModal(true);
+  };
+
+  const sendActivationProposals = async () => {
+    if (!activationPit) return;
+    const toSend = activationLeads.filter(r => activationChecked.has(r.lead.id) && r.hasEmail);
+    if (toSend.length === 0) { toast({ title: "No leads with email selected", variant: "destructive" }); return; }
+    setActivationSending(true);
+    setActivationProgress({ current: 0, total: toSend.length });
+    const pitSlug = activationPit.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    for (let i = 0; i < toSend.length; i++) {
+      const d = toSend[i];
+      const { zip } = parseAddress(d.lead.address);
+      const orderUrl = `https://riversand.net/order?address=${encodeURIComponent(d.lead.address)}&price=${d.price.toFixed(2)}&zip=${zip}&lead=${encodeURIComponent(d.lead.lead_number || "")}&utm_source=pit_activation&utm_medium=email&utm_campaign=${pitSlug}`;
+      try {
+        await supabase.functions.invoke("send-email", {
+          body: {
+            type: "pit_proposal",
+            data: {
+              lead_number: d.lead.lead_number,
+              customer_name: d.lead.customer_name,
+              customer_email: d.lead.customer_email,
+              delivery_address: d.lead.address,
+              zip_code: zip,
+              new_price: d.price.toFixed(2),
+              pit_name: activationPit.name,
+              order_url: orderUrl,
+              custom_note: "Great news — we now deliver to your area!",
+            },
+          },
+        });
+        await updateStage(d.lead.id, "quoted");
+        const timestamp = new Date().toLocaleString("en-US");
+        await appendNote(d.lead.id, `Auto-proposal sent ${timestamp} on PIT activation: ${activationPit.name} at $${d.price.toFixed(2)}. Link: ${orderUrl}`);
+        if (!d.lead.contacted) {
+          await supabase.functions.invoke("leads-auth", {
+            body: { password: storedPassword(), action: "toggle_contacted", id: d.lead.id },
+          });
+        }
+      } catch (err: any) {
+        console.error("Activation proposal error:", err);
+      }
+      setActivationProgress({ current: i + 1, total: toSend.length });
+    }
+    const skipped = activationLeads.filter(r => activationChecked.has(r.lead.id) && !r.hasEmail).length;
+    toast({ title: `${toSend.length} proposals sent${skipped > 0 ? ` · ${skipped} skipped (no email)` : ""}` });
+    setActivationSending(false);
+    setShowActivationModal(false);
+    setActivationLeads([]);
+    await fetchLeads(storedPassword());
+  };
+
   const addPit = async () => {
     if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     setGeocoding(true);
@@ -553,7 +626,12 @@ const Leads = () => {
         },
       });
       if (fnError) throw fnError;
-      if (data?.pit) setPits(prev => [...prev, data.pit]);
+      if (data?.pit) {
+        setPits(prev => [...prev, data.pit]);
+        if (newPit.status === "active") {
+          checkActivationLeads(data.pit);
+        }
+      }
       setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
