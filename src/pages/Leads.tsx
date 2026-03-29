@@ -1266,7 +1266,15 @@ const Leads = () => {
                       <div key={p.id} className="border-2 rounded-lg p-4 flex-1 min-w-[280px]" style={{ borderColor: BRAND_GOLD }}>
                         <div className="space-y-3">
                           <Input placeholder="PIT Name" value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
-                          <Input placeholder="PIT Address" value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value })} />
+                          <div className="relative">
+                            <Input ref={editPitInputRef} placeholder="PIT Address" value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
+                            {editPitData.lat != null && editPitData.lat !== pits.find(pp => pp.id === editingPitId)?.lat && (
+                              <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />
+                            )}
+                            {editPitData.address && editPitData.address !== pits.find(pp => pp.id === editingPitId)?.address && editPitData.lat === pits.find(pp => pp.id === editingPitId)?.lat && (
+                              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
+                            )}
+                          </div>
                           <select
                             value={editPitData.status || "active"}
                             onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })}
