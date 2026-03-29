@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -16,9 +16,19 @@ const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyB
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const PAGE_SIZE = 25;
-const BASE_PRICE = 195;
 const HQ_LAT = 29.9308;
 const HQ_LON = -90.1685;
+
+// Defaults used as fallback if DB fetch fails
+const DEFAULT_SETTINGS: Record<string, string> = {
+  default_base_price: "195.00",
+  default_free_miles: "15",
+  default_extra_per_mile: "5.00",
+  default_max_distance: "30",
+  saturday_surcharge: "35.00",
+  site_name: "River Sand",
+  phone: "1-855-GOT-WAYS",
+};
 
 interface Lead {
   id: string;
@@ -47,9 +57,25 @@ interface Pit {
   address: string;
   lat: number;
   lon: number;
-  status: "active" | "planning";
+  status: "active" | "planning" | "inactive";
   notes: string;
+  is_default?: boolean;
+  base_price: number | null;
+  free_miles: number | null;
+  price_per_extra_mile: number | null;
+  max_distance: number | null;
 }
+
+interface GlobalSettings {
+  [key: string]: string;
+}
+
+const getEffectivePrice = (pit: Pit, gs: GlobalSettings) => ({
+  base_price: pit.base_price ?? parseFloat(gs.default_base_price || "195"),
+  free_miles: pit.free_miles ?? parseFloat(gs.default_free_miles || "15"),
+  extra_per_mile: pit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5"),
+  max_distance: pit.max_distance ?? parseFloat(gs.default_max_distance || "30"),
+});
 
 const parseAddress = (address: string): { state: string; zip: string; city: string } => {
   const match = address.match(/,\s*([^,]+),\s*([A-Z]{2})\s+(\d{5})(?:-\d{4})?/i);
@@ -105,12 +131,15 @@ const Leads = () => {
   const [detailNote, setDetailNote] = useState("");
   const [savingDetail, setSavingDetail] = useState(false);
 
-  // PIT simulator
-  const [pits, setPits] = useState<Pit[]>(() => {
-    try { return JSON.parse(sessionStorage.getItem("pits") || "[]"); } catch { return []; }
-  });
+  // Global settings
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
+  const [editSettings, setEditSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // PIT simulator — DB-backed
+  const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning", notes: "" });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "" });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
@@ -119,6 +148,11 @@ const Leads = () => {
   const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
   const pitInputRef = useRef<HTMLInputElement>(null);
 
+  // PIT edit mode
+  const [editingPitId, setEditingPitId] = useState<string | null>(null);
+  const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
+  const [savingPit, setSavingPit] = useState(false);
+
   // Proposal modal
   const [showProposal, setShowProposal] = useState(false);
   const [proposalSubject, setProposalSubject] = useState("");
@@ -126,6 +160,8 @@ const Leads = () => {
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
+
+  const basePrice = parseFloat(globalSettings.default_base_price || "195");
 
   const fetchLeads = useCallback(async (pw: string) => {
     setLoading(true);
@@ -145,9 +181,68 @@ const Leads = () => {
     }
   }, []);
 
-  useEffect(() => { const saved = storedPassword(); if (saved) fetchLeads(saved); }, [fetchLeads]);
+  const fetchSettings = useCallback(async (pw: string) => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "get_settings" },
+      });
+      if (fnError) throw fnError;
+      if (data?.settings) {
+        setGlobalSettings(data.settings);
+        setEditSettings(data.settings);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch settings:", err);
+    }
+  }, []);
 
-  const handleLogin = async () => { setError(""); await fetchLeads(password); };
+  const fetchPits = useCallback(async (pw: string) => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "list_pits" },
+      });
+      if (fnError) throw fnError;
+      if (data?.pits) setPits(data.pits);
+    } catch (err: any) {
+      console.error("Failed to fetch pits:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const saved = storedPassword();
+    if (saved) {
+      fetchLeads(saved);
+      fetchSettings(saved);
+      fetchPits(saved);
+    }
+  }, [fetchLeads, fetchSettings, fetchPits]);
+
+  const handleLogin = async () => {
+    setError("");
+    await fetchLeads(password);
+    if (sessionStorage.getItem("leads_pw")) {
+      await Promise.all([fetchSettings(password), fetchPits(password)]);
+    }
+  };
+
+  const saveGlobalSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "save_settings", settings: editSettings },
+      });
+      if (fnError) throw fnError;
+      if (data?.settings) {
+        setGlobalSettings(data.settings);
+        setEditSettings(data.settings);
+      }
+      toast({ title: "Global settings saved — all PITs updated" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const toggleContacted = async (id: string) => {
     setToggling(id);
@@ -269,9 +364,9 @@ const Leads = () => {
       avgDistance: distances.length ? (distances.reduce((a, b) => a + b, 0) / distances.length).toFixed(1) : "—",
       states: new Set(parsedLeads.map(l => l.state).filter(s => s !== "—")).size,
       zips: new Set(parsedLeads.map(l => l.zip).filter(z => z !== "—")).size,
-      pipelineValue: parsedLeads.filter(l => !["won", "lost"].includes(l.stage)).length * BASE_PRICE,
+      pipelineValue: parsedLeads.filter(l => !["won", "lost"].includes(l.stage)).length * basePrice,
     };
-  }, [parsedLeads]);
+  }, [parsedLeads, basePrice]);
 
   // ZIP intelligence
   const zipData = useMemo(() => {
@@ -329,8 +424,6 @@ const Leads = () => {
   };
 
   // PIT functions
-  const savePits = (p: Pit[]) => { setPits(p); sessionStorage.setItem("pits", JSON.stringify(p)); };
-
   const geocodeAddress = async (address: string): Promise<{ lat: number; lon: number } | null> => {
     if (geocodeCache[address]) return geocodeCache[address];
     try {
@@ -353,36 +446,139 @@ const Leads = () => {
     setGeocoding(true);
     const coords = await geocodeAddress(newPit.address);
     if (!coords) { toast({ title: "Geocode failed", description: "Could not find coordinates for that address", variant: "destructive" }); setGeocoding(false); return; }
-    const pit: Pit = { id: crypto.randomUUID(), ...newPit, lat: coords.lat, lon: coords.lon };
-    savePits([...pits, pit]);
-    setNewPit({ name: "", address: "", status: "planning", notes: "" });
-    setShowAddPit(false);
-    setGeocoding(false);
-    toast({ title: "PIT added" });
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: {
+          password: storedPassword(),
+          action: "save_pit",
+          pit: { name: newPit.name, address: newPit.address, lat: coords.lat, lon: coords.lon, status: newPit.status, notes: newPit.notes },
+        },
+      });
+      if (fnError) throw fnError;
+      if (data?.pit) setPits(prev => [...prev, data.pit]);
+      setNewPit({ name: "", address: "", status: "planning", notes: "" });
+      setShowAddPit(false);
+      toast({ title: "PIT added" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  const deletePit = async (pitId: string) => {
+    const pit = pits.find(p => p.id === pitId);
+    if (pit?.is_default) {
+      toast({ title: "Warning", description: "Deleting the default PIT. Set another PIT as default first.", variant: "destructive" });
+    }
+    try {
+      const { error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "delete_pit", id: pitId },
+      });
+      if (fnError) throw fnError;
+      setPits(prev => prev.filter(p => p.id !== pitId));
+      if (selectedPit?.id === pitId) setSelectedPit(null);
+      toast({ title: "PIT deleted" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const togglePitStatus = async (pit: Pit) => {
+    const newStatus = pit.status === "active" ? "inactive" : "active";
+    if (pit.is_default && newStatus === "inactive") {
+      toast({ title: "Warning", description: "Deactivating the default PIT will show 'Delivery unavailable' to all customers. Set another PIT as default first." });
+    }
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "save_pit", pit: { ...pit, status: newStatus } },
+      });
+      if (fnError) throw fnError;
+      if (data?.pit) setPits(prev => prev.map(p => p.id === pit.id ? data.pit : p));
+      toast({ title: newStatus === "active" ? "PIT activated" : "PIT deactivated" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const startEditPit = (pit: Pit) => {
+    setEditingPitId(pit.id);
+    setEditPitData({ ...pit });
+  };
+
+  const cancelEditPit = () => {
+    setEditingPitId(null);
+    setEditPitData({});
+  };
+
+  const saveEditPit = async () => {
+    if (!editPitData.name || !editPitData.address) {
+      toast({ title: "Missing info", variant: "destructive" });
+      return;
+    }
+    setSavingPit(true);
+    try {
+      // Geocode if address changed
+      const originalPit = pits.find(p => p.id === editingPitId);
+      let lat = editPitData.lat!;
+      let lon = editPitData.lon!;
+      if (originalPit && editPitData.address !== originalPit.address) {
+        const coords = await geocodeAddress(editPitData.address!);
+        if (!coords) { toast({ title: "Geocode failed", variant: "destructive" }); setSavingPit(false); return; }
+        lat = coords.lat;
+        lon = coords.lon;
+      }
+      const pitPayload = {
+        id: editingPitId,
+        name: editPitData.name,
+        address: editPitData.address,
+        lat, lon,
+        status: editPitData.status,
+        notes: editPitData.notes || "",
+        is_default: editPitData.is_default,
+        base_price: editPitData.base_price || null,
+        free_miles: editPitData.free_miles || null,
+        price_per_extra_mile: editPitData.price_per_extra_mile || null,
+        max_distance: editPitData.max_distance || null,
+      };
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "save_pit", pit: pitPayload },
+      });
+      if (fnError) throw fnError;
+      if (data?.pit) setPits(prev => prev.map(p => p.id === editingPitId ? data.pit : p));
+      setEditingPitId(null);
+      setEditPitData({});
+      toast({ title: "PIT updated" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingPit(false);
+    }
   };
 
   // Simulation data
   const simData = useMemo(() => {
     if (!selectedPit) return [];
+    const eff = getEffectivePrice(selectedPit, globalSettings);
     return parsedLeads.map(l => {
       const cached = geocodeCache[l.address];
       const hqDist = l.distance_miles || 0;
       if (!cached) return { lead: l, hqDist, pitDist: null, delta: 0, newPrice: 0, status: "unknown" as const };
       const pitDist = haversine(selectedPit.lat, selectedPit.lon, cached.lat, cached.lon);
       const delta = hqDist - pitDist;
-      const extra = pitDist > 15 ? (pitDist - 15) * 3.49 : 0;
-      const newPrice = BASE_PRICE + extra;
-      const status = pitDist <= 30 ? "serviceable" : pitDist < hqDist ? "closer" : "same";
+      const extra = pitDist > eff.free_miles ? (pitDist - eff.free_miles) * eff.extra_per_mile : 0;
+      const newPrice = eff.base_price + extra;
+      const status = pitDist <= eff.max_distance ? "serviceable" : pitDist < hqDist ? "closer" : "same";
       return { lead: l, hqDist, pitDist, delta, newPrice, status: status as "serviceable" | "closer" | "same" };
     }).filter(d => d.pitDist !== null).sort((a, b) => (a.pitDist || 0) - (b.pitDist || 0));
-  }, [selectedPit, parsedLeads, geocodeCache]);
+  }, [selectedPit, parsedLeads, geocodeCache, globalSettings]);
 
   const geocodeAllLeads = async () => {
     setGeocoding(true);
     for (const l of parsedLeads) {
       if (!geocodeCache[l.address]) {
         await geocodeAddress(l.address);
-        await new Promise(r => setTimeout(r, 200)); // rate limit
+        await new Promise(r => setTimeout(r, 200));
       }
     }
     setGeocoding(false);
@@ -417,9 +613,7 @@ const Leads = () => {
             },
           },
         });
-        // Update stage to quoted
         await updateStage(d.lead.id, "quoted");
-        // Append note
         await appendNote(d.lead.id, `Proposal sent from PIT ${selectedPit?.name} at $${d.newPrice.toFixed(2)}. Order link: ${orderUrl}`);
       } catch (err: any) {
         console.error("Proposal send error:", err);
@@ -455,6 +649,12 @@ const Leads = () => {
       {btnLoading ? "..." : contacted ? "Contacted" : "Pending"}
     </button>
   );
+
+  const StatusBadge = ({ status }: { status: string }) => {
+    const colors = { active: { bg: "#22C55E20", text: "#22C55E" }, planning: { bg: "#1A6BB820", text: "#1A6BB8" }, inactive: { bg: "#99999920", text: "#999" } };
+    const c = colors[status as keyof typeof colors] || colors.inactive;
+    return <span className="text-xs px-2 py-0.5 rounded-full font-bold inline-block" style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.text}` }}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>;
+  };
 
   // Detail modal
   const openDetail = (l: ParsedLead) => { setSelectedLead(l); setDetailStage(l.stage); setDetailNote(""); };
@@ -501,7 +701,7 @@ const Leads = () => {
     </th>
   );
 
-  // Leads table (reusable)
+  // Leads table
   const LeadsTable = ({ data, showStage = true }: { data: ParsedLead[]; showStage?: boolean }) => (
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse">
@@ -585,6 +785,8 @@ const Leads = () => {
     );
   }
 
+  const livePricing = `$${globalSettings.default_base_price} base · $${globalSettings.default_extra_per_mile}/mi · ${globalSettings.default_max_distance}mi max`;
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f4f4" }}>
       {/* Header */}
@@ -592,7 +794,7 @@ const Leads = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-wider" style={{ color: BRAND_GOLD }}>DELIVERY LEADS</h1>
-            <p className="text-white/60 text-sm">{metrics.total} total leads</p>
+            <p className="text-white/60 text-sm">{metrics.total} total leads · Live pricing: {livePricing}</p>
           </div>
           <Button onClick={exportCSV} variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
             <Download className="w-4 h-4 mr-1" /> Export CSV
@@ -616,7 +818,6 @@ const Leads = () => {
 
           {/* OVERVIEW TAB */}
           <TabsContent value="overview">
-            {/* Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
               <MetricCard label="Pipeline Value" value={`$${metrics.pipelineValue.toLocaleString()}`} />
               <MetricCard label="Hot ZIPs (2+)" value={zipData.filter(z => z.priority === "hot").length} />
@@ -625,7 +826,6 @@ const Leads = () => {
               <MetricCard label="Converted" value={metrics.won} />
             </div>
 
-            {/* Search + filters */}
             <div className="flex flex-wrap gap-2 mb-4">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -638,7 +838,6 @@ const Leads = () => {
               <FilterSelect value={distanceFilter} onChange={setDistanceFilter} label="Distance" options={[{ value: "all", label: "All distances" }, { value: "30-50", label: "30-50 mi" }, { value: "50-75", label: "50-75 mi" }, { value: "75-100", label: "75-100 mi" }, { value: "100+", label: "100+ mi" }]} />
             </div>
 
-            {/* Table */}
             <div className="bg-white rounded-lg border shadow-sm">
               <LeadsTable data={paginatedLeads} />
               <div className="px-4 py-3 border-t flex items-center justify-between text-sm text-gray-500">
@@ -680,7 +879,7 @@ const Leads = () => {
                           <div className="h-full rounded-full" style={{ width: `${(z.count / maxZipCount) * 100}%`, backgroundColor: BRAND_GOLD }} />
                         </div>
                       </td>
-                      <td className="px-3 py-2 font-bold" style={{ color: BRAND_GOLD }}>${(z.count * BASE_PRICE * 20).toLocaleString()}</td>
+                      <td className="px-3 py-2 font-bold" style={{ color: BRAND_GOLD }}>${(z.count * basePrice * 20).toLocaleString()}</td>
                       <td className="px-3 py-2">{z.avgDist.toFixed(1)} mi</td>
                       <td className="px-3 py-2">
                         <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: z.priority === "hot" ? BRAND_GOLD : z.priority === "warm" ? "#1A6BB8" : "#999" }}>
@@ -694,7 +893,7 @@ const Leads = () => {
             </div>
           </TabsContent>
 
-          {/* PIPELINE TAB — KANBAN */}
+          {/* PIPELINE TAB */}
           <TabsContent value="pipeline">
             <div className="mb-4 text-center">
               <p className="text-lg font-bold" style={{ color: BRAND_NAVY }}>
@@ -712,11 +911,7 @@ const Leads = () => {
                     </div>
                     <div className="bg-gray-50 p-2 space-y-2 min-h-[200px] max-h-[500px] overflow-y-auto">
                       {stageLeads.map(l => (
-                        <div
-                          key={l.id}
-                          onClick={() => openDetail(l)}
-                          className="bg-white rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                        >
+                        <div key={l.id} onClick={() => openDetail(l)} className="bg-white rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                           <p className="font-mono text-xs mb-1" style={{ color: BRAND_GOLD }}>{l.lead_number || "—"}</p>
                           <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{l.customer_name}</p>
                           <p className="text-xs text-gray-500">{l.zip} • {l.distance_miles?.toFixed(1) || "?"} mi</p>
@@ -735,13 +930,13 @@ const Leads = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="rounded-lg p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
                 <p className="text-white/60 text-sm">Immediate Opportunity</p>
-                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.notContacted * BASE_PRICE).toLocaleString()}</p>
-                <p className="text-white/40 text-xs mt-1">{metrics.notContacted} uncontacted leads × ${BASE_PRICE}</p>
+                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.notContacted * basePrice).toLocaleString()}</p>
+                <p className="text-white/40 text-xs mt-1">{metrics.notContacted} uncontacted leads × ${basePrice}</p>
               </div>
               <div className="rounded-lg p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
                 <p className="text-white/60 text-sm">Total Pipeline</p>
-                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.total * BASE_PRICE).toLocaleString()}</p>
-                <p className="text-white/40 text-xs mt-1">{metrics.total} total leads × ${BASE_PRICE}</p>
+                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.total * basePrice).toLocaleString()}</p>
+                <p className="text-white/40 text-xs mt-1">{metrics.total} total leads × ${basePrice}</p>
               </div>
             </div>
 
@@ -756,7 +951,7 @@ const Leads = () => {
                 </thead>
                 <tbody>
                   {zipData.filter(z => z.priority === "hot").map((z, i) => {
-                    const monthlyRev = z.count * 5 * BASE_PRICE * 4;
+                    const monthlyRev = z.count * 5 * basePrice * 4;
                     const breakEven = monthlyRev > 0 ? (3000 / monthlyRev).toFixed(1) : "—";
                     return (
                       <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
@@ -771,13 +966,12 @@ const Leads = () => {
               </table>
             </div>
 
-            {/* Simple bar chart */}
             <div className="bg-white rounded-lg border shadow-sm mt-4 p-6">
               <h3 className="text-sm font-bold mb-4" style={{ color: BRAND_NAVY }}>Projected Monthly Revenue by Market</h3>
               <div className="space-y-3">
                 {zipData.filter(z => z.priority === "hot").map(z => {
-                  const rev = z.count * 5 * BASE_PRICE * 4;
-                  const maxRev = Math.max(...zipData.filter(zz => zz.priority === "hot").map(zz => zz.count * 5 * BASE_PRICE * 4), 1);
+                  const rev = z.count * 5 * basePrice * 4;
+                  const maxRev = Math.max(...zipData.filter(zz => zz.priority === "hot").map(zz => zz.count * 5 * basePrice * 4), 1);
                   return (
                     <div key={z.zip} className="flex items-center gap-3">
                       <span className="text-xs font-mono w-16" style={{ color: BRAND_NAVY }}>{z.zip}</span>
@@ -794,6 +988,82 @@ const Leads = () => {
 
           {/* PIT SIMULATOR TAB */}
           <TabsContent value="pit">
+            {/* Global Settings Panel */}
+            <div className="bg-white rounded-lg border shadow-sm p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Settings className="w-5 h-5" style={{ color: BRAND_GOLD }} />
+                <div>
+                  <h3 className="font-bold text-sm" style={{ color: BRAND_NAVY }}>Global Pricing Defaults</h3>
+                  <p className="text-xs text-gray-500">These apply to all PITs unless overridden individually</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Base price per load</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <Input
+                      className="pl-6 h-9"
+                      value={editSettings.default_base_price || ""}
+                      onChange={e => setEditSettings({ ...editSettings, default_base_price: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Free delivery radius</label>
+                  <div className="relative">
+                    <Input
+                      className="pr-12 h-9"
+                      value={editSettings.default_free_miles || ""}
+                      onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Extra per mile</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <Input
+                      className="pl-6 pr-12 h-9"
+                      value={editSettings.default_extra_per_mile || ""}
+                      onChange={e => setEditSettings({ ...editSettings, default_extra_per_mile: e.target.value })}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">/mile</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Max delivery distance</label>
+                  <div className="relative">
+                    <Input
+                      className="pr-12 h-9"
+                      value={editSettings.default_max_distance || ""}
+                      onChange={e => setEditSettings({ ...editSettings, default_max_distance: e.target.value })}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <Input
+                      className="pl-6 h-9"
+                      value={editSettings.saturday_surcharge || ""}
+                      onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-xs text-gray-400">Changes here instantly update pricing across all PITs that don't have their own override. The landing page price will also update automatically.</p>
+                <Button onClick={saveGlobalSettings} disabled={savingSettings} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                  Save Global Settings
+                </Button>
+              </div>
+            </div>
+
             {/* PIT Manager */}
             <div className="bg-white rounded-lg border shadow-sm p-4 mb-4">
               <div className="flex items-center justify-between mb-3">
@@ -809,26 +1079,123 @@ const Leads = () => {
                 </div>
               </div>
 
-              {/* Default HQ */}
+              {/* PIT Cards */}
               <div className="flex flex-wrap gap-3">
-                <div className="border rounded-lg p-3 flex-1 min-w-[200px]" style={{ borderColor: BRAND_NAVY + "30" }}>
-                  <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>New Orleans HQ</p>
-                  <p className="text-xs text-gray-500">Bridge City, LA</p>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 mt-1 inline-block">Active</span>
-                </div>
-                {pits.map(p => (
-                  <div key={p.id} className="border rounded-lg p-3 flex-1 min-w-[200px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : BRAND_NAVY + "30" }}>
-                    <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{p.name}</p>
-                    <p className="text-xs text-gray-500">{p.address}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${p.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
-                      {p.status === "active" ? "Active" : "Planning"}
-                    </span>
-                    <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline" onClick={() => setSelectedPit(p)} className="text-xs h-7">Simulate</Button>
-                      <Button size="sm" variant="outline" onClick={() => savePits(pits.filter(x => x.id !== p.id))} className="text-xs h-7 text-red-500 border-red-200">Delete</Button>
+                {pits.map(p => {
+                  const eff = getEffectivePrice(p, globalSettings);
+                  const hasOverride = p.base_price != null || p.free_miles != null || p.price_per_extra_mile != null || p.max_distance != null;
+
+                  if (editingPitId === p.id) {
+                    // Edit mode
+                    return (
+                      <div key={p.id} className="border-2 rounded-lg p-4 flex-1 min-w-[280px]" style={{ borderColor: BRAND_GOLD }}>
+                        <div className="space-y-3">
+                          <Input placeholder="PIT Name" value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
+                          <Input placeholder="PIT Address" value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value })} />
+                          <select
+                            value={editPitData.status || "active"}
+                            onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })}
+                            className="w-full h-10 px-3 rounded-md border"
+                          >
+                            <option value="active">Active</option>
+                            <option value="planning">Planning</option>
+                            <option value="inactive">Inactive</option>
+                          </select>
+                          <div className="border-t pt-3">
+                            <p className="text-xs font-bold mb-2" style={{ color: BRAND_NAVY }}>Pricing Overrides (leave blank to use global)</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-xs text-gray-400">Base price</label>
+                                <Input
+                                  placeholder={`Global: $${globalSettings.default_base_price}`}
+                                  value={editPitData.base_price ?? ""}
+                                  onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })}
+                                  type="number"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-400">Free miles</label>
+                                <Input
+                                  placeholder={`Global: ${globalSettings.default_free_miles} mi`}
+                                  value={editPitData.free_miles ?? ""}
+                                  onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
+                                  type="number"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-400">Extra per mile</label>
+                                <Input
+                                  placeholder={`Global: $${globalSettings.default_extra_per_mile}/mi`}
+                                  value={editPitData.price_per_extra_mile ?? ""}
+                                  onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
+                                  type="number"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-400">Max distance</label>
+                                <Input
+                                  placeholder={`Global: ${globalSettings.default_max_distance} mi`}
+                                  value={editPitData.max_distance ?? ""}
+                                  onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
+                                  type="number"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button onClick={saveEditPit} disabled={savingPit} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                              {savingPit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                            </Button>
+                            <Button onClick={cancelEditPit} variant="outline" size="sm">Cancel</Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Read-only card
+                  return (
+                    <div key={p.id} className="border rounded-lg p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : BRAND_NAVY + "30" }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{p.name}</p>
+                        {p.is_default && <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Default</span>}
+                      </div>
+                      <p className="text-xs text-gray-500">{p.address}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <StatusBadge status={p.status} />
+                      </div>
+                      <p className="text-xs mt-2" style={{ color: hasOverride ? BRAND_GOLD : "#999" }}>
+                        Effective: ${eff.base_price} base · {eff.free_miles}mi free · ${eff.extra_per_mile}/mi · {eff.max_distance}mi max
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        <Button size="sm" variant="outline" onClick={() => setSelectedPit(p)} className="text-xs h-7">Simulate</Button>
+                        <Button size="sm" variant="outline" onClick={() => startEditPit(p)} className="text-xs h-7">
+                          <Edit2 className="w-3 h-3 mr-1" />Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => togglePitStatus(p)}
+                          className="text-xs h-7"
+                          style={{
+                            borderColor: p.status === "active" ? "#EF444430" : "#22C55E30",
+                            color: p.status === "active" ? "#EF4444" : "#22C55E",
+                          }}
+                        >
+                          <Power className="w-3 h-3 mr-1" />
+                          {p.status === "active" ? "Deactivate" : "Activate"}
+                        </Button>
+                        {!p.is_default && (
+                          <Button size="sm" variant="outline" onClick={() => deletePit(p.id)} className="text-xs h-7 text-red-500 border-red-200">Delete</Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Add PIT form */}
@@ -839,11 +1206,12 @@ const Leads = () => {
                     <Input ref={pitInputRef} placeholder="PIT Address" value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value })} />
                     <select
                       value={newPit.status}
-                      onChange={e => setNewPit({ ...newPit, status: e.target.value as "active" | "planning" })}
+                      onChange={e => setNewPit({ ...newPit, status: e.target.value as any })}
                       className="h-10 px-3 rounded-md border"
                     >
                       <option value="planning">Planning</option>
                       <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
                     </select>
                     <Input placeholder="Notes" value={newPit.notes} onChange={e => setNewPit({ ...newPit, notes: e.target.value })} />
                   </div>
@@ -863,9 +1231,10 @@ const Leads = () => {
               <>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                   {(() => {
+                    const eff = getEffectivePrice(selectedPit, globalSettings);
                     const serviceable = simData.filter(d => d.status === "serviceable");
-                    const immediateRev = serviceable.length * BASE_PRICE;
-                    const monthlyPotential = serviceable.length * 5 * BASE_PRICE * 4;
+                    const immediateRev = serviceable.length * eff.base_price;
+                    const monthlyPotential = serviceable.length * 5 * eff.base_price * 4;
                     const breakEven = monthlyPotential > 0 ? (3000 / monthlyPotential).toFixed(1) : "—";
                     return (
                       <>
@@ -921,7 +1290,9 @@ const Leads = () => {
                       </thead>
                       <tbody>
                         {simData.map((d, i) => {
-                          const oldPrice = BASE_PRICE + (d.hqDist > 15 ? (d.hqDist - 15) * 3.49 : 0);
+                          const eff = getEffectivePrice(selectedPit, globalSettings);
+                          const oldExtra = d.hqDist > eff.free_miles ? (d.hqDist - eff.free_miles) * eff.extra_per_mile : 0;
+                          const oldPrice = eff.base_price + oldExtra;
                           const savings = oldPrice - d.newPrice;
                           return (
                             <tr key={d.lead.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
