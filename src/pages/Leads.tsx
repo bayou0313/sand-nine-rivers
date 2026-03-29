@@ -69,6 +69,9 @@ interface Pit {
   free_miles: number | null;
   price_per_extra_mile: number | null;
   max_distance: number | null;
+  operating_days: number[] | null;
+  saturday_surcharge_override: number | null;
+  same_day_cutoff: string | null;
 }
 
 interface GlobalSettings {
