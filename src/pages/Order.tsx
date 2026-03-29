@@ -1151,7 +1151,7 @@ const Order = () => {
                       </div>
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Processing Fee (3.5%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(processingFee)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayProcessingFee)}</span>
                       </div>
                     </div>
                   </div>
