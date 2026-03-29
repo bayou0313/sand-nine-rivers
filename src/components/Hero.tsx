@@ -1,5 +1,5 @@
 import heroImage from "@/assets/hero-sand.jpg";
-import { Phone, Truck, ArrowDown, ShieldCheck, Clock, Star, MapPin, AlertTriangle } from "lucide-react";
+import { Phone, Truck, ArrowDown, ShieldCheck, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -40,12 +40,6 @@ const Hero = () => {
                 <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
               </div>
             </div>
-            {new Date().getHours() < 13 && (
-              <div className="inline-flex items-center gap-2 bg-destructive/90 backdrop-blur-sm px-4 py-1.5 rounded-lg">
-                <AlertTriangle className="w-3.5 h-3.5 text-white animate-pulse" />
-                <p className="font-display text-white tracking-wider text-xs">LIMITED SPOTS AVAILABLE TODAY</p>
-              </div>
-            )}
           </motion.div>
 
           <motion.div
@@ -67,20 +61,6 @@ const Hero = () => {
           >
             Quality river sand for landscaping, drainage, backfill, and construction projects across Greater New Orleans. Order before noon for same-day delivery.
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 }}
-            className="bg-primary-foreground/5 backdrop-blur-xl border border-primary-foreground/15 rounded-2xl p-6 inline-block"
-          >
-            <p className="text-3xl md:text-4xl font-display text-primary-foreground">
-              9 YARDS — <span className="text-accent">$195</span>
-            </p>
-            <p className="text-primary-foreground/60 font-body mt-2 flex items-center gap-2 text-sm">
-              <Truck className="w-4 h-4" /> Free delivery within the Greater New Orleans area
-            </p>
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -107,7 +87,6 @@ const Hero = () => {
             </div>
           </motion.div>
 
-          {/* Prominent phone number */}
           <motion.a
             href="tel:+18554689297"
             initial={{ opacity: 0 }}
@@ -128,7 +107,7 @@ const Hero = () => {
             {[
               { icon: ShieldCheck, text: "Same-day delivery available" },
               { icon: MapPin, text: "GPS-tracked loads" },
-              { icon: Star, text: "Local New Orleans team" },
+              { icon: Truck, text: "Local New Orleans team" },
             ].map((item) => (
               <div key={item.text} className="flex items-center gap-2 text-primary-foreground/50 font-body text-sm">
                 <item.icon className="w-4 h-4 text-accent/80" />
