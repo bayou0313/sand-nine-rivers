@@ -559,6 +559,11 @@ const Order = () => {
       };
       setConfirmedTotals(snapshotTotals);
       setStep("success");
+      updateSession({
+        stage: "completed_order",
+        order_id: inserted?.id || null,
+        order_number: inserted?.order_number || null,
+      });
 
       // Send order confirmation email with totals passed directly (state not yet updated)
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
