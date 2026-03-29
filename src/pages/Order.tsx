@@ -386,6 +386,12 @@ const Order = () => {
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current?.getPlace();
       if (place?.formatted_address) setAddress(place.formatted_address);
+      if (place?.geometry?.location) {
+        setCustomerCoords({
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        });
+      }
       if (place?.address_components) {
         const parish = getParishFromPlaceResult(place.address_components);
         setDetectedParish(parish);
