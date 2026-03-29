@@ -1,100 +1,46 @@
 
 
-## Add Global Pricing Settings to PIT Manager
+## Fix Two Bugs in PIT Manager Form
 
-### Overview
-Create a `global_settings` table and a `pits` table in the database, update the `leads-auth` edge function with CRUD actions for both, and update the PIT Simulator tab and pricing logic across the site to use dynamic values instead of hardcoded constants.
+### Bug 1 — Pricing Fields Showing Raw Numbers
 
----
+The Add PIT form at lines 1316-1339 currently has no pricing fields, so the bug is in the **edit mode** form (lines 1220-1260). The `editPitData` is initialized with `{ ...pit }` (line 517), which copies the PIT's actual values. When those values are `null` (inherited), `value={editPitData.base_price ?? ""}` correctly shows empty. But if a PIT has saved values, they show as raw numbers without formatting.
 
-### Step 1 — Database Migration
+**Fix in `src/pages/Leads.tsx`:**
 
-Single migration creating both tables:
+1. Add pricing override fields to the **Add New PIT form** (after line 1330) with empty initial values — the `newPit` state already lacks pricing fields, so just add 4 optional inputs with descriptive placeholders: `"e.g. 195.00"`, `"e.g. 15"`, `"e.g. 5.00"`, `"e.g. 30"`
 
-**`global_settings`**: key-value table with `id`, `key` (unique), `value`, `description`, `updated_at`. RLS: public SELECT, service role full access. Seeded with:
-- `default_base_price` = `195.00`
-- `default_free_miles` = `15`
-- `default_extra_per_mile` = `5.00`
-- `default_max_distance` = `30` *(user-specified, not 100)*
-- `saturday_surcharge` = `35.00`
-- `site_name` = `River Sand`
-- `phone` = `1-855-GOT-WAYS`
+2. Expand `newPit` state to include optional pricing: `base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null`
 
-**`pits`**: `id`, `name`, `address`, `lat`, `lon`, `status` (text), `notes`, `base_price` (nullable numeric), `free_miles` (nullable numeric), `price_per_extra_mile` (nullable numeric), `max_distance` (nullable numeric), `is_default` (boolean default false), `created_at`, `updated_at`. RLS: public SELECT, service role full access. Seeded with default HQ PIT:
-- name: `New Orleans HQ`, address: `Bridge City, LA`, lat: `29.9308`, lon: `-90.1685`, status: `active`, is_default: `true`, all pricing fields `NULL` (inherits global 30mi max)
+3. Pass pricing fields in the `addPit` save payload (line 465)
 
----
+4. For **edit mode** pricing inputs, add `onBlur` formatting for currency fields (base_price, price_per_extra_mile) — format to 2 decimal places on blur. The `value` stays as the raw number for editing; formatting happens display-side only.
 
-### Step 2 — Update `leads-auth` Edge Function
+5. Ensure edit mode initializes null pricing fields as empty string display, not the global fallback value — current code `editPitData.base_price ?? ""` already does this correctly.
 
-Add 5 new password-protected actions:
-- **`get_settings`** — returns all `global_settings` rows as `{ key: value }` object
-- **`save_settings`** — accepts `{ settings: { key: value, ... } }`, upserts each key
-- **`list_pits`** — returns all PITs ordered by `is_default DESC, name`
-- **`save_pit`** — upsert PIT (INSERT if no id, UPDATE if exists), returns saved record
-- **`delete_pit`** — deletes PIT by id
+### Bug 2 — PIT Address Not Using Google Places Autocomplete
 
----
+The Add PIT address field (line 1320) and Edit PIT address field (line 1208) are plain text inputs. Need to attach Google Places Autocomplete.
 
-### Step 3 — Update `src/pages/Leads.tsx`
+**Fix in `src/pages/Leads.tsx`:**
 
-**Replace sessionStorage PITs with DB-backed PITs**:
-- On auth, call `list_pits` and `get_settings` to load data
-- Remove sessionStorage for PITs (keep geocache in sessionStorage)
+1. Add a `useEffect` for the **Add PIT** address field: when `showAddPit` becomes true and `pitInputRef.current` exists, attach `google.maps.places.Autocomplete` to it. On `place_changed`, extract `formatted_address`, `lat()`, `lon()` and update `newPit` state including new `lat`/`lon` fields.
 
-**Global Settings Panel** at top of PIT Simulator tab:
-- Editable fields for base price, free miles, extra per mile, max distance, saturday surcharge
-- Save button calls `save_settings`
-- Toast on success
+2. Add `lat` and `lon` to the `newPit` state (default `null`).
 
-**PIT Cards updated**:
-- Each card shows effective pricing: "Effective: $195 base · 15mi free · $5/mi · 30mi max"
-- Gray text if all inherited from global, gold if any field overridden
-- Edit mode shows optional override fields with placeholder showing global default (e.g., `placeholder="Global: $195"`)
-- Activate/Deactivate toggle (active ↔ inactive), with warning toast on default PIT
-- Status badges: green Active / blue Planning / gray Inactive
-- Save/delete call edge function actions
+3. Add a ref for the **Edit PIT** address input. When `editingPitId` changes, attach autocomplete to that ref. On `place_changed`, update `editPitData` with new address + coords.
 
-**`getEffectivePrice(pit, globalSettings)` utility**:
-```
-base_price: pit.base_price ?? globalSettings.default_base_price
-free_miles: pit.free_miles ?? globalSettings.default_free_miles
-extra_per_mile: pit.price_per_extra_mile ?? globalSettings.default_extra_per_mile
-max_distance: pit.max_distance ?? globalSettings.default_max_distance
-```
-Used in simulation table, ROI summary, revenue forecast, proposal pricing.
+4. Show green checkmark icon next to address field when lat/lon are captured (both Add and Edit forms).
 
-**Dashboard header**: Show "Live pricing: $195 base · $5/mi · 30mi max"
+5. Show warning text below address field if user has typed text but lat/lon are not set: "Select an address from the suggestions to capture coordinates"
 
----
+6. In `addPit()`, skip the manual `geocodeAddress()` call if lat/lon already captured from Places. Only geocode as fallback if Places wasn't used.
 
-### Step 4 — Update `src/pages/Order.tsx`
-
-On page load, fetch `global_settings` and active PITs via public Supabase SELECT.
-
-Replace hardcoded constants:
-- `BASE_PRICE` → fetched `default_base_price`
-- `BASE_MILES` → fetched `default_free_miles`
-- `MAX_MILES` → fetched `default_max_distance`
-- `PER_MILE_EXTRA` → fetched `default_extra_per_mile`
-
-Fallback to current hardcoded values (195, 15, 30, 3.49) if fetch fails.
-
----
-
-### Step 5 — Update `src/components/DeliveryEstimator.tsx`
-
-Same as Order.tsx: fetch global settings on mount, replace hardcoded constants, update "Starting at $195" to use fetched base price. Fallback to defaults on error.
-
----
+7. In `saveEditPit()`, same logic — skip geocode if coords already updated via Places.
 
 ### Files Changed
 
 | File | Change |
 |---|---|
-| SQL migration | Create `global_settings` + `pits` tables, seed data, RLS policies |
-| `supabase/functions/leads-auth/index.ts` | Add 5 actions: get_settings, save_settings, list_pits, save_pit, delete_pit |
-| `src/pages/Leads.tsx` | Global settings panel, DB-backed PITs with effective pricing, getEffectivePrice utility, live pricing header |
-| `src/pages/Order.tsx` | Fetch global settings + PITs, replace hardcoded pricing constants |
-| `src/components/DeliveryEstimator.tsx` | Fetch global settings, replace hardcoded pricing constants and display text |
+| `src/pages/Leads.tsx` | Add pricing fields to Add PIT form, expand newPit state, attach Google Places Autocomplete to address inputs (add + edit), show checkmark/warning for coordinate capture, add onBlur currency formatting for price fields |
 
