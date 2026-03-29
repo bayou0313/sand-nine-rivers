@@ -2797,6 +2797,52 @@ const Leads = () => {
           </div>
         </div>
       )}
+
+      {/* ─── MARK AS PAID DIALOG ─── */}
+      {cashOrderToMark && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !markingPaid && setCashOrderToMark(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Confirm Payment Received</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2 text-sm">
+                <p><strong style={{ color: BRAND_NAVY }}>Order #:</strong> {cashOrderToMark.order_number || "—"}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {cashOrderToMark.customer_name}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Amount:</strong> <span style={{ color: BRAND_GOLD, fontWeight: 700 }}>${Number(cashOrderToMark.price || 0).toFixed(2)}</span></p>
+                <p><strong style={{ color: BRAND_NAVY }}>Method:</strong> {cashOrderToMark.payment_method === "check" ? "Check" : "Cash"}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Delivery:</strong> {cashOrderToMark.delivery_date || "TBD"}</p>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "#666" }}>Collected by (optional)</label>
+                <Input placeholder="e.g. John D." value={cashCollectedBy} onChange={e => setCashCollectedBy(e.target.value)} className="h-9 text-sm" />
+              </div>
+              {cashOrderToMark.customer_email && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input type="checkbox" checked={cashSendEmail} onChange={e => setCashSendEmail(e.target.checked)} className="w-4 h-4 rounded" />
+                  Send payment confirmation email to {cashOrderToMark.customer_email}
+                </label>
+              )}
+            </div>
+            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+              <Button onClick={markCashPaid} disabled={markingPaid} className="flex-1 h-10" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                {markingPaid ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+                Confirm Payment
+              </Button>
+              <Button onClick={() => setCashOrderToMark(null)} disabled={markingPaid} variant="outline" className="flex-1">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print styles for cash daily schedule */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #cash-daily-schedule, #cash-daily-schedule * { visibility: visible; }
+          #cash-daily-schedule { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+      `}</style>
     </div>
   );
 };
