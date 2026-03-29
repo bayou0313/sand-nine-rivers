@@ -34,6 +34,9 @@ const DeliveryEstimator = () => {
   const [result, setResult] = useState<EstimateResult>(null);
   const [error, setError] = useState("");
   const [apiLoaded, setApiLoaded] = useState(false);
+  const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
+  const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
+  const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
