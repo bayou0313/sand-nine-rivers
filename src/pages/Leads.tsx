@@ -1886,6 +1886,165 @@ const Leads = () => {
           </>
         );
 
+      case "cash_orders": {
+        const today = new Date().toISOString().slice(0, 10);
+        const getCashStatus = (o: any) => {
+          if (o.cash_collected) return "collected";
+          if (o.delivery_date && o.delivery_date < today) return "overdue";
+          return "pending";
+        };
+        const filtered = cashOrders.filter(o => {
+          if (cashFilter === "all") return true;
+          return getCashStatus(o) === cashFilter;
+        });
+        const pendingToday = cashOrders.filter(o => !o.cash_collected && o.delivery_date === today);
+        const overdueOrders = cashOrders.filter(o => !o.cash_collected && o.delivery_date && o.delivery_date < today);
+        const collectedToday = cashOrders.filter(o => o.cash_collected && o.cash_collected_at?.slice(0, 10) === today);
+        const totalOutstanding = cashOrders.filter(o => !o.cash_collected).reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const expectedToday = pendingToday.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const todaysOrders = cashOrders.filter(o => o.delivery_date === today);
+
+        return (
+          <>
+            {/* Expected today */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+              <div className="text-right">
+                <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${expectedToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-xs text-gray-500">Expected today across {pendingToday.length} orders</p>
+              </div>
+            </div>
+
+            {/* Overdue alert */}
+            {overdueOrders.length > 0 && !cashOverdueDismissed && (
+              <div className="mb-4 p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: "#FEF3C7", border: "1px solid #F59E0B40" }}>
+                <p className="text-sm" style={{ color: "#92400E" }}>
+                  <strong>{overdueOrders.length} orders overdue</strong> — delivery date has passed without payment confirmation.
+                </p>
+                <button onClick={() => { setCashOverdueDismissed(true); sessionStorage.setItem("cash_overdue_dismissed", "1"); }} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+              </div>
+            )}
+
+            {/* Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              {[
+                { label: "Pending Today", value: pendingToday.length, color: "#F59E0B" },
+                { label: "Overdue", value: overdueOrders.length, color: overdueOrders.length > 0 ? "#EF4444" : "#999" },
+                { label: "Collected Today", value: collectedToday.length, color: "#22C55E" },
+                { label: "Total Outstanding", value: `$${totalOutstanding.toFixed(2)}`, color: BRAND_GOLD },
+              ].map(m => (
+                <div key={m.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+                  <p className="text-2xl font-bold" style={{ color: m.color }}>{m.value}</p>
+                  <p className="text-xs text-white/60 mt-1">{m.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Filter tabs */}
+            <div className="flex gap-1 mb-4">
+              {(["all", "pending", "overdue", "collected"] as const).map(f => (
+                <button key={f} onClick={() => setCashFilter(f)} className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors" style={{
+                  backgroundColor: cashFilter === f ? BRAND_NAVY : "white",
+                  color: cashFilter === f ? BRAND_GOLD : "#666",
+                  border: `1px solid ${CARD_BORDER}`,
+                }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {cashLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : (
+              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action"].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(o => {
+                      const status = getCashStatus(o);
+                      const statusColor = status === "collected" ? "#22C55E" : status === "overdue" ? "#EF4444" : "#F59E0B";
+                      const statusLabel = status === "collected" ? "Collected" : status === "overdue" ? "Overdue" : "Pending";
+                      const isToday = o.delivery_date === today;
+                      const isPast = o.delivery_date && o.delivery_date < today && !o.cash_collected;
+                      return (
+                        <tr key={o.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
+                          <td className="px-3 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{o.order_number || "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(o.created_at)}</td>
+                          <td className="px-3 py-2">
+                            <p className="text-xs font-medium">{o.customer_name}</p>
+                            <p className="text-[10px] text-gray-400">{o.customer_phone}</p>
+                          </td>
+                          <td className="px-3 py-2 text-xs max-w-[160px] truncate">{o.delivery_address}</td>
+                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toFixed(2)}</td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: isPast ? "#EF4444" : isToday ? BRAND_GOLD : undefined }}>
+                            {isToday ? "Today" : o.delivery_date ? new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F3F3F3", color: BRAND_NAVY }}>
+                              {o.payment_method === "check" ? "Check" : "Cash"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: statusColor }}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            {!o.cash_collected ? (
+                              <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                                Mark as Paid
+                              </Button>
+                            ) : (
+                              <span className="text-[10px]" style={{ color: "#22C55E" }}>Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filtered.length === 0 && (
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No cash/check orders found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Today's Cash Schedule */}
+            {todaysOrders.length > 0 && (
+              <div className="mt-6" id="cash-daily-schedule">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold" style={{ color: BRAND_NAVY }}>Today's Cash Schedule</h3>
+                  <Button size="sm" variant="outline" onClick={() => window.print()} className="text-xs">
+                    Print Today's Sheet
+                  </Button>
+                </div>
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                  {todaysOrders.map((o, i) => (
+                    <div key={o.id} className="px-4 py-3 flex items-center justify-between" style={{ borderTop: i > 0 ? `1px solid ${CARD_BORDER}` : undefined }}>
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: BRAND_NAVY }}>{o.customer_name}</p>
+                        <p className="text-xs text-gray-500">{o.delivery_address}</p>
+                        <p className="text-xs text-gray-400">{o.customer_phone} · {o.order_number}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toFixed(2)}</p>
+                        <p className="text-[10px] text-gray-400">{o.payment_method === "check" ? "Check" : "Cash"}{o.cash_collected ? " ✓" : ""}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      }
+
       case "abandoned":
         return (
           <>
