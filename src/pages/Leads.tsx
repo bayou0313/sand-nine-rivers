@@ -848,6 +848,13 @@ const Leads = () => {
     return () => { profileAutocompleteRef.current = null; };
   }, [activePage, googleLoaded]);
 
+  // Fetch abandoned sessions when navigating to that page
+  useEffect(() => {
+    if (activePage === "abandoned" && authenticated) {
+      fetchAbandonedSessions();
+    }
+  }, [activePage, authenticated, fetchAbandonedSessions]);
+
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
       setter({ ...current, [field]: Math.round(value * 100) / 100 });
