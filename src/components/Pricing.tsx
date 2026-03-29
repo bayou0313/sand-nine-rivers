@@ -231,8 +231,9 @@ const Pricing = () => {
 
       <OutOfAreaModal
         open={showOutOfArea}
-        onOpenChange={setShowOutOfArea}
+        onClose={() => setShowOutOfArea(false)}
         address={address}
+        distanceMiles={nearestPitInfo?.distance ?? 0}
         nearestPit={nearestPitInfo}
       />
     </section>
