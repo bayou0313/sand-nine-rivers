@@ -1,69 +1,95 @@
 
 
-## Prompt 3 — Cash/Check Order Management
+## Prompt 5 — Programmatic City Pages
 
 ### Overview
-Add 3 new columns to `orders` table, two new actions to `leads-auth` edge function, a new email template in `send-email`, and a full "Cash Orders" dashboard page in `Leads.tsx`.
+Create a system for auto-discovering cities near active PITs, generating AI content for each, and rendering dynamic SEO-optimized city landing pages. Adds a new database table, edge function for AI content generation, a new page component, and a management UI in the leads dashboard.
 
 ---
 
 ### Step 1 — Database Migration
 
-Add columns to `orders`:
-- `cash_collected` boolean DEFAULT false
-- `cash_collected_at` timestamptz
-- `cash_collected_by` text
+**New table `city_pages`** with columns: `id`, `created_at`, `updated_at`, `pit_id` (FK to pits), `city_name`, `city_slug`, `state`, `zip_codes` (text[]), `lat`, `lng`, `distance_from_pit`, `base_price`, `status` (active/inactive/draft), `meta_title`, `meta_description`, `h1_text`, `content`, `content_generated_at`, `page_views`, `last_viewed_at`. UNIQUE on `(city_slug, pit_id)`.
 
-Also add `discount_amount` if not already present (it exists per schema).
+RLS: public SELECT where `status = 'active'`, service_role ALL, anon UPDATE for page_views increment.
 
----
+**Add column to `pits`**: `served_cities jsonb DEFAULT NULL`.
 
-### Step 2 — Edge Function: `leads-auth/index.ts`
-
-Add two new actions after existing ones:
-
-**`list_cash_orders`**: Query `orders` where `payment_method IN ('cash', 'check', 'cod', 'COD')` AND `payment_status != 'cancelled'`, ordered by `delivery_date ASC, created_at DESC`. Return all fields including new cash columns.
-
-**`mark_cash_paid`**: Accept `{ order_id, collected_by?, send_email? }`. Update the order: `cash_collected = true`, `cash_collected_at = now()`, `cash_collected_by`, `payment_status = 'collected'`. If `send_email` is true and customer has email, invoke `send-email` function with type `cash_payment_confirmed`. Return updated order.
-
-Also destructure `order_id`, `collected_by`, `send_email` from request body.
+**RPC function** `increment_city_page_views(p_slug text)` — SECURITY DEFINER, increments `page_views` and sets `last_viewed_at`.
 
 ---
 
-### Step 3 — Edge Function: `send-email/index.ts`
+### Step 2 — Edge Function: `generate-city-page/index.ts`
 
-Add new email type handler `cash_payment_confirmed`:
-- Subject: "Payment Confirmed — Order #[order_number]"
-- Body: greeting, confirmation box with gold border showing order details (order number, payment method, amount, address, delivery date, payment recorded timestamp), closing message, Silas Caldeira signature, branded footer.
-- Send to customer email.
+New edge function using Lovable AI Gateway (`google/gemini-3-flash-preview`).
+
+Accepts: `{ city_name, state, pit_name, distance, price, free_miles, saturday_available }`.
+
+System prompt instructs SEO content generation for river sand delivery. User prompt requests `meta_title`, `meta_description`, `h1_text`, and HTML `content` — returned as JSON via tool calling (structured output).
+
+Saves generated fields to city_pages record, sets `content_generated_at`.
+
+CORS headers included. Auth via LEADS_PASSWORD in request body.
 
 ---
 
-### Step 4 — Leads Dashboard: `src/pages/Leads.tsx`
+### Step 3 — Edge Function: Update `leads-auth/index.ts`
 
-**NavPage type**: Add `"cash_orders"` to the union type.
+Add actions:
+- **`list_city_pages`**: SELECT * from city_pages with pit name join, ordered by city_name.
+- **`save_city_page`**: UPDATE city_pages record (meta_title, meta_description, h1_text, content, status).
+- **`delete_city_page`**: DELETE from city_pages by id.
+- **`discover_cities`**: Accept pit_id. Query pits record, use Google Places Nearby Search API (server-side fetch with `VITE_GOOGLE_MAPS_API_KEY` or a server-side key) to find localities within max_distance. Return list of cities with distances and prices. Does NOT auto-create records — returns candidates for confirmation.
+- **`create_city_pages`**: Accept array of city objects. Bulk insert into city_pages. For each, invoke `generate-city-page` function to create AI content.
+- **`toggle_city_page`**: Toggle status between active/inactive.
 
-**NAV_ITEMS**: Insert `{ id: "cash_orders", label: "Cash Orders", icon: DollarSign }` in OPERATIONS section between Overview and ZIP Intelligence.
+---
 
-**State**: Add `cashOrders` array state, `cashFilter` tab state (`all | pending | overdue | collected`), `markingPaid` loading state, `cashOrderToMark` for confirmation dialog.
+### Step 4 — New Page: `src/pages/CityPage.tsx`
 
-**Data fetching**: Add `fetchCashOrders()` function calling `list_cash_orders` action. Call it when `activePage === "cash_orders"`.
+Dynamic route component. On load:
+1. Extract `citySlug` from URL params
+2. Fetch from `city_pages` where `city_slug = param AND status = 'active'` (public RLS allows this)
+3. If not found → redirect to `/`
+4. Call `increment_city_page_views` RPC
+5. Render with `react-helmet-async`: dynamic title, description, canonical, schema markup (LocalBusiness + BreadcrumbList)
+6. Reuse homepage components: `Navbar`, `Hero` (with city-specific h1), `DeliveryEstimator`, rendered HTML content via `dangerouslySetInnerHTML`, internal links to other city pages, `Footer`
+7. Fetch up to 5 other active city pages for "Other Areas We Serve" section
 
-**Cash Orders page content** (rendered when `activePage === "cash_orders"`):
+---
 
-1. **Header**: "CASH ORDERS" title with dynamic count. Right side shows "Expected today: $X across Y orders" in gold.
+### Step 5 — Route Registration: `src/App.tsx`
 
-2. **Overdue alert banner**: Amber banner if any orders have `delivery_date < today AND !cash_collected`. Dismissible per session via sessionStorage.
+Add route: `<Route path="/:citySlug/river-sand-delivery" element={<CityPage />} />`
 
-3. **Summary metrics bar**: 4 cards — Pending Today, Overdue (red badge if > 0), Collected Today, Total Outstanding.
+Place above the catch-all `*` route but below explicit routes.
 
-4. **Filter tabs**: All | Pending | Overdue | Collected.
+---
 
-5. **Table**: Order #, Date, Customer (name + phone), Address (truncated), Amount (gold bold), Delivery Date (red if past+unpaid, gold if today), Method (Cash/Check pill), Status (amber/green/red pill), Action (Mark as Paid button or "Paid [date]" text).
+### Step 6 — Leads Dashboard: City Pages Manager
 
-6. **Mark as Paid dialog**: Uses existing Dialog component. Shows order details, optional "Collected by" input, checkbox for sending confirmation email (checked by default). On confirm, calls `mark_cash_paid`, refreshes list, shows toast.
+**NavPage type**: Add `"city_pages"` to union.
 
-7. **Daily Cash Summary**: Below table, "Today's Cash Schedule" listing today's orders. Print button opens `window.print()` with a print-friendly CSS media query for the section.
+**NAV_ITEMS**: Insert `{ id: "city_pages", label: "City Pages", icon: MapIcon }` in EXPANSION section before "All Leads".
+
+**State**: `cityPages` array, `cityPageFilter` (pit filter), `editingCityPage` for edit modal.
+
+**Page content** (when `activePage === "city_pages"`):
+1. Header with count + [Discover Cities] and [Regenerate All] buttons
+2. Metrics bar: Active Pages, Total Views, Cities Covered, States Covered
+3. PIT filter dropdown
+4. Table: City, State, Slug/URL (clickable), PIT, Distance, Price, Status (pill), Views, Actions (View/Edit/Regenerate/Toggle)
+5. Edit modal: city name, meta title (60 char counter), meta description (160 char counter), h1, status dropdown, content textarea, [Regenerate with AI] button
+
+**Discover Cities flow**: Calls `discover_cities` action → shows confirmation dialog with city list, checkboxes, duplicate warnings → on confirm calls `create_city_pages` with selected cities → shows generation progress.
+
+---
+
+### Step 7 — Sitemap Edge Function: `generate-sitemap/index.ts`
+
+Returns XML sitemap with static pages + all active city pages. Content-Type: `application/xml`. No auth required.
+
+Note: Since Vercel serves static `public/sitemap.xml`, we'll add a Vercel rewrite for `/sitemap.xml` → the edge function URL, OR generate a static sitemap that gets rebuilt. Given the dynamic nature, the edge function approach is better — add a vercel.json rewrite.
 
 ---
 
@@ -71,15 +97,18 @@ Add new email type handler `cash_payment_confirmed`:
 
 | File | Change |
 |---|---|
-| `supabase/migrations/[new].sql` | Add `cash_collected`, `cash_collected_at`, `cash_collected_by` columns to orders |
-| `supabase/functions/leads-auth/index.ts` | Add `list_cash_orders` and `mark_cash_paid` actions |
-| `supabase/functions/send-email/index.ts` | Add `cash_payment_confirmed` email type |
-| `src/pages/Leads.tsx` | Add "Cash Orders" nav item, page with metrics/table/dialog/print, ~300 lines of new content |
+| `supabase/migrations/[new].sql` | Create `city_pages` table, RLS, RPC, add `served_cities` to pits |
+| `supabase/functions/generate-city-page/index.ts` | New — AI content generation via Lovable AI Gateway |
+| `supabase/functions/generate-sitemap/index.ts` | New — dynamic XML sitemap |
+| `supabase/functions/leads-auth/index.ts` | Add city page CRUD + discover actions |
+| `src/pages/CityPage.tsx` | New — dynamic city landing page |
+| `src/App.tsx` | Add `/:citySlug/river-sand-delivery` route |
+| `src/pages/Leads.tsx` | Add City Pages nav item + management UI (~250 lines) |
+| `vercel.json` | Add sitemap rewrite to edge function |
 
 ### Technical Notes
-- `mark_cash_paid` calls `send-email` via Supabase function invoke from inside the edge function using service role
-- Overdue = `delivery_date < today AND cash_collected = false`
-- Print uses `@media print` CSS to hide sidebar/nav and show only the daily schedule
-- No new imports needed beyond what Leads.tsx already has (DollarSign icon already imported)
-- Cash/Check distinction shown via `payment_method` value display
+- AI content uses Lovable AI Gateway (LOVABLE_API_KEY already configured) with structured output via tool calling — no Anthropic API needed
+- Google Places Nearby Search called server-side from leads-auth edge function using the existing API key
+- City page views tracked via SECURITY DEFINER RPC to allow anonymous increment without broad UPDATE access
+- Duplicate prevention: UNIQUE constraint + pre-check in discover flow; if two PITs cover same city, assign to lowest-price PIT
 
