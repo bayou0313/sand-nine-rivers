@@ -236,6 +236,14 @@ const Leads = () => {
   const [cashSendEmail, setCashSendEmail] = useState(true);
   const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
 
+  // SEO state
+  const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo">("pricing");
+  const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
+  const [savingSeo, setSavingSeo] = useState(false);
+  const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
+  const [seoAuditResults, setSeoAuditResults] = useState<any>(null);
+  const [seoAuditing, setSeoAuditing] = useState(false);
+
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
     try {
