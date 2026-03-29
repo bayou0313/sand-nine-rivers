@@ -2549,9 +2549,17 @@ const Leads = () => {
                       <p className="text-[10px] text-gray-400 mt-0.5">Paste verification meta content value only</p>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Google Analytics 4 ID</label>
+                      <label className="text-xs text-gray-500 block mb-1">GTM Container ID</label>
+                      <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
+                        <span className="text-sm font-mono" style={{ color: BRAND_NAVY }}>GTM-KPKFPCXM</span>
+                        <span className="text-xs font-medium text-green-600">— Active ✓</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">GTM detected on your site. Configure tags at tagmanager.google.com</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">GA4 Property ID (for reference)</label>
                       <Input className="h-9" value={seoSettings.seo_ga4_id || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_ga4_id: e.target.value })} placeholder="G-XXXXXXXXXX" />
-                      <p className="text-[10px] text-gray-400 mt-0.5">Enter your GA4 Measurement ID</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Connect this to GTM inside Google Tag Manager dashboard</p>
                     </div>
                   </div>
 

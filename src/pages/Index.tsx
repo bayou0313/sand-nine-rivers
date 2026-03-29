@@ -99,12 +99,7 @@ const Index = () => {
         {seoSettings.seo_og_description && <meta property="og:description" content={seoSettings.seo_og_description} />}
         {seoSettings.seo_og_image && <meta property="og:image" content={seoSettings.seo_og_image} />}
         {seoSettings.seo_gsc_id && <meta name="google-site-verification" content={seoSettings.seo_gsc_id} />}
-        {seoSettings.seo_ga4_id && (
-          <script async src={`https://www.googletagmanager.com/gtag/js?id=${seoSettings.seo_ga4_id}`} />
-        )}
-        {seoSettings.seo_ga4_id && (
-          <script>{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${seoSettings.seo_ga4_id}');`}</script>
-        )}
+        {/* GA4 scripts handled by GTM — no injection needed */}
       </Helmet>
       {localBusinessSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: localBusinessSchema }} />
