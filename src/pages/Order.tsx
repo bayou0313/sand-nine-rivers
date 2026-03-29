@@ -76,6 +76,8 @@ const Order = () => {
   const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
   const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
+  const [leadReference, setLeadReference] = useState<string | null>(null);
+  const [showProposalBanner, setShowProposalBanner] = useState(false);
   const [confirmedTotals, setConfirmedTotals] = useState<{
     totalPrice: number;
     totalWithProcessingFee: number;
