@@ -210,6 +210,13 @@ const DeliveryEstimator = () => {
           </div>
         </div>
       </div>
+
+      <OutOfAreaModal
+        open={showOutOfAreaModal}
+        onClose={() => setShowOutOfAreaModal(false)}
+        address={outOfAreaAddress}
+        distanceMiles={outOfAreaDistance}
+      />
     </section>
   );
 };
