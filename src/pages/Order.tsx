@@ -346,7 +346,7 @@ const Order = () => {
       setAddress(paramAddress);
       setResult({
         distance: parseFloat(paramDistance),
-        price: parseFloat(paramPrice || String(BASE_PRICE)),
+        price: parseFloat(paramPrice || String(globalPricing.base_price)),
         address: `${paramDistance} miles away`,
         duration: paramDuration,
       });
