@@ -931,11 +931,11 @@ const Order = () => {
 
                       <ReceiptRow label={`River Sand (9 cu yds × ${quantity})`} value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
                       <div className="border-b border-dashed border-border" />
-                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(195 * quantity)} />
-                      {result.distance > BASE_MILES && (
+                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(effectivePricing.base_price * quantity)} />
+                      {result.distance > effectivePricing.free_miles && (
                         <>
                           <div className="border-b border-dashed border-border" />
-                          <ReceiptRow label={`Extended delivery surcharge × ${quantity}`} value={`+${formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}`} />
+                          <ReceiptRow label={`Extended delivery surcharge × ${quantity}`} value={`+${formatCurrency((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity)}`} />
                         </>
                       )}
                       <div className="border-b border-dashed border-border" />
