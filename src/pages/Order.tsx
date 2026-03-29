@@ -422,7 +422,7 @@ const Order = () => {
         setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
         // Find nearest PIT
         try {
-          const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon").eq("status", "active");
+          const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
           if (pitsData && pitsData.length > 0) {
             const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
             const geocodeData = await geocodeResp.json();
