@@ -234,6 +234,22 @@ serve(async (req) => {
       );
     }
 
+    // ── LIST ABANDONED SESSIONS ──
+    if (action === "list_abandoned") {
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("*")
+        .in("stage", ["started_checkout", "reached_payment"])
+        .not("customer_email", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ sessions: data }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
