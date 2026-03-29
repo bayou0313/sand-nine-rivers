@@ -1241,7 +1241,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Extra per mile</label>
                                 <Input
-                                  placeholder={`Global: $${globalSettings.default_extra_per_mile}/mi`}
+                                  placeholder="Enter price per mile"
                                   value={editPitData.price_per_extra_mile ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
