@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import OutOfAreaModal from "@/components/OutOfAreaModal";
 
 declare global {
   interface Window {
@@ -33,6 +34,9 @@ const DeliveryEstimator = () => {
   const [result, setResult] = useState<EstimateResult>(null);
   const [error, setError] = useState("");
   const [apiLoaded, setApiLoaded] = useState(false);
+  const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
+  const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
+  const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
@@ -86,6 +90,9 @@ const DeliveryEstimator = () => {
       const distanceMiles = element.distance.value / 1609.34;
       if (distanceMiles > MAX_MILES) {
         setError("That address is outside our delivery area. Call us for options.");
+        setOutOfAreaAddress(address);
+        setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
+        setShowOutOfAreaModal(true);
         setLoading(false); return;
       }
 
@@ -203,6 +210,13 @@ const DeliveryEstimator = () => {
           </div>
         </div>
       </div>
+
+      <OutOfAreaModal
+        open={showOutOfAreaModal}
+        onClose={() => setShowOutOfAreaModal(false)}
+        address={outOfAreaAddress}
+        distanceMiles={outOfAreaDistance}
+      />
     </section>
   );
 };
