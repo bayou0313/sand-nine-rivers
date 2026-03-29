@@ -110,11 +110,11 @@ const Hero = ({ h1Override, subtitleOverride, trustBadges }: HeroProps = {}) => 
             transition={{ delay: 0.9 }}
             className="flex flex-wrap gap-6 pt-2"
           >
-            {[
+            {(trustBadges || [
               { icon: ShieldCheck, text: "Same-day delivery available" },
               { icon: MapPin, text: "GPS-tracked loads" },
               { icon: Truck, text: "Local New Orleans team" },
-            ].map((item) => (
+            ]).map((item) => (
               <div key={item.text} className="flex items-center gap-2 text-primary-foreground/50 font-body text-sm">
                 <item.icon className="w-4 h-4 text-accent/80" />
                 {item.text}
