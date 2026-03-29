@@ -18,6 +18,7 @@ import Navbar from "@/components/Navbar";
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
+import { type PitData, type GlobalPricing, findBestPit, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -26,11 +27,6 @@ declare global {
   }
 }
 
-const ORIGIN = "1215 River Rd, Bridge City, LA 70094";
-const FALLBACK_BASE_PRICE = 195;
-const FALLBACK_BASE_MILES = 15;
-const FALLBACK_MAX_MILES = 30;
-const FALLBACK_PER_MILE_EXTRA = 5;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
 type EstimateResult = {
