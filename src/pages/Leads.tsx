@@ -1372,57 +1372,6 @@ const Leads = () => {
                   const eff = getEffectivePrice(p, globalSettings);
                   const hasOverride = p.base_price != null || p.free_miles != null || p.price_per_extra_mile != null || p.max_distance != null;
 
-                  if (editingPitId === p.id) {
-                    return (
-                      <div key={p.id} className="border-2 rounded-xl p-4 flex-1 min-w-[280px]" style={{ borderColor: BRAND_GOLD }}>
-                        <div className="space-y-3">
-                          <Input placeholder="PIT Name" value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
-                          <div className="relative">
-                            <Input ref={editPitInputRef} placeholder="PIT Address" value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
-                            {editPitData.lat != null && editPitData.lat !== pits.find(pp => pp.id === editingPitId)?.lat && (
-                              <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />
-                            )}
-                            {editPitData.address && editPitData.address !== pits.find(pp => pp.id === editingPitId)?.address && editPitData.lat === pits.find(pp => pp.id === editingPitId)?.lat && (
-                              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
-                            )}
-                          </div>
-                          <select value={editPitData.status || "active"} onChange={e => setEditPitData({ ...editPitData, status: e.target.value as any })} className="w-full h-10 px-3 rounded-md border">
-                            <option value="active">Active</option>
-                            <option value="planning">Planning</option>
-                            <option value="inactive">Inactive</option>
-                          </select>
-                          <div className="border-t pt-3">
-                            <p className="text-xs font-bold mb-2" style={{ color: BRAND_NAVY }}>Pricing Overrides (leave blank to use global)</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-xs text-gray-400">Base price</label>
-                                <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-8 text-sm" />
-                              </div>
-                              <div>
-                                <label className="text-xs text-gray-400">Free miles</label>
-                                <Input placeholder="e.g. 15" value={editPitData.free_miles ?? ""} onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                              </div>
-                              <div>
-                                <label className="text-xs text-gray-400">Extra per mile</label>
-                                <Input placeholder="e.g. 5.00" value={editPitData.price_per_extra_mile ?? ""} onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)} type="number" className="h-8 text-sm" />
-                              </div>
-                              <div>
-                                <label className="text-xs text-gray-400">Max distance</label>
-                                <Input placeholder="e.g. 30" value={editPitData.max_distance ?? ""} onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button onClick={saveEditPit} disabled={savingPit} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                              {savingPit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
-                            </Button>
-                            <Button onClick={cancelEditPit} variant="outline" size="sm">Cancel</Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
                   return (
                     <div key={p.id} className="border rounded-xl p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : CARD_BORDER }}>
                       <div className="flex items-center justify-between mb-1">
@@ -1447,64 +1396,11 @@ const Leads = () => {
                           <Power className="w-3 h-3 mr-1" />
                           {p.status === "active" ? "Deactivate" : "Activate"}
                         </Button>
-                        {!p.is_default && (
-                          <Button size="sm" variant="outline" onClick={() => deletePit(p.id)} className="text-xs h-7 text-red-500 border-red-200">Delete</Button>
-                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-
-              {/* Add PIT form */}
-              {showAddPit && (
-                <div className="mt-4 p-4 border rounded-xl bg-gray-50" style={{ borderColor: CARD_BORDER }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input placeholder="PIT Name" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
-                    <div className="relative">
-                      <Input ref={pitInputRef} placeholder="PIT Address" value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
-                      {newPit.lat != null && <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />}
-                      {newPit.address && newPit.lat == null && (
-                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
-                      )}
-                    </div>
-                    <select value={newPit.status} onChange={e => setNewPit({ ...newPit, status: e.target.value as any })} className="h-10 px-3 rounded-md border">
-                      <option value="planning">Planning</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                    <Input placeholder="Notes" value={newPit.notes} onChange={e => setNewPit({ ...newPit, notes: e.target.value })} />
-                  </div>
-                  <div className="border-t mt-3 pt-3">
-                    <p className="text-xs font-bold mb-2" style={{ color: BRAND_NAVY }}>Pricing Overrides (leave blank to use global)</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      <div>
-                        <label className="text-xs text-gray-400">Base price</label>
-                        <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-8 text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-400">Free miles</label>
-                        <Input placeholder="e.g. 15" value={newPit.free_miles ?? ""} onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-400">Extra per mile</label>
-                        <Input placeholder="e.g. 5.00" value={newPit.price_per_extra_mile ?? ""} onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }} type="number" className="h-8 text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-400">Max distance</label>
-                        <Input placeholder="e.g. 30" value={newPit.max_distance ?? ""} onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-8 text-sm" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button onClick={addPit} disabled={geocoding} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                      {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                      Add PIT
-                    </Button>
-                    <Button onClick={() => setShowAddPit(false)} variant="outline" size="sm">Cancel</Button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ROI Summary + Simulation Table */}
