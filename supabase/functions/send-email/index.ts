@@ -374,6 +374,46 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
       );
       console.log("[email] Out-of-area lead notification sent to:", ownerEmail);
 
+    } else if (type === "pit_proposal") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const proposalHtml = emailWrapper(`
+        <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+        <p style="font-size:16px;color:#555;line-height:1.6">Good news — <strong>River Sand now delivers near ${data.zip_code || "your area"}</strong>!</p>
+        
+        <div style="border:2px solid ${BRAND_GOLD};border-radius:12px;padding:24px;margin:24px 0;text-align:center">
+          <p style="margin:0 0 8px;font-size:14px;color:#555;text-transform:uppercase;letter-spacing:1px">River Sand — 9 Cubic Yards</p>
+          <p style="margin:0 0 4px;font-size:13px;color:#777">Delivered to: ${data.delivery_address || ""}</p>
+          <p style="margin:16px 0 0;font-size:32px;font-weight:700;color:${BRAND_GOLD}">$${Number(data.new_price || 195).toFixed(2)}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#999">Your price, delivered</p>
+        </div>
+
+        <div style="text-align:center;margin:24px 0">
+          <a href="${data.order_url || "https://riversand.net/order"}" style="display:inline-block;background:${BRAND_GOLD};color:#fff!important;padding:16px 48px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:1px">ORDER NOW — $${Number(data.new_price || 195).toFixed(2)} DELIVERED</a>
+        </div>
+
+        <p style="font-size:14px;color:#555;line-height:1.8">Click the button above to place your order instantly — your address is already filled in.<br>
+        Same-day delivery available Monday–Friday.<br>
+        No account needed. Pay by card, cash, or check.</p>
+
+        <p style="font-size:14px;color:#555;line-height:1.8">Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a> — we're real people and happy to help.</p>
+
+        <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">Ways Materials, LLC</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">New Orleans, Louisiana</p>
+        </div>
+      `);
+
+      await sendMail(
+        resend,
+        data.customer_email,
+        `River Sand is now available near ${data.zip_code || "you"} — Your price: $${Number(data.new_price || 195).toFixed(2)}`,
+        proposalHtml
+      );
+      console.log("[email] Pit proposal sent to:", data.customer_email);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),

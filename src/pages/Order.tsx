@@ -76,6 +76,8 @@ const Order = () => {
   const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
   const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
+  const [leadReference, setLeadReference] = useState<string | null>(null);
+  const [showProposalBanner, setShowProposalBanner] = useState(false);
   const [confirmedTotals, setConfirmedTotals] = useState<{
     totalPrice: number;
     totalWithProcessingFee: number;
@@ -293,16 +295,41 @@ const Order = () => {
     const paramDistance = searchParams.get("distance");
     const paramPrice = searchParams.get("price");
     const paramDuration = searchParams.get("duration");
+    const paramLead = searchParams.get("lead");
+    const paramUtmSource = searchParams.get("utm_source");
 
-    if (paramAddress && paramDistance && paramPrice && paramDuration) {
+    if (paramLead) setLeadReference(paramLead);
+    if (paramUtmSource === "proposal") setShowProposalBanner(true);
+
+    if (paramAddress && paramPrice) {
+      setAddress(paramAddress);
+      const price = parseFloat(paramPrice);
+      const dist = paramDistance ? parseFloat(paramDistance) : (price > BASE_PRICE ? ((price - BASE_PRICE) / PER_MILE_EXTRA) + BASE_MILES : 10);
+      setResult({
+        distance: parseFloat(dist.toFixed(1)),
+        price: isNaN(price) ? BASE_PRICE : price,
+        address: `${dist.toFixed(1)} miles away`,
+        duration: paramDuration || "~30 min",
+      });
+      setStep(prev => prev === "address" ? "details" : prev);
+    } else if (paramAddress && paramDistance && paramDuration) {
       setAddress(paramAddress);
       setResult({
         distance: parseFloat(paramDistance),
-        price: parseFloat(paramPrice),
+        price: parseFloat(paramPrice || String(BASE_PRICE)),
         address: `${paramDistance} miles away`,
         duration: paramDuration,
       });
       setStep(prev => prev === "address" ? "details" : prev);
+    } else if (paramAddress) {
+      setAddress(paramAddress);
+      // Auto-trigger distance calculation after API loads
+      setTimeout(() => {
+        if (window.google?.maps) {
+          const btn = document.querySelector('[data-calc-btn]') as HTMLButtonElement;
+          btn?.click();
+        }
+      }, 1500);
     }
   }, [searchParams]);
 
@@ -426,6 +453,7 @@ const Order = () => {
     same_day_requested: selectedDeliveryDate!.isSameDay,
     tax_rate: taxInfo.rate,
     tax_amount: taxAmount,
+    ...(leadReference ? { lead_reference: leadReference } : {}),
   });
 
   const handleCodSubmit = async () => {
@@ -465,6 +493,18 @@ const Order = () => {
 
       // Send order confirmation email with totals passed directly (state not yet updated)
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
+
+      // Mark lead as converted if this order came from a proposal
+      if (leadReference) {
+        supabase.functions.invoke("leads-auth", {
+          body: {
+            password: "system",
+            action: "mark_converted",
+            lead_number: leadReference,
+            order_number: inserted?.order_number || null,
+          },
+        }).catch((err: any) => console.warn("[Order] Lead conversion tracking failed:", err));
+      }
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
     } finally {
@@ -618,6 +658,20 @@ const Order = () => {
       <Navbar solid />
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
+        {/* Proposal banner for leads coming from email */}
+        {showProposalBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 rounded-xl flex items-center justify-between"
+            style={{ backgroundColor: "#FFF8E7", border: "1px solid #C07A00" }}
+          >
+            <p className="font-body text-sm" style={{ color: "#0D2137" }}>
+              <strong>Welcome back!</strong> River Sand is now delivering to your area. Your price is locked in below.
+            </p>
+            <button onClick={() => setShowProposalBanner(false)} className="ml-4 text-lg font-bold" style={{ color: "#0D2137" }}>×</button>
+          </motion.div>
+        )}
         {/* Sticky countdown + progress */}
         <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-accent/10 -mx-4 px-4 mb-4">
           <CountdownBar />
@@ -703,7 +757,7 @@ const Order = () => {
                       <p className="font-body text-sm text-destructive">{error}</p>
                     </motion.div>
                   )}
-                  <Button onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                  <Button data-calc-btn onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow">
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET DELIVERY PRICE</>}
                   </Button>
                 </div>

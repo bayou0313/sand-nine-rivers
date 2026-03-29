@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { password, action, id } = await req.json();
+    const { password, action, id, stage, notes, lead_number, order_number } = await req.json();
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
@@ -49,7 +49,6 @@ serve(async (req) => {
         );
       }
 
-      // Get current value
       const { data: current, error: fetchErr } = await supabase
         .from("delivery_leads")
         .select("contacted")
@@ -67,6 +66,114 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, contacted: !current.contacted }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update_stage") {
+      if (!id || !stage) {
+        return new Response(
+          JSON.stringify({ error: "Missing id or stage" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const validStages = ["new", "called", "quoted", "won", "lost"];
+      if (!validStages.includes(stage)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid stage" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { error: updateErr } = await supabase
+        .from("delivery_leads")
+        .update({ stage })
+        .eq("id", id);
+
+      if (updateErr) throw updateErr;
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update_notes") {
+      if (!id || notes === undefined) {
+        return new Response(
+          JSON.stringify({ error: "Missing id or notes" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get current notes and append
+      const { data: current, error: fetchErr } = await supabase
+        .from("delivery_leads")
+        .select("notes")
+        .eq("id", id)
+        .single();
+
+      if (fetchErr) throw fetchErr;
+
+      const timestamp = new Date().toLocaleString("en-US");
+      const existingNotes = current.notes || "";
+      const newNotes = existingNotes
+        ? `${existingNotes}\n[${timestamp}] ${notes}`
+        : `[${timestamp}] ${notes}`;
+
+      const { error: updateErr } = await supabase
+        .from("delivery_leads")
+        .update({ notes: newNotes })
+        .eq("id", id);
+
+      if (updateErr) throw updateErr;
+
+      return new Response(
+        JSON.stringify({ success: true, notes: newNotes }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "mark_converted") {
+      if (!lead_number) {
+        return new Response(
+          JSON.stringify({ error: "Missing lead_number" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Find lead by lead_number
+      const { data: lead, error: fetchErr } = await supabase
+        .from("delivery_leads")
+        .select("id, notes")
+        .eq("lead_number", lead_number)
+        .single();
+
+      if (fetchErr) {
+        console.error("[leads-auth] Lead not found:", lead_number, fetchErr);
+        return new Response(
+          JSON.stringify({ error: "Lead not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const timestamp = new Date().toLocaleString("en-US");
+      const existingNotes = lead.notes || "";
+      const conversionNote = `[${timestamp}] CONVERTED — Order ${order_number || "N/A"} placed`;
+      const newNotes = existingNotes
+        ? `${existingNotes}\n${conversionNote}`
+        : conversionNote;
+
+      const { error: updateErr } = await supabase
+        .from("delivery_leads")
+        .update({ stage: "won", contacted: true, notes: newNotes })
+        .eq("id", lead.id);
+
+      if (updateErr) throw updateErr;
+
+      return new Response(
+        JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
