@@ -267,6 +267,7 @@ const DeliveryEstimator = () => {
         onClose={() => setShowOutOfAreaModal(false)}
         address={outOfAreaAddress}
         distanceMiles={outOfAreaDistance}
+        nearestPit={nearestPitInfo}
       />
     </section>
   );
