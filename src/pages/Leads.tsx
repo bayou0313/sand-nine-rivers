@@ -1680,7 +1680,7 @@ const Leads = () => {
             if (fnError) throw fnError;
             if (data?.cities) {
               setDiscoveredCities(data.cities);
-              const nonDuplicates = new Set(data.cities.map((_: any, i: number) => i).filter((i: number) => !data.cities[i].duplicate));
+              const nonDuplicates = new Set<number>(data.cities.map((_: any, i: number) => i).filter((i: number) => !data.cities[i].duplicate));
               setDiscoverChecked(nonDuplicates);
               setShowDiscoverModal(true);
             }
