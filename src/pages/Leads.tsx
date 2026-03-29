@@ -43,6 +43,9 @@ interface Lead {
   stage: string;
   ip_address: string | null;
   notes: string | null;
+  nearest_pit_name: string | null;
+  nearest_pit_id: string | null;
+  nearest_pit_distance: number | null;
 }
 
 interface ParsedLead extends Lead {
