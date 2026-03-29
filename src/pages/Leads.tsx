@@ -675,6 +675,7 @@ const Leads = () => {
     const ac = new window.google.maps.places.Autocomplete(editPitInputRef.current, {
       types: ["address"],
       fields: ["formatted_address", "geometry"],
+      componentRestrictions: { country: "us" },
     });
     ac.addListener("place_changed", () => {
       const place = ac.getPlace();
@@ -689,7 +690,7 @@ const Leads = () => {
     });
     editPitAutocompleteRef.current = ac;
     return () => { editPitAutocompleteRef.current = null; };
-  }, [editingPitId]);
+  }, [editingPitId, googleLoaded]);
 
   // Google Places Autocomplete for Business Profile address
   useEffect(() => {
