@@ -575,6 +575,13 @@ const Order = () => {
       };
       setConfirmedTotals(snapshotTotals);
       setStep("success");
+      trackEvent("purchase", {
+        transaction_id: inserted?.order_number || "",
+        value: totalPrice,
+        currency: "USD",
+        tax: taxAmount,
+        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result?.price || 0, quantity }],
+      });
       updateSession({
         stage: "completed_order",
         order_id: inserted?.id || null,
