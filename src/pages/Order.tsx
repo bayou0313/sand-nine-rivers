@@ -72,6 +72,16 @@ const Order = () => {
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [lookupToken, setLookupToken] = useState<string | null>(null);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+  const [confirmedTotals, setConfirmedTotals] = useState<{
+    totalPrice: number;
+    totalWithProcessingFee: number;
+    processingFee: number;
+    taxAmount: number;
+    subtotal: number;
+    saturdaySurchargeTotal: number;
+    distanceFee: number;
+    taxInfo: { rate: number; parish: string };
+  } | null>(null);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
