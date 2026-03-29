@@ -12,6 +12,10 @@ const faqs = [
     a: "RIVERSAND.NET offers same-day delivery across Greater New Orleans for orders placed before noon Monday through Saturday. Our GPS-tracked trucks operate throughout Orleans, Jefferson, St. Bernard, and St. Tammany parishes. For large commercial orders or specific delivery windows, call 1-855-GOT-WAYS to confirm availability.",
   },
   {
+    q: "What is a \"load\" of river sand?",
+    a: "One load is approximately 12–15 cubic yards of river sand, delivered by a single dump truck. That's enough to cover roughly 1,500–2,000 square feet at a 2-inch depth — ideal for fill, drainage, or landscaping projects.",
+  },
+  {
     q: "What type of river sand do you deliver?",
     a: "We deliver natural river sand sourced from local suppliers — the same coarse, rounded-grain material used by New Orleans contractors for drainage projects, landscaping, and construction base layers. It is not beach sand or manufactured sand. If you have specific gradation requirements for a commercial project, contact us and we will confirm the specification.",
   },
@@ -22,6 +26,26 @@ const faqs = [
   {
     q: "Where do you deliver river sand?",
     a: "We serve Greater New Orleans including Orleans Parish, Jefferson Parish, Metairie, Kenner, Chalmette, Slidell, and surrounding areas. Service availability and pricing may vary based on distance. Enter your address in the delivery calculator above to confirm coverage and get your instant quote.",
+  },
+  {
+    q: "How do I know the driver will show up?",
+    a: "Once you place your order you'll receive an email confirmation with your order number and delivery window. Our team also confirms by phone the morning of your delivery.",
+  },
+  {
+    q: "Do I need to be home when the sand is delivered?",
+    a: "No. As long as you leave clear access instructions (gate codes, where to dump, etc.) in the notes field during checkout, our driver can complete the delivery without you present.",
+  },
+  {
+    q: "What areas do you currently serve?",
+    a: "We serve the greater Gulf South region including Metairie, Kenner, Gretna, and surrounding areas. Enter your address in the estimator above for an instant answer.",
+  },
+  {
+    q: "Can I pay with cash?",
+    a: "Yes. We offer cash on delivery (COD) at no extra charge. You can also pay by card online through Stripe checkout.",
+  },
+  {
+    q: "What if it rains on my delivery day?",
+    a: "Light rain doesn't affect delivery. For severe weather, our team will contact you to reschedule at no penalty.",
   },
   {
     q: "What if I need more or less than 9 yards?",

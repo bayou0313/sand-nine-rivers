@@ -202,6 +202,22 @@ const Pricing = () => {
           )}
         </motion.div>
 
+        {/* Example pricing breakdown */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-10 max-w-lg mx-auto bg-background/5 border border-background/10 rounded-2xl p-6 text-center"
+        >
+          <p className="font-body text-background/60 text-sm leading-relaxed">
+            <strong className="text-background/80">Example:</strong> 5 miles from our pit → {formatCurrency(globalPricing.base_price)}. 15 miles → {formatCurrency(globalPricing.base_price + (15 - globalPricing.free_miles) * globalPricing.extra_per_mile)}.
+            <br />Your exact price depends on your address —{" "}
+            <a href="#estimator" className="text-accent hover:text-accent/80 underline underline-offset-2 transition-colors">
+              check yours above
+            </a>.
+          </p>
+        </motion.div>
+
         <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -227,6 +243,12 @@ const Pricing = () => {
             </div>
           ))}
         </motion.div>
+
+        <div className="mt-6 text-center">
+          <a href="#estimator" className="text-accent hover:text-accent/80 font-display tracking-wider text-sm transition-colors">
+            → Check my exact delivery price
+          </a>
+        </div>
       </div>
 
       <OutOfAreaModal
