@@ -540,6 +540,8 @@ serve(async (req) => {
       const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
 
       const created: string[] = [];
+      let generated = 0;
+      let failed = 0;
       for (const city of cities) {
         const { data: inserted, error: insertErr } = await supabase
           .from("city_pages")
@@ -559,6 +561,7 @@ serve(async (req) => {
 
         if (insertErr) {
           console.error("Insert city page error:", insertErr);
+          failed++;
           continue;
         }
 
@@ -580,20 +583,22 @@ serve(async (req) => {
             }),
           });
           if (genResp.ok) {
-            // Set to active after successful generation
             await supabase.from("city_pages").update({ status: "active" }).eq("id", inserted.id);
+            generated++;
           } else {
             console.error("AI generation failed for", city.city_name, await genResp.text());
+            failed++;
           }
         } catch (genErr) {
           console.error("AI generation error for", city.city_name, genErr);
+          failed++;
         }
 
         created.push(inserted.id);
       }
 
       return new Response(
-        JSON.stringify({ success: true, created_ids: created, count: created.length }),
+        JSON.stringify({ success: true, created_ids: created, count: created.length, generated, failed }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
