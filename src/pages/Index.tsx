@@ -21,7 +21,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <Stats />
-      <Pricing />
+      
       <DeliveryEstimator />
       <About />
       <RiverSandInfo />
