@@ -402,13 +402,77 @@ serve(async (req) => {
         .from("pits").select("*").eq("id", pit_id).single();
       if (pitErr) throw pitErr;
 
-      const radiusMeters = (pitData.max_distance || 30) * 1609;
+      const maxDist = pitData.max_distance || 30;
+      const radiusMeters = maxDist * 1609;
       const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
 
-      const placesResp = await fetch(
-        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${pitData.lat},${pitData.lon}&radius=${radiusMeters}&type=locality&key=${apiKey}`
-      );
-      const placesData = await placesResp.json();
+      // Haversine helper
+      const R = 3958.8;
+      const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      };
+
+      // Run multiple place type searches
+      const placeTypes = ["locality", "sublocality", "neighborhood"];
+      const allPlaces = new Map<string, any>();
+
+      for (const pType of placeTypes) {
+        try {
+          const resp = await fetch(
+            `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${pitData.lat},${pitData.lon}&radius=${radiusMeters}&type=${pType}&key=${apiKey}`
+          );
+          const data = await resp.json();
+          for (const place of (data.results || [])) {
+            const name = place.name;
+            if (!allPlaces.has(name.toLowerCase())) {
+              allPlaces.set(name.toLowerCase(), place);
+            }
+          }
+        } catch (e) {
+          console.error(`Places search failed for type=${pType}:`, e);
+        }
+      }
+
+      // Fallback: if fewer than 5 results, use hardcoded LA community list + geocoding
+      const FALLBACK_CITIES = [
+        "Metairie","Kenner","Gretna","Harvey","Westwego","Marrero","Terrytown","Algiers",
+        "Chalmette","Arabi","Meraux","Violet","Slidell","Mandeville","Covington",
+        "Hammond","Houma","Thibodaux","Laplace","Reserve","Lutcher","Gramercy",
+        "Destrehan","Norco","Hahnville","Boutte","Luling","Paradis","Des Allemands",
+        "Belle Chasse","Buras","Empire","Morgan City","Raceland","Lockport",
+        "Golden Meadow","Cut Off","Galliano","Napoleonville","Donaldsonville",
+        "Plaquemine","Port Allen","Baker","Zachary","Central","Denham Springs",
+        "Gonzales","Prairieville","Sorrento","Vacherie"
+      ];
+
+      if (allPlaces.size < 5 && apiKey) {
+        console.log(`Only ${allPlaces.size} places found via API, using fallback list`);
+        for (const cityName of FALLBACK_CITIES) {
+          if (allPlaces.has(cityName.toLowerCase())) continue;
+          try {
+            const geoResp = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cityName + ", Louisiana")}&key=${apiKey}`
+            );
+            const geoData = await geoResp.json();
+            const result = geoData.results?.[0];
+            if (result) {
+              const loc = result.geometry.location;
+              const dist = hav(pitData.lat, pitData.lon, loc.lat, loc.lng);
+              if (dist <= maxDist) {
+                allPlaces.set(cityName.toLowerCase(), {
+                  name: cityName,
+                  geometry: { location: loc },
+                });
+              }
+            }
+          } catch (e) {
+            console.error(`Geocode failed for ${cityName}:`, e);
+          }
+        }
+      }
 
       // Get existing city slugs
       const { data: existingPages } = await supabase
@@ -429,15 +493,7 @@ serve(async (req) => {
       const freeMiles = pitData.free_miles ?? parseFloat(gs.default_free_miles || "15");
       const extraPerMile = pitData.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
 
-      const R = 3958.8;
-      const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      };
-
-      const discovered = (placesData.results || []).map((place: any) => {
+      const discovered = Array.from(allPlaces.values()).map((place: any) => {
         const cityName = place.name;
         const slug = cityName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
         const lat = place.geometry.location.lat;
@@ -457,7 +513,8 @@ serve(async (req) => {
           duplicate: !!existing,
           existing_pit_name: existing?.pit_name || null,
         };
-      }).filter((c: any) => c.distance <= (pitData.max_distance || 30));
+      }).filter((c: any) => c.distance <= maxDist)
+        .sort((a: any, b: any) => a.distance - b.distance);
 
       return new Response(
         JSON.stringify({ cities: discovered, pit: pitData }),
@@ -483,6 +540,8 @@ serve(async (req) => {
       const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
 
       const created: string[] = [];
+      let generated = 0;
+      let failed = 0;
       for (const city of cities) {
         const { data: inserted, error: insertErr } = await supabase
           .from("city_pages")
@@ -502,6 +561,7 @@ serve(async (req) => {
 
         if (insertErr) {
           console.error("Insert city page error:", insertErr);
+          failed++;
           continue;
         }
 
@@ -523,20 +583,22 @@ serve(async (req) => {
             }),
           });
           if (genResp.ok) {
-            // Set to active after successful generation
             await supabase.from("city_pages").update({ status: "active" }).eq("id", inserted.id);
+            generated++;
           } else {
             console.error("AI generation failed for", city.city_name, await genResp.text());
+            failed++;
           }
         } catch (genErr) {
           console.error("AI generation error for", city.city_name, genErr);
+          failed++;
         }
 
         created.push(inserted.id);
       }
 
       return new Response(
-        JSON.stringify({ success: true, created_ids: created, count: created.length }),
+        JSON.stringify({ success: true, created_ids: created, count: created.length, generated, failed }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
