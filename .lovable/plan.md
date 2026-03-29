@@ -1,63 +1,82 @@
 
 
-## Fix — Cash/Check Orders Showing $0.00 on Confirmation Page
+## Capture Out-of-Area Leads — Implementation Plan
 
-### Root Cause
-The confirmation page displays `totalPrice`, which is derived from `result` (the distance estimate state). If `result` becomes null or the component re-renders and loses state, `subtotal` falls to 0 (line 100), making `totalPrice` = $0.00.
+### Overview
+When a delivery address is outside the service area, show a modal to collect the customer's contact info, save it to a new `delivery_leads` table, send an email notification to `cmo@haulogix.com`, and provide a password-protected `/leads` page to manage them.
 
-### Fix
-Store the final computed totals in state when the order is submitted, so the confirmation page uses a snapshot rather than depending on `result` still being available.
+---
 
-### Changes — `src/pages/Order.tsx`
+### Step 1 — Database Migration
 
-**A. Add new state to capture confirmed totals (near line 74):**
-```typescript
-const [confirmedTotals, setConfirmedTotals] = useState<{
-  totalPrice: number;
-  totalWithProcessingFee: number;
-  processingFee: number;
-  taxAmount: number;
-  subtotal: number;
-  saturdaySurchargeTotal: number;
-  distanceFee: number;
-} | null>(null);
-```
+Create `delivery_leads` table with RLS policies:
+- Columns: `id`, `created_at`, `address`, `distance_miles`, `customer_name`, `customer_email`, `customer_phone`, `contacted`
+- `CHECK` constraint: at least one of email or phone required
+- RLS: anon/authenticated can INSERT; only admins can SELECT/UPDATE
+- Add a separate policy allowing SELECT/UPDATE for the service role (so the edge function for the leads page can query)
 
-**B. Capture totals in `handleCodSubmit` (before `setStep("success")`, ~line 417):**
-```typescript
-setConfirmedTotals({
-  totalPrice,
-  totalWithProcessingFee,
-  processingFee,
-  taxAmount,
-  subtotal,
-  saturdaySurchargeTotal,
-  distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
-});
-setStep("success");
-```
+### Step 2 — New Component: `src/components/OutOfAreaModal.tsx`
 
-**C. Capture totals in Stripe success handler (~line 172):**
-Same `setConfirmedTotals(...)` call before `setStep("success")`.
+Dialog modal with:
+- Name (required), Email, Phone fields (at least one of email/phone required)
+- Uses `(xxx) xxx-xxxx` phone mask per project standards
+- On submit: inserts into `delivery_leads` via Supabase client, then calls `send-email` edge function with `type: "out_of_area_lead"`
+- Shows success toast, closes modal
+- Props: `open`, `onClose`, `address`, `distanceMiles`
 
-**D. Use `confirmedTotals` on the success page:**
-Create display variables at the top of the success block:
-```typescript
-const displayTotal = confirmedTotals?.totalPrice ?? totalPrice;
-const displayTotalWithFee = confirmedTotals?.totalWithProcessingFee ?? totalWithProcessingFee;
-const displayProcessingFee = confirmedTotals?.processingFee ?? processingFee;
-```
+### Step 3 — Update `src/components/DeliveryEstimator.tsx`
 
-Replace all `totalPrice`, `totalWithProcessingFee`, and `processingFee` references in the success section (lines 1060–1246) with these display variables.
+- Add `showOutOfAreaModal` state
+- When `distanceMiles > MAX_MILES`: set `showOutOfAreaModal = true`, store address/distance
+- Render `<OutOfAreaModal>` component
+- Keep existing error message visible
 
-Key lines affected:
-- **Line 1094** (Amount Charged): use `displayTotalWithFee`
-- **Line 1114** (Processing Fee): use `displayProcessingFee`
-- **Line 1133** (Amount Due for cash/check): use `displayTotal`
-- **Line 1206–1231** (Pricing Summary line items): use confirmed values
-- **Line 1235** (Total): use display variables
-- **Line 1242** (Due at delivery): use display variables
+### Step 4 — Update `supabase/functions/send-email/index.ts`
 
-### No other files changed
-This is a frontend-only fix in `src/pages/Order.tsx`.
+Add handler for `type === "out_of_area_lead"`:
+- Send plain-text style email to `cmo@haulogix.com`
+- Subject: `New Out-of-Area Lead — [address]`
+- Body includes address, distance, name, email, phone, timestamp
+- Footer: `riversand.net | 1-855-GOT-WAYS | Haulogix, LLC`
+
+### Step 5 — New Edge Function: `supabase/functions/leads-auth/index.ts`
+
+Simple edge function that:
+- Accepts POST with `{ password, action, ... }`
+- Validates password against `LEADS_PASSWORD` secret
+- Actions: `list` (returns all leads sorted newest first), `toggle_contacted` (updates contacted boolean by id)
+- Uses service role Supabase client to bypass RLS
+
+### Step 6 — New Page: `src/pages/Leads.tsx`
+
+- Password gate: simple input form, validates via `leads-auth` edge function
+- Once authenticated (store in sessionStorage), shows leads table
+- Navy `#0D2137` header, gold `#C07A00` accents, white table
+- Columns: Date, Address, Distance, Name, Email, Phone, Contacted toggle
+- Sorted newest first
+- Footer: "Powered by Haulogix, LLC"
+
+### Step 7 — Route & Indexing
+
+- Add `/leads` route to `src/App.tsx`
+- Add `Disallow: /leads` to `public/robots.txt`
+
+### Step 8 — Add Secret
+
+- Add `LEADS_PASSWORD` to Lovable Secrets before deploying
+
+---
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| Migration SQL | Create `delivery_leads` table + RLS |
+| `src/components/OutOfAreaModal.tsx` | New modal component |
+| `src/components/DeliveryEstimator.tsx` | Trigger modal on out-of-area |
+| `supabase/functions/send-email/index.ts` | Add `out_of_area_lead` email type |
+| `supabase/functions/leads-auth/index.ts` | New edge function for password auth + CRUD |
+| `src/pages/Leads.tsx` | New password-protected leads page |
+| `src/App.tsx` | Add `/leads` route |
+| `public/robots.txt` | Add `Disallow: /leads` |
 
