@@ -685,11 +685,13 @@ const Leads = () => {
   const startEditPit = (pit: Pit) => {
     setEditingPitId(pit.id);
     setEditPitData({ ...pit });
+    setShowDeleteConfirm(false);
   };
 
   const cancelEditPit = () => {
     setEditingPitId(null);
     setEditPitData({});
+    setShowDeleteConfirm(false);
   };
 
   const saveEditPit = async () => {
@@ -721,13 +723,21 @@ const Leads = () => {
         price_per_extra_mile: editPitData.price_per_extra_mile || null,
         max_distance: editPitData.max_distance || null,
       };
+      const wasActive = originalPit?.status === "active";
+      const nowActive = editPitData.status === "active";
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: { password: storedPassword(), action: "save_pit", pit: pitPayload },
       });
       if (fnError) throw fnError;
-      if (data?.pit) setPits(prev => prev.map(p => p.id === editingPitId ? data.pit : p));
+      if (data?.pit) {
+        setPits(prev => prev.map(p => p.id === editingPitId ? data.pit : p));
+        if (!wasActive && nowActive) {
+          checkActivationLeads(data.pit);
+        }
+      }
       setEditingPitId(null);
       setEditPitData({});
+      setShowDeleteConfirm(false);
       toast({ title: "PIT updated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
