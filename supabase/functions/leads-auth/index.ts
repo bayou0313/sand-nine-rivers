@@ -403,7 +403,7 @@ serve(async (req) => {
       if (pitErr) throw pitErr;
 
       const radiusMeters = (pitData.max_distance || 30) * 1609;
-      const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY") || "";
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
 
       const placesResp = await fetch(
         `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${pitData.lat},${pitData.lon}&radius=${radiusMeters}&type=locality&key=${apiKey}`
