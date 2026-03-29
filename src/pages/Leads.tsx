@@ -538,11 +538,11 @@ const Leads = () => {
     }
     setSavingPit(true);
     try {
-      // Geocode if address changed
       const originalPit = pits.find(p => p.id === editingPitId);
       let lat = editPitData.lat!;
       let lon = editPitData.lon!;
-      if (originalPit && editPitData.address !== originalPit.address) {
+      // Only geocode if address changed AND coords weren't already updated by Places autocomplete
+      if (originalPit && editPitData.address !== originalPit.address && (lat === originalPit.lat && lon === originalPit.lon)) {
         const coords = await geocodeAddress(editPitData.address!);
         if (!coords) { toast({ title: "Geocode failed", variant: "destructive" }); setSavingPit(false); return; }
         lat = coords.lat;
