@@ -651,6 +651,7 @@ const Leads = () => {
     const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, {
       types: ["address"],
       fields: ["formatted_address", "geometry"],
+      componentRestrictions: { country: "us" },
     });
     ac.addListener("place_changed", () => {
       const place = ac.getPlace();
@@ -665,7 +666,7 @@ const Leads = () => {
     });
     addPitAutocompleteRef.current = ac;
     return () => { addPitAutocompleteRef.current = null; };
-  }, [showAddPit]);
+  }, [showAddPit, googleLoaded]);
 
   // Google Places Autocomplete for Edit PIT
   useEffect(() => {
