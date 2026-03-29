@@ -337,7 +337,7 @@ const Order = () => {
       const dist = paramDistance ? parseFloat(paramDistance) : (price > globalPricing.base_price ? ((price - globalPricing.base_price) / globalPricing.extra_per_mile) + globalPricing.free_miles : 10);
       setResult({
         distance: parseFloat(dist.toFixed(1)),
-        price: isNaN(price) ? BASE_PRICE : price,
+        price: isNaN(price) ? globalPricing.base_price : price,
         address: `${dist.toFixed(1)} miles away`,
         duration: paramDuration || "~30 min",
       });
