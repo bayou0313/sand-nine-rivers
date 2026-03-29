@@ -508,6 +508,11 @@ const Order = () => {
     }
     setDateError("");
     setStep("confirm");
+    trackEvent("add_payment_info", {
+      value: totalPrice,
+      currency: "USD",
+      payment_type: paymentMethod,
+    });
     updateSession({
       stage: "reached_payment",
       customer_name: form.name.trim(),
