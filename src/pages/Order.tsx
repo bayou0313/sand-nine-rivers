@@ -72,6 +72,16 @@ const Order = () => {
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [lookupToken, setLookupToken] = useState<string | null>(null);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+  const [confirmedTotals, setConfirmedTotals] = useState<{
+    totalPrice: number;
+    totalWithProcessingFee: number;
+    processingFee: number;
+    taxAmount: number;
+    subtotal: number;
+    saturdaySurchargeTotal: number;
+    distanceFee: number;
+    taxInfo: { rate: number; parish: string };
+  } | null>(null);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
@@ -171,6 +181,16 @@ const Order = () => {
           if (signal.session_id) setStripePaymentId(signal.session_id);
           if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
           setPendingOrderId(null);
+          setConfirmedTotals({
+            totalPrice,
+            totalWithProcessingFee,
+            processingFee,
+            taxAmount,
+            subtotal,
+            saturdaySurchargeTotal,
+            distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
+            taxInfo,
+          });
           setStep("success");
           // Send confirmation email for Stripe payment
           sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
@@ -414,6 +434,16 @@ const Order = () => {
       setOrderNumber(inserted?.order_number || null);
       setConfirmedOrderId(inserted?.id || null);
       setLookupToken(inserted?.lookup_token || null);
+      setConfirmedTotals({
+        totalPrice,
+        totalWithProcessingFee,
+        processingFee,
+        taxAmount,
+        subtotal,
+        saturdaySurchargeTotal,
+        distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
+        taxInfo,
+      });
       setStep("success");
 
       // Send order confirmation email
@@ -1058,7 +1088,17 @@ const Order = () => {
             )}
 
             {/* SUCCESS — Full Confirmation Page */}
-            {step === "success" && (
+            {step === "success" && (() => {
+              const dt = confirmedTotals;
+              const displayTotal = dt?.totalPrice ?? totalPrice;
+              const displayTotalWithFee = dt?.totalWithProcessingFee ?? totalWithProcessingFee;
+              const displayProcessingFee = dt?.processingFee ?? processingFee;
+              const displayTaxAmount = dt?.taxAmount ?? taxAmount;
+              const displaySubtotal = dt?.subtotal ?? subtotal;
+              const displaySaturdaySurcharge = dt?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
+              const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0);
+              const displayTaxInfo = dt?.taxInfo ?? taxInfo;
+              return (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-5 print-confirmation">
                 {/* Header */}
                 <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
@@ -1091,7 +1131,7 @@ const Order = () => {
                       )}
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Amount Charged</span>
-                        <span className="font-display text-sm text-foreground">{formatCurrency(totalWithProcessingFee)}</span>
+                        <span className="font-display text-sm text-foreground">{formatCurrency(displayTotalWithFee)}</span>
                       </div>
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Currency</span>
@@ -1111,7 +1151,7 @@ const Order = () => {
                       </div>
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Processing Fee (3.5%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(processingFee)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayProcessingFee)}</span>
                       </div>
                     </div>
                   </div>
@@ -1130,7 +1170,7 @@ const Order = () => {
                       </div>
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Amount Due</span>
-                        <span className="font-display text-sm text-foreground">{formatCurrency(totalPrice)}</span>
+                        <span className="font-display text-sm text-foreground">{formatCurrency(displayTotal)}</span>
                       </div>
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Due</span>
@@ -1205,41 +1245,41 @@ const Order = () => {
                       <span className="font-body text-sm text-muted-foreground">River Sand (×{quantity})</span>
                       <span className="font-body text-sm text-foreground">{formatCurrency(BASE_PRICE * quantity)}</span>
                     </div>
-                    {result && result.distance > BASE_MILES && (
+                    {displayDistanceFee > 0 && (
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Distance fee</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency((result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayDistanceFee)}</span>
                       </div>
                     )}
                     {selectedDeliveryDate?.isSaturday && (
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Saturday surcharge</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(saturdaySurchargeTotal)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displaySaturdaySurcharge)}</span>
                       </div>
                     )}
-                    {taxAmount > 0 && (
+                    {displayTaxAmount > 0 && (
                       <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(taxAmount)}</span>
+                        <span className="font-body text-sm text-muted-foreground">Sales tax — {displayTaxInfo.parish} ({(displayTaxInfo.rate * 100).toFixed(2)}%)</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayTaxAmount)}</span>
                       </div>
                     )}
                     {paymentMethod === "stripe-link" && (
                       <div className="flex justify-between py-1.5">
                         <span className="font-body text-sm text-muted-foreground">Processing fee (3.5%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(processingFee)}</span>
+                        <span className="font-body text-sm text-foreground">{formatCurrency(displayProcessingFee)}</span>
                       </div>
                     )}
                     <Separator className="my-2" />
                     <div className="flex justify-between py-2">
                       <span className="font-display text-base text-foreground">Total</span>
-                      <span className="font-display text-base text-primary">{formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}</span>
+                      <span className="font-display text-base text-primary">{formatCurrency(paymentMethod === "stripe-link" ? displayTotalWithFee : displayTotal)}</span>
                     </div>
                     <div className="flex justify-between py-1.5">
                       <span className="font-body text-sm text-muted-foreground">
                         {paymentMethod === "stripe-link" ? "Card charged" : "Due at delivery"}
                       </span>
                       <span className="font-display text-sm text-foreground">
-                        {formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}
+                        {formatCurrency(paymentMethod === "stripe-link" ? displayTotalWithFee : displayTotal)}
                       </span>
                     </div>
                   </div>
@@ -1259,7 +1299,8 @@ const Order = () => {
                   </Button>
                 </div>
               </motion.div>
-            )}
+              );
+            })()}
           </AnimatePresence>
         </div>
       </div>
