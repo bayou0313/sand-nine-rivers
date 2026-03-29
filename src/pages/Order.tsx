@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import DeliveryDatePicker, { type DeliveryDate, SATURDAY_SURCHARGE } from "@/components/DeliveryDatePicker";
+import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -72,6 +73,9 @@ const Order = () => {
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [lookupToken, setLookupToken] = useState<string | null>(null);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+  const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
+  const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
+  const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const [confirmedTotals, setConfirmedTotals] = useState<{
     totalPrice: number;
     totalWithProcessingFee: number;
@@ -363,6 +367,9 @@ const Order = () => {
       const distanceMiles = element.distance.value / 1609.34;
       if (distanceMiles > MAX_MILES) {
         setError("That address is outside our delivery area. Please call us for options.");
+        setOutOfAreaAddress(address);
+        setOutOfAreaDistance(parseFloat(distanceMiles.toFixed(1)));
+        setShowOutOfAreaModal(true);
         setLoading(false);
         return;
       }
@@ -606,6 +613,7 @@ const Order = () => {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
       <Navbar solid />
 
@@ -1315,6 +1323,13 @@ const Order = () => {
         </div>
       </div>
     </div>
+    <OutOfAreaModal
+      open={showOutOfAreaModal}
+      onClose={() => setShowOutOfAreaModal(false)}
+      address={outOfAreaAddress}
+      distanceMiles={outOfAreaDistance}
+    />
+  </>
   );
 };
 
