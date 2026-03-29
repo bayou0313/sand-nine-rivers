@@ -1830,6 +1830,69 @@ const Leads = () => {
           </>
         );
 
+      case "abandoned":
+        return (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-500">{abandonedSessions.length} abandoned sessions with email</p>
+              <Button onClick={runEmailCheck} disabled={runningEmailCheck} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                {runningEmailCheck ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Run Email Check
+              </Button>
+            </div>
+            {abandonedLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : (
+              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      {["Date", "Address", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {abandonedSessions.map(s => (
+                      <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
+                        <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
+                        <td className="px-3 py-2">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{
+                            backgroundColor: s.stage === "reached_payment" ? "#EA580C" : "#F59E0B"
+                          }}>
+                            {s.stage === "reached_payment" ? "At Payment" : "Started"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">{s.calculated_price ? `$${Number(s.calculated_price).toFixed(0)}` : "—"}</td>
+                        <td className="px-3 py-2 text-xs">{s.customer_name || "—"}</td>
+                        <td className="px-3 py-2 text-xs">{s.customer_email || "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">
+                          <span>{s.email_1hr_sent ? "1hr ✓" : "1hr ○"}</span>
+                          <span className="mx-1">|</span>
+                          <span>{s.email_24hr_sent ? "24hr ✓" : "24hr ○"}</span>
+                          <span className="mx-1">|</span>
+                          <span>{s.email_72hr_sent ? "72hr ✓" : "72hr ○"}</span>
+                        </td>
+                        <td className="px-3 py-2">
+                          {s.visit_count > 1 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                              {s.visit_count}×
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {abandonedSessions.length === 0 && (
+                      <tr><td colSpan={8} className="px-3 py-8 text-center text-gray-400">No abandoned sessions found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        );
+
       default:
         return null;
     }
