@@ -443,7 +443,7 @@ const Order = () => {
       setOrderNumber(inserted?.order_number || null);
       setConfirmedOrderId(inserted?.id || null);
       setLookupToken(inserted?.lookup_token || null);
-      setConfirmedTotals({
+      const snapshotTotals = {
         totalPrice,
         totalWithProcessingFee,
         processingFee,
@@ -452,11 +452,12 @@ const Order = () => {
         saturdaySurchargeTotal,
         distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
         taxInfo,
-      });
+      };
+      setConfirmedTotals(snapshotTotals);
       setStep("success");
 
-      // Send order confirmation email
-      sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null);
+      // Send order confirmation email with totals passed directly (state not yet updated)
+      sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again or call us.", variant: "destructive" });
     } finally {
