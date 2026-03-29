@@ -205,6 +205,7 @@ const Leads = () => {
   // Business profile state
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
   const [savingProfile, setSavingProfile] = useState(false);
+  const [googleLoaded, setGoogleLoaded] = useState(!!window.google?.maps?.places);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
   const basePrice = parseFloat(globalSettings.default_base_price || "195");
@@ -253,6 +254,22 @@ const Leads = () => {
     } catch (err: any) {
       console.error("Failed to fetch pits:", err);
     }
+  }, []);
+
+  // Load Google Maps Places library
+  useEffect(() => {
+    if (window.google?.maps?.places) { setGoogleLoaded(true); return; }
+    const existing = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existing) {
+      existing.addEventListener("load", () => setGoogleLoaded(true));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleLoaded(true);
+    document.head.appendChild(script);
   }, []);
 
   useEffect(() => {
@@ -634,6 +651,7 @@ const Leads = () => {
     const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, {
       types: ["address"],
       fields: ["formatted_address", "geometry"],
+      componentRestrictions: { country: "us" },
     });
     ac.addListener("place_changed", () => {
       const place = ac.getPlace();
@@ -648,7 +666,7 @@ const Leads = () => {
     });
     addPitAutocompleteRef.current = ac;
     return () => { addPitAutocompleteRef.current = null; };
-  }, [showAddPit]);
+  }, [showAddPit, googleLoaded]);
 
   // Google Places Autocomplete for Edit PIT
   useEffect(() => {
@@ -657,6 +675,7 @@ const Leads = () => {
     const ac = new window.google.maps.places.Autocomplete(editPitInputRef.current, {
       types: ["address"],
       fields: ["formatted_address", "geometry"],
+      componentRestrictions: { country: "us" },
     });
     ac.addListener("place_changed", () => {
       const place = ac.getPlace();
@@ -671,7 +690,7 @@ const Leads = () => {
     });
     editPitAutocompleteRef.current = ac;
     return () => { editPitAutocompleteRef.current = null; };
-  }, [editingPitId]);
+  }, [editingPitId, googleLoaded]);
 
   // Google Places Autocomplete for Business Profile address
   useEffect(() => {
@@ -680,6 +699,7 @@ const Leads = () => {
     const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, {
       types: ["address"],
       fields: ["formatted_address", "geometry"],
+      componentRestrictions: { country: "us" },
     });
     ac.addListener("place_changed", () => {
       const place = ac.getPlace();
@@ -689,7 +709,7 @@ const Leads = () => {
     });
     profileAutocompleteRef.current = ac;
     return () => { profileAutocompleteRef.current = null; };
-  }, [activePage]);
+  }, [activePage, googleLoaded]);
 
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
