@@ -124,7 +124,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
   {
     section: "EXPANSION",
     items: [
-      { id: "pit", label: "PIT Simulator", icon: Zap },
+      { id: "pit", label: "PIT", icon: Zap },
       { id: "all", label: "All Leads", icon: Users },
     ],
   },
