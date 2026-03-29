@@ -236,6 +236,36 @@ const Leads = () => {
   const [cashSendEmail, setCashSendEmail] = useState(true);
   const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
 
+  const fetchCashOrders = useCallback(async () => {
+    setCashLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_cash_orders" },
+      });
+      if (!fnError && data?.orders) setCashOrders(data.orders);
+    } catch (err) { console.warn("Failed to fetch cash orders:", err); }
+    finally { setCashLoading(false); }
+  }, []);
+
+  const markCashPaid = useCallback(async () => {
+    if (!cashOrderToMark) return;
+    setMarkingPaid(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "mark_cash_paid", order_id: cashOrderToMark.id, collected_by: cashCollectedBy || null, send_email: cashSendEmail },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Payment recorded", description: cashSendEmail && cashOrderToMark.customer_email ? `Confirmation sent to ${cashOrderToMark.customer_email}` : "Payment marked as collected" });
+      setCashOrderToMark(null);
+      setCashCollectedBy("");
+      setCashSendEmail(true);
+      fetchCashOrders();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setMarkingPaid(false); }
+  }, [cashOrderToMark, cashCollectedBy, cashSendEmail, fetchCashOrders, toast]);
+
   const fetchAbandonedSessions = useCallback(async () => {
     setAbandonedLoading(true);
     try {
