@@ -258,7 +258,7 @@ const Leads = () => {
   const [creatingPages, setCreatingPages] = useState(false);
   const [generatingContent, setGeneratingContent] = useState<string | null>(null);
   const [selectedCityPages, setSelectedCityPages] = useState<Set<string>>(new Set());
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
