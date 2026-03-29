@@ -1140,6 +1140,7 @@ const Leads = () => {
     zip: { title: "ZIP INTELLIGENCE", subtitle: `${zipData.length} unique ZIPs tracked` },
     pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
     revenue: { title: "REVENUE FORECAST" },
+    abandoned: { title: "ABANDONED SESSIONS", subtitle: "Checkout drop-offs" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
