@@ -35,7 +35,7 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
     setSubmitting(true);
 
     try {
-      const insertData: Record<string, any> = {
+      const insertData: any = {
         address,
         distance_miles: parseFloat(distanceMiles.toFixed(1)),
         customer_name: name.trim(),
@@ -49,7 +49,7 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
         insertData.nearest_pit_distance = parseFloat(nearestPit.distance.toFixed(1));
       }
 
-      const { error } = await supabase.from("delivery_leads").insert(insertData);
+      const { error } = await supabase.from("delivery_leads").insert(insertData as any);
       if (error) throw error;
 
       // Send email notification (fire-and-forget)
