@@ -757,7 +757,7 @@ const Order = () => {
                       <p className="font-body text-sm text-destructive">{error}</p>
                     </motion.div>
                   )}
-                  <Button onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                  <Button data-calc-btn onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow">
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET DELIVERY PRICE</>}
                   </Button>
                 </div>
