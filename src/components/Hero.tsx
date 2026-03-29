@@ -54,7 +54,7 @@ const Hero = ({ h1Override, subtitleOverride, trustBadges }: HeroProps = {}) => 
             transition={{ delay: 0.3, duration: 0.6 }}
           >
             <h1 className="text-5xl md:text-6xl lg:text-[4.3rem] leading-[0.9] text-primary-foreground tracking-wide">
-              SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS
+              {h1Override || "SAME-DAY RIVER SAND DELIVERY IN NEW ORLEANS"}
             </h1>
             <div className="w-32 h-1 bg-accent mt-3 rounded-full" />
           </motion.div>
