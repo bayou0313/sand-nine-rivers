@@ -334,7 +334,7 @@ const Order = () => {
     if (paramAddress && paramPrice) {
       setAddress(paramAddress);
       const price = parseFloat(paramPrice);
-      const dist = paramDistance ? parseFloat(paramDistance) : (price > BASE_PRICE ? ((price - BASE_PRICE) / PER_MILE_EXTRA) + BASE_MILES : 10);
+      const dist = paramDistance ? parseFloat(paramDistance) : (price > globalPricing.base_price ? ((price - globalPricing.base_price) / globalPricing.extra_per_mile) + globalPricing.free_miles : 10);
       setResult({
         distance: parseFloat(dist.toFixed(1)),
         price: isNaN(price) ? BASE_PRICE : price,
