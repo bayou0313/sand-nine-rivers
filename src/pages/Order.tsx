@@ -81,6 +81,7 @@ const Order = () => {
         if (map.default_free_miles) setBASE_MILES(parseFloat(map.default_free_miles));
         if (map.default_max_distance) setMAX_MILES(parseFloat(map.default_max_distance));
         if (map.default_extra_per_mile) setPER_MILE_EXTRA(parseFloat(map.default_extra_per_mile));
+        if (map.saturday_surcharge) setGlobalSaturdaySurcharge(parseFloat(map.saturday_surcharge));
       }
     });
   }, []);
