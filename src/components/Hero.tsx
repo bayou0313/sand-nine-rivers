@@ -6,7 +6,13 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { useCountdown } from "@/hooks/use-countdown";
 
-const Hero = () => {
+interface HeroProps {
+  h1Override?: string;
+  subtitleOverride?: string;
+  trustBadges?: { icon: any; text: string }[];
+}
+
+const Hero = ({ h1Override, subtitleOverride, trustBadges }: HeroProps = {}) => {
   const { timeLeft, label } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
