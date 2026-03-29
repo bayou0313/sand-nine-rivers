@@ -51,8 +51,8 @@ const Footer = () => {
               <motion.a href="tel:+18554689297" className="flex items-center gap-2 hover:text-accent transition-colors duration-300" whileHover={{ x: 4 }}>
                 <Phone className="w-4 h-4" /> 1-855-GOT-WAYS
               </motion.a>
-              <motion.a href="mailto:info@riversand.net" className="flex items-center gap-2 hover:text-accent transition-colors duration-300" whileHover={{ x: 4 }}>
-                <Mail className="w-4 h-4" /> info@riversand.net
+              <motion.a href="mailto:orders@ways.us" className="flex items-center gap-2 hover:text-accent transition-colors duration-300" whileHover={{ x: 4 }}>
+                <Mail className="w-4 h-4" /> orders@ways.us
               </motion.a>
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" /> Greater New Orleans, LA
