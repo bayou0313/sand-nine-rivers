@@ -38,6 +38,7 @@ const DeliveryEstimator = () => {
   const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
   const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
+  const [nearestPitInfo, setNearestPitInfo] = useState<{ id: string; name: string; distance: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
