@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/analytics";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import DeliveryEstimator from "@/components/DeliveryEstimator";
