@@ -1221,7 +1221,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Base price</label>
                                 <Input
-                                  placeholder={`Global: $${globalSettings.default_base_price}`}
+                                  placeholder="Enter base price"
                                   value={editPitData.base_price ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
@@ -1231,7 +1231,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Free miles</label>
                                 <Input
-                                  placeholder={`Global: ${globalSettings.default_free_miles} mi`}
+                                  placeholder="Enter free miles"
                                   value={editPitData.free_miles ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
@@ -1241,7 +1241,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Extra per mile</label>
                                 <Input
-                                  placeholder={`Global: $${globalSettings.default_extra_per_mile}/mi`}
+                                  placeholder="Enter price per mile"
                                   value={editPitData.price_per_extra_mile ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
@@ -1251,7 +1251,7 @@ const Leads = () => {
                               <div>
                                 <label className="text-xs text-gray-400">Max distance</label>
                                 <Input
-                                  placeholder={`Global: ${globalSettings.default_max_distance} mi`}
+                                  placeholder="Enter max distance"
                                   value={editPitData.max_distance ?? ""}
                                   onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
                                   type="number"
