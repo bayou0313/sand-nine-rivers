@@ -1698,7 +1698,10 @@ const Leads = () => {
               body: { password: storedPassword(), action: "create_city_pages", pit_id: discoverPitId, cities: selected },
             });
             if (fnError) throw fnError;
-            toast({ title: `${data?.count || 0} city pages created`, description: "Content generation will happen when you click Regenerate." });
+            const genCount = data?.generated || 0;
+            const failCount = data?.failed || 0;
+            const desc = failCount > 0 ? `${failCount} failed — click Regen to retry.` : "All content generated and pages activated.";
+            toast({ title: `${genCount} city pages created & generated`, description: desc });
             setShowDiscoverModal(false);
             setDiscoveredCities([]);
             fetchCityPages();
