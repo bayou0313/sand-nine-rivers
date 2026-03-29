@@ -613,6 +613,7 @@ const Order = () => {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
       <Navbar solid />
 
