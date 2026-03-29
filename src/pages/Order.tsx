@@ -424,6 +424,16 @@ const Order = () => {
       setOrderNumber(inserted?.order_number || null);
       setConfirmedOrderId(inserted?.id || null);
       setLookupToken(inserted?.lookup_token || null);
+      setConfirmedTotals({
+        totalPrice,
+        totalWithProcessingFee,
+        processingFee,
+        taxAmount,
+        subtotal,
+        saturdaySurchargeTotal,
+        distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
+        taxInfo,
+      });
       setStep("success");
 
       // Send order confirmation email
