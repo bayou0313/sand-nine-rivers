@@ -92,8 +92,19 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
       }
     });
   }, [apiLoaded]);
+  // Prefill address from return visitor banner
+  useEffect(() => {
+    if (prefillAddress && apiLoaded) {
+      setAddress(prefillAddress);
+      // Trigger geocode + price calculation after setting address
+      setTimeout(() => {
+        const btn = document.querySelector('[data-estimator-btn]') as HTMLButtonElement;
+        btn?.click();
+      }, 500);
+    }
+  }, [prefillAddress, apiLoaded]);
 
-  const calculateDistance = useCallback(async () => {
+
     if (!address.trim()) { setError("Please enter a delivery address."); return; }
     setLoading(true); setError(""); setResult(null); setMatchedEffective(null);
 
