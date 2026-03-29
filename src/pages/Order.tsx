@@ -453,6 +453,39 @@ const Order = () => {
       let price = BASE_PRICE;
       if (distanceMiles > BASE_MILES) price += (distanceMiles - BASE_MILES) * PER_MILE_EXTRA;
 
+      // Find nearest active PIT to set schedule for date picker
+      try {
+        const { data: pitsData } = await supabase.from("pits").select("id, name, lat, lon, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active");
+        if (pitsData && pitsData.length > 0) {
+          const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
+          const geocodeData = await geocodeResp.json();
+          if (geocodeData.results?.[0]) {
+            const custLat = geocodeData.results[0].geometry.location.lat;
+            const custLon = geocodeData.results[0].geometry.location.lng;
+            const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+              const R = 3958.8;
+              const dLat2 = (lat2 - lat1) * Math.PI / 180;
+              const dLon2 = (lon2 - lon1) * Math.PI / 180;
+              const a2 = Math.sin(dLat2 / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon2 / 2) ** 2;
+              return R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1 - a2));
+            };
+            let bestPit: any = null;
+            let bestDist = Infinity;
+            for (const p of pitsData) {
+              const d = hav(Number(p.lat), Number(p.lon), custLat, custLon);
+              if (d < bestDist) { bestPit = p; bestDist = d; }
+            }
+            if (bestPit) {
+              setMatchedPitSchedule({
+                operating_days: bestPit.operating_days,
+                saturday_surcharge_override: bestPit.saturday_surcharge_override != null ? Number(bestPit.saturday_surcharge_override) : null,
+                same_day_cutoff: bestPit.same_day_cutoff,
+              });
+            }
+          }
+        }
+      } catch (e) { console.error("PIT schedule lookup error:", e); }
+
       setResult({
         distance: parseFloat(distanceMiles.toFixed(1)),
         price: parseFloat(price.toFixed(2)),
