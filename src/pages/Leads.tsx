@@ -1388,7 +1388,13 @@ const Leads = () => {
                 <div className="mt-4 p-4 border rounded-lg bg-gray-50">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input placeholder="PIT Name" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
-                    <Input ref={pitInputRef} placeholder="PIT Address" value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value })} />
+                    <div className="relative">
+                      <Input ref={pitInputRef} placeholder="PIT Address" value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
+                      {newPit.lat != null && <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />}
+                      {newPit.address && newPit.lat == null && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select an address from the suggestions to capture coordinates</p>
+                      )}
+                    </div>
                     <select
                       value={newPit.status}
                       onChange={e => setNewPit({ ...newPit, status: e.target.value as any })}
@@ -1399,6 +1405,53 @@ const Leads = () => {
                       <option value="inactive">Inactive</option>
                     </select>
                     <Input placeholder="Notes" value={newPit.notes} onChange={e => setNewPit({ ...newPit, notes: e.target.value })} />
+                  </div>
+                  <div className="border-t mt-3 pt-3">
+                    <p className="text-xs font-bold mb-2" style={{ color: BRAND_NAVY }}>Pricing Overrides (leave blank to use global)</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div>
+                        <label className="text-xs text-gray-400">Base price</label>
+                        <Input
+                          placeholder="e.g. 195.00"
+                          value={newPit.base_price ?? ""}
+                          onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })}
+                          onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400">Free miles</label>
+                        <Input
+                          placeholder="e.g. 15"
+                          value={newPit.free_miles ?? ""}
+                          onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400">Extra per mile</label>
+                        <Input
+                          placeholder="e.g. 5.00"
+                          value={newPit.price_per_extra_mile ?? ""}
+                          onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })}
+                          onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400">Max distance</label>
+                        <Input
+                          placeholder="e.g. 30"
+                          value={newPit.max_distance ?? ""}
+                          onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })}
+                          type="number"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-2 mt-3">
                     <Button onClick={addPit} disabled={geocoding} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
