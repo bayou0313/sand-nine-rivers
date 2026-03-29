@@ -98,6 +98,8 @@ const Order = () => {
   const [nearestPitInfo, setNearestPitInfo] = useState<{ id: string; name: string; distance: number } | null>(null);
   const [leadReference, setLeadReference] = useState<string | null>(null);
   const [showProposalBanner, setShowProposalBanner] = useState(false);
+  const [matchedPitSchedule, setMatchedPitSchedule] = useState<PitSchedule | null>(null);
+  const [globalSaturdaySurcharge, setGlobalSaturdaySurcharge] = useState<number>(SATURDAY_SURCHARGE);
   const [confirmedTotals, setConfirmedTotals] = useState<{
     totalPrice: number;
     totalWithProcessingFee: number;
