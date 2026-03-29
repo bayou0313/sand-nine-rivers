@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      delivery_leads: {
+        Row: {
+          address: string
+          contacted: boolean
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          distance_miles: number | null
+          id: string
+        }
+        Insert: {
+          address: string
+          contacted?: boolean
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          distance_miles?: number | null
+          id?: string
+        }
+        Update: {
+          address?: string
+          contacted?: boolean
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          distance_miles?: number | null
+          id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           confirmation_token: string
