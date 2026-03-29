@@ -220,6 +220,11 @@ const Leads = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [googleLoaded, setGoogleLoaded] = useState(!!window.google?.maps?.places);
 
+  // Abandoned sessions state
+  const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
+  const [abandonedLoading, setAbandonedLoading] = useState(false);
+  const [runningEmailCheck, setRunningEmailCheck] = useState(false);
+
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
   const basePrice = parseFloat(globalSettings.default_base_price || "195");
 
