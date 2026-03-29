@@ -181,6 +181,16 @@ const Order = () => {
           if (signal.session_id) setStripePaymentId(signal.session_id);
           if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
           setPendingOrderId(null);
+          setConfirmedTotals({
+            totalPrice,
+            totalWithProcessingFee,
+            processingFee,
+            taxAmount,
+            subtotal,
+            saturdaySurchargeTotal,
+            distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
+            taxInfo,
+          });
           setStep("success");
           // Send confirmation email for Stripe payment
           sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
