@@ -1299,7 +1299,8 @@ const Order = () => {
                   </Button>
                 </div>
               </motion.div>
-            )}
+              );
+            })()}
           </AnimatePresence>
         </div>
       </div>
