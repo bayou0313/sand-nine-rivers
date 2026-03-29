@@ -31,7 +31,7 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `You are an SEO content writer for River Sand, a same-day bulk river sand delivery company serving Greater New Orleans. Write compelling, locally relevant content that helps the page rank for '[city] river sand delivery'. Write in a direct, trustworthy tone. Never use corporate jargon. Always emphasize same-day delivery and local expertise. Content must be unique per city — mention local context, nearby landmarks, common construction projects in the area, and why river sand is used there.`;
+    const systemPrompt = `You are an SEO content writer for River Sand, a same-day bulk river sand delivery company. Write compelling, locally relevant content that helps the page rank for '[city] river sand delivery'. Write in a direct, trustworthy tone. Never use corporate jargon. Always emphasize same-day delivery and local expertise. Content must be unique per city — mention local context, common construction projects in the area, why river sand is used there, and local geography where relevant.`;
 
     const userPrompt = `Generate a complete city landing page for river sand delivery in ${city_name}, ${state}.
 
@@ -43,10 +43,10 @@ Saturday available: ${saturday_available ? "yes" : "no"}
 
 Generate:
 1. meta_title (under 60 chars): Format: 'River Sand Delivery ${city_name} ${state} | Same-Day | $${price}'
-2. meta_description (under 160 chars): Mention same-day, price, city, and call to action.
-3. h1_text: Format: 'Same-Day River Sand Delivery in ${city_name}, Louisiana'
+2. meta_description (under 160 chars): Mention same-day, price, city, state, and call to action.
+3. h1_text: Format: 'Same-Day River Sand Delivery in ${city_name}, ${state}'
 4. page_content (HTML): Include these sections:
-   - Hero paragraph about river sand delivery in ${city_name}
+   - Hero paragraph about river sand delivery in ${city_name}, ${state}
    - Why choose River Sand section
    - Delivery details for ${city_name} area
    - Common uses in ${city_name} (construction, drainage, fill)
@@ -54,7 +54,7 @@ Generate:
    - Local context paragraph mentioning ${city_name} specifically
    - FAQ section (3-5 questions specific to ${city_name} delivery)
    Use proper HTML: <h2>, <h3>, <p>, <ul>, <li>
-   No inline styles. No placeholder text. All content must be specific to ${city_name} — never generic.`;
+   No inline styles. No placeholder text. All content must be specific to ${city_name}, ${state} — never generic.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
