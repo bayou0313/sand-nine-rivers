@@ -725,6 +725,9 @@ const Leads = () => {
         free_miles: editPitData.free_miles || null,
         price_per_extra_mile: editPitData.price_per_extra_mile || null,
         max_distance: editPitData.max_distance || null,
+        operating_days: editPitData.operating_days ?? null,
+        saturday_surcharge_override: editPitData.saturday_surcharge_override ?? null,
+        same_day_cutoff: editPitData.same_day_cutoff || null,
       };
       const wasActive = originalPit?.status === "active";
       const nowActive = editPitData.status === "active";
