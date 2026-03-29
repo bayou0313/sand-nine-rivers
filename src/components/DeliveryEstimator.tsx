@@ -84,6 +84,7 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
           address_lat: place.geometry?.location?.lat(),
           address_lng: place.geometry?.location?.lng(),
         });
+        trackEvent("address_entered", { address: place.formatted_address });
       }
       if (place?.geometry?.location) {
         setCustomerCoords({
