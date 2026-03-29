@@ -176,6 +176,12 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
         price: bestResult.price,
         address: `${bestResult.distance.toFixed(1)} mi away`,
       });
+      trackEvent("price_calculated", {
+        price: bestResult.price,
+        pit_name: bestResult.pit.name,
+        distance_miles: parseFloat(bestResult.distance.toFixed(1)),
+        currency: "USD",
+      });
       updateSession({
         stage: "got_price",
         calculated_price: bestResult.price,
