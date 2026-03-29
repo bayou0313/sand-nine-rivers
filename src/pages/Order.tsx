@@ -295,16 +295,41 @@ const Order = () => {
     const paramDistance = searchParams.get("distance");
     const paramPrice = searchParams.get("price");
     const paramDuration = searchParams.get("duration");
+    const paramLead = searchParams.get("lead");
+    const paramUtmSource = searchParams.get("utm_source");
 
-    if (paramAddress && paramDistance && paramPrice && paramDuration) {
+    if (paramLead) setLeadReference(paramLead);
+    if (paramUtmSource === "proposal") setShowProposalBanner(true);
+
+    if (paramAddress && paramPrice) {
+      setAddress(paramAddress);
+      const price = parseFloat(paramPrice);
+      const dist = paramDistance ? parseFloat(paramDistance) : (price > BASE_PRICE ? ((price - BASE_PRICE) / PER_MILE_EXTRA) + BASE_MILES : 10);
+      setResult({
+        distance: parseFloat(dist.toFixed(1)),
+        price: isNaN(price) ? BASE_PRICE : price,
+        address: `${dist.toFixed(1)} miles away`,
+        duration: paramDuration || "~30 min",
+      });
+      setStep(prev => prev === "address" ? "details" : prev);
+    } else if (paramAddress && paramDistance && paramDuration) {
       setAddress(paramAddress);
       setResult({
         distance: parseFloat(paramDistance),
-        price: parseFloat(paramPrice),
+        price: parseFloat(paramPrice || String(BASE_PRICE)),
         address: `${paramDistance} miles away`,
         duration: paramDuration,
       });
       setStep(prev => prev === "address" ? "details" : prev);
+    } else if (paramAddress) {
+      setAddress(paramAddress);
+      // Auto-trigger distance calculation after API loads
+      setTimeout(() => {
+        if (window.google?.maps) {
+          const btn = document.querySelector('[data-calc-btn]') as HTMLButtonElement;
+          btn?.click();
+        }
+      }, 1500);
     }
   }, [searchParams]);
 
