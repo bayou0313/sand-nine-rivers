@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
+import { supabase } from "@/integrations/supabase/client";
 
 declare global {
   interface Window {
@@ -15,10 +16,10 @@ declare global {
 }
 
 const ORIGIN = "1215 River Rd, Bridge City, LA 70094";
-const BASE_PRICE = 195;
-const BASE_MILES = 15;
-const MAX_MILES = 30;
-const PER_MILE_EXTRA = 3.49;
+const FALLBACK_BASE_PRICE = 195;
+const FALLBACK_BASE_MILES = 15;
+const FALLBACK_MAX_MILES = 30;
+const FALLBACK_PER_MILE_EXTRA = 5;
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyBDjm1VJ85yJ7KX-cSRX3RCXVir4DOyQ-I";
 
 type EstimateResult = {
@@ -39,6 +40,29 @@ const DeliveryEstimator = () => {
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+
+  // Dynamic pricing from global_settings
+  const [pricing, setPricing] = useState({
+    basePrice: FALLBACK_BASE_PRICE,
+    baseMiles: FALLBACK_BASE_MILES,
+    maxMiles: FALLBACK_MAX_MILES,
+    perMileExtra: FALLBACK_PER_MILE_EXTRA,
+  });
+
+  useEffect(() => {
+    supabase.from("global_settings").select("key, value").then(({ data }) => {
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((r: any) => { map[r.key] = r.value; });
+        setPricing({
+          basePrice: parseFloat(map.default_base_price) || FALLBACK_BASE_PRICE,
+          baseMiles: parseFloat(map.default_free_miles) || FALLBACK_BASE_MILES,
+          maxMiles: parseFloat(map.default_max_distance) || FALLBACK_MAX_MILES,
+          perMileExtra: parseFloat(map.default_extra_per_mile) || FALLBACK_PER_MILE_EXTRA,
+        });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!GOOGLE_MAPS_API_KEY) return;
