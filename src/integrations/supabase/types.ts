@@ -94,6 +94,9 @@ export type Database = {
       }
       orders: {
         Row: {
+          cash_collected: boolean | null
+          cash_collected_at: string | null
+          cash_collected_by: string | null
           confirmation_token: string
           created_at: string
           customer_email: string | null
@@ -125,6 +128,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cash_collected?: boolean | null
+          cash_collected_at?: string | null
+          cash_collected_by?: string | null
           confirmation_token?: string
           created_at?: string
           customer_email?: string | null
@@ -156,6 +162,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cash_collected?: boolean | null
+          cash_collected_at?: string | null
+          cash_collected_by?: string | null
           confirmation_token?: string
           created_at?: string
           customer_email?: string | null

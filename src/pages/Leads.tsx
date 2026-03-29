@@ -109,7 +109,7 @@ const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "profile" | "settings";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "cash_orders" | "profile" | "settings";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -122,6 +122,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
       { id: "pipeline", label: "Pipeline", icon: List },
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
+      { id: "cash_orders", label: "Cash Orders", icon: DollarSign },
       { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
     ],
   },
@@ -224,6 +225,46 @@ const Leads = () => {
   const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
   const [abandonedLoading, setAbandonedLoading] = useState(false);
   const [runningEmailCheck, setRunningEmailCheck] = useState(false);
+
+  // Cash orders state
+  const [cashOrders, setCashOrders] = useState<any[]>([]);
+  const [cashLoading, setCashLoading] = useState(false);
+  const [cashFilter, setCashFilter] = useState<"all" | "pending" | "overdue" | "collected">("all");
+  const [cashOrderToMark, setCashOrderToMark] = useState<any | null>(null);
+  const [markingPaid, setMarkingPaid] = useState(false);
+  const [cashCollectedBy, setCashCollectedBy] = useState("");
+  const [cashSendEmail, setCashSendEmail] = useState(true);
+  const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
+
+  const fetchCashOrders = useCallback(async () => {
+    setCashLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_cash_orders" },
+      });
+      if (!fnError && data?.orders) setCashOrders(data.orders);
+    } catch (err) { console.warn("Failed to fetch cash orders:", err); }
+    finally { setCashLoading(false); }
+  }, []);
+
+  const markCashPaid = useCallback(async () => {
+    if (!cashOrderToMark) return;
+    setMarkingPaid(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "mark_cash_paid", order_id: cashOrderToMark.id, collected_by: cashCollectedBy || null, send_email: cashSendEmail },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Payment recorded", description: cashSendEmail && cashOrderToMark.customer_email ? `Confirmation sent to ${cashOrderToMark.customer_email}` : "Payment marked as collected" });
+      setCashOrderToMark(null);
+      setCashCollectedBy("");
+      setCashSendEmail(true);
+      fetchCashOrders();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setMarkingPaid(false); }
+  }, [cashOrderToMark, cashCollectedBy, cashSendEmail, fetchCashOrders, toast]);
 
   const fetchAbandonedSessions = useCallback(async () => {
     setAbandonedLoading(true);
@@ -855,6 +896,13 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
 
+  // Fetch cash orders when navigating to that page
+  useEffect(() => {
+    if (activePage === "cash_orders" && authenticated) {
+      fetchCashOrders();
+    }
+  }, [activePage, authenticated, fetchCashOrders]);
+
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
       setter({ ...current, [field]: Math.round(value * 100) / 100 });
@@ -1176,6 +1224,7 @@ const Leads = () => {
     pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
     revenue: { title: "REVENUE FORECAST" },
     abandoned: { title: "ABANDONED SESSIONS", subtitle: "Checkout drop-offs" },
+    cash_orders: { title: "CASH ORDERS", subtitle: `${cashOrders.length} orders` },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
@@ -1836,6 +1885,165 @@ const Leads = () => {
             <p className="text-xs text-gray-400 text-center mt-2">✓ Synced to: Emails · Invoices · Landing page · Order confirmations</p>
           </>
         );
+
+      case "cash_orders": {
+        const today = new Date().toISOString().slice(0, 10);
+        const getCashStatus = (o: any) => {
+          if (o.cash_collected) return "collected";
+          if (o.delivery_date && o.delivery_date < today) return "overdue";
+          return "pending";
+        };
+        const filtered = cashOrders.filter(o => {
+          if (cashFilter === "all") return true;
+          return getCashStatus(o) === cashFilter;
+        });
+        const pendingToday = cashOrders.filter(o => !o.cash_collected && o.delivery_date === today);
+        const overdueOrders = cashOrders.filter(o => !o.cash_collected && o.delivery_date && o.delivery_date < today);
+        const collectedToday = cashOrders.filter(o => o.cash_collected && o.cash_collected_at?.slice(0, 10) === today);
+        const totalOutstanding = cashOrders.filter(o => !o.cash_collected).reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const expectedToday = pendingToday.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const todaysOrders = cashOrders.filter(o => o.delivery_date === today);
+
+        return (
+          <>
+            {/* Expected today */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+              <div className="text-right">
+                <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${expectedToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-xs text-gray-500">Expected today across {pendingToday.length} orders</p>
+              </div>
+            </div>
+
+            {/* Overdue alert */}
+            {overdueOrders.length > 0 && !cashOverdueDismissed && (
+              <div className="mb-4 p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: "#FEF3C7", border: "1px solid #F59E0B40" }}>
+                <p className="text-sm" style={{ color: "#92400E" }}>
+                  <strong>{overdueOrders.length} orders overdue</strong> — delivery date has passed without payment confirmation.
+                </p>
+                <button onClick={() => { setCashOverdueDismissed(true); sessionStorage.setItem("cash_overdue_dismissed", "1"); }} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+              </div>
+            )}
+
+            {/* Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              {[
+                { label: "Pending Today", value: pendingToday.length, color: "#F59E0B" },
+                { label: "Overdue", value: overdueOrders.length, color: overdueOrders.length > 0 ? "#EF4444" : "#999" },
+                { label: "Collected Today", value: collectedToday.length, color: "#22C55E" },
+                { label: "Total Outstanding", value: `$${totalOutstanding.toFixed(2)}`, color: BRAND_GOLD },
+              ].map(m => (
+                <div key={m.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+                  <p className="text-2xl font-bold" style={{ color: m.color }}>{m.value}</p>
+                  <p className="text-xs text-white/60 mt-1">{m.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Filter tabs */}
+            <div className="flex gap-1 mb-4">
+              {(["all", "pending", "overdue", "collected"] as const).map(f => (
+                <button key={f} onClick={() => setCashFilter(f)} className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors" style={{
+                  backgroundColor: cashFilter === f ? BRAND_NAVY : "white",
+                  color: cashFilter === f ? BRAND_GOLD : "#666",
+                  border: `1px solid ${CARD_BORDER}`,
+                }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {cashLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : (
+              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action"].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(o => {
+                      const status = getCashStatus(o);
+                      const statusColor = status === "collected" ? "#22C55E" : status === "overdue" ? "#EF4444" : "#F59E0B";
+                      const statusLabel = status === "collected" ? "Collected" : status === "overdue" ? "Overdue" : "Pending";
+                      const isToday = o.delivery_date === today;
+                      const isPast = o.delivery_date && o.delivery_date < today && !o.cash_collected;
+                      return (
+                        <tr key={o.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
+                          <td className="px-3 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{o.order_number || "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(o.created_at)}</td>
+                          <td className="px-3 py-2">
+                            <p className="text-xs font-medium">{o.customer_name}</p>
+                            <p className="text-[10px] text-gray-400">{o.customer_phone}</p>
+                          </td>
+                          <td className="px-3 py-2 text-xs max-w-[160px] truncate">{o.delivery_address}</td>
+                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toFixed(2)}</td>
+                          <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: isPast ? "#EF4444" : isToday ? BRAND_GOLD : undefined }}>
+                            {isToday ? "Today" : o.delivery_date ? new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F3F3F3", color: BRAND_NAVY }}>
+                              {o.payment_method === "check" ? "Check" : "Cash"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: statusColor }}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            {!o.cash_collected ? (
+                              <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                                Mark as Paid
+                              </Button>
+                            ) : (
+                              <span className="text-[10px]" style={{ color: "#22C55E" }}>Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filtered.length === 0 && (
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No cash/check orders found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Today's Cash Schedule */}
+            {todaysOrders.length > 0 && (
+              <div className="mt-6" id="cash-daily-schedule">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold" style={{ color: BRAND_NAVY }}>Today's Cash Schedule</h3>
+                  <Button size="sm" variant="outline" onClick={() => window.print()} className="text-xs">
+                    Print Today's Sheet
+                  </Button>
+                </div>
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                  {todaysOrders.map((o, i) => (
+                    <div key={o.id} className="px-4 py-3 flex items-center justify-between" style={{ borderTop: i > 0 ? `1px solid ${CARD_BORDER}` : undefined }}>
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: BRAND_NAVY }}>{o.customer_name}</p>
+                        <p className="text-xs text-gray-500">{o.delivery_address}</p>
+                        <p className="text-xs text-gray-400">{o.customer_phone} · {o.order_number}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toFixed(2)}</p>
+                        <p className="text-[10px] text-gray-400">{o.payment_method === "check" ? "Check" : "Cash"}{o.cash_collected ? " ✓" : ""}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      }
 
       case "abandoned":
         return (
@@ -2589,6 +2797,52 @@ const Leads = () => {
           </div>
         </div>
       )}
+
+      {/* ─── MARK AS PAID DIALOG ─── */}
+      {cashOrderToMark && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !markingPaid && setCashOrderToMark(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Confirm Payment Received</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2 text-sm">
+                <p><strong style={{ color: BRAND_NAVY }}>Order #:</strong> {cashOrderToMark.order_number || "—"}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {cashOrderToMark.customer_name}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Amount:</strong> <span style={{ color: BRAND_GOLD, fontWeight: 700 }}>${Number(cashOrderToMark.price || 0).toFixed(2)}</span></p>
+                <p><strong style={{ color: BRAND_NAVY }}>Method:</strong> {cashOrderToMark.payment_method === "check" ? "Check" : "Cash"}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Delivery:</strong> {cashOrderToMark.delivery_date || "TBD"}</p>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "#666" }}>Collected by (optional)</label>
+                <Input placeholder="e.g. John D." value={cashCollectedBy} onChange={e => setCashCollectedBy(e.target.value)} className="h-9 text-sm" />
+              </div>
+              {cashOrderToMark.customer_email && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input type="checkbox" checked={cashSendEmail} onChange={e => setCashSendEmail(e.target.checked)} className="w-4 h-4 rounded" />
+                  Send payment confirmation email to {cashOrderToMark.customer_email}
+                </label>
+              )}
+            </div>
+            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+              <Button onClick={markCashPaid} disabled={markingPaid} className="flex-1 h-10" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                {markingPaid ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+                Confirm Payment
+              </Button>
+              <Button onClick={() => setCashOrderToMark(null)} disabled={markingPaid} variant="outline" className="flex-1">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print styles for cash daily schedule */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #cash-daily-schedule, #cash-daily-schedule * { visibility: visible; }
+          #cash-daily-schedule { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+      `}</style>
     </div>
   );
 };

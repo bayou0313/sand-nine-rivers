@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { password, action, id, stage, notes, lead_number, order_number, settings, pit } = await req.json();
+    const { password, action, id, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email } = await req.json();
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
@@ -248,6 +248,79 @@ serve(async (req) => {
         JSON.stringify({ sessions: data }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ── LIST CASH ORDERS ──
+    if (action === "list_cash_orders") {
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
+          .in("payment_method", ["cash", "check", "cod", "COD"])
+          .neq("payment_status", "cancelled")
+          .order("delivery_date", { ascending: true })
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ orders: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (err) {
+        console.error("[leads-auth] list_cash_orders error:", err);
+        throw err;
+      }
+    }
+
+    // ── MARK CASH PAID ──
+    if (action === "mark_cash_paid") {
+      if (!order_id) {
+        return new Response(JSON.stringify({ error: "Missing order_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      try {
+        const { data: updatedOrder, error: updateErr } = await supabase
+          .from("orders")
+          .update({
+            cash_collected: true,
+            cash_collected_at: new Date().toISOString(),
+            cash_collected_by: collected_by || null,
+            payment_status: "collected",
+          })
+          .eq("id", order_id)
+          .select()
+          .single();
+        if (updateErr) throw updateErr;
+
+        // Send confirmation email if requested
+        if (send_email && updatedOrder.customer_email) {
+          try {
+            const emailResp = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serviceRoleKey}`,
+              },
+              body: JSON.stringify({
+                type: "cash_payment_confirmed",
+                data: updatedOrder,
+              }),
+            });
+            if (!emailResp.ok) {
+              console.error("[leads-auth] Email send failed:", await emailResp.text());
+            }
+          } catch (emailErr) {
+            console.error("[leads-auth] Email error:", emailErr);
+          }
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, order: updatedOrder }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (err) {
+        console.error("[leads-auth] mark_cash_paid error:", err);
+        throw err;
+      }
     }
 
     return new Response(
