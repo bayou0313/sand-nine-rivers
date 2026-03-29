@@ -73,6 +73,9 @@ const Order = () => {
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [lookupToken, setLookupToken] = useState<string | null>(null);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+  const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
+  const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
+  const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const [confirmedTotals, setConfirmedTotals] = useState<{
     totalPrice: number;
     totalWithProcessingFee: number;
