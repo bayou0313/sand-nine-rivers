@@ -1217,6 +1217,7 @@ const Leads = () => {
     pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
     revenue: { title: "REVENUE FORECAST" },
     abandoned: { title: "ABANDONED SESSIONS", subtitle: "Checkout drop-offs" },
+    cash_orders: { title: "CASH ORDERS", subtitle: `${cashOrders.length} orders` },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
