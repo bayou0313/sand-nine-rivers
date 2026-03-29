@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import logoImg from "@/assets/riversand-logo.png";
-import waysLogoImg from "@/assets/ways-logo.png";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -28,21 +27,16 @@ const Footer = () => {
             variants={fadeUp}
           >
             <motion.img
-              src={waysLogoImg}
-              alt="WAYS — We Are Your Source"
-              className="w-[200px] h-auto object-contain ml-0 mt-2"
-              loading="lazy"
-              whileHover={{ scale: 1.08, filter: "drop-shadow(0 0 12px hsl(41 83% 53% / 0.5))" }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            />
-            <motion.img
               src={logoImg}
               alt="RiverSand logo"
-              className="w-[200px] h-auto object-contain mb-4 self-start my-0 py-[113px] border-none pb-[2px] pr-0 pt-[5px] mt-[9px] ml-0"
+              className="w-[200px] h-auto object-contain mb-4 self-start"
               loading="lazy"
               whileHover={{ scale: 1.08, filter: "drop-shadow(0 0 12px hsl(41 83% 53% / 0.5))" }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
             />
+            <p className="font-body text-background/40 text-xs mt-2">
+              River Sand is a brand of Ways Materials, LLC
+            </p>
           </motion.div>
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} custom={1} variants={fadeUp}>
@@ -84,7 +78,7 @@ const Footer = () => {
                   <ShoppingCart className="w-4 h-4" /> Order Online
                 </Link>
               </motion.div>
-              <p>Mon–Fri + Saturday (+$35)</p>
+              <p>Mon–Fri + Saturday (+surcharge)</p>
               <p>Same-day before 10 AM CT</p>
               <p>Licensed & Insured</p>
             </div>
@@ -99,7 +93,7 @@ const Footer = () => {
           transition={{ delay: 0.6, duration: 0.5 }}
         >
           <p className="font-body text-background/30 text-sm">
-            © {new Date().getFullYear()} RiverSand.net — Serving the Greater New Orleans Area · Powered by WAYS® Materials, LLC
+            © {new Date().getFullYear()} Ways Materials, LLC. All rights reserved.
           </p>
         </motion.div>
       </div>
