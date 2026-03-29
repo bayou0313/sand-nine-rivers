@@ -224,7 +224,7 @@ const Order = () => {
             taxAmount,
             subtotal,
             saturdaySurchargeTotal,
-            distanceFee: result ? Math.max(0, (result.distance - BASE_MILES) * PER_MILE_EXTRA * quantity) : 0,
+            distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
             taxInfo,
           });
           setStep("success");
