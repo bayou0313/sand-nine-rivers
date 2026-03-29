@@ -843,7 +843,7 @@ const Order = () => {
 
                 <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                   {[
-                    { top: "LOCAL AREA", bot: "Starting at $195" },
+                    { top: "LOCAL AREA", bot: "Included delivery" },
                     { top: "EXTENDED", bot: "Surcharge applies" },
                     { top: "9 YDS", bot: "Per load" },
                   ].map((item, i) => (
