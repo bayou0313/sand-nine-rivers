@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-import { pollForGoogleMaps } from "@/lib/google-maps";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 
 type EstimateResult = {
   distance: number;
