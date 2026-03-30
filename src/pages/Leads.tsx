@@ -1667,7 +1667,15 @@ const Leads = () => {
                   return (
                     <div key={p.id} className="border rounded-xl p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : CARD_BORDER }}>
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{p.name}</p>
+                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>
+                          {p.name}
+                          {(p.lat == null || p.lon == null || Number(p.lat) === 0 || Number(p.lon) === 0) && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ml-2"
+                              style={{ backgroundColor: "#FEE2E2", color: "#991B1B" }}>
+                              <AlertTriangle className="w-3 h-3" /> No coords
+                            </span>
+                          )}
+                        </p>
                         {p.is_default && <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Default</span>}
                       </div>
                       <p className="text-xs text-gray-500">{p.address}</p>
