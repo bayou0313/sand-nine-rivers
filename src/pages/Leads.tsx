@@ -703,11 +703,16 @@ const Leads = () => {
     return null;
   };
 
-  // Helper: get driving distance if cached, else fallback to haversine
-  const getDist = useCallback((pitLat: number, pitLon: number, destLat: number, destLon: number) => {
+  // Cache key for driving distance
+  const drivingDistKey = useCallback((lat1: number, lon1: number, lat2: number, lon2: number) =>
+    `${lat1.toFixed(5)},${lon1.toFixed(5)}->${lat2.toFixed(5)},${lon2.toFixed(5)}`, []);
+
+  // Helper: get driving distance from cache. Returns null if not cached (no haversine fallback).
+  const getDist = useCallback((pitLat: number, pitLon: number, destLat: number, destLon: number): number | null => {
     const key = drivingDistKey(pitLat, pitLon, destLat, destLon);
-    return drivingCache[key] ?? haversine(pitLat, pitLon, destLat, destLon);
-  }, [drivingCache]);
+    const val = drivingCache[key];
+    return val !== undefined ? val : null;
+  }, [drivingCache, drivingDistKey]);
 
   const checkActivationLeads = (pit: Pit) => {
     const eff = getEffectivePrice(pit, globalSettings);
