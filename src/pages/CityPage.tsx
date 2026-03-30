@@ -150,6 +150,26 @@ const CityPage = () => {
         h1Override={cityPage.h1_text || `River Sand Delivery in ${cityPage.city_name}, ${cityPage.state} — Same-Day Service`}
         subtitleOverride={cityPage.hero_intro || `Quality river sand for landscaping, drainage, backfill, and construction projects in ${cityPage.city_name}, ${cityPage.state}. Order before noon for same-day delivery.`}
       />
+
+      {/* Conditional price display for multi-PIT vs single-PIT cities */}
+      {cityPage.multi_pit_coverage ? (
+        <div className="text-center py-4 bg-accent/10">
+          <p className="text-base text-muted-foreground max-w-lg mx-auto px-4">
+            Pricing varies by location within {cityPage.city_name}.
+            Enter your address below for your exact delivery price.
+          </p>
+        </div>
+      ) : cityPage.base_price ? (
+        <div className="text-center py-4 bg-accent/10">
+          <p className="text-2xl font-semibold text-foreground">
+            Delivery from ${Number(cityPage.base_price).toFixed(0)}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Enter your address below for your exact price
+          </p>
+        </div>
+      ) : null}
+
       <Stats />
       <DeliveryEstimator />
 

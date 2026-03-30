@@ -790,6 +790,8 @@ serve(async (req) => {
             lng: city.lng,
             distance_from_pit: city.distance,
             base_price: Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile)),
+            multi_pit_coverage: isMultiPit,
+            competing_pit_ids: competingIds,
             status: "draft",
             page_views: 0,
             pit_reassigned: false,
