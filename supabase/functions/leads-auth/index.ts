@@ -453,8 +453,25 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Missing id" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Fetch city page to get pit_id and slug before deleting
+      const { data: pageToDelete } = await supabase
+        .from("city_pages").select("pit_id, city_slug").eq("id", id).maybeSingle();
+
       const { error } = await supabase.from("city_pages").delete().eq("id", id);
       if (error) throw error;
+
+      // Clear this city from PIT's served_cities cache
+      if (pageToDelete?.pit_id) {
+        const { data: pitRec } = await supabase
+          .from("pits").select("served_cities").eq("id", pageToDelete.pit_id).maybeSingle();
+        if (pitRec?.served_cities && Array.isArray(pitRec.served_cities)) {
+          const updated = (pitRec.served_cities as any[]).filter(
+            (c: any) => c.slug !== pageToDelete.city_slug
+          );
+          await supabase.from("pits").update({ served_cities: updated }).eq("id", pageToDelete.pit_id);
+        }
+      }
+
       return new Response(
         JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
