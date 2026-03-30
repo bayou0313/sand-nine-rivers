@@ -693,7 +693,9 @@ const Leads = () => {
       const data = await resp.json();
       if (data.results?.[0]) {
         const loc = data.results[0].geometry.location;
-        const result = { lat: loc.lat, lon: loc.lng };
+        const location_type = data.results[0].geometry.location_type || "UNKNOWN";
+        const formatted_address = data.results[0].formatted_address || address;
+        const result = { lat: loc.lat, lon: loc.lng, location_type, formatted_address };
         const newCache = { ...geocodeCache, [address]: result };
         setGeocodeCache(newCache);
         sessionStorage.setItem("geocache", JSON.stringify(newCache));
