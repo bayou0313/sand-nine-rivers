@@ -865,6 +865,8 @@ serve(async (req) => {
         }
         console.log(`[bulk] Sampling ${samplePoints.length} points for PIT ${pit.name}`);
 
+        // Collect unique cities from reverse geocoding first
+        const pitCityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
         const BATCH_SIZE = 10;
         for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
           const batch = samplePoints.slice(i, i + BATCH_SIZE);
@@ -895,23 +897,44 @@ serve(async (req) => {
               if (!isValidCityName(cityName)) continue;
               const loc = result.geometry?.location;
               if (!loc) continue;
-              const distance = hav(pit.lat, pit.lon, loc.lat, loc.lng);
-              if (distance > maxDist) continue;
-              const slug = cityName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-              const bPrice = pit.base_price ?? parseFloat(gs.default_base_price || "195");
-              const freeMiles = pit.free_miles ?? parseFloat(gs.default_free_miles || "15");
-              const extraPerMile = pit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
-              const extraMiles = Math.max(0, distance - freeMiles);
-              const price = Math.max(bPrice, Math.round(bPrice + extraMiles * extraPerMile));
-
-              allCandidates.push({
-                city_name: cityName, city_slug: slug, state: stateCode || "LA",
-                lat: loc.lat, lng: loc.lng, distance_from_pit: Math.round(distance * 10) / 10,
-                pit_id: pit.id, pit_name: pit.name, base_price: price,
-              });
+              // Pre-filter with haversine (generous 1.5x)
+              const straightLine = haversine(pit.lat, pit.lon, loc.lat, loc.lng);
+              if (straightLine > maxDist * 1.5) continue;
+              const key = cityName.toLowerCase();
+              if (!pitCityMap.has(key)) {
+                pitCityMap.set(key, { name: cityName, state: stateCode || "LA", lat: loc.lat, lng: loc.lng });
+              }
             }
           }
         }
+
+        // Get driving distances for all cities discovered for this PIT
+        const pitCities = [...pitCityMap.values()];
+        const drivingDists = await getDrivingDistances(
+          pit.lat, pit.lon,
+          pitCities.map(c => ({ lat: c.lat, lng: c.lng })),
+          apiKey
+        );
+
+        const bPrice = pit.base_price ?? parseFloat(gs.default_base_price || "195");
+        const freeMiles = pit.free_miles ?? parseFloat(gs.default_free_miles || "15");
+        const extraPerMile = pit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+
+        for (let idx = 0; idx < pitCities.length; idx++) {
+          const city = pitCities[idx];
+          const distance = drivingDists[idx] ?? haversine(pit.lat, pit.lon, city.lat, city.lng);
+          if (distance > maxDist) continue;
+          const slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+          const extraMiles = Math.max(0, distance - freeMiles);
+          const price = Math.max(bPrice, Math.round(bPrice + extraMiles * extraPerMile));
+
+          allCandidates.push({
+            city_name: city.name, city_slug: slug, state: city.state,
+            lat: city.lat, lng: city.lng, distance_from_pit: Math.round(distance * 10) / 10,
+            pit_id: pit.id, pit_name: pit.name, base_price: price,
+          });
+        }
+        console.log(`[bulk] PIT ${pit.name}: ${pitCities.length} cities discovered, ${allCandidates.length} total candidates`);
       }
 
       // Deduplicate: for each city_slug keep lowest distance_from_pit
