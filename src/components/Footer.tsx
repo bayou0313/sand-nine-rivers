@@ -147,7 +147,7 @@ const Footer = () => {
             variants={fadeUp}
             className="mb-10 pt-8 border-t border-background/10"
           >
-            <p className="font-display text-lg text-background tracking-widest mb-6">CITIES WE SERVE</p>
+            <p className="font-display text-lg text-background tracking-widest mb-6">{getCitiesSectionHeading(cityLinks)}</p>
             {/* If all cities lack regions, render flat multi-column grid */}
             {regionKeys.length === 1 && regionKeys[0] === "Other Areas" ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1.5">
