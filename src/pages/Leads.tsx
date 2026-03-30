@@ -4146,7 +4146,17 @@ const Leads = () => {
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
                     <div className="relative">
-                      <Input ref={editPitInputRef} value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
+                      {googleLoaded ? (
+                        <PlaceAutocompleteInput
+                          onPlaceSelect={handleEditPitPlaceSelect}
+                          onInputChange={(val) => setEditPitData({ ...editPitData, address: val, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })}
+                          placeholder="Start typing an address..."
+                          initialValue={editPitData.address || ""}
+                          containerClassName="place-autocomplete-admin"
+                        />
+                      ) : (
+                        <Input value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
+                      )}
                       {editPitData.lat != null && editPitData.lat !== pits.find(pp => pp.id === editingPitId)?.lat && (
                         <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />
                       )}
