@@ -1936,7 +1936,7 @@ const Leads = () => {
                   price: page.base_price || 195,
                   free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
                   saturday_available: pitData?.operating_days?.includes(6) ?? false,
-                  multi_pit_coverage: page.multi_pit_coverage || false,
+                  multi_pit_coverage: (page.multi_pit_coverage || false) && pits.filter((p: any) => p.status === "active").length > 1,
                 },
               });
               // Explicitly set status to active in DB after successful generation
