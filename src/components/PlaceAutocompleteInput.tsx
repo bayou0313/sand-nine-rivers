@@ -132,7 +132,7 @@ export default function PlaceAutocompleteInput({
   return (
     <div
       ref={containerRef}
-      className={`place-autocomplete-container ${containerClassName}`}
+      className={`place-autocomplete-container relative ${containerClassName}`}
     />
   );
 }
