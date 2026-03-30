@@ -3922,7 +3922,17 @@ const Leads = () => {
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
                     <div className="relative">
-                      <Input ref={pitInputRef} placeholder="Start typing an address..." value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
+                      {googleLoaded ? (
+                        <PlaceAutocompleteInput
+                          onPlaceSelect={handleAddPitPlaceSelect}
+                          onInputChange={(val) => setNewPit({ ...newPit, address: val, lat: null, lon: null })}
+                          placeholder="Start typing an address..."
+                          initialValue={newPit.address}
+                          containerClassName="place-autocomplete-admin"
+                        />
+                      ) : (
+                        <Input placeholder="Start typing an address..." value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
+                      )}
                       {newPit.lat != null && <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />}
                       {newPit.address && newPit.lat == null && (
                         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
