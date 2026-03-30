@@ -122,7 +122,7 @@ const Index = () => {
       </Helmet>
       <Navbar />
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
-      <Hero h1Override={seo.seo_homepage_h1 || DEFAULT_H1} prefillAddress={returnAddress} />
+      <Hero h1Override={seo.seo_h1 || DEFAULT_H1} prefillAddress={returnAddress} />
       <SocialProofStrip />
       <Features />
       <Testimonials />
