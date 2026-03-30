@@ -1886,6 +1886,15 @@ const Leads = () => {
                 {discoverLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
                 Discover Cities
               </Button>
+              <Button
+                onClick={() => setShowBulkCreateConfirm(true)}
+                disabled={bulkCreating}
+                size="sm"
+                style={{ backgroundColor: BRAND_NAVY, color: "white" }}
+              >
+                {bulkCreating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-4 h-4 mr-1" />}
+                Create All City Pages
+              </Button>
             </div>
 
             {/* Metrics */}
