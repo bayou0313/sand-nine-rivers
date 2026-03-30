@@ -19,6 +19,21 @@ interface CityLink {
   city_slug: string;
   city_name: string;
   region: string | null;
+  state: string;
+}
+
+function formatRegionHeading(region: string, state: string): string {
+  const term = state?.toUpperCase() === "LA" ? "Parish" : "County";
+  const lower = region.toLowerCase();
+  if (lower.includes("parish") || lower.includes("county")) return region;
+  return `${region} ${term}`;
+}
+
+function getCitiesSectionHeading(cities: CityLink[]): string {
+  const states = [...new Set(cities.map((c) => c.state))];
+  if (states.length > 1) return "AREAS WE SERVE";
+  if (states[0] === "LA") return "PARISHES WE SERVE";
+  return "COUNTIES WE SERVE";
 }
 
 const Footer = () => {
