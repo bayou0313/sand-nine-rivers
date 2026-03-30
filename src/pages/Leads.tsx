@@ -686,7 +686,7 @@ const Leads = () => {
   };
 
   // PIT functions
-  const geocodeAddress = async (address: string): Promise<{ lat: number; lon: number; location_type: string; formatted_address: string } | null> => {
+  const geocodeAddress = async (address: string): Promise<{ lat: number; lon: number; location_type?: string; formatted_address?: string } | null> => {
     if (geocodeCache[address]) return geocodeCache[address];
     try {
       const resp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
