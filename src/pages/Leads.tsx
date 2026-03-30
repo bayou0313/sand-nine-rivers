@@ -192,6 +192,10 @@ const Leads = () => {
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPricePreview, setShowPricePreview] = useState(false);
+  const [pricePreviewData, setPricePreviewData] = useState<{ city_name: string; old_price: number; new_price: number; change: number }[]>([]);
+  const [pendingPitPayload, setPendingPitPayload] = useState<any>(null);
+  const [pendingPitMeta, setPendingPitMeta] = useState<{ wasActive: boolean; nowActive: boolean } | null>(null);
 
   // Activation modal state
   const [activationLeads, setActivationLeads] = useState<Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }>>([]);
