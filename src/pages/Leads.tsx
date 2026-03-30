@@ -798,6 +798,17 @@ const Leads = () => {
     if (lat == null || lon == null) {
       const coords = await geocodeAddress(newPit.address);
       if (!coords) { toast({ title: "Geocode failed", description: "Could not find coordinates for that address", variant: "destructive" }); setGeocoding(false); return; }
+      // Block save if geocoded location is too imprecise (city centroid or region)
+      const imprecise = ["GEOMETRIC_CENTER", "APPROXIMATE", "UNKNOWN"];
+      if (imprecise.includes(coords.location_type)) {
+        toast({
+          title: "Address not specific enough",
+          description: `Google returned a "${coords.location_type}" result for "${coords.formatted_address}". This is the center of a city or region, not a real location. Enter a full street address, select from the autocomplete dropdown, or provide GPS coordinates.`,
+          variant: "destructive",
+        });
+        setGeocoding(false);
+        return;
+      }
       lat = coords.lat;
       lon = coords.lon;
     }
