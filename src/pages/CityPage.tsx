@@ -183,7 +183,7 @@ const CityPage = () => {
                 >
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-accent" />
-                    <span className="font-display text-foreground">{c.city_name}, {c.state}</span>
+                    <span className="font-display text-foreground">River Sand Delivery in {c.city_name}, {c.state}</span>
                   </div>
                 </Link>
               ))}
