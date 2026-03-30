@@ -1186,7 +1186,88 @@ serve(async (req) => {
       );
     }
 
-    // ── RECALCULATE CITY PRICES ──
+    // ── RECALCULATE ALL DISTANCES & PRICES ──
+    if (action === "recalculate_all_distances") {
+      const googleKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY");
+      if (!googleKey) {
+        return new Response(JSON.stringify({ error: "GOOGLE_MAPS_SERVER_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Fetch all pits and global settings
+      const [{ data: allPits }, { data: gsRows }] = await Promise.all([
+        supabase.from("pits").select("*").eq("status", "active"),
+        supabase.from("global_settings").select("key, value"),
+      ]);
+
+      const gs: Record<string, string> = {};
+      (gsRows || []).forEach((r: any) => { gs[r.key] = r.value; });
+      const defaultBase = parseFloat(gs.default_base_price || "195");
+      const defaultFree = parseFloat(gs.default_free_miles || "15");
+      const defaultExtra = parseFloat(gs.default_extra_per_mile || "5");
+
+      // Get all city pages
+      const { data: allPages, error: pagesErr } = await supabase
+        .from("city_pages")
+        .select("id, city_name, lat, lng, pit_id, distance_from_pit, base_price");
+      if (pagesErr) throw pagesErr;
+
+      let updated = 0;
+      let errors = 0;
+
+      // Group pages by pit_id for batch processing
+      const byPit: Record<string, any[]> = {};
+      for (const page of (allPages || [])) {
+        if (!page.pit_id || page.lat == null || page.lng == null) continue;
+        if (!byPit[page.pit_id]) byPit[page.pit_id] = [];
+        byPit[page.pit_id].push(page);
+      }
+
+      for (const [pitId, pages] of Object.entries(byPit)) {
+        const pit = (allPits || []).find((p: any) => p.id === pitId);
+        if (!pit) continue;
+
+        const effectiveBase = pit.base_price ?? defaultBase;
+        const effectiveFree = pit.free_miles ?? defaultFree;
+        const effectiveExtra = pit.price_per_extra_mile ?? defaultExtra;
+
+        // Fetch driving distances in batches
+        const dests = pages.map((p: any) => ({ lat: Number(p.lat), lng: Number(p.lng) }));
+        const distances = await getDrivingDistances(Number(pit.lat), Number(pit.lon), dests, googleKey);
+
+        for (let i = 0; i < pages.length; i++) {
+          const drivingDist = distances[i];
+          if (drivingDist == null) { errors++; continue; }
+
+          const extraMiles = Math.max(0, drivingDist - effectiveFree);
+          const newPrice = Math.max(effectiveBase, Math.round(effectiveBase + extraMiles * effectiveExtra));
+          const oldDist = pages[i].distance_from_pit ? Number(pages[i].distance_from_pit) : null;
+          const priceChanged = pages[i].base_price !== newPrice;
+          const distChanged = oldDist == null || Math.abs(oldDist - drivingDist) > 0.1;
+
+          if (distChanged || priceChanged) {
+            const { error: upErr } = await supabase
+              .from("city_pages")
+              .update({
+                distance_from_pit: Math.round(drivingDist * 10) / 10,
+                base_price: newPrice,
+                price_changed: priceChanged,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", pages[i].id);
+            if (!upErr) updated++;
+            else errors++;
+          }
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, updated, errors, total: (allPages || []).length }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── RECALCULATE CITY PRICES (price-only, no distance re-fetch) ──
     if (action === "recalculate_city_prices") {
       if (!pit_id || base_price == null || free_miles == null || price_per_extra_mile == null) {
         return new Response(JSON.stringify({ error: "Missing pit_id or pricing fields" }),
