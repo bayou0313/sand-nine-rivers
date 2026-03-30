@@ -2761,7 +2761,9 @@ const Leads = () => {
                         <div>Generated: <strong>{editingCityPage.content_generated_at ? new Date(editingCityPage.content_generated_at).toLocaleDateString() : "Never"}</strong></div>
                         <div>Version: <strong>{editingCityPage.prompt_version || "—"}</strong></div>
                         <div>Views: <strong>{editingCityPage.page_views || 0}</strong></div>
-                        {editingCityPage.multi_pit_coverage && <div className="col-span-3"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>Multi-PIT Coverage</span></div>}
+                        {editingCityPage.multi_pit_coverage && pits.filter(p => p.status === "active").length > 1 && (
+                          <div className="col-span-3"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>Multi-PIT Coverage</span></div>
+                        )}
                       </div>
                     </div>
 
