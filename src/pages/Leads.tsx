@@ -3300,7 +3300,17 @@ const Leads = () => {
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Business address</label>
-                  <Input ref={profileAddressRef} className="h-9" value={profileSettings.business_address || ""} onChange={e => setProfileSettings({ ...profileSettings, business_address: e.target.value })} placeholder="1215 River Rd, Bridge City, LA 70094" />
+                  {googleLoaded ? (
+                    <PlaceAutocompleteInput
+                      onPlaceSelect={handleProfilePlaceSelect}
+                      onInputChange={(val) => setProfileSettings({ ...profileSettings, business_address: val })}
+                      placeholder="1215 River Rd, Bridge City, LA 70094"
+                      initialValue={profileSettings.business_address || ""}
+                      containerClassName="place-autocomplete-admin"
+                    />
+                  ) : (
+                    <Input className="h-9" value={profileSettings.business_address || ""} onChange={e => setProfileSettings({ ...profileSettings, business_address: e.target.value })} placeholder="1215 River Rd, Bridge City, LA 70094" />
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Display city (customer-facing)</label>
