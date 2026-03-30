@@ -1919,10 +1919,7 @@ const Leads = () => {
               },
             });
             if (fnError) throw fnError;
-            // Activate page after successful regeneration
-            await supabase.functions.invoke("leads-auth", {
-              body: { password: storedPassword(), action: "save_city_page", city_page_id: cp.id, city_page: { ...cp, status: "active", meta_title: data?.generated?.meta_title || cp.meta_title, meta_description: data?.generated?.meta_description || cp.meta_description, h1_text: data?.generated?.h1_text || cp.h1_text, content: data?.generated?.content || cp.content } },
-            });
+            // generate-city-page already sets status: "active" in the DB
             toast({ title: `Content generated for ${cp.city_name}`, description: "Page activated." });
             fetchCityPages();
           } catch (err: any) {
