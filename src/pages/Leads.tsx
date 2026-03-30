@@ -2431,9 +2431,6 @@ const Leads = () => {
                           <div className="flex gap-1">
                             <button onClick={() => window.open(`/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}>View</button>
                             <button onClick={() => setEditingCityPage({ ...cp })} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_GOLD + "30", color: BRAND_GOLD }}>Edit</button>
-                            <button onClick={() => regenerateContent(cp)} disabled={generatingContent === cp.id} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_GOLD + "30", color: BRAND_GOLD }}>
-                              {generatingContent === cp.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Regen"}
-                            </button>
                             <button onClick={() => toggleCityPage(cp.id)} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: cp.status === "active" ? "#EF444430" : "#22C55E30", color: cp.status === "active" ? "#EF4444" : "#22C55E" }}>
                               {cp.status === "active" ? "Deactivate" : "Activate"}
                             </button>
