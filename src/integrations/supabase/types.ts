@@ -19,6 +19,7 @@ export type Database = {
           base_price: number | null
           city_name: string
           city_slug: string
+          competing_pit_ids: string[] | null
           content: string | null
           content_generated_at: string | null
           created_at: string | null
@@ -30,6 +31,7 @@ export type Database = {
           lng: number | null
           meta_description: string | null
           meta_title: string | null
+          multi_pit_coverage: boolean | null
           page_views: number | null
           pit_id: string | null
           pit_reassigned: boolean | null
@@ -46,6 +48,7 @@ export type Database = {
           base_price?: number | null
           city_name: string
           city_slug: string
+          competing_pit_ids?: string[] | null
           content?: string | null
           content_generated_at?: string | null
           created_at?: string | null
@@ -57,6 +60,7 @@ export type Database = {
           lng?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          multi_pit_coverage?: boolean | null
           page_views?: number | null
           pit_id?: string | null
           pit_reassigned?: boolean | null
@@ -73,6 +77,7 @@ export type Database = {
           base_price?: number | null
           city_name?: string
           city_slug?: string
+          competing_pit_ids?: string[] | null
           content?: string | null
           content_generated_at?: string | null
           created_at?: string | null
@@ -84,6 +89,7 @@ export type Database = {
           lng?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          multi_pit_coverage?: boolean | null
           page_views?: number | null
           pit_id?: string | null
           pit_reassigned?: boolean | null
