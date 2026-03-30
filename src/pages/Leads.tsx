@@ -1795,21 +1795,31 @@ const Leads = () => {
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
         const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
         const CURRENT_PROMPT_VERSION = "2.0";
-        const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at).length;
-        const outdatedCount = cityPages.filter((cp: any) => !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION).length;
-        const missingCount = cityPages.filter((cp: any) => cp.status === "active" && !cp.content_generated_at).length;
+        const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed).length;
+        const pitChangedCount = cityPages.filter((cp: any) => cp.pit_reassigned).length;
+        const priceChangedCount = cityPages.filter((cp: any) => cp.price_changed && !cp.pit_reassigned).length;
+        const outdatedCount = cityPages.filter((cp: any) => (!cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION) && !cp.pit_reassigned && !cp.price_changed && cp.content_generated_at).length;
+        const missingCount = cityPages.filter((cp: any) => !cp.content_generated_at).length;
+        const needsRegenCount = cityPages.filter((cp: any) => cp.pit_reassigned || cp.price_changed || !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION || !cp.content_generated_at).length;
 
         const regenOutdated = async () => {
-          const outdated = cityPages.filter(
-            (p: any) => !p.prompt_version || p.prompt_version !== CURRENT_PROMPT_VERSION
-          );
+          const toRegen = cityPages.filter(
+            (p: any) => p.pit_reassigned || p.price_changed || !p.prompt_version || p.prompt_version !== CURRENT_PROMPT_VERSION || !p.content_generated_at
+          ).sort((a: any, b: any) => {
+            const priority = (p: any) =>
+              p.pit_reassigned ? 0 :
+              p.price_changed ? 1 :
+              !p.content_generated_at ? 2 : 3;
+            return priority(a) - priority(b);
+          });
           regenCancelRef.current = false;
-          setRegenQueue({ total: outdated.length, current: 0, currentCity: "", status: "running" });
+          setRegenQueue({ total: toRegen.length, current: 0, currentCity: "", status: "running" });
 
-          for (let i = 0; i < outdated.length; i++) {
+          for (let i = 0; i < toRegen.length; i++) {
             if (regenCancelRef.current) break;
-            const page = outdated[i];
-            setRegenQueue(q => q ? { ...q, current: i + 1, currentCity: page.city_name } : q);
+            const page = toRegen[i];
+            const reason = page.pit_reassigned ? "PIT reassigned" : page.price_changed ? "Price changed" : !page.content_generated_at ? "Missing content" : "Outdated prompt";
+            setRegenQueue(q => q ? { ...q, current: i + 1, currentCity: `${page.city_name} — ${reason}` } : q);
 
             try {
               const pitData = pits.find((p: any) => p.id === page.pit_id);
@@ -1826,18 +1836,18 @@ const Leads = () => {
                   saturday_available: pitData?.operating_days?.includes(6) ?? false,
                 },
               });
-              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, content_generated_at: new Date().toISOString(), status: "active" } : cp));
+              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, pit_reassigned: false, price_changed: false, regen_reason: null, content_generated_at: new Date().toISOString(), status: "active" } : cp));
             } catch (err) {
               console.error(`Failed to regen ${page.city_name}:`, err);
             }
 
-            if (i < outdated.length - 1 && !regenCancelRef.current) {
+            if (i < toRegen.length - 1 && !regenCancelRef.current) {
               await new Promise(resolve => setTimeout(resolve, 3000));
             }
           }
 
           setRegenQueue(q => q ? { ...q, current: q.total, status: "complete" } : q);
-          toast({ title: "Regeneration complete", description: `${outdated.length} pages updated.` });
+          toast({ title: "Regeneration complete", description: `${toRegen.length} pages updated.` });
           fetchCityPages();
         };
 
@@ -1973,11 +1983,13 @@ const Leads = () => {
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-4">
               <MetricCard label="Active Pages" value={activeCount} />
               <MetricCard label="Current" value={currentCount} />
               <MetricCard label="Outdated" value={outdatedCount} />
-              <MetricCard label="Missing Content" value={missingCount} />
+              <MetricCard label="PIT Changed" value={pitChangedCount} />
+              <MetricCard label="Price Changed" value={priceChangedCount} />
+              <MetricCard label="Missing" value={missingCount} />
               <MetricCard label="Total Views" value={totalViews} />
             </div>
 
@@ -2019,14 +2031,14 @@ const Leads = () => {
               )}
               <Button
                 onClick={() => setShowRegenOutdatedConfirm(true)}
-                disabled={outdatedCount === 0 || regenQueue?.status === "running"}
+                disabled={needsRegenCount === 0 || regenQueue?.status === "running"}
                 size="sm"
                 variant="outline"
                 className="text-xs"
-                style={{ borderColor: outdatedCount > 0 ? BRAND_GOLD + "40" : undefined, color: outdatedCount > 0 ? BRAND_GOLD : undefined }}
+                style={{ borderColor: needsRegenCount > 0 ? BRAND_GOLD + "40" : undefined, color: needsRegenCount > 0 ? BRAND_GOLD : undefined }}
               >
                 {regenQueue?.status === "running" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-3 h-3 mr-1" />}
-                Regen Outdated ({outdatedCount})
+                Regen Outdated ({needsRegenCount})
               </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
@@ -2331,9 +2343,9 @@ const Leads = () => {
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
                   <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regenerate outdated city pages?</h3>
-                  <p className="text-sm text-gray-600">
-                    This will regenerate content for <strong>{outdatedCount}</strong> city pages using the current AI prompt. Pages are processed one at a time to avoid rate limits. This may take several minutes.
-                  </p>
+                   <p className="text-sm text-gray-600">
+                     This will regenerate content for <strong>{needsRegenCount}</strong> city pages using the current AI prompt. Pages are processed one at a time to avoid rate limits. This may take several minutes.
+                   </p>
                   <div className="flex gap-3 justify-end">
                     <Button variant="outline" onClick={() => setShowRegenOutdatedConfirm(false)}>Cancel</Button>
                     <Button
@@ -2411,15 +2423,17 @@ const Leads = () => {
                             {cp.status?.charAt(0).toUpperCase() + cp.status?.slice(1)}
                           </span>
                         </td>
-                        <td className="px-3 py-2">
+                         <td className="px-3 py-2">
                           {(() => {
-                            const isCurrent = cp.prompt_version === "2.0" && cp.content_generated_at;
-                            const isMissing = cp.status === "active" && !cp.content_generated_at;
-                            const isOutdated = !isCurrent && !isMissing;
-                            const dotColor = isCurrent ? "#22C55E" : isMissing ? "#EF4444" : "#F59E0B";
-                            const label = isCurrent ? "Current" : isMissing ? "Missing" : "Outdated";
+                            const isCurrent = cp.prompt_version === "2.0" && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed;
+                            const isPitChanged = cp.pit_reassigned;
+                            const isPriceChanged = cp.price_changed && !cp.pit_reassigned;
+                            const isMissing = !cp.content_generated_at;
+                            const isOutdated = !isCurrent && !isPitChanged && !isPriceChanged && !isMissing;
+                            const dotColor = isCurrent ? "#22C55E" : isPitChanged ? "#EF4444" : isPriceChanged ? "#EF4444" : isMissing ? "#6B7280" : "#F59E0B";
+                            const label = isCurrent ? "Current" : isPitChanged ? "PIT Changed" : isPriceChanged ? "Price Changed" : isMissing ? "Missing" : "Outdated";
                             return (
-                              <span className="inline-flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1.5" title={cp.regen_reason || undefined}>
                                 <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
                                 <span className="text-xs" style={{ color: dotColor }}>{label}</span>
                               </span>
