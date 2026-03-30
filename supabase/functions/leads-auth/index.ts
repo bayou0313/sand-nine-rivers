@@ -756,17 +756,48 @@ serve(async (req) => {
       let generated = 0;
       let failed = 0;
       let skipped = 0;
-      // Fetch all active PITs for multi-PIT coverage detection
+      // Google Maps API key for driving distance lookups
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+
+      // Fetch all active PITs for multi-PIT coverage detection (driving distance)
       const { data: allActivePits } = await supabase
         .from("pits")
         .select("id, lat, lon, max_distance")
         .eq("status", "active");
 
+      const otherPits = (allActivePits ?? []).filter(p => p.id !== pit_id);
+
+      // Pre-compute driving distances from each other PIT to all cities in one batch per PIT
+      // Key: `${pitId}:${cityIndex}` → driving distance in miles (or null)
+      const multiPitDrivingCache = new Map<string, number | null>();
+      for (const otherPit of otherPits) {
+        // Haversine pre-filter: only query Distance Matrix for cities plausibly in range
+        const maxDRange = (otherPit.max_distance || 30) * 1.5;
+        const candidateIndices: number[] = [];
+        const candidateCoords: { lat: number; lng: number }[] = [];
+        for (let ci = 0; ci < cities.length; ci++) {
+          const straight = haversine(otherPit.lat, otherPit.lon, cities[ci].lat, cities[ci].lng);
+          if (straight <= maxDRange) {
+            candidateIndices.push(ci);
+            candidateCoords.push({ lat: cities[ci].lat, lng: cities[ci].lng });
+          }
+        }
+        if (candidateCoords.length > 0) {
+          const dists = await getDrivingDistances(otherPit.lat, otherPit.lon, candidateCoords, apiKey);
+          for (let j = 0; j < candidateIndices.length; j++) {
+            multiPitDrivingCache.set(`${otherPit.id}:${candidateIndices[j]}`, dists[j]);
+          }
+        }
+      }
+
       for (const city of cities) {
-        // ── Multi-PIT coverage detection ──
-        const competingPits = (allActivePits ?? []).filter(otherPit => {
-          if (otherPit.id === pit_id) return false;
-          const dist = haversine(city.lat, city.lng, otherPit.lat, otherPit.lon);
+        // ── Multi-PIT coverage detection (driving distance) ──
+        const cityIdx = cities.indexOf(city);
+        const competingPits = otherPits.filter(otherPit => {
+          const cacheKey = `${otherPit.id}:${cityIdx}`;
+          const drivingDist = multiPitDrivingCache.get(cacheKey);
+          // If we have a driving distance, use it; otherwise fall back to haversine
+          const dist = drivingDist ?? haversine(city.lat, city.lng, otherPit.lat, otherPit.lon);
           return dist <= (otherPit.max_distance || 30);
         });
         const isMultiPit = competingPits.length > 0;
