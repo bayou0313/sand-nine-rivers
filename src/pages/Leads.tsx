@@ -11,7 +11,7 @@ declare global {
   interface Window { google: any; }
 }
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+import { GOOGLE_MAPS_API_KEY, pollForGoogleMaps } from "@/lib/google-maps";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const SIDEBAR_HOVER = "#142845";
