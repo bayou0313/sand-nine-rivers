@@ -1121,8 +1121,40 @@ const Leads = () => {
         await new Promise(r => setTimeout(r, 200));
       }
     }
+
+    // Batch-fetch driving distances for all geocoded leads against all active PITs
+    const activePits = pits.filter(p => p.status === "active");
+    const geocodedLeads = parsedLeads.filter(l => geocodeCache[l.address]);
+    if (geocodedLeads.length > 0 && activePits.length > 0) {
+      const newDrivingCache = { ...drivingCache };
+      for (const pit of activePits) {
+        // Filter leads that don't have a cached driving distance for this PIT yet
+        const needsDriving = geocodedLeads.filter(l => {
+          const gc = geocodeCache[l.address];
+          const key = drivingDistKey(pit.lat, pit.lon, gc.lat, gc.lon);
+          return !newDrivingCache[key];
+        });
+        if (needsDriving.length === 0) continue;
+
+        const dests = needsDriving.map(l => {
+          const gc = geocodeCache[l.address];
+          return { lat: gc.lat, lon: gc.lon };
+        });
+        const distances = await fetchDrivingDistances(pit.lat, pit.lon, dests, GOOGLE_MAPS_API_KEY);
+        for (let i = 0; i < needsDriving.length; i++) {
+          if (distances[i] != null) {
+            const gc = geocodeCache[needsDriving[i].address];
+            const key = drivingDistKey(pit.lat, pit.lon, gc.lat, gc.lon);
+            newDrivingCache[key] = distances[i]!;
+          }
+        }
+      }
+      setDrivingCache(newDrivingCache);
+      sessionStorage.setItem("drivingcache", JSON.stringify(newDrivingCache));
+    }
+
     setGeocoding(false);
-    toast({ title: "Geocoding complete" });
+    toast({ title: "Geocoding & driving distances complete" });
   };
 
   const sendProposals = async () => {
