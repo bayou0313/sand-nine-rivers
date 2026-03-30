@@ -3853,59 +3853,6 @@ const Leads = () => {
         </div>
       )}
 
-      {/* ─── PRICE PREVIEW MODAL ─── */}
-      {showPricePreview && pendingPitPayload && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => { setShowPricePreview(false); setPendingPitPayload(null); setPendingPitMeta(null); setPricePreviewData([]); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
-              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Review Price Changes</h2>
-              <p className="text-white/60 text-sm">
-                Updating pricing for <strong className="text-white">{pendingPitPayload.name}</strong> will affect {pricePreviewData.length} city page{pricePreviewData.length !== 1 ? "s" : ""}.
-              </p>
-            </div>
-            <div className="p-4 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: "#F9F9F9" }}>
-                    <th className="px-3 py-2 text-left text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>City</th>
-                    <th className="px-3 py-2 text-right text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>Current Price</th>
-                    <th className="px-3 py-2 text-right text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>New Price</th>
-                    <th className="px-3 py-2 text-right text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>Change</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pricePreviewData.slice(0, 20).map((row, i) => (
-                    <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
-                      <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{row.city_name}</td>
-                      <td className="px-3 py-2 text-right">${row.old_price.toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right font-bold" style={{ color: BRAND_GOLD }}>${row.new_price.toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right font-bold" style={{ color: row.change > 0 ? "#EF4444" : "#22C55E" }}>
-                        {row.change > 0 ? "+" : ""}{row.change.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {pricePreviewData.length > 20 && (
-                <p className="text-xs text-center mt-3" style={{ color: "#999" }}>
-                  + {pricePreviewData.length - 20} more cities will also be updated
-                </p>
-              )}
-            </div>
-            <div className="px-6 py-4 flex gap-3 justify-end" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
-              <Button variant="outline" onClick={() => { setShowPricePreview(false); setPendingPitPayload(null); setPendingPitMeta(null); setPricePreviewData([]); }}>Cancel</Button>
-              <Button
-                disabled={savingPit}
-                style={{ backgroundColor: BRAND_GOLD, color: "white" }}
-                onClick={() => executePitSave(pendingPitPayload, pendingPitMeta?.wasActive ?? false, pendingPitMeta?.nowActive ?? false)}
-              >
-                {savingPit ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                Confirm & Save All
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ─── ACTIVATION LEADS MODAL ─── */}
       {showActivationModal && activationPit && (
