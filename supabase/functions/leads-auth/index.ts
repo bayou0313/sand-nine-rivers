@@ -613,7 +613,20 @@ serve(async (req) => {
       const created: string[] = [];
       let generated = 0;
       let failed = 0;
+      let skipped = 0;
       for (const city of cities) {
+        // ── Dedup check: skip if slug already exists ──
+        const { data: existing } = await supabase
+          .from("city_pages")
+          .select("id, city_slug")
+          .eq("city_slug", city.city_slug)
+          .maybeSingle();
+        if (existing) {
+          console.log(`Skipped duplicate: ${city.city_slug} (already exists as ${existing.id})`);
+          skipped++;
+          continue;
+        }
+
         const { data: inserted, error: insertErr } = await supabase
           .from("city_pages")
           .insert({
