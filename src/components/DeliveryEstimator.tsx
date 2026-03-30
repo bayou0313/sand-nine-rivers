@@ -62,44 +62,60 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   }, []);
 
   useEffect(() => {
-    if (!apiLoaded || !inputRef.current || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
+    if (!apiLoaded || !inputRef.current) return;
     if (autocompleteRef.current) return;
 
-    const acElement = new (window.google.maps.places as any).PlaceAutocompleteElement({
-      types: ["address"],
-      componentRestrictions: { country: "us" },
-    });
-    acElement.style.width = "100%";
-
-    if (inputRef.current.parentNode) {
-      inputRef.current.parentNode.insertBefore(acElement, inputRef.current);
-      inputRef.current.style.display = "none";
+    // Use new PlaceAutocompleteElement if available, otherwise fall back to legacy Autocomplete
+    if (window.google?.maps?.places?.PlaceAutocompleteElement) {
+      const acElement = new (window.google.maps.places as any).PlaceAutocompleteElement({
+        types: ["address"],
+        componentRestrictions: { country: "us" },
+      });
+      acElement.style.width = "100%";
+      if (inputRef.current.parentNode) {
+        inputRef.current.parentNode.insertBefore(acElement, inputRef.current);
+        inputRef.current.style.display = "none";
+      }
+      acElement.addEventListener("gmp-placeselect", async (event: any) => {
+        const place = event.place;
+        await place.fetchFields({ fields: ["formattedAddress", "location"] });
+        const lat = place.location?.lat();
+        const lng = place.location?.lng();
+        const addr = place.formattedAddress;
+        if (addr) {
+          setAddress(addr);
+          updateSession({ stage: "entered_address", delivery_address: addr, address_lat: lat, address_lng: lng });
+          trackEvent("address_entered", { address: addr });
+        }
+        if (lat != null && lng != null) {
+          setCustomerCoords({ lat, lng });
+        }
+      });
+      autocompleteRef.current = acElement;
+      return () => { acElement.remove(); autocompleteRef.current = null; };
+    } else if (window.google?.maps?.places?.Autocomplete) {
+      const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+        componentRestrictions: { country: "us" },
+        types: ["address"],
+      });
+      ac.addListener("place_changed", () => {
+        const place = ac.getPlace();
+        if (place?.formatted_address) {
+          setAddress(place.formatted_address);
+          updateSession({
+            stage: "entered_address",
+            delivery_address: place.formatted_address,
+            address_lat: place.geometry?.location?.lat(),
+            address_lng: place.geometry?.location?.lng(),
+          });
+          trackEvent("address_entered", { address: place.formatted_address });
+        }
+        if (place?.geometry?.location) {
+          setCustomerCoords({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
+        }
+      });
+      autocompleteRef.current = ac;
     }
-
-    acElement.addEventListener("gmp-placeselect", async (event: any) => {
-      const place = event.place;
-      await place.fetchFields({ fields: ["formattedAddress", "location"] });
-      const lat = place.location?.lat();
-      const lng = place.location?.lng();
-      const addr = place.formattedAddress;
-
-      if (addr) {
-        setAddress(addr);
-        updateSession({
-          stage: "entered_address",
-          delivery_address: addr,
-          address_lat: lat,
-          address_lng: lng,
-        });
-        trackEvent("address_entered", { address: addr });
-      }
-      if (lat != null && lng != null) {
-        setCustomerCoords({ lat, lng });
-      }
-    });
-
-    autocompleteRef.current = acElement;
-    return () => { acElement.remove(); autocompleteRef.current = null; };
   }, [apiLoaded]);
 
   useEffect(() => {
