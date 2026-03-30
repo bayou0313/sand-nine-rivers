@@ -236,7 +236,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         : "bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
       }>
         <div className="space-y-4">
-          <label className={`font-display text-lg tracking-wider flex items-center gap-2 ${embedded ? "text-primary-foreground" : "text-foreground"}`}>
+          <label htmlFor="delivery-address" className={`font-display text-lg tracking-wider flex items-center gap-2 ${embedded ? "text-primary-foreground" : "text-foreground"}`}>
             <MapPin className="w-5 h-5 text-accent" /> DELIVERY ADDRESS
           </label>
           <p className={`text-sm font-body ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
@@ -246,6 +246,9 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             <Input
               ref={inputRef}
               type="text"
+              id="delivery-address"
+              name="delivery-address"
+              autoComplete="street-address"
               placeholder="Enter your delivery address..."
               value={address}
               onChange={(e) => { setAddress(e.target.value); setCustomerCoords(null); }}

@@ -10,9 +10,11 @@ interface EmailInputProps {
   required?: boolean;
   className?: string;
   maxLength?: number;
+  id?: string;
+  name?: string;
 }
 
-const EmailInput = ({ value, onChange, placeholder = "john@example.com", required, className, maxLength = 255 }: EmailInputProps) => {
+const EmailInput = ({ value, onChange, placeholder = "john@example.com", required, className, maxLength = 255, id, name }: EmailInputProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -67,6 +69,9 @@ const EmailInput = ({ value, onChange, placeholder = "john@example.com", require
     <div ref={wrapperRef} className="relative">
       <Input
         type="email"
+        id={id}
+        name={name}
+        autoComplete="email"
         placeholder={placeholder}
         required={required}
         maxLength={maxLength}

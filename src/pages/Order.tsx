@@ -826,11 +826,15 @@ const Order = () => {
 
                 <div className="space-y-4">
                   <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
+                    <label htmlFor="order-address" className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" /> DELIVERY ADDRESS
-                  </label>
+                    </label>
                   <Input
                     ref={inputRef}
                     type="text"
+                    id="order-address"
+                    name="delivery-address"
+                    autoComplete="street-address"
                     placeholder="Enter your delivery address..."
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
