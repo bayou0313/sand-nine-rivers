@@ -721,6 +721,7 @@ const Leads = () => {
       const cached = geocodeCache[l.address];
       if (!cached) continue;
       const dist = getDist(pit.lat, pit.lon, cached.lat, cached.lon);
+      if (dist === null) continue; // No driving distance available — skip
       if (dist <= eff.max_distance) {
         const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
         const price = eff.base_price + extra;
