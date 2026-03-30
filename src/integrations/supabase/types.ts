@@ -32,6 +32,7 @@ export type Database = {
           meta_title: string | null
           page_views: number | null
           pit_id: string | null
+          region: string | null
           state: string
           status: string | null
           updated_at: string | null
@@ -54,6 +55,7 @@ export type Database = {
           meta_title?: string | null
           page_views?: number | null
           pit_id?: string | null
+          region?: string | null
           state?: string
           status?: string | null
           updated_at?: string | null
@@ -76,6 +78,7 @@ export type Database = {
           meta_title?: string | null
           page_views?: number | null
           pit_id?: string | null
+          region?: string | null
           state?: string
           status?: string | null
           updated_at?: string | null
