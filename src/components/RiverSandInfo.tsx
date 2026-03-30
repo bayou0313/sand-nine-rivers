@@ -51,10 +51,15 @@ const RiverSandInfo = () => {
 
           {expanded && (
           <div className="space-y-12">
-            <p className="font-body text-muted-foreground leading-relaxed text-lg mt-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+            <p className="font-body text-muted-foreground leading-relaxed text-lg">
               The rounded grain also means it compacts consistently without fully sealing, which is critical in low-lying areas where water management is the primary concern. It settles firmly underfoot or under pavers without creating an impermeable base that traps water below the surface — a problem that affects poorly chosen fill materials in flood-prone areas like the Orleans and Jefferson Parish lowlands.
             </p>
-          </motion.div>
+            </motion.div>
 
           {/* Callout: Pumped from the Mississippi */}
           <motion.div
