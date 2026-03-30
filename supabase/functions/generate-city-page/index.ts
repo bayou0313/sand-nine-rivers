@@ -23,9 +23,9 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) {
+      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -42,7 +42,19 @@ Your content must:
 6. Include SECONDARY KEYWORDS naturally: bulk sand delivery, same-day sand delivery, fill sand, river sand [parish name]
 7. Write for PEOPLE FIRST — content must be genuinely useful to someone planning a delivery in this specific city
 8. Never use generic filler — every sentence must be specific to this city, parish, or region
-9. Never use phrases like "look no further", "we've got you covered", "your one-stop shop", or similar corporate clichés`;
+9. Never use phrases like "look no further", "we've got you covered", "your one-stop shop", or similar corporate clichés
+
+You MUST respond with a single JSON object (no markdown fences, no explanation) containing these exact fields:
+- meta_title (string, max 60 chars)
+- meta_description (string, max 160 chars)
+- h1_text (string, max 70 chars, MUST start with "River Sand Delivery in", NO pipe characters)
+- hero_intro (string, 2-3 sentences)
+- why_choose_intro (string, 1-2 sentences)
+- delivery_details (string, 1-2 sentences)
+- local_uses (array of exactly 4 strings, each 1 sentence)
+- local_expertise (string, 2-3 sentences)
+- faq_items (array of exactly 3 objects, each with "question" and "answer" strings)
+- schema_service_area (string)`;
 
     const effectiveRegion = region || state;
     const effectiveCutoff = same_day_cutoff || "12:00 PM";
@@ -56,7 +68,7 @@ IMPORTANT — Multi-PIT Coverage is TRUE for this city:
 - All other fields (hero_intro, why_choose_intro, local_uses, local_expertise) write normally with local knowledge.
 - meta_description should NOT include a specific price — instead emphasize "instant pricing" and "same-day delivery".` : "";
 
-    const userPrompt = `Generate structured local SEO content for this city page. Return ONLY the structured tool call — no markdown, no explanation.
+    const userPrompt = `Generate structured local SEO content for this city page. Return ONLY a JSON object — no markdown, no explanation.
 
 CITY DATA:
 - City: ${city_name}
@@ -87,76 +99,29 @@ CONTENT REQUIREMENTS:
   3. Local use-case question specific to this city's geography — confident, specific answer
 - schema_service_area: City name formatted for schema: "${city_name}, ${state}"`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
+        "x-api-key": anthropicKey,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-4-5",
+        max_tokens: 2000,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_city_page_content",
-              description: "Return the generated city page content with local SEO optimization",
-              parameters: {
-                type: "object",
-                properties: {
-                  meta_title: { type: "string", description: "Meta title under 60 chars with city name and 'river sand delivery'" },
-                  meta_description: { type: "string", description: "Meta description under 160 chars with city, price, same-day" },
-                  h1_text: { type: "string", description: "H1 heading, max 70 chars. MUST start with 'River Sand Delivery in'. Format: 'River Sand Delivery in [City], [State] — Same-Day Service'. NO pipe characters (|). Must read as a natural headline." },
-                  hero_intro: { type: "string", description: "2-3 sentence hero intro with local reference" },
-                  why_choose_intro: { type: "string", description: "1-2 sentences establishing local authority and E-E-A-T" },
-                  delivery_details: { type: "string", description: "1-2 sentences with exact logistics, roads, distance, price" },
-                  local_uses: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Exactly 4 local use cases, each 1 sentence"
-                  },
-                  local_expertise: { type: "string", description: "2-3 sentences showing deep local knowledge" },
-                  faq_items: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        question: { type: "string" },
-                        answer: { type: "string" }
-                      },
-                      required: ["question", "answer"],
-                      additionalProperties: false
-                    },
-                    description: "Exactly 3 city-specific FAQ items"
-                  },
-                  schema_service_area: { type: "string", description: "City, State for schema areaServed" }
-                },
-                required: ["meta_title", "meta_description", "h1_text", "hero_intro", "why_choose_intro", "delivery_details", "local_uses", "local_expertise", "faq_items", "schema_service_area"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "generate_city_page_content" } },
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
+      console.error("Anthropic API error:", response.status, errText);
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited, please try again later." }), {
           status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Credits exhausted. Add funds in Settings > Workspace > Usage." }), {
-          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -167,15 +132,27 @@ CONTENT REQUIREMENTS:
     }
 
     const result = await response.json();
-    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      console.error("No tool call in AI response:", JSON.stringify(result));
-      return new Response(JSON.stringify({ error: "AI did not return structured content" }), {
+    const rawText = (result.content || [])
+      .filter((block: any) => block.type === "text")
+      .map((block: any) => block.text)
+      .join("");
+
+    const cleanText = rawText
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    let generated: any;
+    try {
+      generated = JSON.parse(cleanText);
+    } catch (parseErr) {
+      console.error("Failed to parse AI JSON:", cleanText);
+      return new Response(JSON.stringify({ error: "AI did not return valid JSON" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
     const generated = JSON.parse(toolCall.function.arguments);
 
     // Build the full HTML content from structured sections
