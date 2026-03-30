@@ -1006,69 +1006,88 @@ const Leads = () => {
 
   // Google Places Autocomplete for Add PIT
   useEffect(() => {
-    if (!showAddPit || !pitInputRef.current || !window.google?.maps?.places) return;
+    if (!showAddPit || !pitInputRef.current || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
     if (addPitAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, {
+    const acElement = new (window.google.maps.places as any).PlaceAutocompleteElement({
       types: ["address"],
-      fields: ["formatted_address", "geometry"],
       componentRestrictions: { country: "us" },
     });
-    ac.addListener("place_changed", () => {
-      const place = ac.getPlace();
-      if (place?.geometry?.location) {
+    acElement.style.width = "100%";
+    if (pitInputRef.current.parentNode) {
+      pitInputRef.current.parentNode.insertBefore(acElement, pitInputRef.current);
+      pitInputRef.current.style.display = "none";
+    }
+    acElement.addEventListener("gmp-placeselect", async (event: any) => {
+      const place = event.place;
+      await place.fetchFields({ fields: ["formattedAddress", "location"] });
+      const lat = place.location?.lat();
+      const lng = place.location?.lng();
+      if (lat != null && lng != null) {
         setNewPit(prev => ({
           ...prev,
-          address: place.formatted_address || prev.address,
-          lat: place.geometry!.location.lat(),
-          lon: place.geometry!.location.lng(),
+          address: place.formattedAddress || prev.address,
+          lat,
+          lon: lng,
         }));
       }
     });
-    addPitAutocompleteRef.current = ac;
-    return () => { addPitAutocompleteRef.current = null; };
+    addPitAutocompleteRef.current = acElement;
+    return () => { acElement.remove(); addPitAutocompleteRef.current = null; };
   }, [showAddPit, googleLoaded]);
 
   // Google Places Autocomplete for Edit PIT
   useEffect(() => {
-    if (!editingPitId || !editPitInputRef.current || !window.google?.maps?.places) return;
+    if (!editingPitId || !editPitInputRef.current || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
     if (editPitAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(editPitInputRef.current, {
+    const acElement = new (window.google.maps.places as any).PlaceAutocompleteElement({
       types: ["address"],
-      fields: ["formatted_address", "geometry"],
       componentRestrictions: { country: "us" },
     });
-    ac.addListener("place_changed", () => {
-      const place = ac.getPlace();
-      if (place?.geometry?.location) {
+    acElement.style.width = "100%";
+    if (editPitInputRef.current.parentNode) {
+      editPitInputRef.current.parentNode.insertBefore(acElement, editPitInputRef.current);
+      editPitInputRef.current.style.display = "none";
+    }
+    acElement.addEventListener("gmp-placeselect", async (event: any) => {
+      const place = event.place;
+      await place.fetchFields({ fields: ["formattedAddress", "location"] });
+      const lat = place.location?.lat();
+      const lng = place.location?.lng();
+      if (lat != null && lng != null) {
         setEditPitData(prev => ({
           ...prev,
-          address: place.formatted_address || prev.address,
-          lat: place.geometry!.location.lat(),
-          lon: place.geometry!.location.lng(),
+          address: place.formattedAddress || prev.address,
+          lat,
+          lon: lng,
         }));
       }
     });
-    editPitAutocompleteRef.current = ac;
-    return () => { editPitAutocompleteRef.current = null; };
+    editPitAutocompleteRef.current = acElement;
+    return () => { acElement.remove(); editPitAutocompleteRef.current = null; };
   }, [editingPitId, googleLoaded]);
 
   // Google Places Autocomplete for Business Profile address
   useEffect(() => {
-    if (activePage !== "profile" || !profileAddressRef.current || !window.google?.maps?.places) return;
+    if (activePage !== "profile" || !profileAddressRef.current || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
     if (profileAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, {
+    const acElement = new (window.google.maps.places as any).PlaceAutocompleteElement({
       types: ["address"],
-      fields: ["formatted_address", "geometry"],
       componentRestrictions: { country: "us" },
     });
-    ac.addListener("place_changed", () => {
-      const place = ac.getPlace();
-      if (place?.formatted_address) {
-        setProfileSettings(prev => ({ ...prev, business_address: place.formatted_address }));
+    acElement.style.width = "100%";
+    if (profileAddressRef.current.parentNode) {
+      profileAddressRef.current.parentNode.insertBefore(acElement, profileAddressRef.current);
+      profileAddressRef.current.style.display = "none";
+    }
+    acElement.addEventListener("gmp-placeselect", async (event: any) => {
+      const place = event.place;
+      await place.fetchFields({ fields: ["formattedAddress", "location"] });
+      if (place.formattedAddress) {
+        setProfileSettings(prev => ({ ...prev, business_address: place.formattedAddress }));
       }
     });
-    profileAutocompleteRef.current = ac;
-    return () => { profileAutocompleteRef.current = null; };
+    profileAutocompleteRef.current = acElement;
+    return () => { acElement.remove(); profileAutocompleteRef.current = null; };
   }, [activePage, googleLoaded]);
 
   // Fetch abandoned sessions when navigating to that page
