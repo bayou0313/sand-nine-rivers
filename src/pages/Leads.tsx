@@ -2390,8 +2390,38 @@ const Leads = () => {
                           className="rounded"
                         />
                       </th>
-                      {["City", "State", "Region", "URL", "PIT", "Distance", "Price", "Status", "Content", "Views", "Actions"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
+                      {[
+                        { label: "City", key: "city_name" },
+                        { label: "State", key: "state" },
+                        { label: "Region", key: null },
+                        { label: "URL", key: null },
+                        { label: "PIT", key: null },
+                        { label: "Distance", key: "distance_from_pit" },
+                        { label: "Price", key: "base_price" },
+                        { label: "Status", key: "status" },
+                        { label: "Content", key: null },
+                        { label: "Views", key: "page_views" },
+                        { label: "Actions", key: null },
+                      ].map(h => (
+                        <th
+                          key={h.label}
+                          className={`px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider ${h.key ? "cursor-pointer select-none hover:text-yellow-200" : ""}`}
+                          onClick={() => {
+                            if (!h.key) return;
+                            const k = h.key as typeof cityPageSortKey;
+                            if (cityPageSortKey === k) {
+                              setCityPageSortDir(d => d === "asc" ? "desc" : "asc");
+                            } else {
+                              setCityPageSortKey(k);
+                              setCityPageSortDir("asc");
+                            }
+                          }}
+                        >
+                          {h.label}
+                          {h.key && cityPageSortKey === h.key && (
+                            <span className="ml-1">{cityPageSortDir === "asc" ? "▲" : "▼"}</span>
+                          )}
+                        </th>
                       ))}
                     </tr>
                   </thead>
