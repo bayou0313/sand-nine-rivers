@@ -54,6 +54,21 @@ async function getDrivingDistances(
   return results;
 }
 
+/**
+ * Cities too large or geographically complex to quote a single delivery price.
+ * Pages for these cities always suppress static pricing and direct to the estimator,
+ * regardless of PIT count.
+ * Add any city here where a single centroid distance is misleading.
+ */
+const LARGE_CITIES_NO_STATIC_PRICE = new Set([
+  "new orleans",
+  "new orleans east",
+  "algiers",
+  "metairie",
+  "kenner",
+  "baton rouge",
+]);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
