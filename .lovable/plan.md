@@ -1,41 +1,25 @@
 
 
-## Plan: Store Structured Content in Individual Columns
+# Fix: "Google Maps API key not configured" on Client-Side Pages
 
-### Problem
-The AI prompt and tool-call schema are correct, but the `generate-city-page` function only writes to `meta_title`, `meta_description`, `h1_text`, and the legacy `content` blob. The 6 new structured columns added by the migration are never populated.
+## Problem
+The client-side code reads `import.meta.env.VITE_GOOGLE_MAPS_KEY`, but this variable is not in the `.env` file. The `.env` file only has the three auto-generated Supabase variables. The `VITE_GOOGLE_MAPS_KEY` secret exists as a runtime secret (for edge functions) but runtime secrets are NOT available to the Vite build.
 
-### Fix — `supabase/functions/generate-city-page/index.ts` (lines 209-219)
+## Solution
+Add `VITE_GOOGLE_MAPS_KEY` to the `.env` file with the actual Google Maps client-side API key value. Since this is a browser-restricted publishable key (not a secret), it's safe to store in the codebase.
 
-Update the `.update()` call to store each structured field in its own column:
+### Steps
+1. **Read the current value** of `VITE_GOOGLE_MAPS_KEY` from runtime secrets (or ask the user to provide the client-side Google Maps key)
+2. **Add the key to `.env`** as a fourth line: `VITE_GOOGLE_MAPS_KEY="<key_value>"`
 
+### Important Note
+The `.env` file is described as auto-generated and "should NEVER be edited directly." However, client-side `VITE_` variables that aren't Supabase-managed must be in this file for Vite to pick them up. The alternative is to hardcode the key directly in `src/lib/google-maps.ts` since it's a publishable key.
+
+### Preferred approach
+Hardcode the key in `src/lib/google-maps.ts` to avoid touching the auto-managed `.env` file:
 ```typescript
-.update({
-  meta_title: generated.meta_title,
-  meta_description: generated.meta_description,
-  h1_text: generated.h1_text,
-  hero_intro: generated.hero_intro,
-  why_choose_intro: generated.why_choose_intro,
-  delivery_details: generated.delivery_details,
-  local_uses: `<ul>${(generated.local_uses || []).map(i => `<li>${i}</li>`).join("")}</ul>`,
-  local_expertise: generated.local_expertise,
-  faq_items: generated.faq_items,
-  content: fullContent,  // keep legacy blob as fallback
-  content_generated_at: new Date().toISOString(),
-  status: "active",
-})
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "<actual-key-here>";
 ```
 
-Also update the response JSON to include all structured fields so the frontend can use them immediately without a refetch.
-
-### Files Changed
-
-| File | Change |
-|---|---|
-| `supabase/functions/generate-city-page/index.ts` | Add 5 structured fields to the `.update()` call (lines 209-219) |
-
-### Not Changed
-- AI prompt, tool schema, system instructions — already correct
-- `CityPage.tsx`, component props — already updated to read these columns
-- `leads-auth`, admin UI, pricing, auth, RLS
+I'll need you to provide the Google Maps client-side API key value so I can add it to the code.
 
