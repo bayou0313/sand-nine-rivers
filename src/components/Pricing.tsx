@@ -1,27 +1,14 @@
 import { Truck, MapPin, Package, DollarSign, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-const SandPile = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 48 32" fill="none" className={className}>
-    {/* Main pile */}
-    <ellipse cx="24" cy="28" rx="22" ry="4" className="fill-accent/20" />
-    <path d="M4 28 Q14 8 24 6 Q34 8 44 28 Z" className="fill-accent/30" />
-    <path d="M8 28 Q16 12 24 10 Q32 12 40 28 Z" className="fill-accent/40" />
-    {/* Highlight */}
-    <path d="M16 28 Q20 16 24 14 Q28 16 32 28 Z" className="fill-accent/20" />
-    {/* Sand grains */}
-    <circle cx="18" cy="22" r="0.8" className="fill-accent/50" />
-    <circle cx="28" cy="20" r="0.6" className="fill-accent/50" />
-    <circle cx="22" cy="18" r="0.5" className="fill-accent/50" />
-    <circle cx="30" cy="24" r="0.7" className="fill-accent/50" />
-  </svg>
-);
-
-const LOOP_DURATION = 2.2;
-const PAUSE = 2;
+const LOOP_DURATION = 3;
+const PAUSE = 1.5;
 const TOTAL = LOOP_DURATION + PAUSE;
 
 const Pricing = () => {
+  // Curved path for the truck to follow
+  const routePath = "M 60,140 C 120,60 200,180 300,100 C 380,40 440,120 540,130";
+
   return (
     <section id="pricing" className="relative py-20 md:py-28 bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-6 relative z-10">
@@ -54,7 +41,7 @@ const Pricing = () => {
           </motion.p>
         </div>
 
-        {/* Route illustration */}
+        {/* Map route illustration */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -62,130 +49,134 @@ const Pricing = () => {
           transition={{ delay: 0.2 }}
           className="max-w-3xl mx-auto mb-12"
         >
-          <div className="relative bg-background border border-border rounded-3xl p-8 md:p-12 overflow-hidden">
-            {/* Map grid background */}
-            <div className="absolute inset-0 opacity-[0.04]">
-              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" className="text-foreground" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-              </svg>
-            </div>
-
-            {/* Route visualization */}
-            <div className="relative flex items-center justify-between gap-4 py-6">
-              {/* PIT origin */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-col items-center gap-2 z-10 shrink-0"
-              >
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-accent/15 border-2 border-accent flex items-center justify-center">
-                  <MapPin className="w-6 h-6 md:w-7 md:h-7 text-accent" />
-                </div>
-                <span className="text-xs md:text-sm font-display tracking-wide text-foreground">Our Pit</span>
-              </motion.div>
-
-              {/* Animated route line + truck */}
-              <div className="flex-1 relative h-20 flex items-center">
-                {/* Road base */}
-                <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[3px] bg-border rounded-full" />
-                
-                {/* Animated road fill — loops */}
-                <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[3px] overflow-hidden rounded-full">
-                  <motion.div
-                    animate={{ width: ["0%", "100%", "100%", "0%"] }}
-                    transition={{
-                      duration: TOTAL,
-                      times: [0, LOOP_DURATION / TOTAL, (LOOP_DURATION + 0.3) / TOTAL, 1],
-                      repeat: Infinity,
-                      repeatDelay: 0.5,
-                      ease: "easeInOut",
-                    }}
-                    className="h-full bg-accent/50"
-                  />
-                </div>
-
-                {/* Dashed center line */}
-                <div className="absolute top-1/2 -translate-y-[0.5px] left-2 right-2 border-t-2 border-dashed border-accent/20" />
-
-                {/* Truck — loops with flip on return */}
-                <motion.div
-                  animate={{ left: ["5%", "72%", "72%", "5%"] }}
-                  transition={{
-                    duration: TOTAL,
-                    times: [0, LOOP_DURATION / TOTAL, (LOOP_DURATION + 0.3) / TOTAL, 1],
-                    repeat: Infinity,
-                    repeatDelay: 0.5,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute top-1/2 -translate-y-1/2 z-10"
-                >
-                  <motion.div
-                    animate={{ scaleX: [1, 1, -1, -1, 1] }}
-                    transition={{
-                      duration: TOTAL + 0.5,
-                      times: [0, LOOP_DURATION / (TOTAL + 0.5), (LOOP_DURATION + 0.05) / (TOTAL + 0.5), TOTAL / (TOTAL + 0.5), 1],
-                      repeat: Infinity,
-                      repeatDelay: 0,
-                      ease: "linear",
-                    }}
-                    className="relative"
-                  >
-                    <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-lg shadow-accent/30">
-                      <Truck className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                    {/* Dust particles */}
-                    <motion.div
-                      animate={{ opacity: [0, 0.3, 0], x: [-2, -10], scale: [0.5, 1.2] }}
-                      transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.3 }}
-                      className="absolute -left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-muted-foreground/15 blur-[2px]"
-                    />
-                  </motion.div>
-                </motion.div>
-              </div>
-
-              {/* Destination with sand pile */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-                className="flex flex-col items-center gap-2 z-10 shrink-0"
-              >
-                <div className="relative">
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 md:w-7 md:h-7 text-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                      <polyline points="9 22 9 12 15 12 15 22" />
-                    </svg>
-                  </div>
-                  {/* Sand pile next to house */}
-                  <div className="absolute -bottom-1 -right-5 md:-right-6">
-                    <SandPile className="w-10 h-7 md:w-12 md:h-8" />
-                  </div>
-                </div>
-                <span className="text-xs md:text-sm font-display tracking-wide text-foreground">Your Place</span>
-              </motion.div>
-            </div>
-
-            {/* Distance label */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 1 }}
-              className="text-center mt-2"
+          <div className="relative bg-background border border-border rounded-3xl overflow-hidden shadow-sm">
+            <svg
+              viewBox="0 0 600 240"
+              className="w-full h-auto"
+              preserveAspectRatio="xMidYMid meet"
             >
+              {/* Map background grid */}
+              <defs>
+                <pattern id="mapGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+                  <path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-foreground" opacity="0.06" />
+                </pattern>
+                {/* Road dash pattern */}
+                <filter id="roadShadow" x="-5%" y="-5%" width="110%" height="110%">
+                  <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.08" />
+                </filter>
+              </defs>
+              <rect width="600" height="240" fill="url(#mapGrid)" />
+
+              {/* Decorative map elements - subtle blocks */}
+              <rect x="130" y="30" width="40" height="25" rx="3" className="fill-muted" opacity="0.3" />
+              <rect x="250" y="160" width="55" height="30" rx="3" className="fill-muted" opacity="0.25" />
+              <rect x="400" y="50" width="45" height="20" rx="3" className="fill-muted" opacity="0.2" />
+              <rect x="180" y="170" width="30" height="20" rx="3" className="fill-muted" opacity="0.2" />
+              <rect x="450" y="170" width="35" height="25" rx="3" className="fill-muted" opacity="0.25" />
+              
+              {/* Decorative cross streets */}
+              <line x1="150" y1="20" x2="150" y2="240" className="stroke-border" strokeWidth="1" opacity="0.3" />
+              <line x1="300" y1="20" x2="300" y2="240" className="stroke-border" strokeWidth="1" opacity="0.2" />
+              <line x1="450" y1="20" x2="450" y2="240" className="stroke-border" strokeWidth="1" opacity="0.3" />
+              <line x1="20" y1="80" x2="580" y2="80" className="stroke-border" strokeWidth="1" opacity="0.15" />
+              <line x1="20" y1="180" x2="580" y2="180" className="stroke-border" strokeWidth="1" opacity="0.15" />
+
+              {/* Route shadow */}
+              <path
+                d={routePath}
+                fill="none"
+                className="stroke-border"
+                strokeWidth="8"
+                strokeLinecap="round"
+                filter="url(#roadShadow)"
+              />
+
+              {/* Route background */}
+              <path
+                d={routePath}
+                fill="none"
+                className="stroke-border"
+                strokeWidth="6"
+                strokeLinecap="round"
+              />
+
+              {/* Route animated fill */}
+              <motion.path
+                d={routePath}
+                fill="none"
+                className="stroke-accent"
+                strokeWidth="4"
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0.6 }}
+                animate={{ pathLength: [0, 1, 1, 0], opacity: [0.6, 0.6, 0.6, 0] }}
+                transition={{
+                  duration: TOTAL,
+                  times: [0, LOOP_DURATION / TOTAL, (LOOP_DURATION + 0.2) / TOTAL, 1],
+                  repeat: Infinity,
+                  repeatDelay: 0.5,
+                  ease: "easeInOut",
+                }}
+              />
+
+              {/* Route dashed center */}
+              <path
+                d={routePath}
+                fill="none"
+                stroke="white"
+                strokeWidth="1"
+                strokeDasharray="6 8"
+                strokeLinecap="round"
+                opacity="0.3"
+              />
+
+              {/* Origin marker - Our Pit */}
+              <g>
+                <circle cx="60" cy="140" r="18" className="fill-accent/15 stroke-accent" strokeWidth="2" />
+                <circle cx="60" cy="140" r="6" className="fill-accent" />
+                <text x="60" y="175" textAnchor="middle" className="fill-foreground font-display" fontSize="11" fontWeight="600">Our Pit</text>
+              </g>
+
+              {/* Destination marker - Your Place */}
+              <g>
+                <circle cx="540" cy="130" r="18" className="fill-primary/10 stroke-primary" strokeWidth="2" />
+                {/* House icon */}
+                <path d="M533,134 L540,126 L547,134 L547,140 L533,140 Z" className="fill-primary/30 stroke-primary" strokeWidth="1.5" strokeLinejoin="round" />
+                <rect x="537" y="135" width="6" height="5" className="fill-primary/50" rx="0.5" />
+                <text x="540" y="165" textAnchor="middle" className="fill-foreground font-display" fontSize="11" fontWeight="600">Your Place</text>
+              </g>
+
+              {/* Truck moving along the curve */}
+              <motion.g
+                initial={{ offsetDistance: "0%" }}
+                animate={{ offsetDistance: ["0%", "85%", "85%", "0%"] }}
+                transition={{
+                  duration: TOTAL,
+                  times: [0, LOOP_DURATION / TOTAL, (LOOP_DURATION + 0.2) / TOTAL, 1],
+                  repeat: Infinity,
+                  repeatDelay: 0.5,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  offsetPath: `path("${routePath}")`,
+                  offsetRotate: "auto",
+                }}
+              >
+                <rect x="-14" y="-14" width="28" height="28" rx="7" className="fill-accent" />
+                <g transform="translate(-8,-8) scale(0.67)" className="text-accent-foreground">
+                  <path d="M1 3h15v13H1z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                  <path d="M16 8h4l3 3v5h-7V8z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                  <circle cx="5.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <circle cx="18.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
+                </g>
+              </motion.g>
+            </svg>
+
+            {/* Label overlay */}
+            <div className="px-6 py-4 text-center border-t border-border">
               <p className="text-sm text-muted-foreground font-body">
-                Price calculated by distance — <span className="text-accent font-medium">enter your address to see yours</span>
+                Price calculated by distance — <a href="#estimator" className="text-accent font-medium hover:text-accent/80 transition-colors">enter your address to see yours</a>
               </p>
-            </motion.div>
+            </div>
           </div>
         </motion.div>
 
