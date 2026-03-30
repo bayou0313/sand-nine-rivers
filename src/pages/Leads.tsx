@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -306,6 +306,10 @@ const Leads = () => {
   const [showBulkCreateConfirm, setShowBulkCreateConfirm] = useState(false);
   const [deduplicating, setDeduplicating] = useState(false);
   const [showDeduplicateConfirm, setShowDeduplicateConfirm] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [showDeleteAllTypeConfirm, setShowDeleteAllTypeConfirm] = useState(false);
+  const [deleteAllTypeInput, setDeleteAllTypeInput] = useState("");
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
@@ -1962,7 +1966,89 @@ const Leads = () => {
                   Remove Duplicates ({duplicateCount})
                 </Button>
               )}
+              <Button
+                onClick={() => setShowDeleteAllConfirm(true)}
+                disabled={deletingAll || cityPages.length === 0}
+                size="sm"
+                variant="outline"
+                className="text-xs ml-auto"
+                style={{ borderColor: "#EF444440", color: "#EF4444" }}
+              >
+                {deletingAll ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-3 h-3 mr-1" />}
+                Delete All City Pages
+              </Button>
             </div>
+
+            {/* Delete All City Pages — Step 1 Confirmation Modal */}
+            {showDeleteAllConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Delete all city pages?</h3>
+                  <p className="text-sm text-gray-600">
+                    This will permanently delete all <strong>{cityPages.length}</strong> city pages and clear the discovery cache on all PITs. This cannot be undone.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Pages will need to be rediscovered using the Discover Cities button on each PIT.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setShowDeleteAllConfirm(false)}>Cancel</Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      onClick={() => {
+                        setShowDeleteAllConfirm(false);
+                        setDeleteAllTypeInput("");
+                        setShowDeleteAllTypeConfirm(true);
+                      }}
+                    >Yes, delete everything</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Delete All City Pages — Step 2 Type DELETE */}
+            {showDeleteAllTypeConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Type DELETE to confirm</h3>
+                  <input
+                    type="text"
+                    value={deleteAllTypeInput}
+                    onChange={e => setDeleteAllTypeInput(e.target.value)}
+                    placeholder="Type DELETE here"
+                    className="w-full h-10 px-3 rounded-md border text-sm"
+                    style={{ borderColor: BRAND_NAVY + "40" }}
+                    autoFocus
+                  />
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => { setShowDeleteAllTypeConfirm(false); setDeleteAllTypeInput(""); }}>Cancel</Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      disabled={deleteAllTypeInput !== "DELETE" || deletingAll}
+                      onClick={async () => {
+                        setShowDeleteAllTypeConfirm(false);
+                        setDeleteAllTypeInput("");
+                        setDeletingAll(true);
+                        try {
+                          const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                            body: { password: storedPassword(), action: "reset_city_pages" },
+                          });
+                          if (fnError) throw fnError;
+                          if (data?.error) throw new Error(data.error);
+                          toast({
+                            title: "All city pages deleted",
+                            description: "Discovery cache cleared. Run Discover Cities on each PIT to start fresh.",
+                          });
+                          setSelectedCityPages(new Set());
+                          fetchCityPages();
+                        } catch (err: any) {
+                          toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+                        } finally { setDeletingAll(false); }
+                      }}
+                    >Confirm Delete</Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Bulk Create All Confirmation Modal */}
             {showBulkCreateConfirm && (
