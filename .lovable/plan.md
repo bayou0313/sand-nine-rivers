@@ -1,38 +1,29 @@
 
 
-## Plan: CTA Background + Duplicate Estimator Removal + Footer Grid Fix
+## Plan: Realistic Road Map with Smooth Truck Animation
 
-### Fix 1 — CTA Section: Light Background
-**File:** `src/components/CTA.tsx`
+### Problem
+The current SVG map is abstract with a single curved path. The truck animation has timing sync issues between forward/return trips. The user wants a more realistic map with a road network and the truck following roads naturally.
 
-Change the section from dark `bg-gradient-to-br from-primary via-primary/95 to-primary/85` to `bg-gray-50`. Remove the decorative dark circles. Update text colors: headline → `text-gray-900`, body → `text-gray-600`, phone link → `text-gray-500`. Button stays `bg-white text-gray-900` (will update to accent/gold for contrast against the now-light background).
+### Approach
+Rewrite the SVG illustration in `src/components/Pricing.tsx` with:
 
-### Fix 2 — Remove Duplicate Estimator from Pricing
-**File:** `src/components/Pricing.tsx`
+1. **Realistic road-network map** — A grid of named roads (horizontal + vertical) with varying widths (highway vs local street), intersections, and the truck route following actual road segments (right-angle turns with rounded corners) instead of arbitrary curves.
 
-The entire Pricing component currently contains a full address-input estimator with Google Maps autocomplete — this is the "Delivery Area & Pricing" section the user sees. Since the estimator is already in the Hero, this component needs to be stripped down to a simple pricing info section:
+2. **Road-following route** — The delivery path will follow the road grid: e.g., go east on one road, turn south at an intersection, continue east on another road. This uses an SVG path with straight segments and small arc turns at corners (`L` + `A` commands), making it look like real navigation.
 
-- Remove all Google Maps/autocomplete logic, address state, price calculation, `findBestPit` calls, and `OutOfAreaModal`
-- Keep only: section heading (renamed from "Delivery Area & Pricing" to just "Pricing"), the example pricing breakdown, the delivery info badges (Mon-Sat, No hidden fees, etc.), and the "Check my exact delivery price" anchor link
-- Remove the address input card entirely
+3. **Single truck, CSS offset-path animation** — One `motion.g` element using `offsetDistance` with keyframes `[0%, 100%, 100%, 0%]` and `offsetRotate: "auto"` so the truck naturally faces the direction of travel at all times (including turns). No dual-truck opacity hack needed.
 
-**File:** `src/pages/Index.tsx` — no changes needed here since `<Pricing />` is already in the correct position. The component itself just needs to be simplified.
+4. **Map details** — Water feature (river), green park areas, building blocks between roads, road labels, and subtle map-tile styling for realism.
 
-### Fix 3 — Footer: Multi-Column Region Grid
-**File:** `src/components/Footer.tsx`
-
-The footer code already has proper region grouping logic. The issue is likely that no regions are assigned yet, so all cities fall into one "Other Areas" group. Add a fallback: when all cities have `region === null` (i.e., only "Other Areas" exists), render them in a flat multi-column grid (`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4`) without region sub-headings. Also update text styling to match the requested classes: region headings → `text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2`, city links → `text-sm text-gray-300 hover:text-white`.
-
-### Files Changed
-
+### File Changed
 | File | Change |
 |---|---|
-| `src/components/CTA.tsx` | Light bg, dark text, accent button |
-| `src/components/Pricing.tsx` | Remove duplicate estimator, keep pricing info only |
-| `src/components/Footer.tsx` | Flat grid fallback when no regions assigned |
+| `src/components/Pricing.tsx` | Full rewrite of SVG map and animation logic |
 
-### Files NOT Changed
-- Hero, DeliveryEstimator, FAQ, Testimonials, Features, SocialProofStrip
-- Index.tsx (no changes needed)
-- pits.ts, session.ts, analytics.ts, edge functions, Stripe, /order flow
+### Technical Detail
+- The route path will be something like: `M 70,160 L 200,160 A 10,10 0 0 0 210,150 L 210,100 A 10,10 0 0 1 220,90 L 520,90` — straight road segments with rounded corner arcs
+- Forward path uses `offsetDistance: ["0%", "100%"]`, return uses a reversed path with same approach
+- Truck swap via opacity at the turnaround point, both using `offsetRotate: "auto"` so the truck always faces forward
+- Animation loop: drive forward (3s) → pause at destination (1.5s) → drive back (2.5s) → pause at origin (1s)
 
