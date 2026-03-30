@@ -729,36 +729,22 @@ serve(async (req) => {
 
     // ── RECALCULATE CITY PRICES ──
     if (action === "recalculate_city_prices") {
-      if (!pit_id) {
-        return new Response(JSON.stringify({ error: "Missing pit_id" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      const { password: _pw, action: _a, pit_id: _pid, ...pricingFields } = await req.clone().then(() => ({ password, action, pit_id, base_price: 0, free_miles: 0, price_per_extra_mile: 0 })).catch(() => ({ password, action, pit_id, base_price: 0, free_miles: 0, price_per_extra_mile: 0 }));
-
-      // Re-parse body for pricing fields
-      const body = { password, action, pit_id, base_price: 0, free_miles: 0, price_per_extra_mile: 0 };
-      // We need the pricing from the original request - let's get them from the request payload
-      const reqBody = JSON.parse(await req.clone().then(r => r.text()).catch(() => "{}"));
-      const newBasePrice = reqBody.base_price;
-      const newFreeMiles = reqBody.free_miles;
-      const newPricePerExtraMile = reqBody.price_per_extra_mile;
-
-      if (newBasePrice == null || newFreeMiles == null || newPricePerExtraMile == null) {
-        return new Response(JSON.stringify({ error: "Missing pricing fields (base_price, free_miles, price_per_extra_mile)" }),
+      if (!pit_id || base_price == null || free_miles == null || price_per_extra_mile == null) {
+        return new Response(JSON.stringify({ error: "Missing pit_id or pricing fields" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      const { data: cities, error: fetchErr } = await supabase
+      const { data: cpData, error: fetchErr } = await supabase
         .from("city_pages")
         .select("id, distance_from_pit")
         .eq("pit_id", pit_id);
       if (fetchErr) throw fetchErr;
 
       let updated = 0;
-      for (const city of (cities || [])) {
+      for (const city of (cpData || [])) {
         const dist = city.distance_from_pit || 0;
-        const extraMiles = Math.max(0, dist - newFreeMiles);
-        const newPrice = Math.max(newBasePrice, Math.round(newBasePrice + extraMiles * newPricePerExtraMile));
+        const extraMiles = Math.max(0, dist - free_miles);
+        const newPrice = Math.max(base_price, Math.round(base_price + extraMiles * price_per_extra_mile));
         const { error: upErr } = await supabase
           .from("city_pages")
           .update({ base_price: newPrice, updated_at: new Date().toISOString() })
