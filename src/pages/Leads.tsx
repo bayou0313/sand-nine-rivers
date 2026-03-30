@@ -4059,6 +4059,25 @@ const Leads = () => {
                         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
                       )}
                     </div>
+                    {(
+                      editPitData.lat == null || editPitData.lon == null ||
+                      Number(editPitData.lat) === 0 ||
+                      Number(editPitData.lat) < 24 || Number(editPitData.lat) > 50 ||
+                      Number(editPitData.lon) < -125 || Number(editPitData.lon) > -66
+                    ) ? (
+                      <div className="flex items-start gap-2 px-3 py-2 mt-1 rounded-lg text-xs"
+                        style={{ backgroundColor: "#FEF3C7", color: "#92400E", border: "1px solid #F59E0B" }}>
+                        <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span>
+                          <strong>Bad coordinates:</strong> lat {String(editPitData.lat ?? "null")}, lon {String(editPitData.lon ?? "null")}.
+                          Retype the address and pick from the dropdown. All city page distances for this PIT are wrong until fixed.
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs mt-1" style={{ color: "#4A6A8A" }}>
+                        ✓ {Number(editPitData.lat).toFixed(5)}, {Number(editPitData.lon).toFixed(5)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
