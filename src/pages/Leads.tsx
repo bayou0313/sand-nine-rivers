@@ -1191,8 +1191,8 @@ const Leads = () => {
     }
     const cached = geocodeCache[quickProposalLead.address];
     if (!cached) return null;
-    return haversine(qpSelectedPit.lat, qpSelectedPit.lon, cached.lat, cached.lon);
-  }, [quickProposalLead, qpSelectedPit, qpPitId, geocodeCache]);
+    return getDist(qpSelectedPit.lat, qpSelectedPit.lon, cached.lat, cached.lon);
+  }, [quickProposalLead, qpSelectedPit, qpPitId, geocodeCache, getDist]);
 
   useEffect(() => {
     if (!qpSelectedPit || qpDistance == null) return;
