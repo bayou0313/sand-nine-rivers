@@ -2017,7 +2017,7 @@ const Leads = () => {
                 price: cp.base_price || 195,
                 free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
                 saturday_available: pitData?.operating_days?.includes(6) ?? false,
-                multi_pit_coverage: cp.multi_pit_coverage || false,
+                multi_pit_coverage: (cp.multi_pit_coverage || false) && pits.filter(p => p.status === "active").length > 1,
               },
             });
             if (fnError) throw fnError;
