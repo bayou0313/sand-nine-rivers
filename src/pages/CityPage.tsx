@@ -111,11 +111,6 @@ const CityPage = () => {
     priceRange: "$$",
   });
 
-  const cityTrustBadges = [
-    { icon: ShieldCheck, text: "Same-day delivery available" },
-    { icon: MapPin, text: `Serving ${cityPage.city_name} area` },
-    { icon: Truck, text: "Local dispatch team" },
-  ];
 
   return (
     <div className="min-h-screen pb-14 lg:pb-0">
