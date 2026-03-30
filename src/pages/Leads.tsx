@@ -233,10 +233,6 @@ const Leads = () => {
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showPricePreview, setShowPricePreview] = useState(false);
-  const [pricePreviewData, setPricePreviewData] = useState<{ city_name: string; old_price: number; new_price: number; change: number }[]>([]);
-  const [pendingPitPayload, setPendingPitPayload] = useState<any>(null);
-  const [pendingPitMeta, setPendingPitMeta] = useState<{ wasActive: boolean; nowActive: boolean } | null>(null);
 
   // Activation modal state
   const [activationLeads, setActivationLeads] = useState<Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }>>([]);
@@ -862,11 +858,6 @@ const Leads = () => {
     setShowDeleteConfirm(false);
   };
 
-  const previewNewPrice = (distanceFromPit: number, newBasePrice: number, newFreeMiles: number, newPricePerExtraMile: number): number => {
-    const extraMiles = Math.max(0, distanceFromPit - newFreeMiles);
-    const raw = newBasePrice + extraMiles * newPricePerExtraMile;
-    return Math.max(newBasePrice, Math.round(raw));
-  };
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
@@ -901,40 +892,7 @@ const Leads = () => {
         same_day_cutoff: editPitData.same_day_cutoff || null,
       };
 
-      // Check if pricing fields changed
-      const pricingChanged = originalPit && (
-        (editPitData.base_price ?? null) !== (originalPit.base_price ?? null) ||
-        (editPitData.free_miles ?? null) !== (originalPit.free_miles ?? null) ||
-        (editPitData.price_per_extra_mile ?? null) !== (originalPit.price_per_extra_mile ?? null) ||
-        (editPitData.saturday_surcharge_override ?? null) !== (originalPit.saturday_surcharge_override ?? null)
-      );
-
-      if (pricingChanged) {
-        // Fetch city pages for this PIT to build preview
-        const affectedCities = cityPages.filter((cp: any) => cp.pit_id === editingPitId);
-        if (affectedCities.length > 0) {
-          const newBP = editPitData.base_price ?? parseFloat(globalSettings.default_base_price || "195");
-          const newFM = editPitData.free_miles ?? parseFloat(globalSettings.default_free_miles || "15");
-          const newEPM = editPitData.price_per_extra_mile ?? parseFloat(globalSettings.default_extra_per_mile || "5");
-
-          const preview = affectedCities.map((cp: any) => {
-            const oldPrice = cp.base_price || 0;
-            const newPrice = previewNewPrice(cp.distance_from_pit || 0, newBP, newFM, newEPM);
-            return { city_name: cp.city_name, old_price: oldPrice, new_price: newPrice, change: newPrice - oldPrice };
-          }).filter((p: any) => p.change !== 0).sort((a: any, b: any) => Math.abs(b.change) - Math.abs(a.change));
-
-          if (preview.length > 0) {
-            setPricePreviewData(preview);
-            setPendingPitPayload(pitPayload);
-            setPendingPitMeta({ wasActive: originalPit?.status === "active", nowActive: editPitData.status === "active" });
-            setShowPricePreview(true);
-            setSavingPit(false);
-            return;
-          }
-        }
-      }
-
-      // No pricing changes or no affected cities — save directly
+      // Save directly — price rollover handled server-side
       await executePitSave(pitPayload, originalPit?.status === "active", editPitData.status === "active");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -957,22 +915,11 @@ const Leads = () => {
         }
       }
 
-      // If pricing changed, trigger bulk recalculation
-      const newBP = pitPayload.base_price ?? parseFloat(globalSettings.default_base_price || "195");
-      const newFM = pitPayload.free_miles ?? parseFloat(globalSettings.default_free_miles || "15");
-      const newEPM = pitPayload.price_per_extra_mile ?? parseFloat(globalSettings.default_extra_per_mile || "5");
-
-      if (pricePreviewData.length > 0) {
-        try {
-          const { data: recalcData, error: recalcErr } = await supabase.functions.invoke("leads-auth", {
-            body: { password: storedPassword(), action: "recalculate_city_prices", pit_id: pitPayload.id, base_price: newBP, free_miles: newFM, price_per_extra_mile: newEPM },
-          });
-          if (recalcErr) throw recalcErr;
-          toast({ title: "PIT saved", description: `${recalcData?.updated || 0} city page prices updated automatically.` });
-          fetchCityPages();
-        } catch (recalcErr: any) {
-          toast({ title: "PIT saved, but price update failed", description: "Please use Regen on affected city pages.", variant: "destructive" });
-        }
+      // Server handles price rollover automatically
+      const pricesUpdated = data?.prices_updated || 0;
+      if (pricesUpdated > 0) {
+        toast({ title: "PIT saved", description: `${pricesUpdated} city page prices updated.` });
+        fetchCityPages();
       } else {
         toast({ title: "PIT updated" });
       }
@@ -980,10 +927,6 @@ const Leads = () => {
       setEditingPitId(null);
       setEditPitData({});
       setShowDeleteConfirm(false);
-      setShowPricePreview(false);
-      setPricePreviewData([]);
-      setPendingPitPayload(null);
-      setPendingPitMeta(null);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -3910,59 +3853,6 @@ const Leads = () => {
         </div>
       )}
 
-      {/* ─── PRICE PREVIEW MODAL ─── */}
-      {showPricePreview && pendingPitPayload && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => { setShowPricePreview(false); setPendingPitPayload(null); setPendingPitMeta(null); setPricePreviewData([]); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
-              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Review Price Changes</h2>
-              <p className="text-white/60 text-sm">
-                Updating pricing for <strong className="text-white">{pendingPitPayload.name}</strong> will affect {pricePreviewData.length} city page{pricePreviewData.length !== 1 ? "s" : ""}.
-              </p>
-            </div>
-            <div className="p-4 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: "#F9F9F9" }}>
-                    <th className="px-3 py-2 text-left text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>City</th>
-                    <th className="px-3 py-2 text-right text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>Current Price</th>
-                    <th className="px-3 py-2 text-right text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>New Price</th>
-                    <th className="px-3 py-2 text-right text-xs font-bold uppercase" style={{ color: BRAND_NAVY }}>Change</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pricePreviewData.slice(0, 20).map((row, i) => (
-                    <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
-                      <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{row.city_name}</td>
-                      <td className="px-3 py-2 text-right">${row.old_price.toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right font-bold" style={{ color: BRAND_GOLD }}>${row.new_price.toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right font-bold" style={{ color: row.change > 0 ? "#EF4444" : "#22C55E" }}>
-                        {row.change > 0 ? "+" : ""}{row.change.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {pricePreviewData.length > 20 && (
-                <p className="text-xs text-center mt-3" style={{ color: "#999" }}>
-                  + {pricePreviewData.length - 20} more cities will also be updated
-                </p>
-              )}
-            </div>
-            <div className="px-6 py-4 flex gap-3 justify-end" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
-              <Button variant="outline" onClick={() => { setShowPricePreview(false); setPendingPitPayload(null); setPendingPitMeta(null); setPricePreviewData([]); }}>Cancel</Button>
-              <Button
-                disabled={savingPit}
-                style={{ backgroundColor: BRAND_GOLD, color: "white" }}
-                onClick={() => executePitSave(pendingPitPayload, pendingPitMeta?.wasActive ?? false, pendingPitMeta?.nowActive ?? false)}
-              >
-                {savingPit ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                Confirm & Save All
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ─── ACTIVATION LEADS MODAL ─── */}
       {showActivationModal && activationPit && (

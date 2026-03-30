@@ -227,6 +227,15 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Missing pit object" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+
+      // Fetch existing PIT pricing before overwriting (for auto price rollover)
+      let existingPit: any = null;
+      if (pit.id) {
+        const { data: ep } = await supabase
+          .from("pits").select("base_price, free_miles, price_per_extra_mile").eq("id", pit.id).maybeSingle();
+        existingPit = ep;
+      }
+
       const pitData = {
         name: pit.name,
         address: pit.address,
@@ -244,25 +253,57 @@ serve(async (req) => {
         same_day_cutoff: pit.same_day_cutoff ?? null,
       };
 
+      let savedPit: any;
       if (pit.id) {
-        // Update
         const { data, error } = await supabase
           .from("pits").update(pitData).eq("id", pit.id).select().single();
         if (error) throw error;
-        return new Response(
-          JSON.stringify({ success: true, pit: data }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        savedPit = data;
       } else {
-        // Insert
         const { data, error } = await supabase
           .from("pits").insert(pitData).select().single();
         if (error) throw error;
-        return new Response(
-          JSON.stringify({ success: true, pit: data }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        savedPit = data;
       }
+
+      // Auto price rollover: if pricing fields changed, recalculate all city page prices
+      let prices_updated = 0;
+      if (existingPit && pit.id) {
+        const pricingChanged =
+          (pit.base_price ?? null) !== (existingPit.base_price ?? null) ||
+          (pit.free_miles ?? null) !== (existingPit.free_miles ?? null) ||
+          (pit.price_per_extra_mile ?? null) !== (existingPit.price_per_extra_mile ?? null);
+
+        if (pricingChanged) {
+          // Fetch global defaults for fallback
+          const { data: gs } = await supabase.from("global_settings").select("key, value");
+          const gMap: Record<string, string> = {};
+          for (const r of gs || []) gMap[r.key] = r.value;
+
+          const effBP = savedPit.base_price ?? parseFloat(gMap.default_base_price || "195");
+          const effFM = savedPit.free_miles ?? parseFloat(gMap.default_free_miles || "15");
+          const effEPM = savedPit.price_per_extra_mile ?? parseFloat(gMap.default_extra_per_mile || "5");
+
+          const { data: cityPages } = await supabase
+            .from("city_pages").select("id, distance_from_pit").eq("pit_id", pit.id);
+
+          for (const page of cityPages ?? []) {
+            const dist = page.distance_from_pit || 0;
+            const extraMiles = Math.max(0, dist - effFM);
+            const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+            await supabase.from("city_pages").update({
+              base_price: newPrice,
+              updated_at: new Date().toISOString()
+            }).eq("id", page.id);
+            prices_updated++;
+          }
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, pit: savedPit, prices_updated }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // ── DELETE PIT ──
