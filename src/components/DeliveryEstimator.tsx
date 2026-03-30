@@ -12,7 +12,7 @@ import OutOfAreaModal from "@/components/OutOfAreaModal";
 import { supabase } from "@/integrations/supabase/client";
 import { type PitData, type GlobalPricing, findBestPitDriving, parseGlobalSettings, getEffectivePrice, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 
-import { pollForGoogleMaps } from "@/lib/google-maps";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 
 type EstimateResult = {
   distance: number;
@@ -31,7 +31,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EstimateResult>(null);
   const [error, setError] = useState("");
-  const [apiLoaded, setApiLoaded] = useState(false);
+  const { loaded: apiLoaded } = useGoogleMaps();
   const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
   const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
@@ -57,9 +57,6 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     fetchData();
   }, []);
 
-  useEffect(() => {
-    return pollForGoogleMaps(() => setApiLoaded(true));
-  }, []);
 
   useEffect(() => {
     if (!apiLoaded || !inputRef.current) return;

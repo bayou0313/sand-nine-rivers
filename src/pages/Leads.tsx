@@ -11,7 +11,7 @@ declare global {
   interface Window { google: any; }
 }
 
-import { pollForGoogleMaps } from "@/lib/google-maps";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const SIDEBAR_HOVER = "#142845";
@@ -275,7 +275,7 @@ const Leads = () => {
   // Business profile state
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
   const [savingProfile, setSavingProfile] = useState(false);
-  const [googleLoaded, setGoogleLoaded] = useState(!!window.google?.maps?.places);
+  const { loaded: googleLoaded } = useGoogleMaps();
 
   // Abandoned sessions state
   const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
@@ -446,10 +446,6 @@ const Leads = () => {
     }
   }, []);
 
-  // Load Google Maps Places library
-  useEffect(() => {
-    return pollForGoogleMaps(() => setGoogleLoaded(true));
-  }, []);
 
   useEffect(() => {
     const saved = storedPassword();
