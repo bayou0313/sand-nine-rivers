@@ -21,6 +21,7 @@ import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCH
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
