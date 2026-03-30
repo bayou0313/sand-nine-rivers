@@ -21,6 +21,7 @@ import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCH
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -61,8 +62,7 @@ const Order = () => {
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
   const { loaded: apiLoaded } = useGoogleMaps();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const addressContainerRef = useRef<HTMLDivElement>(null);
 
   // Dynamic pricing from global_settings + PITs
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
@@ -374,30 +374,18 @@ const Order = () => {
   }, [searchParams]);
 
 
-  useEffect(() => {
-    if (!apiLoaded || !inputRef.current) return;
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-      componentRestrictions: { country: "us" },
-      types: ["address"],
-    });
-    autocompleteRef.current.addListener("place_changed", () => {
-      const place = autocompleteRef.current?.getPlace();
-      if (place?.formatted_address) setAddress(place.formatted_address);
-      if (place?.geometry?.location) {
-        setCustomerCoords({
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-        });
-      }
-      if (place?.address_components) {
-        const parish = getParishFromPlaceResult(place.address_components);
-        setDetectedParish(parish);
-      }
-    });
-  }, [apiLoaded]);
+  const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setAddress(result.formattedAddress);
+    setCustomerCoords({ lat: result.lat, lng: result.lng });
+    if (result.addressComponents) {
+      const parish = getParishFromPlaceResult(result.addressComponents);
+      setDetectedParish(parish);
+    }
+  }, []);
 
   const calculateDistance = useCallback(async () => {
-    if (!address.trim()) { setError("Please enter a delivery address."); return; }
+    const currentAddress = address.trim() || getPlaceInputValue(addressContainerRef.current);
+    if (!currentAddress) { setError("Please enter a delivery address."); return; }
     setLoading(true);
     setError("");
     setResult(null);
@@ -815,19 +803,21 @@ const Order = () => {
                   <label htmlFor="order-address" className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" /> DELIVERY ADDRESS
                   </label>
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    id="order-address"
-                    name="delivery-address"
-                    autoComplete="street-address"
-                    placeholder="Enter your delivery address..."
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="h-14 text-base rounded-xl border-border/50 shadow-sm focus:shadow-md transition-shadow"
-                    maxLength={500}
-                    onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
-                  />
+                  <div ref={addressContainerRef}>
+                    {apiLoaded ? (
+                      <PlaceAutocompleteInput
+                        onPlaceSelect={handleOrderPlaceSelect}
+                        onInputChange={(val) => setAddress(val)}
+                        onEnterKey={calculateDistance}
+                        placeholder="Enter your delivery address..."
+                        initialValue={address || undefined}
+                        id="order-address"
+                        containerClassName="place-autocomplete-order"
+                      />
+                    ) : (
+                      <div className="h-14 rounded-xl border border-input bg-background animate-pulse" />
+                    )}
+                  </div>
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}

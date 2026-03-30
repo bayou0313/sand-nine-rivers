@@ -12,6 +12,7 @@ declare global {
 }
 
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const SIDEBAR_HOVER = "#142845";
@@ -236,12 +237,7 @@ const Leads = () => {
   const [drivingCache, setDrivingCache] = useState<Record<string, number | null>>(() => {
     try { return JSON.parse(sessionStorage.getItem("drivingcache") || "{}"); } catch { return {}; }
   });
-  const pitInputRef = useRef<HTMLInputElement>(null);
-  const editPitInputRef = useRef<HTMLInputElement>(null);
-  const addPitAutocompleteRef = useRef<any>(null);
-  const editPitAutocompleteRef = useRef<any>(null);
-  const profileAddressRef = useRef<HTMLInputElement>(null);
-  const profileAutocompleteRef = useRef<any>(null);
+  // Refs no longer needed for autocomplete — using PlaceAutocompleteInput component
 
   const [editingPitId, setEditingPitId] = useState<string | null>(null);
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
@@ -1001,35 +997,18 @@ const Leads = () => {
     }
   };
 
-  // Google Places Autocomplete for Add PIT
-  useEffect(() => {
-    if (!showAddPit || !pitInputRef.current || !window.google?.maps?.places) return;
-    if (addPitAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.geometry?.location) { setNewPit(prev => ({ ...prev, address: place.formatted_address || prev.address, lat: place.geometry!.location.lat(), lon: place.geometry!.location.lng() })); } });
-    addPitAutocompleteRef.current = ac;
-    return () => { addPitAutocompleteRef.current = null; };
-  }, [showAddPit, googleLoaded]);
+  // Autocomplete handlers for PlaceAutocompleteInput components
+  const handleAddPitPlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setNewPit(prev => ({ ...prev, address: result.formattedAddress, lat: result.lat, lon: result.lng }));
+  }, []);
 
-  // Google Places Autocomplete for Edit PIT
-  useEffect(() => {
-    if (!editingPitId || !editPitInputRef.current || !window.google?.maps?.places) return;
-    if (editPitAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(editPitInputRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.geometry?.location) { setEditPitData(prev => ({ ...prev, address: place.formatted_address || prev.address, lat: place.geometry!.location.lat(), lon: place.geometry!.location.lng() })); } });
-    editPitAutocompleteRef.current = ac;
-    return () => { editPitAutocompleteRef.current = null; };
-  }, [editingPitId, googleLoaded]);
+  const handleEditPitPlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setEditPitData(prev => ({ ...prev, address: result.formattedAddress, lat: result.lat, lon: result.lng }));
+  }, []);
 
-  // Google Places Autocomplete for Business Profile address
-  useEffect(() => {
-    if (activePage !== "profile" || !profileAddressRef.current || !window.google?.maps?.places) return;
-    if (profileAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.formatted_address) { setProfileSettings(prev => ({ ...prev, business_address: place.formatted_address })); } });
-    profileAutocompleteRef.current = ac;
-    return () => { profileAutocompleteRef.current = null; };
-  }, [activePage, googleLoaded]);
+  const handleProfilePlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setProfileSettings(prev => ({ ...prev, business_address: result.formattedAddress }));
+  }, []);
 
   // Fetch abandoned sessions when navigating to that page
   useEffect(() => {
@@ -3321,7 +3300,17 @@ const Leads = () => {
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Business address</label>
-                  <Input ref={profileAddressRef} className="h-9" value={profileSettings.business_address || ""} onChange={e => setProfileSettings({ ...profileSettings, business_address: e.target.value })} placeholder="1215 River Rd, Bridge City, LA 70094" />
+                  {googleLoaded ? (
+                    <PlaceAutocompleteInput
+                      onPlaceSelect={handleProfilePlaceSelect}
+                      onInputChange={(val) => setProfileSettings({ ...profileSettings, business_address: val })}
+                      placeholder="1215 River Rd, Bridge City, LA 70094"
+                      initialValue={profileSettings.business_address || ""}
+                      containerClassName="place-autocomplete-admin"
+                    />
+                  ) : (
+                    <Input className="h-9" value={profileSettings.business_address || ""} onChange={e => setProfileSettings({ ...profileSettings, business_address: e.target.value })} placeholder="1215 River Rd, Bridge City, LA 70094" />
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Display city (customer-facing)</label>
@@ -3933,7 +3922,17 @@ const Leads = () => {
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
                     <div className="relative">
-                      <Input ref={pitInputRef} placeholder="Start typing an address..." value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
+                      {googleLoaded ? (
+                        <PlaceAutocompleteInput
+                          onPlaceSelect={handleAddPitPlaceSelect}
+                          onInputChange={(val) => setNewPit({ ...newPit, address: val, lat: null, lon: null })}
+                          placeholder="Start typing an address..."
+                          initialValue={newPit.address}
+                          containerClassName="place-autocomplete-admin"
+                        />
+                      ) : (
+                        <Input placeholder="Start typing an address..." value={newPit.address} onChange={e => setNewPit({ ...newPit, address: e.target.value, lat: null, lon: null })} />
+                      )}
                       {newPit.lat != null && <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />}
                       {newPit.address && newPit.lat == null && (
                         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
@@ -4147,7 +4146,17 @@ const Leads = () => {
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
                     <div className="relative">
-                      <Input ref={editPitInputRef} value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
+                      {googleLoaded ? (
+                        <PlaceAutocompleteInput
+                          onPlaceSelect={handleEditPitPlaceSelect}
+                          onInputChange={(val) => setEditPitData({ ...editPitData, address: val, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })}
+                          placeholder="Start typing an address..."
+                          initialValue={editPitData.address || ""}
+                          containerClassName="place-autocomplete-admin"
+                        />
+                      ) : (
+                        <Input value={editPitData.address || ""} onChange={e => setEditPitData({ ...editPitData, address: e.target.value, lat: pits.find(pp => pp.id === editingPitId)?.lat, lon: pits.find(pp => pp.id === editingPitId)?.lon })} />
+                      )}
                       {editPitData.lat != null && editPitData.lat !== pits.find(pp => pp.id === editingPitId)?.lat && (
                         <Check className="absolute right-2 top-2.5 w-4 h-4 text-green-500" />
                       )}

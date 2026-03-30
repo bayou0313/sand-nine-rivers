@@ -5,14 +5,13 @@ import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import { supabase } from "@/integrations/supabase/client";
 import { type PitData, type GlobalPricing, findBestPitDriving, parseGlobalSettings, getEffectivePrice, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
-
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 type EstimateResult = {
   distance: number;
@@ -37,8 +36,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const [nearestPitInfo, setNearestPitInfo] = useState<{ id: string; name: string; distance: number } | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
@@ -56,36 +54,6 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     };
     fetchData();
   }, []);
-
-
-  useEffect(() => {
-    if (!apiLoaded || !inputRef.current) return;
-    if (autocompleteRef.current) return;
-
-    if (window.google?.maps?.places?.Autocomplete) {
-      const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: "us" },
-        types: ["address"],
-      });
-      ac.addListener("place_changed", () => {
-        const place = ac.getPlace();
-        if (place?.formatted_address) {
-          setAddress(place.formatted_address);
-          updateSession({
-            stage: "entered_address",
-            delivery_address: place.formatted_address,
-            address_lat: place.geometry?.location?.lat(),
-            address_lng: place.geometry?.location?.lng(),
-          });
-          trackEvent("address_entered", { address: place.formatted_address });
-        }
-        if (place?.geometry?.location) {
-          setCustomerCoords({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
-        }
-      });
-      autocompleteRef.current = ac;
-    }
-  }, [apiLoaded]);
 
   useEffect(() => {
     if (prefillAddress && apiLoaded) {
@@ -132,8 +100,22 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     }
   };
 
+  const handlePlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setAddress(result.formattedAddress);
+    setCustomerCoords({ lat: result.lat, lng: result.lng });
+    updateSession({
+      stage: "entered_address",
+      delivery_address: result.formattedAddress,
+      address_lat: result.lat,
+      address_lng: result.lng,
+    });
+    trackEvent("address_entered", { address: result.formattedAddress });
+  }, []);
+
   const calculateDistance = useCallback(async () => {
-    if (!address.trim()) { setError("Please enter a delivery address."); return; }
+    // Read address from the autocomplete input if state is empty
+    const currentAddress = address.trim() || getPlaceInputValue(containerRef.current);
+    if (!currentAddress) { setError("Please enter a delivery address."); return; }
     setLoading(true); setError(""); setResult(null); setMatchedEffective(null);
 
     try {
@@ -146,7 +128,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
           setLoading(false); return;
         }
         const geocoder = new window.google.maps.Geocoder();
-        const geocodeResult = await geocoder.geocode({ address });
+        const geocodeResult = await geocoder.geocode({ address: currentAddress });
         if (geocodeResult.results?.[0]?.geometry?.location) {
           custLat = geocodeResult.results[0].geometry.location.lat();
           custLng = geocodeResult.results[0].geometry.location.lng();
@@ -170,7 +152,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
 
       if (!bestResult.serviceable) {
         setError("That address is outside our delivery area. Call us for options.");
-        setOutOfAreaAddress(address);
+        setOutOfAreaAddress(currentAddress);
         setOutOfAreaDistance(parseFloat(bestResult.distance.toFixed(1)));
         setNearestPitInfo({ id: bestResult.pit.id, name: bestResult.pit.name, distance: bestResult.distance });
         setShowOutOfAreaModal(true);
@@ -180,7 +162,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         });
         updateSession({
           stage: "got_out_of_area",
-          delivery_address: address,
+          delivery_address: currentAddress,
           nearest_pit_name: bestResult.pit.name,
           nearest_pit_id: bestResult.pit.id,
           serviceable: false,
@@ -223,7 +205,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
 
   const estimatorContent = (
     <>
-      <div id="estimator" className={embedded
+      <div id="estimator" ref={containerRef} className={embedded
         ? "bg-foreground/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl"
         : "bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
       }>
@@ -235,19 +217,19 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             Get an exact delivery price in seconds — no account needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Input
-              ref={inputRef}
-              type="text"
-              id="delivery-address"
-              name="delivery-address"
-              autoComplete="street-address"
-              placeholder="Enter your delivery address..."
-              value={address}
-              onChange={(e) => { setAddress(e.target.value); setCustomerCoords(null); }}
-              className={`flex-1 h-12 min-h-[44px] text-base rounded-xl ${embedded ? "bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-accent/50" : ""}`}
-              maxLength={500}
-              onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
-            />
+            {apiLoaded ? (
+              <PlaceAutocompleteInput
+                onPlaceSelect={handlePlaceSelect}
+                onInputChange={(val) => { setAddress(val); setCustomerCoords(null); }}
+                onEnterKey={calculateDistance}
+                placeholder="Enter your delivery address..."
+                initialValue={prefillAddress || undefined}
+                id="delivery-address"
+                containerClassName={`flex-1 ${embedded ? "place-autocomplete-embedded" : ""}`}
+              />
+            ) : (
+              <div className="flex-1 h-12 rounded-xl border border-input bg-background animate-pulse" />
+            )}
             <Button data-estimator-btn onClick={calculateDistance} disabled={loading} className="h-12 min-h-[44px] font-display tracking-wider text-base px-8 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
             </Button>
