@@ -1918,6 +1918,7 @@ const Leads = () => {
                         </td>
                         <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: cp.region ? BRAND_NAVY : "#ccc" }}>{cp.region || "—"}</td>
                         <td className="px-3 py-2 text-xs">
                           <a href={`/${cp.city_slug}/river-sand-delivery`} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: BRAND_GOLD }}>
                             /{cp.city_slug}/river-sand-delivery
