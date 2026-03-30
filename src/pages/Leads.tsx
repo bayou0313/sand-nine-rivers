@@ -2138,6 +2138,28 @@ const Leads = () => {
                 </button>
               )}
               <Button
+                onClick={async () => {
+                  try {
+                    toast({ title: "Recalculating all distances…", description: "This may take a moment." });
+                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                      body: { password: storedPassword(), action: "recalculate_all_distances" },
+                    });
+                    if (fnError) throw fnError;
+                    toast({ title: "Distances recalculated", description: `${data?.updated || 0} of ${data?.total || 0} pages updated. ${data?.errors || 0} errors.` });
+                    fetchCityPages();
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: BRAND_NAVY + "40", color: BRAND_NAVY }}
+              >
+                <MapIcon className="w-3 h-3 mr-1" />
+                Recalculate Distances
+              </Button>
+              <Button
                 onClick={() => setShowRegenOutdatedConfirm(true)}
                 disabled={needsRegenCount === 0 || regenQueue?.status === "running"}
                 size="sm"
