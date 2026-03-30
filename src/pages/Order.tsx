@@ -935,20 +935,20 @@ const Order = () => {
                     <SectionHeading icon={User} title="YOUR INFORMATION" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
-                        <Input placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-11 rounded-lg" />
+                        <label htmlFor="order-name" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
+                        <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-11 rounded-lg" />
                       </div>
                       <div>
-                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone *</label>
-                        <Input type="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-11 rounded-lg" />
+                        <label htmlFor="order-phone" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone *</label>
+                        <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-11 rounded-lg" />
                       </div>
                       <div>
-                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                        <EmailInput value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-11 rounded-lg" />
+                        <label htmlFor="order-email" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
+                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-11 rounded-lg" />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Notes (optional)</label>
-                        <Textarea placeholder="Gate code, placement instructions..." maxLength={1000} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg" />
+                        <label htmlFor="order-notes" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Notes (optional)</label>
+                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={1000} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg" />
                       </div>
                     </div>
                   </div>
