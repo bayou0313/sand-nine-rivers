@@ -210,6 +210,25 @@ serve(async (req) => {
       );
     }
 
+    // ── SAVE SETTINGS BULK ──
+    if (action === "save_settings_bulk") {
+      const { settings: bulkSettings } = JSON.parse(JSON.stringify({ settings }));
+      if (!Array.isArray(bulkSettings)) {
+        return new Response(JSON.stringify({ error: "settings must be an array of { key, value }" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      for (const setting of bulkSettings) {
+        await supabase.from("global_settings").upsert(
+          { key: setting.key, value: setting.value, updated_at: new Date().toISOString() },
+          { onConflict: "key" }
+        );
+      }
+      return new Response(
+        JSON.stringify({ success: true, saved: bulkSettings.length }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── LIST PITS ──
     if (action === "list_pits") {
       const { data, error } = await supabase

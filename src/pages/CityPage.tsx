@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import DeliveryEstimator from "@/components/DeliveryEstimator";
 import About from "@/components/About";
 import Stats from "@/components/Stats";
 import RiverSandInfo from "@/components/RiverSandInfo";
@@ -18,7 +17,7 @@ import Footer from "@/components/Footer";
 import MobilePhoneBar from "@/components/MobilePhoneBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import { MapPin, ShieldCheck, Truck, Loader2 } from "lucide-react";
+import { MapPin, Loader2 } from "lucide-react";
 
 const CityPage = () => {
   const { citySlug } = useParams<{ citySlug: string }>();
@@ -52,12 +51,10 @@ const CityPage = () => {
         page_price: data.base_price,
       });
 
-      // Increment views
       try {
         await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });
       } catch { /* ignore */ }
 
-      // Other cities for internal links
       const { data: others } = await supabase
         .from("city_pages")
         .select("city_name, city_slug, state")
@@ -156,7 +153,7 @@ const CityPage = () => {
         <div className="text-center py-4 bg-accent/10">
           <p className="text-base text-muted-foreground max-w-lg mx-auto px-4">
             Pricing varies by location within {cityPage.city_name}.
-            Enter your address below for your exact delivery price.
+            Enter your address above for your exact delivery price.
           </p>
         </div>
       ) : cityPage.base_price ? (
@@ -165,15 +162,12 @@ const CityPage = () => {
             Delivery from ${Number(cityPage.base_price).toFixed(0)}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Enter your address below for your exact price
+            Enter your address above for your exact price
           </p>
         </div>
       ) : null}
 
       <Stats />
-      <DeliveryEstimator />
-
-
       <About />
       <RiverSandInfo />
       <Features />
