@@ -790,6 +790,20 @@ const Leads = () => {
       lat = coords.lat;
       lon = coords.lon;
     }
+    if (
+      lat == null || lon == null ||
+      (lat === 0 && lon === 0) ||
+      lat < 24 || lat > 50 ||
+      lon < -125 || lon > -66
+    ) {
+      toast({
+        title: "Cannot save PIT — invalid coordinates",
+        description: `Coordinates are invalid (lat: ${lat}, lon: ${lon}). Please select the address from the autocomplete dropdown rather than typing it manually.`,
+        variant: "destructive",
+      });
+      setGeocoding(false);
+      return;
+    }
     try {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: {
@@ -883,6 +897,20 @@ const Leads = () => {
         if (!coords) { toast({ title: "Geocode failed", variant: "destructive" }); setSavingPit(false); return; }
         lat = coords.lat;
         lon = coords.lon;
+      }
+      if (
+        lat == null || lon == null ||
+        (lat === 0 && lon === 0) ||
+        lat < 24 || lat > 50 ||
+        lon < -125 || lon > -66
+      ) {
+        toast({
+          title: "Cannot save PIT — invalid coordinates",
+          description: `This PIT has missing or implausible coordinates (lat: ${lat}, lon: ${lon}). Open Edit, retype the address, and select from the autocomplete dropdown to fix it.`,
+          variant: "destructive",
+        });
+        setSavingPit(false);
+        return;
       }
       const pitPayload = {
         id: editingPitId,
@@ -1639,7 +1667,15 @@ const Leads = () => {
                   return (
                     <div key={p.id} className="border rounded-xl p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : CARD_BORDER }}>
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{p.name}</p>
+                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>
+                          {p.name}
+                          {(p.lat == null || p.lon == null || Number(p.lat) === 0 || Number(p.lon) === 0) && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ml-2"
+                              style={{ backgroundColor: "#FEE2E2", color: "#991B1B" }}>
+                              <AlertTriangle className="w-3 h-3" /> No coords
+                            </span>
+                          )}
+                        </p>
                         {p.is_default && <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Default</span>}
                       </div>
                       <p className="text-xs text-gray-500">{p.address}</p>
@@ -1846,6 +1882,15 @@ const Leads = () => {
                   multi_pit_coverage: page.multi_pit_coverage || false,
                 },
               });
+              // Explicitly set status to active in DB after successful generation
+              await supabase.functions.invoke("leads-auth", {
+                body: {
+                  password: storedPassword(),
+                  action: "save_city_page",
+                  city_page_id: page.id,
+                  city_page: { ...page, status: "active" },
+                },
+              });
               setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, pit_reassigned: false, price_changed: false, regen_reason: null, content_generated_at: new Date().toISOString(), status: "active" } : cp));
             } catch (err) {
               console.error(`Failed to regen ${page.city_name}:`, err);
@@ -2036,6 +2081,15 @@ const Leads = () => {
                   {deduplicating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
                   Remove Duplicates ({duplicateCount})
                 </Button>
+               )}
+              {cityPageSortKey !== "city_name" && (
+                <button
+                  onClick={() => { setCityPageSortKey("city_name"); setCityPageSortDir("asc"); }}
+                  className="h-9 px-3 rounded-md border text-xs hover:bg-gray-50"
+                  style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}
+                >
+                  Reset Sort
+                </button>
               )}
               <Button
                 onClick={() => setShowRegenOutdatedConfirm(true)}
@@ -4022,6 +4076,25 @@ const Leads = () => {
                         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
                       )}
                     </div>
+                    {(
+                      editPitData.lat == null || editPitData.lon == null ||
+                      Number(editPitData.lat) === 0 ||
+                      Number(editPitData.lat) < 24 || Number(editPitData.lat) > 50 ||
+                      Number(editPitData.lon) < -125 || Number(editPitData.lon) > -66
+                    ) ? (
+                      <div className="flex items-start gap-2 px-3 py-2 mt-1 rounded-lg text-xs"
+                        style={{ backgroundColor: "#FEF3C7", color: "#92400E", border: "1px solid #F59E0B" }}>
+                        <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span>
+                          <strong>Bad coordinates:</strong> lat {String(editPitData.lat ?? "null")}, lon {String(editPitData.lon ?? "null")}.
+                          Retype the address and pick from the dropdown. All city page distances for this PIT are wrong until fixed.
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs mt-1" style={{ color: "#4A6A8A" }}>
+                        ✓ {Number(editPitData.lat).toFixed(5)}, {Number(editPitData.lon).toFixed(5)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
