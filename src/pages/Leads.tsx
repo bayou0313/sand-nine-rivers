@@ -232,8 +232,8 @@ const Leads = () => {
   });
   const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
   const [geocoding, setGeocoding] = useState(false);
-  // Driving distance cache: key -> miles
-  const [drivingCache, setDrivingCache] = useState<Record<string, number>>(() => {
+  // Driving distance cache: key -> miles (populated via getDrivingDistanceBatch)
+  const [drivingCache, setDrivingCache] = useState<Record<string, number | null>>(() => {
     try { return JSON.parse(sessionStorage.getItem("drivingcache") || "{}"); } catch { return {}; }
   });
   const pitInputRef = useRef<HTMLInputElement>(null);
