@@ -384,7 +384,8 @@ const Order = () => {
   }, []);
 
   const calculateDistance = useCallback(async () => {
-    if (!address.trim()) { setError("Please enter a delivery address."); return; }
+    const currentAddress = address.trim() || getPlaceInputValue(addressContainerRef.current);
+    if (!currentAddress) { setError("Please enter a delivery address."); return; }
     setLoading(true);
     setError("");
     setResult(null);
