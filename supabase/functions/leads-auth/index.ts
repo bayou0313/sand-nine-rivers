@@ -960,7 +960,7 @@ serve(async (req) => {
         return true;
       };
 
-      const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
+      const VALID_TYPES = ["sublocality_level_1", "locality", "administrative_area_level_3"];
 
       const { data: gsData } = await supabase.from("global_settings").select("key, value");
       const gs: Record<string, string> = {};
