@@ -2004,7 +2004,8 @@ const Leads = () => {
                 Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
               </button>
               {duplicateCount > 0 && (
-                <Button
+  const [showDeduplicateConfirm2, _] = [showDeduplicateConfirm, setShowDeduplicateConfirm];
+              <Button
                   onClick={() => setShowDeduplicateConfirm(true)}
                   disabled={deduplicating}
                   size="sm"
@@ -2015,6 +2016,17 @@ const Leads = () => {
                   Remove Duplicates ({duplicateCount})
                 </Button>
               )}
+              <Button
+                onClick={() => setShowRegenOutdatedConfirm(true)}
+                disabled={outdatedCount === 0 || regenQueue?.status === "running"}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: outdatedCount > 0 ? BRAND_GOLD + "40" : undefined, color: outdatedCount > 0 ? BRAND_GOLD : undefined }}
+              >
+                {regenQueue?.status === "running" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-3 h-3 mr-1" />}
+                Regen Outdated ({outdatedCount})
+              </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
