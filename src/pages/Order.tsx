@@ -374,27 +374,14 @@ const Order = () => {
   }, [searchParams]);
 
 
-  useEffect(() => {
-    if (!apiLoaded || !inputRef.current) return;
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-      componentRestrictions: { country: "us" },
-      types: ["address"],
-    });
-    autocompleteRef.current.addListener("place_changed", () => {
-      const place = autocompleteRef.current?.getPlace();
-      if (place?.formatted_address) setAddress(place.formatted_address);
-      if (place?.geometry?.location) {
-        setCustomerCoords({
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-        });
-      }
-      if (place?.address_components) {
-        const parish = getParishFromPlaceResult(place.address_components);
-        setDetectedParish(parish);
-      }
-    });
-  }, [apiLoaded]);
+  const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setAddress(result.formattedAddress);
+    setCustomerCoords({ lat: result.lat, lng: result.lng });
+    if (result.addressComponents) {
+      const parish = getParishFromPlaceResult(result.addressComponents);
+      setDetectedParish(parish);
+    }
+  }, []);
 
   const calculateDistance = useCallback(async () => {
     if (!address.trim()) { setError("Please enter a delivery address."); return; }
