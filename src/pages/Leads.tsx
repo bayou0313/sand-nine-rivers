@@ -2343,9 +2343,9 @@ const Leads = () => {
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
                   <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regenerate outdated city pages?</h3>
-                  <p className="text-sm text-gray-600">
-                    This will regenerate content for <strong>{outdatedCount}</strong> city pages using the current AI prompt. Pages are processed one at a time to avoid rate limits. This may take several minutes.
-                  </p>
+                   <p className="text-sm text-gray-600">
+                     This will regenerate content for <strong>{needsRegenCount}</strong> city pages using the current AI prompt. Pages are processed one at a time to avoid rate limits. This may take several minutes.
+                   </p>
                   <div className="flex gap-3 justify-end">
                     <Button variant="outline" onClick={() => setShowRegenOutdatedConfirm(false)}>Cancel</Button>
                     <Button
