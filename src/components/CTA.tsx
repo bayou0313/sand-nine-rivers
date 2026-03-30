@@ -10,19 +10,14 @@ const CTA = () => {
   };
 
   return (
-    <section className="py-24 bg-gradient-to-br from-primary via-primary/95 to-primary/85 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.07]">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-primary-foreground rounded-full -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-primary-foreground rounded-full translate-x-1/3 translate-y-1/3" />
-      </div>
-
+    <section className="py-24 bg-gray-50 relative overflow-hidden">
       <div className="container mx-auto px-6 text-center space-y-8 relative z-10">
         <motion.h2
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-3xl md:text-5xl text-primary-foreground"
+          className="text-3xl md:text-5xl text-gray-900"
         >
           Get your sand delivered today.
         </motion.h2>
@@ -31,7 +26,7 @@ const CTA = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-xl font-body text-primary-foreground/75 max-w-xl mx-auto"
+          className="text-xl font-body text-gray-600 max-w-xl mx-auto"
         >
           Check your address for an instant price. Same-day delivery available in most areas.
         </motion.p>
@@ -46,14 +41,14 @@ const CTA = () => {
             <Button
               size="lg"
               onClick={scrollToEstimator}
-              className="text-lg font-display tracking-wider px-10 py-6 bg-white hover:opacity-90 text-gray-900 rounded-2xl shadow-xl transition-all duration-200"
+              className="text-lg font-display tracking-wider px-10 py-6 bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-xl transition-all duration-200"
             >
               See My Price <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </motion.div>
           <a
             href="tel:+18554689297"
-            className="font-body text-primary-foreground/50 text-sm hover:text-primary-foreground/70 transition-colors flex items-center gap-1.5"
+            className="font-body text-gray-500 text-sm hover:text-gray-700 transition-colors flex items-center gap-1.5"
           >
             <Phone className="w-3.5 h-3.5" />
             or call us: 1-855-GOT-WAYS
