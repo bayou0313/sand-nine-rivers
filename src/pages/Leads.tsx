@@ -3861,11 +3861,12 @@ const Leads = () => {
                 <label className="text-xs text-gray-400 block mb-1">Select PIT</label>
                 <select value={qpPitId} onChange={e => setQpPitId(e.target.value)} className="w-full h-10 px-3 rounded-md border text-sm">
                   {pits.filter(p => p.status === "active").map(p => {
-                    const dist = quickProposalLead.nearest_pit_id === p.id && quickProposalLead.nearest_pit_distance != null
-                      ? quickProposalLead.nearest_pit_distance.toFixed(1)
+                    const rawDist = quickProposalLead.nearest_pit_id === p.id && quickProposalLead.nearest_pit_distance != null
+                      ? quickProposalLead.nearest_pit_distance
                       : geocodeCache[quickProposalLead.address]
-                        ? getDist(p.lat, p.lon, geocodeCache[quickProposalLead.address].lat, geocodeCache[quickProposalLead.address].lon).toFixed(1)
-                        : "?";
+                        ? getDist(p.lat, p.lon, geocodeCache[quickProposalLead.address].lat, geocodeCache[quickProposalLead.address].lon)
+                        : null;
+                    const dist = rawDist !== null ? rawDist.toFixed(1) : "—";
                     return <option key={p.id} value={p.id}>{p.name} — {dist} mi away</option>;
                   })}
                 </select>
