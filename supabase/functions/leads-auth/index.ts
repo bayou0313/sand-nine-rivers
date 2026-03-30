@@ -617,14 +617,23 @@ serve(async (req) => {
       let failed = 0;
       let skipped = 0;
       for (const city of cities) {
-        // ── Dedup check: skip if slug already exists ──
+        // ── Closest-PIT dedup: check if slug already exists ──
         const { data: existing } = await supabase
           .from("city_pages")
-          .select("id, city_slug")
+          .select("id, distance_from_pit")
           .eq("city_slug", city.city_slug)
           .maybeSingle();
         if (existing) {
-          console.log(`Skipped duplicate: ${city.city_slug} (already exists as ${existing.id})`);
+          if (city.distance < (existing.distance_from_pit ?? 999)) {
+            // New PIT is closer — update existing page
+            const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
+            await supabase.from("city_pages").update({
+              pit_id, distance_from_pit: city.distance, base_price: newPrice,
+            }).eq("id", existing.id);
+            console.log(`Updated ${city.city_slug} to closer PIT (${city.distance} mi)`);
+          } else {
+            console.log(`Skipped ${city.city_slug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
+          }
           skipped++;
           continue;
         }

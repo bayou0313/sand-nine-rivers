@@ -265,6 +265,10 @@ const Leads = () => {
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [showDeactivateDupsConfirm, setShowDeactivateDupsConfirm] = useState(false);
+  const [bulkCreating, setBulkCreating] = useState(false);
+  const [showBulkCreateConfirm, setShowBulkCreateConfirm] = useState(false);
+  const [deduplicating, setDeduplicating] = useState(false);
+  const [showDeduplicateConfirm, setShowDeduplicateConfirm] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
