@@ -7,6 +7,51 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Haversine fallback (miles) — used only as pre-filter
+const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+/**
+ * Get driving distances from one origin to multiple destinations using Google Distance Matrix API.
+ * Returns array of distances in miles (null if route not found).
+ * Batches in groups of 25 destinations per API call.
+ */
+async function getDrivingDistances(
+  originLat: number, originLon: number,
+  destinations: { lat: number; lng: number }[],
+  apiKey: string
+): Promise<(number | null)[]> {
+  if (destinations.length === 0) return [];
+  const results: (number | null)[] = new Array(destinations.length).fill(null);
+  const BATCH = 25; // Distance Matrix max elements per call with 1 origin
+
+  for (let i = 0; i < destinations.length; i += BATCH) {
+    const batch = destinations.slice(i, i + BATCH);
+    const destsStr = batch.map(d => `${d.lat},${d.lng}`).join("|");
+    try {
+      const resp = await fetch(
+        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLon}&destinations=${encodeURIComponent(destsStr)}&units=imperial&key=${apiKey}`
+      );
+      const data = await resp.json();
+      const elements = data.rows?.[0]?.elements || [];
+      for (let j = 0; j < elements.length; j++) {
+        if (elements[j]?.status === "OK" && elements[j].distance?.value) {
+          results[i + j] = elements[j].distance.value / 1609.344; // meters to miles
+        }
+      }
+    } catch (e) {
+      console.error("Distance Matrix batch failed:", e);
+      // Leave as null — caller will fall back to haversine
+    }
+  }
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
