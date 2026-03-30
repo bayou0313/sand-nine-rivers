@@ -248,6 +248,24 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      // Validate coordinates — last line of defense
+      if (
+        pit.lat == null || pit.lon == null ||
+        isNaN(Number(pit.lat)) || isNaN(Number(pit.lon)) ||
+        Number(pit.lat) === 0 ||
+        Number(pit.lat) < 24 || Number(pit.lat) > 50 ||
+        Number(pit.lon) < -125 || Number(pit.lon) > -66
+      ) {
+        return new Response(
+          JSON.stringify({
+            error: `Invalid PIT coordinates: lat=${pit.lat}, lon=${pit.lon}. ` +
+              "A valid US location is required. Enter a full street address or " +
+              "provide GPS coordinates from Google Maps."
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       let existingPit: any = null;
       if (pit.id) {
         const { data: ep } = await supabase

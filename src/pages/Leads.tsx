@@ -227,7 +227,7 @@ const Leads = () => {
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
   const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "" });
   const [showAddPit, setShowAddPit] = useState(false);
-  const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number }>>(() => {
+  const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number; location_type?: string; formatted_address?: string }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
   });
   const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
@@ -686,14 +686,16 @@ const Leads = () => {
   };
 
   // PIT functions
-  const geocodeAddress = async (address: string): Promise<{ lat: number; lon: number } | null> => {
+  const geocodeAddress = async (address: string): Promise<{ lat: number; lon: number; location_type?: string; formatted_address?: string } | null> => {
     if (geocodeCache[address]) return geocodeCache[address];
     try {
       const resp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
       const data = await resp.json();
       if (data.results?.[0]) {
         const loc = data.results[0].geometry.location;
-        const result = { lat: loc.lat, lon: loc.lng };
+        const location_type = data.results[0].geometry.location_type || "UNKNOWN";
+        const formatted_address = data.results[0].formatted_address || address;
+        const result = { lat: loc.lat, lon: loc.lng, location_type, formatted_address };
         const newCache = { ...geocodeCache, [address]: result };
         setGeocodeCache(newCache);
         sessionStorage.setItem("geocache", JSON.stringify(newCache));
@@ -796,6 +798,17 @@ const Leads = () => {
     if (lat == null || lon == null) {
       const coords = await geocodeAddress(newPit.address);
       if (!coords) { toast({ title: "Geocode failed", description: "Could not find coordinates for that address", variant: "destructive" }); setGeocoding(false); return; }
+      // Block save if geocoded location is too imprecise (city centroid or region)
+      const imprecise = ["GEOMETRIC_CENTER", "APPROXIMATE", "UNKNOWN"];
+      if (imprecise.includes(coords.location_type)) {
+        toast({
+          title: "Address not specific enough",
+          description: `Google returned a "${coords.location_type}" result for "${coords.formatted_address}". This is the center of a city or region, not a real location. Enter a full street address, select from the autocomplete dropdown, or provide GPS coordinates.`,
+          variant: "destructive",
+        });
+        setGeocoding(false);
+        return;
+      }
       lat = coords.lat;
       lon = coords.lon;
     }
@@ -904,6 +917,17 @@ const Leads = () => {
       if (originalPit && editPitData.address !== originalPit.address && (lat === originalPit.lat && lon === originalPit.lon)) {
         const coords = await geocodeAddress(editPitData.address!);
         if (!coords) { toast({ title: "Geocode failed", variant: "destructive" }); setSavingPit(false); return; }
+        // Block save if geocoded location is too imprecise
+        const imprecise = ["GEOMETRIC_CENTER", "APPROXIMATE", "UNKNOWN"];
+        if (imprecise.includes(coords.location_type)) {
+          toast({
+            title: "Address not specific enough",
+            description: `Google returned a "${coords.location_type}" result for "${coords.formatted_address}". This is the center of a city or region, not a real location. Enter a full street address, select from the autocomplete dropdown, or provide GPS coordinates.`,
+            variant: "destructive",
+          });
+          setSavingPit(false);
+          return;
+        }
         lat = coords.lat;
         lon = coords.lon;
       }
@@ -3955,6 +3979,63 @@ const Leads = () => {
                         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
                       )}
                     </div>
+                    {newPit.lat != null && newPit.lon != null &&
+                      Number(newPit.lat) >= 24 && Number(newPit.lat) <= 50 &&
+                      Number(newPit.lon) >= -125 && Number(newPit.lon) <= -66 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs" style={{ color: "#4A6A8A" }}>
+                          ✓ {Number(newPit.lat).toFixed(5)}, {Number(newPit.lon).toFixed(5)}
+                        </p>
+                        <a
+                          href={`https://www.google.com/maps?q=${newPit.lat},${newPit.lon}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs underline"
+                          style={{ color: BRAND_GOLD }}
+                        >
+                          Verify on Google Maps ↗
+                        </a>
+                      </div>
+                    )}
+                    <div className="mt-2">
+                      <p className="text-xs mb-1 font-medium" style={{ color: SECTION_LABEL }}>
+                        GPS Coordinates (optional — use if address is not a full street address)
+                      </p>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-xs mb-0.5 block" style={{ color: "#666" }}>Latitude</label>
+                          <Input
+                            className="h-8 text-xs font-mono"
+                            placeholder="e.g. 29.9073"
+                            type="number"
+                            step="0.00001"
+                            value={newPit.lat ?? ""}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              setNewPit(prev => ({ ...prev, lat: isNaN(val) ? null : val }));
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs mb-0.5 block" style={{ color: "#666" }}>Longitude</label>
+                          <Input
+                            className="h-8 text-xs font-mono"
+                            placeholder="e.g. -90.1721"
+                            type="number"
+                            step="0.00001"
+                            value={newPit.lon ?? ""}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              setNewPit(prev => ({ ...prev, lon: isNaN(val) ? null : val }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: "#999" }}>
+                        If filled, these override the address geocoding.
+                        Find coordinates by right-clicking your pit location in Google Maps.
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
@@ -4129,10 +4210,60 @@ const Leads = () => {
                         </span>
                       </div>
                     ) : (
-                      <p className="text-xs mt-1" style={{ color: "#4A6A8A" }}>
-                        ✓ {Number(editPitData.lat).toFixed(5)}, {Number(editPitData.lon).toFixed(5)}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs" style={{ color: "#4A6A8A" }}>
+                          ✓ {Number(editPitData.lat).toFixed(5)}, {Number(editPitData.lon).toFixed(5)}
+                        </p>
+                        <a
+                          href={`https://www.google.com/maps?q=${editPitData.lat},${editPitData.lon}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs underline"
+                          style={{ color: BRAND_GOLD }}
+                        >
+                          Verify on Google Maps ↗
+                        </a>
+                      </div>
                     )}
+                    <div className="mt-2">
+                      <p className="text-xs mb-1 font-medium" style={{ color: SECTION_LABEL }}>
+                        GPS Coordinates (optional — use if address is not a full street address)
+                      </p>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-xs mb-0.5 block" style={{ color: "#666" }}>Latitude</label>
+                          <Input
+                            className="h-8 text-xs font-mono"
+                            placeholder="e.g. 29.9073"
+                            type="number"
+                            step="0.00001"
+                            value={editPitData.lat ?? ""}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              setEditPitData(prev => ({ ...prev, lat: isNaN(val) ? null : val }));
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs mb-0.5 block" style={{ color: "#666" }}>Longitude</label>
+                          <Input
+                            className="h-8 text-xs font-mono"
+                            placeholder="e.g. -90.1721"
+                            type="number"
+                            step="0.00001"
+                            value={editPitData.lon ?? ""}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              setEditPitData(prev => ({ ...prev, lon: isNaN(val) ? null : val }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: "#999" }}>
+                        If filled, these override the address geocoding.
+                        Find coordinates by right-clicking your pit location in Google Maps.
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
