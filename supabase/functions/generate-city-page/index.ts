@@ -100,7 +100,7 @@ CONTENT REQUIREMENTS:
                 properties: {
                   meta_title: { type: "string", description: "Meta title under 60 chars with city name and 'river sand delivery'" },
                   meta_description: { type: "string", description: "Meta description under 160 chars with city, price, same-day" },
-                  h1_text: { type: "string", description: "H1 heading, max 70 chars, transactional keyword-first" },
+                  h1_text: { type: "string", description: "H1 heading, max 70 chars. MUST start with 'River Sand Delivery in'. Format: 'River Sand Delivery in [City], [State] — Same-Day Service'. NO pipe characters (|). Must read as a natural headline." },
                   hero_intro: { type: "string", description: "2-3 sentence hero intro with local reference" },
                   why_choose_intro: { type: "string", description: "1-2 sentences establishing local authority and E-E-A-T" },
                   delivery_details: { type: "string", description: "1-2 sentences with exact logistics, roads, distance, price" },
