@@ -153,14 +153,6 @@ const CityPage = () => {
       <Stats />
       <DeliveryEstimator />
 
-      {/* City-specific AI content — styled to match homepage sections */}
-      {cityPage.content && (
-        <section className="py-16 bg-muted/30">
-          <div className="container mx-auto px-6 max-w-4xl prose prose-lg prose-headings:font-display prose-headings:tracking-wide prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-a:text-accent prose-h2:text-2xl prose-h2:md:text-3xl prose-h3:text-xl prose-h3:md:text-2xl">
-            <div dangerouslySetInnerHTML={{ __html: cityPage.content }} />
-          </div>
-        </section>
-      )}
 
       <About />
       <RiverSandInfo />
