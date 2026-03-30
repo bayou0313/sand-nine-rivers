@@ -2048,7 +2048,7 @@ const Leads = () => {
                   </div>
                 </div>
               </div>
-            )
+            )}
 
             {/* Bulk Create All Confirmation Modal */}
             {showBulkCreateConfirm && (
