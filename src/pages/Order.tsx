@@ -20,7 +20,7 @@ import Navbar from "@/components/Navbar";
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
-import { type PitData, type GlobalPricing, findBestPit, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
+import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -441,7 +441,7 @@ const Order = () => {
         setLoading(false); return;
       }
 
-      const bestResult = findBestPit(allPits, custLat!, custLng!, globalPricing);
+      const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing, GOOGLE_MAPS_API_KEY);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");
