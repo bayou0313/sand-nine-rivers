@@ -145,10 +145,10 @@ const CityPage = () => {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbSchema }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: localBusinessSchema }} />
 
-      <Navbar />
+      <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} />
       <Hero
-        h1Override={cityPage.h1_text || `SAME-DAY RIVER SAND DELIVERY IN ${cityPage.city_name.toUpperCase()}`}
-        subtitleOverride={`Quality river sand for landscaping, drainage, backfill, and construction projects in ${cityPage.city_name}, ${cityPage.state}. Order before noon for same-day delivery.`}
+        h1Override={cityPage.h1_text || `River Sand Delivery in ${cityPage.city_name}, ${cityPage.state} — Same-Day Service`}
+        subtitleOverride={cityPage.hero_intro || `Quality river sand for landscaping, drainage, backfill, and construction projects in ${cityPage.city_name}, ${cityPage.state}. Order before noon for same-day delivery.`}
       />
       <Stats />
       <DeliveryEstimator />

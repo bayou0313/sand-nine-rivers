@@ -29,7 +29,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
     >
       <div className="container mx-auto px-6 flex items-center justify-between h-16 md:h-20">
         <motion.a
-          href="/"
+          href={logoHref}
           className="flex items-center shrink-0"
           whileHover={{ scale: 1.04 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}

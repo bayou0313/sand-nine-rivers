@@ -65,7 +65,7 @@ CITY DATA:
 CONTENT REQUIREMENTS:
 - meta_title: Max 60 chars. Must include city name and 'river sand delivery'. Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day | River Sand"
 - meta_description: Max 160 chars. Must include city name, same-day delivery, price ($${price}), and payment options (cash or card). Written to maximize click-through from search results.
-- h1_text: Max 70 chars. Primary keyword first. Must be transactional, not informational. City name required.
+- h1_text: Max 70 chars. MUST start with "River Sand Delivery in". Format: "River Sand Delivery in ${city_name}, ${state} — Same-Day Service". NO pipe characters (|) — pipes are for meta_title only. Must read as a natural headline, not an SEO tag.
 - hero_intro: 2-3 sentences. Opens with city name and a specific local reference (road, landmark, project type common to this area). States the core offer. Ends with a confidence signal. NO generic phrases.
 - why_choose_intro: 1-2 sentences. Establishes LOCAL AUTHORITY for this specific parish/area. Reference the parish name, local terrain challenge, or why a local supplier matters here. Demonstrates E-E-A-T.
 - delivery_details: 1-2 sentences. Specific logistics: pit name, exact distance (${distance} miles), the actual road(s) used to reach this city (reference real LA highways like LA-18, US-90, I-10, etc.), delivery price ($${price}). Shows we know the route.
