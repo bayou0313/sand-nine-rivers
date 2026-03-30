@@ -259,6 +259,8 @@ const Leads = () => {
   const [generatingContent, setGeneratingContent] = useState<string | null>(null);
   const [selectedCityPages, setSelectedCityPages] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [showDeactivateDupsConfirm, setShowDeactivateDupsConfirm] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
@@ -1667,11 +1669,20 @@ const Leads = () => {
         );
 
       case "city_pages": {
-        const filteredCityPages = cityPageFilter === "all" ? cityPages : cityPages.filter((cp: any) => cp.pit_id === cityPageFilter);
+        // Detect duplicate slugs
+        const slugCounts: Record<string, number> = {};
+        cityPages.forEach((cp: any) => { slugCounts[cp.city_slug] = (slugCounts[cp.city_slug] || 0) + 1; });
+        const duplicateSlugs = new Set(Object.keys(slugCounts).filter(s => slugCounts[s] > 1));
+
+        let filteredCityPages = cityPageFilter === "all" ? cityPages : cityPages.filter((cp: any) => cp.pit_id === cityPageFilter);
+        if (showDuplicatesOnly) {
+          filteredCityPages = filteredCityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug));
+        }
         const activeCount = cityPages.filter((cp: any) => cp.status === "active").length;
         const totalViews = cityPages.reduce((sum: number, cp: any) => sum + (cp.page_views || 0), 0);
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
+        const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
 
         const discoverCities = async (pitId: string) => {
           setDiscoverLoading(true);
@@ -1804,7 +1815,7 @@ const Leads = () => {
             </div>
 
             {/* PIT Filter */}
-            <div className="mb-4">
+            <div className="mb-4 flex flex-wrap gap-2 items-center">
               <select
                 value={cityPageFilter}
                 onChange={e => setCityPageFilter(e.target.value)}
@@ -1814,6 +1825,18 @@ const Leads = () => {
                 <option value="all">All PITs</option>
                 {pits.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
+              <button
+                onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
+                className="h-9 px-3 rounded-md border text-xs font-bold transition-colors"
+                style={{
+                  borderColor: showDuplicatesOnly ? "#F59E0B" : BRAND_NAVY + "30",
+                  backgroundColor: showDuplicatesOnly ? "#FEF3C7" : "white",
+                  color: showDuplicatesOnly ? "#92400E" : BRAND_NAVY,
+                }}
+              >
+                <AlertTriangle className="w-3 h-3 inline mr-1" />
+                Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
+              </button>
             </div>
 
             {/* Bulk Actions Bar */}
@@ -1839,6 +1862,21 @@ const Leads = () => {
                   className="text-xs px-3 py-1.5 rounded border font-bold hover:bg-amber-50"
                   style={{ borderColor: "#F59E0B40", color: "#F59E0B" }}
                 >Deactivate Selected</button>
+                {/* Keep Best / Deactivate Duplicates */}
+                {(() => {
+                  const selectedArr = Array.from(selectedCityPages);
+                  const selectedPages = cityPages.filter((cp: any) => selectedArr.includes(cp.id));
+                  const selectedSlugs = new Set(selectedPages.map((cp: any) => cp.city_slug));
+                  const hasDups = [...selectedSlugs].some(s => duplicateSlugs.has(s));
+                  if (!hasDups) return null;
+                  return (
+                    <button
+                      onClick={() => setShowDeactivateDupsConfirm(true)}
+                      className="text-xs px-3 py-1.5 rounded border font-bold hover:bg-blue-50"
+                      style={{ borderColor: "#3B82F640", color: "#3B82F6" }}
+                    >Keep Best, Deactivate Rest</button>
+                  );
+                })()}
                 <button
                   onClick={() => setSelectedCityPages(new Set())}
                   className="text-xs px-3 py-1.5 rounded border hover:bg-gray-50"
@@ -1873,6 +1911,53 @@ const Leads = () => {
                 </div>
               </div>
             )}
+
+            {/* Keep Best / Deactivate Duplicates Confirmation Modal */}
+            {showDeactivateDupsConfirm && (() => {
+              const selectedArr = Array.from(selectedCityPages);
+              const selectedPages = cityPages.filter((cp: any) => selectedArr.includes(cp.id));
+              // Group selected by slug
+              const bySlug: Record<string, any[]> = {};
+              selectedPages.forEach((cp: any) => {
+                if (!bySlug[cp.city_slug]) bySlug[cp.city_slug] = [];
+                bySlug[cp.city_slug].push(cp);
+              });
+              // For each slug group with >1, keep highest views, deactivate rest
+              const toDeactivate: string[] = [];
+              for (const [, group] of Object.entries(bySlug)) {
+                if (group.length <= 1) continue;
+                const sorted = [...group].sort((a, b) => (b.page_views || 0) - (a.page_views || 0));
+                for (let i = 1; i < sorted.length; i++) toDeactivate.push(sorted[i].id);
+              }
+              return (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                    <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Keep Best, Deactivate Rest</h3>
+                    <p className="text-sm text-gray-600">
+                      This will deactivate <strong>{toDeactivate.length}</strong> duplicate pages, keeping the one with the most views for each city.
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                      <Button variant="outline" onClick={() => setShowDeactivateDupsConfirm(false)}>Cancel</Button>
+                      <Button
+                        style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+                        onClick={async () => {
+                          if (toDeactivate.length === 0) { setShowDeactivateDupsConfirm(false); return; }
+                          try {
+                            await supabase.functions.invoke("leads-auth", {
+                              body: { password: storedPassword(), action: "deactivate_city_pages", ids: toDeactivate },
+                            });
+                            toast({ title: `${toDeactivate.length} duplicates deactivated`, description: "Highest-traffic page kept for each city." });
+                            setSelectedCityPages(new Set());
+                            setShowDeactivateDupsConfirm(false);
+                            fetchCityPages();
+                          } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+                        }}
+                      >Confirm ({toDeactivate.length} pages)</Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Table */}
             <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
@@ -1916,7 +2001,12 @@ const Leads = () => {
                             className="rounded"
                           />
                         </td>
-                        <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
+                        <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>
+                          {cp.city_name}
+                          {duplicateSlugs.has(cp.city_slug) && (
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>Duplicate</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
                         <td className="px-3 py-2 text-xs" style={{ color: cp.region ? BRAND_NAVY : "#ccc" }}>{cp.region || "—"}</td>
                         <td className="px-3 py-2 text-xs">
