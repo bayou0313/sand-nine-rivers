@@ -165,7 +165,7 @@ const Footer = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
                 {regionKeys.map((region) => (
                   <div key={region}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{region}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{formatRegionHeading(region, grouped[region][0]?.state || "LA")}</p>
                     <div className="space-y-1.5">
                       {grouped[region].map((city) => (
                         <Link
