@@ -212,6 +212,12 @@ CONTENT REQUIREMENTS:
           meta_title: generated.meta_title,
           meta_description: generated.meta_description,
           h1_text: generated.h1_text,
+          hero_intro: generated.hero_intro || null,
+          why_choose_intro: generated.why_choose_intro || null,
+          delivery_details: generated.delivery_details || null,
+          local_uses: localUsesHtml ? `<ul>${localUsesHtml}</ul>` : null,
+          local_expertise: generated.local_expertise || null,
+          faq_items: generated.faq_items || null,
           content: fullContent,
           content_generated_at: new Date().toISOString(),
           status: "active",
@@ -223,7 +229,7 @@ CONTENT REQUIREMENTS:
       }
     }
 
-    return new Response(JSON.stringify({ success: true, generated: { ...generated, content: fullContent } }), {
+    return new Response(JSON.stringify({ success: true, generated: { ...generated, content: fullContent, local_uses: localUsesHtml ? `<ul>${localUsesHtml}</ul>` : null } }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
