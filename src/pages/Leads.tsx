@@ -2013,6 +2013,9 @@ const Leads = () => {
                 </div>
               </div>
             )}
+
+            {/* Bulk Actions Bar */}
+            {selectedCityPages.size > 0 && (
               <div className="mb-4 flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: BRAND_NAVY + "08", borderColor: BRAND_NAVY + "20" }}>
                 <span className="text-sm font-bold" style={{ color: BRAND_NAVY }}>{selectedCityPages.size} selected</span>
                 <button
