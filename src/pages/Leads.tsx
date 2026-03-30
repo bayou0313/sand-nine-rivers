@@ -2304,6 +2304,47 @@ const Leads = () => {
               );
             })()}
 
+            {/* Regen Queue Progress */}
+            {regenQueue && regenQueue.status === "running" && (
+              <div className="mb-4 p-3 rounded-lg border" style={{ borderColor: BRAND_GOLD + "40", backgroundColor: BRAND_GOLD + "08" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium" style={{ color: BRAND_NAVY }}>
+                    Regenerating city pages... <strong>{regenQueue.currentCity}</strong> ({regenQueue.current} of {regenQueue.total})
+                  </span>
+                  <button
+                    onClick={() => { regenCancelRef.current = true; }}
+                    className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                    style={{ borderColor: "#EF444440", color: "#EF4444" }}
+                  >Cancel</button>
+                </div>
+                <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: BRAND_NAVY + "15" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${(regenQueue.current / regenQueue.total) * 100}%`, backgroundColor: BRAND_GOLD }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Regen Outdated Confirmation Modal */}
+            {showRegenOutdatedConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regenerate outdated city pages?</h3>
+                  <p className="text-sm text-gray-600">
+                    This will regenerate content for <strong>{outdatedCount}</strong> city pages using the current AI prompt. Pages are processed one at a time to avoid rate limits. This may take several minutes.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setShowRegenOutdatedConfirm(false)}>Cancel</Button>
+                    <Button
+                      style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+                      onClick={() => { setShowRegenOutdatedConfirm(false); regenOutdated(); }}
+                    >Start Regen Queue</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Table */}
             <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
               {cityPagesLoading ? (
