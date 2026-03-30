@@ -54,6 +54,21 @@ async function getDrivingDistances(
   return results;
 }
 
+/**
+ * Cities too large or geographically complex to quote a single delivery price.
+ * Pages for these cities always suppress static pricing and direct to the estimator,
+ * regardless of PIT count.
+ * Add any city here where a single centroid distance is misleading.
+ */
+const LARGE_CITIES_NO_STATIC_PRICE = new Set([
+  "new orleans",
+  "new orleans east",
+  "algiers",
+  "metairie",
+  "kenner",
+  "baton rouge",
+]);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -589,7 +604,7 @@ serve(async (req) => {
         return true;
       };
 
-      const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
+      const VALID_TYPES = ["sublocality_level_1", "locality", "administrative_area_level_3"];
 
       // Generate sample points at various distances and directions
       const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= maxDist);
@@ -778,8 +793,9 @@ serve(async (req) => {
           if (drivingDist === null || drivingDist === undefined) return false; // No road route — not competing
           return drivingDist <= (otherPit.max_distance || 30);
         });
-        const isMultiPit = competingPits.length > 0;
-        const competingIds = isMultiPit ? competingPits.map(p => p.id) : null;
+        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
+        const isMultiPit = competingPits.length > 0 || forceSuppressPrice;
+        const competingIds = competingPits.length > 0 ? competingPits.map(p => p.id) : null;
 
         // Closest-PIT dedup
         const { data: existing } = await supabase
@@ -960,7 +976,7 @@ serve(async (req) => {
         return true;
       };
 
-      const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
+      const VALID_TYPES = ["sublocality_level_1", "locality", "administrative_area_level_3"];
 
       const { data: gsData } = await supabase.from("global_settings").select("key, value");
       const gs: Record<string, string> = {};
@@ -1077,12 +1093,15 @@ serve(async (req) => {
       let failed = 0;
 
       for (const city of toCreate) {
+        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
+        const isMultiPit = forceSuppressPrice; // multi-PIT detection not done in bulk yet
         const { data: inserted, error: insertErr } = await supabase
           .from("city_pages")
           .insert({
             pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
             state: city.state, lat: city.lat, lng: city.lng,
-            distance_from_pit: city.distance_from_pit, base_price: city.base_price, status: "draft",
+            distance_from_pit: city.distance_from_pit, base_price: city.base_price,
+            multi_pit_coverage: isMultiPit, status: "draft",
           })
           .select().single();
         if (insertErr) { console.error("Insert error:", insertErr); failed++; continue; }
@@ -1100,6 +1119,7 @@ serve(async (req) => {
               price: city.base_price,
               free_miles: pitData?.free_miles ?? parseFloat(gs.default_free_miles || "15"),
               saturday_available: pitData?.operating_days ? pitData.operating_days.includes(6) : true,
+              multi_pit_coverage: isMultiPit,
             }),
           });
           if (genResp.ok) {
