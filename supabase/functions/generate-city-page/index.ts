@@ -152,6 +152,7 @@ CONTENT REQUIREMENTS:
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
 
     // Build the full HTML content from structured sections
     const localUsesHtml = (generated.local_uses || [])
