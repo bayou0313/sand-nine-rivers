@@ -1834,6 +1834,7 @@ const Leads = () => {
                   price: page.base_price || 195,
                   free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
                   saturday_available: pitData?.operating_days?.includes(6) ?? false,
+                  multi_pit_coverage: page.multi_pit_coverage || false,
                 },
               });
               setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, pit_reassigned: false, price_changed: false, regen_reason: null, content_generated_at: new Date().toISOString(), status: "active" } : cp));

@@ -823,6 +823,7 @@ serve(async (req) => {
               price: city.price,
               free_miles: pitFreeMiles,
               saturday_available: satAvailable,
+              multi_pit_coverage: isMultiPit,
             }),
           });
           if (genResp.ok) {
