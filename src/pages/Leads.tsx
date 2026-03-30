@@ -695,13 +695,19 @@ const Leads = () => {
     return null;
   };
 
+  // Helper: get driving distance if cached, else fallback to haversine
+  const getDist = useCallback((pitLat: number, pitLon: number, destLat: number, destLon: number) => {
+    const key = drivingDistKey(pitLat, pitLon, destLat, destLon);
+    return drivingCache[key] ?? haversine(pitLat, pitLon, destLat, destLon);
+  }, [drivingCache]);
+
   const checkActivationLeads = (pit: Pit) => {
     const eff = getEffectivePrice(pit, globalSettings);
     const reachable: Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }> = [];
     for (const l of parsedLeads) {
       const cached = geocodeCache[l.address];
       if (!cached) continue;
-      const dist = haversine(pit.lat, pit.lon, cached.lat, cached.lon);
+      const dist = getDist(pit.lat, pit.lon, cached.lat, cached.lon);
       if (dist <= eff.max_distance) {
         const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
         const price = eff.base_price + extra;
