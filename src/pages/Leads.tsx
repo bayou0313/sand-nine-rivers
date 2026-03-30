@@ -308,6 +308,9 @@ const Leads = () => {
   const [showDeduplicateConfirm, setShowDeduplicateConfirm] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [showDeleteAllTypeConfirm, setShowDeleteAllTypeConfirm] = useState(false);
+  const [showRegenOutdatedConfirm, setShowRegenOutdatedConfirm] = useState(false);
+  const [regenQueue, setRegenQueue] = useState<{ total: number; current: number; currentCity: string; status: "idle" | "running" | "complete" } | null>(null);
+  const regenCancelRef = useRef(false);
   const [deleteAllTypeInput, setDeleteAllTypeInput] = useState("");
   const [deletingAll, setDeletingAll] = useState(false);
 
@@ -1791,6 +1794,52 @@ const Leads = () => {
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
         const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
+        const CURRENT_PROMPT_VERSION = "2.0";
+        const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at).length;
+        const outdatedCount = cityPages.filter((cp: any) => !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION).length;
+        const missingCount = cityPages.filter((cp: any) => cp.status === "active" && !cp.content_generated_at).length;
+
+        const regenOutdated = async () => {
+          const outdated = cityPages.filter(
+            (p: any) => !p.prompt_version || p.prompt_version !== CURRENT_PROMPT_VERSION
+          );
+          regenCancelRef.current = false;
+          setRegenQueue({ total: outdated.length, current: 0, currentCity: "", status: "running" });
+
+          for (let i = 0; i < outdated.length; i++) {
+            if (regenCancelRef.current) break;
+            const page = outdated[i];
+            setRegenQueue(q => q ? { ...q, current: i + 1, currentCity: page.city_name } : q);
+
+            try {
+              const pitData = pits.find((p: any) => p.id === page.pit_id);
+              await supabase.functions.invoke("generate-city-page", {
+                body: {
+                  password: storedPassword(),
+                  city_page_id: page.id,
+                  city_name: page.city_name,
+                  state: page.state,
+                  pit_name: pitData?.name || "HQ",
+                  distance: page.distance_from_pit || 0,
+                  price: page.base_price || 195,
+                  free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
+                  saturday_available: pitData?.operating_days?.includes(6) ?? false,
+                },
+              });
+              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, content_generated_at: new Date().toISOString(), status: "active" } : cp));
+            } catch (err) {
+              console.error(`Failed to regen ${page.city_name}:`, err);
+            }
+
+            if (i < outdated.length - 1 && !regenCancelRef.current) {
+              await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+          }
+
+          setRegenQueue(q => q ? { ...q, current: q.total, status: "complete" } : q);
+          toast({ title: "Regeneration complete", description: `${outdated.length} pages updated.` });
+          fetchCityPages();
+        };
 
         const discoverCities = async (pitId: string) => {
           setDiscoverLoading(true);
@@ -1924,11 +1973,12 @@ const Leads = () => {
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
               <MetricCard label="Active Pages" value={activeCount} />
+              <MetricCard label="Current" value={currentCount} />
+              <MetricCard label="Outdated" value={outdatedCount} />
+              <MetricCard label="Missing Content" value={missingCount} />
               <MetricCard label="Total Views" value={totalViews} />
-              <MetricCard label="Cities Covered" value={citiesCovered} />
-              <MetricCard label="States Covered" value={statesCovered} />
             </div>
 
             {/* PIT Filter */}
@@ -1955,7 +2005,8 @@ const Leads = () => {
                 Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
               </button>
               {duplicateCount > 0 && (
-                <Button
+  
+              <Button
                   onClick={() => setShowDeduplicateConfirm(true)}
                   disabled={deduplicating}
                   size="sm"
@@ -1966,6 +2017,17 @@ const Leads = () => {
                   Remove Duplicates ({duplicateCount})
                 </Button>
               )}
+              <Button
+                onClick={() => setShowRegenOutdatedConfirm(true)}
+                disabled={outdatedCount === 0 || regenQueue?.status === "running"}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: outdatedCount > 0 ? BRAND_GOLD + "40" : undefined, color: outdatedCount > 0 ? BRAND_GOLD : undefined }}
+              >
+                {regenQueue?.status === "running" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-3 h-3 mr-1" />}
+                Regen Outdated ({outdatedCount})
+              </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
@@ -2242,6 +2304,47 @@ const Leads = () => {
               );
             })()}
 
+            {/* Regen Queue Progress */}
+            {regenQueue && regenQueue.status === "running" && (
+              <div className="mb-4 p-3 rounded-lg border" style={{ borderColor: BRAND_GOLD + "40", backgroundColor: BRAND_GOLD + "08" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium" style={{ color: BRAND_NAVY }}>
+                    Regenerating city pages... <strong>{regenQueue.currentCity}</strong> ({regenQueue.current} of {regenQueue.total})
+                  </span>
+                  <button
+                    onClick={() => { regenCancelRef.current = true; }}
+                    className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                    style={{ borderColor: "#EF444440", color: "#EF4444" }}
+                  >Cancel</button>
+                </div>
+                <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: BRAND_NAVY + "15" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${(regenQueue.current / regenQueue.total) * 100}%`, backgroundColor: BRAND_GOLD }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Regen Outdated Confirmation Modal */}
+            {showRegenOutdatedConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regenerate outdated city pages?</h3>
+                  <p className="text-sm text-gray-600">
+                    This will regenerate content for <strong>{outdatedCount}</strong> city pages using the current AI prompt. Pages are processed one at a time to avoid rate limits. This may take several minutes.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setShowRegenOutdatedConfirm(false)}>Cancel</Button>
+                    <Button
+                      style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+                      onClick={() => { setShowRegenOutdatedConfirm(false); regenOutdated(); }}
+                    >Start Regen Queue</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Table */}
             <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
               {cityPagesLoading ? (
@@ -2264,7 +2367,7 @@ const Leads = () => {
                           className="rounded"
                         />
                       </th>
-                      {["City", "State", "Region", "URL", "PIT", "Distance", "Price", "Status", "Views", "Actions"].map(h => (
+                      {["City", "State", "Region", "URL", "PIT", "Distance", "Price", "Status", "Content", "Views", "Actions"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
@@ -2308,6 +2411,21 @@ const Leads = () => {
                             {cp.status?.charAt(0).toUpperCase() + cp.status?.slice(1)}
                           </span>
                         </td>
+                        <td className="px-3 py-2">
+                          {(() => {
+                            const isCurrent = cp.prompt_version === "2.0" && cp.content_generated_at;
+                            const isMissing = cp.status === "active" && !cp.content_generated_at;
+                            const isOutdated = !isCurrent && !isMissing;
+                            const dotColor = isCurrent ? "#22C55E" : isMissing ? "#EF4444" : "#F59E0B";
+                            const label = isCurrent ? "Current" : isMissing ? "Missing" : "Outdated";
+                            return (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
+                                <span className="text-xs" style={{ color: dotColor }}>{label}</span>
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-3 py-2 text-xs">{cp.page_views || 0}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
@@ -2324,7 +2442,7 @@ const Leads = () => {
                       </tr>
                     ))}
                     {filteredCityPages.length === 0 && (
-                      <tr><td colSpan={10} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
+                      <tr><td colSpan={12} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
                     )}
                   </tbody>
                 </table>

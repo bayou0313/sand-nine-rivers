@@ -219,6 +219,7 @@ CONTENT REQUIREMENTS:
           local_expertise: generated.local_expertise || null,
           faq_items: generated.faq_items || null,
           content: fullContent,
+          prompt_version: "2.0",
           content_generated_at: new Date().toISOString(),
           status: "active",
         })
