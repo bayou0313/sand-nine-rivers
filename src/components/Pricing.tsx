@@ -1,6 +1,25 @@
-import { useEffect, useState } from "react";
 import { Truck, MapPin, Package, DollarSign, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+
+const SandPile = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 48 32" fill="none" className={className}>
+    {/* Main pile */}
+    <ellipse cx="24" cy="28" rx="22" ry="4" className="fill-accent/20" />
+    <path d="M4 28 Q14 8 24 6 Q34 8 44 28 Z" className="fill-accent/30" />
+    <path d="M8 28 Q16 12 24 10 Q32 12 40 28 Z" className="fill-accent/40" />
+    {/* Highlight */}
+    <path d="M16 28 Q20 16 24 14 Q28 16 32 28 Z" className="fill-accent/20" />
+    {/* Sand grains */}
+    <circle cx="18" cy="22" r="0.8" className="fill-accent/50" />
+    <circle cx="28" cy="20" r="0.6" className="fill-accent/50" />
+    <circle cx="22" cy="18" r="0.5" className="fill-accent/50" />
+    <circle cx="30" cy="24" r="0.7" className="fill-accent/50" />
+  </svg>
+);
+
+const LOOP_DURATION = 2.2;
+const PAUSE = 2;
+const TOTAL = LOOP_DURATION + PAUSE;
 
 const Pricing = () => {
   return (
@@ -44,7 +63,7 @@ const Pricing = () => {
           className="max-w-3xl mx-auto mb-12"
         >
           <div className="relative bg-background border border-border rounded-3xl p-8 md:p-12 overflow-hidden">
-            {/* Map-like background pattern */}
+            {/* Map grid background */}
             <div className="absolute inset-0 opacity-[0.04]">
               <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -74,14 +93,20 @@ const Pricing = () => {
 
               {/* Animated route line + truck */}
               <div className="flex-1 relative h-20 flex items-center">
-                {/* Road */}
+                {/* Road base */}
                 <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[3px] bg-border rounded-full" />
+                
+                {/* Animated road fill — loops */}
                 <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[3px] overflow-hidden rounded-full">
                   <motion.div
-                    initial={{ width: "0%" }}
-                    whileInView={{ width: "100%" }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5, duration: 1.5, ease: "easeInOut" }}
+                    animate={{ width: ["0%", "100%", "100%", "0%"] }}
+                    transition={{
+                      duration: TOTAL,
+                      times: [0, LOOP_DURATION / TOTAL, (LOOP_DURATION + 0.3) / TOTAL, 1],
+                      repeat: Infinity,
+                      repeatDelay: 0.5,
+                      ease: "easeInOut",
+                    }}
                     className="h-full bg-accent/50"
                   />
                 </div>
@@ -89,31 +114,38 @@ const Pricing = () => {
                 {/* Dashed center line */}
                 <div className="absolute top-1/2 -translate-y-[0.5px] left-2 right-2 border-t-2 border-dashed border-accent/20" />
 
-                {/* Truck sliding across */}
+                {/* Truck — loops */}
                 <motion.div
-                  initial={{ left: "5%" }}
-                  whileInView={{ left: "75%" }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.6, duration: 1.8, ease: "easeInOut" }}
+                  animate={{ left: ["5%", "72%", "72%", "5%"] }}
+                  transition={{
+                    duration: TOTAL,
+                    times: [0, LOOP_DURATION / TOTAL, (LOOP_DURATION + 0.3) / TOTAL, 1],
+                    repeat: Infinity,
+                    repeatDelay: 0.5,
+                    ease: "easeInOut",
+                  }}
                   className="absolute top-1/2 -translate-y-1/2 z-10"
                 >
                   <div className="relative">
                     <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-lg shadow-accent/30">
                       <Truck className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
-                    {/* Dust trail */}
+                    {/* Dust particles */}
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: [0, 0.4, 0] }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.8, duration: 1.5, repeat: 0 }}
-                      className="absolute -left-6 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-muted-foreground/10 blur-sm"
+                      animate={{ opacity: [0, 0.3, 0], x: [-2, -10], scale: [0.5, 1.2] }}
+                      transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.3 }}
+                      className="absolute -left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-muted-foreground/15 blur-[2px]"
+                    />
+                    <motion.div
+                      animate={{ opacity: [0, 0.2, 0], x: [-4, -14], scale: [0.3, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5, delay: 0.2 }}
+                      className="absolute -left-3 top-1/3 w-2 h-2 rounded-full bg-muted-foreground/10 blur-[2px]"
                     />
                   </div>
                 </motion.div>
               </div>
 
-              {/* Destination */}
+              {/* Destination with sand pile */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -121,11 +153,17 @@ const Pricing = () => {
                 transition={{ delay: 0.4 }}
                 className="flex flex-col items-center gap-2 z-10 shrink-0"
               >
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 md:w-7 md:h-7 text-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
+                <div className="relative">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-6 h-6 md:w-7 md:h-7 text-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                  </div>
+                  {/* Sand pile next to house */}
+                  <div className="absolute -bottom-1 -right-5 md:-right-6">
+                    <SandPile className="w-10 h-7 md:w-12 md:h-8" />
+                  </div>
                 </div>
                 <span className="text-xs md:text-sm font-display tracking-wide text-foreground">Your Place</span>
               </motion.div>
@@ -136,7 +174,7 @@ const Pricing = () => {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: 1.8 }}
+              transition={{ delay: 1 }}
               className="text-center mt-2"
             >
               <p className="text-sm text-muted-foreground font-body">
