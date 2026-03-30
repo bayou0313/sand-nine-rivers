@@ -122,7 +122,7 @@ const Pricing = () => {
 
               {/* Origin */}
               <g>
-                <motion.circle cx="55" cy="155" r={20} className="fill-accent" opacity="0.08" animate={{ r: [20, 26, 20] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
+                <motion.circle cx="55" cy="155" r={20 ?? 0} className="fill-accent" opacity="0.08" animate={{ r: [20, 26, 20] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
                 <circle cx="55" cy="155" r="14" className="fill-background stroke-accent" strokeWidth="2" />
                 <circle cx="55" cy="155" r="4.5" className="fill-accent" />
                 <text x="55" y="180" textAnchor="middle" className="fill-foreground" fontSize="9" fontWeight="700" fontFamily="sans-serif">Our Pit</text>
