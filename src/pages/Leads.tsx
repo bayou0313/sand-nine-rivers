@@ -308,6 +308,9 @@ const Leads = () => {
   const [showDeduplicateConfirm, setShowDeduplicateConfirm] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [showDeleteAllTypeConfirm, setShowDeleteAllTypeConfirm] = useState(false);
+  const [showRegenOutdatedConfirm, setShowRegenOutdatedConfirm] = useState(false);
+  const [regenQueue, setRegenQueue] = useState<{ total: number; current: number; currentCity: string; status: "idle" | "running" | "complete" } | null>(null);
+  const regenCancelRef = useRef(false);
   const [deleteAllTypeInput, setDeleteAllTypeInput] = useState("");
   const [deletingAll, setDeletingAll] = useState(false);
 
