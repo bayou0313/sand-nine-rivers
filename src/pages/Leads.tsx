@@ -1936,7 +1936,7 @@ const Leads = () => {
                   price: page.base_price || 195,
                   free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
                   saturday_available: pitData?.operating_days?.includes(6) ?? false,
-                  multi_pit_coverage: page.multi_pit_coverage || false,
+                  multi_pit_coverage: (page.multi_pit_coverage || false) && pits.filter((p: any) => p.status === "active").length > 1,
                 },
               });
               // Explicitly set status to active in DB after successful generation
@@ -2017,7 +2017,7 @@ const Leads = () => {
                 price: cp.base_price || 195,
                 free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
                 saturday_available: pitData?.operating_days?.includes(6) ?? false,
-                multi_pit_coverage: cp.multi_pit_coverage || false,
+                multi_pit_coverage: (cp.multi_pit_coverage || false) && pits.filter(p => p.status === "active").length > 1,
               },
             });
             if (fnError) throw fnError;
@@ -2550,7 +2550,7 @@ const Leads = () => {
                         </td>
                         <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>
                           {cp.city_name}
-                          {cp.multi_pit_coverage && (
+                          {cp.multi_pit_coverage && pits.filter(p => p.status === "active").length > 1 && (
                             <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>Multi-PIT</span>
                           )}
                           {duplicateSlugs.has(cp.city_slug) && (
@@ -2761,7 +2761,9 @@ const Leads = () => {
                         <div>Generated: <strong>{editingCityPage.content_generated_at ? new Date(editingCityPage.content_generated_at).toLocaleDateString() : "Never"}</strong></div>
                         <div>Version: <strong>{editingCityPage.prompt_version || "—"}</strong></div>
                         <div>Views: <strong>{editingCityPage.page_views || 0}</strong></div>
-                        {editingCityPage.multi_pit_coverage && <div className="col-span-3"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>Multi-PIT Coverage</span></div>}
+                        {editingCityPage.multi_pit_coverage && pits.filter(p => p.status === "active").length > 1 && (
+                          <div className="col-span-3"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>Multi-PIT Coverage</span></div>
+                        )}
                       </div>
                     </div>
 
