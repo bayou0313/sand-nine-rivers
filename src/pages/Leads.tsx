@@ -811,6 +811,12 @@ const Leads = () => {
     setShowDeleteConfirm(false);
   };
 
+  const previewNewPrice = (distanceFromPit: number, newBasePrice: number, newFreeMiles: number, newPricePerExtraMile: number): number => {
+    const extraMiles = Math.max(0, distanceFromPit - newFreeMiles);
+    const raw = newBasePrice + extraMiles * newPricePerExtraMile;
+    return Math.max(newBasePrice, Math.round(raw));
+  };
+
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
       toast({ title: "Missing info", variant: "destructive" });
@@ -843,8 +849,52 @@ const Leads = () => {
         saturday_surcharge_override: editPitData.saturday_surcharge_override ?? null,
         same_day_cutoff: editPitData.same_day_cutoff || null,
       };
-      const wasActive = originalPit?.status === "active";
-      const nowActive = editPitData.status === "active";
+
+      // Check if pricing fields changed
+      const pricingChanged = originalPit && (
+        (editPitData.base_price ?? null) !== (originalPit.base_price ?? null) ||
+        (editPitData.free_miles ?? null) !== (originalPit.free_miles ?? null) ||
+        (editPitData.price_per_extra_mile ?? null) !== (originalPit.price_per_extra_mile ?? null) ||
+        (editPitData.saturday_surcharge_override ?? null) !== (originalPit.saturday_surcharge_override ?? null)
+      );
+
+      if (pricingChanged) {
+        // Fetch city pages for this PIT to build preview
+        const affectedCities = cityPages.filter((cp: any) => cp.pit_id === editingPitId);
+        if (affectedCities.length > 0) {
+          const newBP = editPitData.base_price ?? parseFloat(globalSettings.default_base_price || "195");
+          const newFM = editPitData.free_miles ?? parseFloat(globalSettings.default_free_miles || "15");
+          const newEPM = editPitData.price_per_extra_mile ?? parseFloat(globalSettings.default_extra_per_mile || "5");
+
+          const preview = affectedCities.map((cp: any) => {
+            const oldPrice = cp.base_price || 0;
+            const newPrice = previewNewPrice(cp.distance_from_pit || 0, newBP, newFM, newEPM);
+            return { city_name: cp.city_name, old_price: oldPrice, new_price: newPrice, change: newPrice - oldPrice };
+          }).filter((p: any) => p.change !== 0).sort((a: any, b: any) => Math.abs(b.change) - Math.abs(a.change));
+
+          if (preview.length > 0) {
+            setPricePreviewData(preview);
+            setPendingPitPayload(pitPayload);
+            setPendingPitMeta({ wasActive: originalPit?.status === "active", nowActive: editPitData.status === "active" });
+            setShowPricePreview(true);
+            setSavingPit(false);
+            return;
+          }
+        }
+      }
+
+      // No pricing changes or no affected cities — save directly
+      await executePitSave(pitPayload, originalPit?.status === "active", editPitData.status === "active");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingPit(false);
+    }
+  };
+
+  const executePitSave = async (pitPayload: any, wasActive: boolean, nowActive: boolean) => {
+    setSavingPit(true);
+    try {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: { password: storedPassword(), action: "save_pit", pit: pitPayload },
       });
@@ -855,10 +905,34 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
+
+      // If pricing changed, trigger bulk recalculation
+      const newBP = pitPayload.base_price ?? parseFloat(globalSettings.default_base_price || "195");
+      const newFM = pitPayload.free_miles ?? parseFloat(globalSettings.default_free_miles || "15");
+      const newEPM = pitPayload.price_per_extra_mile ?? parseFloat(globalSettings.default_extra_per_mile || "5");
+
+      if (pricePreviewData.length > 0) {
+        try {
+          const { data: recalcData, error: recalcErr } = await supabase.functions.invoke("leads-auth", {
+            body: { password: storedPassword(), action: "recalculate_city_prices", pit_id: pitPayload.id, base_price: newBP, free_miles: newFM, price_per_extra_mile: newEPM },
+          });
+          if (recalcErr) throw recalcErr;
+          toast({ title: "PIT saved", description: `${recalcData?.updated || 0} city page prices updated automatically.` });
+          fetchCityPages();
+        } catch (recalcErr: any) {
+          toast({ title: "PIT saved, but price update failed", description: "Please use Regen on affected city pages.", variant: "destructive" });
+        }
+      } else {
+        toast({ title: "PIT updated" });
+      }
+
       setEditingPitId(null);
       setEditPitData({});
       setShowDeleteConfirm(false);
-      toast({ title: "PIT updated" });
+      setShowPricePreview(false);
+      setPricePreviewData([]);
+      setPendingPitPayload(null);
+      setPendingPitMeta(null);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
