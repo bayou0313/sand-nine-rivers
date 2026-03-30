@@ -1846,6 +1846,15 @@ const Leads = () => {
                   multi_pit_coverage: page.multi_pit_coverage || false,
                 },
               });
+              // Explicitly set status to active in DB after successful generation
+              await supabase.functions.invoke("leads-auth", {
+                body: {
+                  password: storedPassword(),
+                  action: "save_city_page",
+                  city_page_id: page.id,
+                  city_page: { ...page, status: "active" },
+                },
+              });
               setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, pit_reassigned: false, price_changed: false, regen_reason: null, content_generated_at: new Date().toISOString(), status: "active" } : cp));
             } catch (err) {
               console.error(`Failed to regen ${page.city_name}:`, err);
