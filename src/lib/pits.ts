@@ -106,11 +106,20 @@ export function getEffectivePrice(pit: PitData, global: GlobalPricing): Effectiv
  * Calculate the delivery price for a given distance and quantity.
  */
 export function calcPitPrice(effective: EffectivePricing, distance: number, qty: number): number {
-  let unitPrice = effective.base_price;
-  if (distance > effective.free_miles) {
-    unitPrice += (distance - effective.free_miles) * effective.extra_per_mile;
-  }
-  return parseFloat((unitPrice * qty).toFixed(2));
+  const extraMiles = Math.max(0, distance - effective.free_miles);
+  const extraCharge = extraMiles * effective.extra_per_mile;
+  const rawPrice = effective.base_price + extraCharge;
+  const unitPrice = Math.max(effective.base_price, Math.round(rawPrice));
+  return unitPrice * qty;
+}
+
+/**
+ * Calculate final price including Saturday surcharge.
+ */
+export function calcFinalPrice(effective: EffectivePricing, distance: number, qty: number, isSaturday: boolean): number {
+  const base = calcPitPrice(effective, distance, qty);
+  const surcharge = isSaturday ? effective.saturday_surcharge : 0;
+  return base + surcharge;
 }
 
 /**

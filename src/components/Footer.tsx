@@ -19,6 +19,21 @@ interface CityLink {
   city_slug: string;
   city_name: string;
   region: string | null;
+  state: string;
+}
+
+function formatRegionHeading(region: string, state: string): string {
+  const term = state?.toUpperCase() === "LA" ? "Parish" : "County";
+  const lower = region.toLowerCase();
+  if (lower.includes("parish") || lower.includes("county")) return region;
+  return `${region} ${term}`;
+}
+
+function getCitiesSectionHeading(cities: CityLink[]): string {
+  const states = [...new Set(cities.map((c) => c.state))];
+  if (states.length > 1) return "AREAS WE SERVE";
+  if (states[0] === "LA") return "PARISHES WE SERVE";
+  return "COUNTIES WE SERVE";
 }
 
 const Footer = () => {
@@ -28,7 +43,7 @@ const Footer = () => {
     const fetchCities = async () => {
       const { data } = await supabase
         .from("city_pages")
-        .select("city_slug, city_name, region")
+        .select("city_slug, city_name, region, state")
         .eq("status", "active")
         .order("region", { ascending: true, nullsFirst: false })
         .order("city_name", { ascending: true });
@@ -132,7 +147,7 @@ const Footer = () => {
             variants={fadeUp}
             className="mb-10 pt-8 border-t border-background/10"
           >
-            <p className="font-display text-lg text-background tracking-widest mb-6">CITIES WE SERVE</p>
+            <p className="font-display text-lg text-background tracking-widest mb-6">{getCitiesSectionHeading(cityLinks)}</p>
             {/* If all cities lack regions, render flat multi-column grid */}
             {regionKeys.length === 1 && regionKeys[0] === "Other Areas" ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1.5">
@@ -150,7 +165,7 @@ const Footer = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
                 {regionKeys.map((region) => (
                   <div key={region}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{region}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{formatRegionHeading(region, grouped[region][0]?.state || "LA")}</p>
                     <div className="space-y-1.5">
                       {grouped[region].map((city) => (
                         <Link
