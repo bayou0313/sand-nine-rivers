@@ -1,80 +1,57 @@
 
 
-# Fix: Distance Matrix CORS + Autocomplete Compatibility
+# Fix: Replace REST Geocoding with Google Maps JS SDK Geocoder
 
-## Problems Found
+## Problem
 
-There are **two distinct issues** in the current code:
+The delivery estimator is broken. Two issues are compounding:
 
-### 1. Distance Matrix CORS Block (CRITICAL — breaks pricing)
-`findBestPitDriving()` in `src/lib/pits.ts` calls the Distance Matrix **REST API** (`/maps/api/distancematrix/json`) directly from the browser via `fetch()`. Google's REST APIs don't support CORS from browsers — this is why you see "blocked by CORS policy" and the price calculation fails completely.
+1. **Geocoding REST API called from browser** — `DeliveryEstimator.tsx` and `Order.tsx` call `https://maps.googleapis.com/maps/api/geocode/json` via `fetch()`. Like the Distance Matrix REST API we fixed earlier, this can be blocked by CORS or API key restrictions. When a user types an address without selecting from autocomplete (or autocomplete doesn't fire properly), the fallback geocoding fails, and no coordinates are available for the distance calculation.
 
-**Fix**: Replace the `fetch()` call with the **Google Maps JavaScript SDK** `google.maps.DistanceMatrixService`, which is designed for client-side use and doesn't have CORS restrictions.
+2. **Autocomplete `place_changed` not firing reliably** — If the user types an address and hits Enter or clicks GET PRICE without selecting a dropdown suggestion, `customerCoords` stays `null`, forcing the broken geocode fallback path.
 
-### 2. Legacy Autocomplete Deprecation (WARNING — still works)
-The code uses `google.maps.places.Autocomplete` which Google deprecated for new customers as of March 2025. It still functions (just shows a console warning) and won't be removed without 12+ months notice. This is non-blocking but worth noting.
+## Solution
 
----
+Replace all client-side REST Geocoding `fetch()` calls with the **Google Maps JS SDK `Geocoder`** (`new google.maps.Geocoder()`), which is designed for browser use and has no CORS restrictions. Same pattern as the Distance Matrix fix.
 
-## Plan
+## Changes
 
-### Step 1: Rewrite `findBestPitDriving()` to use JS SDK DistanceMatrixService
+### 1. `src/components/DeliveryEstimator.tsx` (lines 146-159)
 
-**File**: `src/lib/pits.ts`
-
-- Replace the `fetch()` call to the REST endpoint with `new google.maps.DistanceMatrixService().getDistanceMatrix(...)` 
-- Remove the `apiKey` parameter since the JS SDK uses the already-loaded script's key
-- The SDK returns a promise-compatible callback with `rows[].elements[]` in the same structure
-- Keep the same sorting/selection logic
-
-Key change:
+Replace the `fetch()` geocoding call with:
 ```typescript
-export async function findBestPitDriving(
-  pits: PitData[],
-  customerLat: number,
-  customerLng: number,
-  globalPricing: GlobalPricing
-  // No more apiKey param — SDK uses the script-loaded key
-): Promise<FindBestPitResult | null> {
-  const service = new google.maps.DistanceMatrixService();
-  const response = await service.getDistanceMatrix({
-    origins: activePits.map(p => ({ lat: p.lat, lng: p.lon })),
-    destinations: [{ lat: customerLat, lng: customerLng }],
-    travelMode: google.maps.TravelMode.DRIVING,
-    unitSystem: google.maps.UnitSystem.IMPERIAL,
-    avoidFerries: true,
-  });
-  // Parse response.rows same as before
+const geocoder = new window.google.maps.Geocoder();
+const geocodeResult = await geocoder.geocode({ address });
+if (geocodeResult.results?.[0]?.geometry?.location) {
+  custLat = geocodeResult.results[0].geometry.location.lat();
+  custLng = geocodeResult.results[0].geometry.location.lng();
 }
 ```
 
-Also rewrite `getDrivingDistanceBatch()` the same way (used in Leads admin).
+Remove the `GOOGLE_MAPS_API_KEY` check — the SDK uses the key from the loaded script. Keep the "could not locate" error for when geocoding returns no results.
 
-### Step 2: Update all callers to remove the `apiKey` argument
+### 2. `src/pages/Order.tsx` (lines ~413-427)
 
-**Files**: `src/components/DeliveryEstimator.tsx`, `src/pages/Order.tsx`, `src/pages/Leads.tsx`
+Same replacement — swap REST `fetch()` geocoding for `google.maps.Geocoder`.
 
-- Remove `GOOGLE_MAPS_API_KEY` from calls to `findBestPitDriving()` and `getDrivingDistanceBatch()`
-- Keep the API key for the geocoding REST fallback in `calculateDistance()` (geocoding REST API does support CORS)
+### 3. `src/pages/Leads.tsx` (line ~690-700)
 
-### Step 3: Ensure Google Maps script is loaded before distance calls
+Same replacement for the admin geocoding function.
 
-The SDK service requires `window.google.maps` to be loaded. The existing `pollForGoogleMaps()` + `apiLoaded` state already guarantees this for the estimator and order pages. Verify the same guard exists in Leads.tsx.
+### 4. `src/components/DeliveryEstimator.tsx` — remove unused warning (lines 259-264)
 
----
+Remove the `!GOOGLE_MAPS_API_KEY` warning UI since the SDK doesn't need the key to be checked separately.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/lib/pits.ts` | Rewrite `findBestPitDriving` and `getDrivingDistanceBatch` to use JS SDK `DistanceMatrixService` instead of REST fetch |
-| `src/components/DeliveryEstimator.tsx` | Remove `apiKey` arg from `findBestPitDriving()` call |
-| `src/pages/Order.tsx` | Remove `apiKey` arg from `findBestPitDriving()` call |
-| `src/pages/Leads.tsx` | Remove `apiKey` arg from distance calculation calls |
-| `src/lib/google-maps.ts` | Add `google.maps.DistanceMatrixService` to the libraries loaded (ensure `&libraries=places` also loads the needed service — it's part of core, no extra library needed) |
+| `src/components/DeliveryEstimator.tsx` | Replace REST geocode `fetch` with SDK `Geocoder`; remove API key warning |
+| `src/pages/Order.tsx` | Replace REST geocode `fetch` with SDK `Geocoder` |
+| `src/pages/Leads.tsx` | Replace REST geocode `fetch` with SDK `Geocoder` |
 
 ## Impact
-- Fixes the CORS error that completely blocks price calculation
-- No change to pricing logic, PIT selection, or UI
-- Autocomplete continues working as-is (legacy warning is non-blocking)
+- Fixes the broken price calculation when autocomplete doesn't capture coordinates
+- No CORS issues — everything uses the JS SDK now
+- No change to pricing logic or UI layout
 
