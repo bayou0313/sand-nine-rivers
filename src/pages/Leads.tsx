@@ -156,50 +156,7 @@ const parseCityPageContent = (cp: any) => {
   return result;
 }
 
-const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 3958.8;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-/**
- * Fetch driving distances from one origin to multiple destinations using Google Distance Matrix.
- * Returns array of distances in miles (null if route not found).
- */
-async function fetchDrivingDistances(
-  originLat: number, originLon: number,
-  destinations: { lat: number; lon: number }[],
-  apiKey: string
-): Promise<(number | null)[]> {
-  if (destinations.length === 0) return [];
-  const results: (number | null)[] = new Array(destinations.length).fill(null);
-  const BATCH = 25;
-  for (let i = 0; i < destinations.length; i += BATCH) {
-    const batch = destinations.slice(i, i + BATCH);
-    const destsStr = batch.map(d => `${d.lat},${d.lon}`).join("|");
-    try {
-      const resp = await fetch(
-        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLon}&destinations=${encodeURIComponent(destsStr)}&units=imperial&mode=driving&avoid=ferries&key=${apiKey}`
-      );
-      const data = await resp.json();
-      const elements = data.rows?.[0]?.elements || [];
-      for (let j = 0; j < elements.length; j++) {
-        if (elements[j]?.status === "OK" && elements[j].distance?.value) {
-          results[i + j] = elements[j].distance.value / 1609.344;
-        }
-      }
-    } catch (e) {
-      console.error("Distance Matrix batch failed:", e);
-    }
-  }
-  return results;
-}
-
-// Cache key for driving distance: "pitLat,pitLon->destLat,destLon"
-const drivingDistKey = (lat1: number, lon1: number, lat2: number, lon2: number) =>
-  `${lat1.toFixed(5)},${lon1.toFixed(5)}->${lat2.toFixed(5)},${lon2.toFixed(5)}`;
+import { getDrivingDistanceBatch } from "@/lib/pits";
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
