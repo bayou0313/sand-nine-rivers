@@ -169,7 +169,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         setLoading(false); return;
       }
 
-      const bestResult = findBestPit(pits, custLat!, custLng!, globalPricing);
+      const bestResult = await findBestPitDriving(pits, custLat!, custLng!, globalPricing, GOOGLE_MAPS_API_KEY);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");
