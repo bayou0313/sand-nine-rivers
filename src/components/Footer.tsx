@@ -133,24 +133,39 @@ const Footer = () => {
             className="mb-10 pt-8 border-t border-background/10"
           >
             <p className="font-display text-lg text-background tracking-widest mb-6">CITIES WE SERVE</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
-              {regionKeys.map((region) => (
-                <div key={region}>
-                  <p className="font-display text-xs text-background/50 uppercase tracking-wider mb-2">{region}</p>
-                  <div className="space-y-1.5">
-                    {grouped[region].map((city) => (
-                      <Link
-                        key={city.city_slug}
-                        to={`/${city.city_slug}/river-sand-delivery`}
-                        className="block font-body text-sm text-background/40 hover:text-accent hover:underline transition-colors duration-300"
-                      >
-                        {city.city_name}
-                      </Link>
-                    ))}
+            {/* If all cities lack regions, render flat multi-column grid */}
+            {regionKeys.length === 1 && regionKeys[0] === "Other Areas" ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1.5">
+                {cityLinks.map((city) => (
+                  <Link
+                    key={city.city_slug}
+                    to={`/${city.city_slug}/river-sand-delivery`}
+                    className="block font-body text-sm text-gray-300 hover:text-white transition-colors duration-300"
+                  >
+                    {city.city_name}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+                {regionKeys.map((region) => (
+                  <div key={region}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{region}</p>
+                    <div className="space-y-1.5">
+                      {grouped[region].map((city) => (
+                        <Link
+                          key={city.city_slug}
+                          to={`/${city.city_slug}/river-sand-delivery`}
+                          className="block font-body text-sm text-gray-300 hover:text-white transition-colors duration-300"
+                        >
+                          {city.city_name}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
 
