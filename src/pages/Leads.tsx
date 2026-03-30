@@ -1973,11 +1973,12 @@ const Leads = () => {
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
               <MetricCard label="Active Pages" value={activeCount} />
+              <MetricCard label="Current" value={currentCount} />
+              <MetricCard label="Outdated" value={outdatedCount} />
+              <MetricCard label="Missing Content" value={missingCount} />
               <MetricCard label="Total Views" value={totalViews} />
-              <MetricCard label="Cities Covered" value={citiesCovered} />
-              <MetricCard label="States Covered" value={statesCovered} />
             </div>
 
             {/* PIT Filter */}
