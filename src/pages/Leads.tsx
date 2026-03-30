@@ -312,6 +312,8 @@ const Leads = () => {
   const [regenQueue, setRegenQueue] = useState<{ total: number; current: number; currentCity: string; status: "idle" | "running" | "complete" } | null>(null);
   const regenCancelRef = useRef(false);
   const [deleteAllTypeInput, setDeleteAllTypeInput] = useState("");
+  const [cityPageSortKey, setCityPageSortKey] = useState<"city_name" | "state" | "distance_from_pit" | "base_price" | "status" | "page_views">("city_name");
+  const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
   const [deletingAll, setDeletingAll] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
@@ -1789,6 +1791,13 @@ const Leads = () => {
         if (showDuplicatesOnly) {
           filteredCityPages = filteredCityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug));
         }
+        filteredCityPages = [...filteredCityPages].sort((a: any, b: any) => {
+          const aVal = a[cityPageSortKey] ?? "";
+          const bVal = b[cityPageSortKey] ?? "";
+          const dir = cityPageSortDir === "asc" ? 1 : -1;
+          if (typeof aVal === "number" && typeof bVal === "number") return (aVal - bVal) * dir;
+          return String(aVal).localeCompare(String(bVal)) * dir;
+        });
         const activeCount = cityPages.filter((cp: any) => cp.status === "active").length;
         const totalViews = cityPages.reduce((sum: number, cp: any) => sum + (cp.page_views || 0), 0);
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
@@ -1910,10 +1919,7 @@ const Leads = () => {
               },
             });
             if (fnError) throw fnError;
-            // Activate page after successful regeneration
-            await supabase.functions.invoke("leads-auth", {
-              body: { password: storedPassword(), action: "save_city_page", city_page_id: cp.id, city_page: { ...cp, status: "active", meta_title: data?.generated?.meta_title || cp.meta_title, meta_description: data?.generated?.meta_description || cp.meta_description, h1_text: data?.generated?.h1_text || cp.h1_text, content: data?.generated?.content || cp.content } },
-            });
+            // generate-city-page already sets status: "active" in the DB
             toast({ title: `Content generated for ${cp.city_name}`, description: "Page activated." });
             fetchCityPages();
           } catch (err: any) {
@@ -2381,8 +2387,38 @@ const Leads = () => {
                           className="rounded"
                         />
                       </th>
-                      {["City", "State", "Region", "URL", "PIT", "Distance", "Price", "Status", "Content", "Views", "Actions"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
+                      {[
+                        { label: "City", key: "city_name" },
+                        { label: "State", key: "state" },
+                        { label: "Region", key: null },
+                        { label: "URL", key: null },
+                        { label: "PIT", key: null },
+                        { label: "Distance", key: "distance_from_pit" },
+                        { label: "Price", key: "base_price" },
+                        { label: "Status", key: "status" },
+                        { label: "Content", key: null },
+                        { label: "Views", key: "page_views" },
+                        { label: "Actions", key: null },
+                      ].map(h => (
+                        <th
+                          key={h.label}
+                          className={`px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider ${h.key ? "cursor-pointer select-none hover:text-yellow-200" : ""}`}
+                          onClick={() => {
+                            if (!h.key) return;
+                            const k = h.key as typeof cityPageSortKey;
+                            if (cityPageSortKey === k) {
+                              setCityPageSortDir(d => d === "asc" ? "desc" : "asc");
+                            } else {
+                              setCityPageSortKey(k);
+                              setCityPageSortDir("asc");
+                            }
+                          }}
+                        >
+                          {h.label}
+                          {h.key && cityPageSortKey === h.key && (
+                            <span className="ml-1">{cityPageSortDir === "asc" ? "▲" : "▼"}</span>
+                          )}
+                        </th>
                       ))}
                     </tr>
                   </thead>
@@ -2413,7 +2449,7 @@ const Leads = () => {
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
                         <td className="px-3 py-2 text-xs" style={{ color: cp.region ? BRAND_NAVY : "#ccc" }}>{cp.region || "—"}</td>
                         <td className="px-3 py-2 text-xs">
-                          <a href={`/${cp.city_slug}/river-sand-delivery`} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: BRAND_GOLD }}>
+                          <a href={`https://riversand.net/${cp.city_slug}/river-sand-delivery`} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: BRAND_GOLD }}>
                             /{cp.city_slug}/river-sand-delivery
                           </a>
                         </td>
@@ -2448,7 +2484,7 @@ const Leads = () => {
                         <td className="px-3 py-2 text-xs">{cp.page_views || 0}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
-                            <button onClick={() => window.open(`/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}>View</button>
+                            <button onClick={() => window.open(`https://riversand.net/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}>View</button>
                             <button onClick={() => setEditingCityPage({ ...cp })} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_GOLD + "30", color: BRAND_GOLD }}>Edit</button>
                             <button onClick={() => toggleCityPage(cp.id)} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: cp.status === "active" ? "#EF444430" : "#22C55E30", color: cp.status === "active" ? "#EF4444" : "#22C55E" }}>
                               {cp.status === "active" ? "Deactivate" : "Activate"}
