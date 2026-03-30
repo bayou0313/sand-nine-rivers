@@ -1028,23 +1028,10 @@ const Leads = () => {
   useEffect(() => {
     if (activePage !== "profile" || !profileAddressRef.current || !window.google?.maps?.places) return;
     if (profileAutocompleteRef.current) return;
-    if (window.google.maps.places.PlaceAutocompleteElement) {
-      const acElement = new (window.google.maps.places as any).PlaceAutocompleteElement({ types: ["address"], componentRestrictions: { country: "us" } });
-      acElement.style.width = "100%";
-      if (profileAddressRef.current.parentNode) { profileAddressRef.current.parentNode.insertBefore(acElement, profileAddressRef.current); profileAddressRef.current.style.display = "none"; }
-      acElement.addEventListener("gmp-placeselect", async (event: any) => {
-        const place = event.place;
-        await place.fetchFields({ fields: ["formattedAddress", "location"] });
-        if (place.formattedAddress) { setProfileSettings(prev => ({ ...prev, business_address: place.formattedAddress })); }
-      });
-      profileAutocompleteRef.current = acElement;
-      return () => { acElement.remove(); profileAutocompleteRef.current = null; };
-    } else {
-      const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-      ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.formatted_address) { setProfileSettings(prev => ({ ...prev, business_address: place.formatted_address })); } });
-      profileAutocompleteRef.current = ac;
-      return () => { profileAutocompleteRef.current = null; };
-    }
+    const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
+    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.formatted_address) { setProfileSettings(prev => ({ ...prev, business_address: place.formatted_address })); } });
+    profileAutocompleteRef.current = ac;
+    return () => { profileAutocompleteRef.current = null; };
   }, [activePage, googleLoaded]);
 
   // Fetch abandoned sessions when navigating to that page
