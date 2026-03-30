@@ -2001,7 +2001,12 @@ const Leads = () => {
                             className="rounded"
                           />
                         </td>
-                        <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
+                        <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>
+                          {cp.city_name}
+                          {duplicateSlugs.has(cp.city_slug) && (
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>Duplicate</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
                         <td className="px-3 py-2 text-xs" style={{ color: cp.region ? BRAND_NAVY : "#ccc" }}>{cp.region || "—"}</td>
                         <td className="px-3 py-2 text-xs">
