@@ -1126,9 +1126,9 @@ const Leads = () => {
 
         const dests = needsDriving.map(l => {
           const gc = geocodeCache[l.address];
-          return { lat: gc.lat, lon: gc.lon };
+          return { lat: gc.lat, lng: gc.lon };
         });
-        const distances = await fetchDrivingDistances(pit.lat, pit.lon, dests, GOOGLE_MAPS_API_KEY);
+        const distances = await getDrivingDistanceBatch(pit.lat, pit.lon, dests, GOOGLE_MAPS_API_KEY);
         for (let i = 0; i < needsDriving.length; i++) {
           if (distances[i] != null) {
             const gc = geocodeCache[needsDriving[i].address];
