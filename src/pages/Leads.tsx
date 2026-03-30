@@ -790,6 +790,20 @@ const Leads = () => {
       lat = coords.lat;
       lon = coords.lon;
     }
+    if (
+      lat == null || lon == null ||
+      (lat === 0 && lon === 0) ||
+      lat < 24 || lat > 50 ||
+      lon < -125 || lon > -66
+    ) {
+      toast({
+        title: "Cannot save PIT — invalid coordinates",
+        description: `Coordinates are invalid (lat: ${lat}, lon: ${lon}). Please select the address from the autocomplete dropdown rather than typing it manually.`,
+        variant: "destructive",
+      });
+      setGeocoding(false);
+      return;
+    }
     try {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: {
