@@ -1,7 +1,7 @@
 /**
  * Shared Google Maps loader — ensures the script is injected exactly once.
  */
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyCXc2SGKbNr40Y3KsELlnSGGDDRSfo6lLg";
 
 export { GOOGLE_MAPS_API_KEY };
 
