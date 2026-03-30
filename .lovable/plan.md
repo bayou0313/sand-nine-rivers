@@ -1,29 +1,58 @@
 
 
-## Plan: Realistic Road Map with Smooth Truck Animation
+## Plan: Bulk City Page Creation + Closest-PIT Deduplication
 
-### Problem
-The current SVG map is abstract with a single curved path. The truck animation has timing sync issues between forward/return trips. The user wants a more realistic map with a road network and the truck following roads naturally.
+### Summary
+Add three capabilities: (1) "Create All Cities" button that discovers cities across all active PITs with closest-PIT dedup, (2) "Remove Duplicates" button for retroactive cleanup, (3) update single-PIT creation to use closest-PIT logic instead of skip-if-exists.
 
-### Approach
-Rewrite the SVG illustration in `src/components/Pricing.tsx` with:
+### Changes
 
-1. **Realistic road-network map** — A grid of named roads (horizontal + vertical) with varying widths (highway vs local street), intersections, and the truck route following actual road segments (right-angle turns with rounded corners) instead of arbitrary curves.
+#### 1. Edge Function — New Actions (`supabase/functions/leads-auth/index.ts`)
 
-2. **Road-following route** — The delivery path will follow the road grid: e.g., go east on one road, turn south at an intersection, continue east on another road. This uses an SVG path with straight segments and small arc turns at corners (`L` + `A` commands), making it look like real navigation.
+**`create_all_city_pages` action** (insert before the final "Invalid action" response):
+- Fetch all active PITs
+- For each PIT, reuse the existing radial-grid + reverse-geocode discovery logic (extracted into a helper or inlined)
+- Collect all candidate cities with their `distance_from_pit`, `pit_id`, and calculated `base_price`
+- Deduplicate: for each `city_slug`, keep only the candidate with the lowest `distance_from_pit`
+- Fetch existing `city_slugs` from `city_pages` table — skip any slug that already exists
+- Insert new pages as `draft`, then call `generate-city-page` for each and activate on success
+- Return `{ success, created, skipped, generated, failed }`
 
-3. **Single truck, CSS offset-path animation** — One `motion.g` element using `offsetDistance` with keyframes `[0%, 100%, 100%, 0%]` and `offsetRotate: "auto"` so the truck naturally faces the direction of travel at all times (including turns). No dual-truck opacity hack needed.
+**`deduplicate_city_pages` action**:
+- Fetch all city pages with `id, city_slug, pit_id, distance_from_pit, status, page_views`
+- Group by `city_slug`; for groups with >1 page, sort by `distance_from_pit` ASC (tiebreak: `page_views` DESC)
+- Keep the first (closest PIT), set rest to `status: 'inactive'`
+- Return `{ success, deactivated }`
 
-4. **Map details** — Water feature (river), green park areas, building blocks between roads, road labels, and subtle map-tile styling for realism.
+**Update existing `create_city_pages` action** (Fix 4):
+- Before inserting, check if a page with the same `city_slug` already exists via `.maybeSingle()`
+- If existing page has higher `distance_from_pit` → update its `pit_id`, `distance_from_pit`, `base_price`
+- If existing page has lower `distance_from_pit` → skip
+- If no existing page → insert as before
 
-### File Changed
+#### 2. Admin UI — New Buttons (`src/pages/Leads.tsx`)
+
+**"Create All City Pages" button** in the City Pages header (next to Discover Cities):
+- New state: `bulkCreating`, `bulkProgress` (string for status messages), `showBulkCreateConfirm`
+- On click → show confirmation dialog (AlertDialog or simple modal) with the text from the spec
+- On confirm → call `leads-auth` with `action: "create_all_city_pages"`
+- Show loading spinner with "Creating city pages for all PITs..."
+- On completion → toast with created/skipped counts, refresh city pages list
+
+**"Remove Duplicates" button** in the filter bar:
+- On click → show confirmation dialog with duplicate count
+- On confirm → call `leads-auth` with `action: "deduplicate_city_pages"`
+- On completion → toast with deactivated count, refresh list
+
+### Files Changed
+
 | File | Change |
 |---|---|
-| `src/components/Pricing.tsx` | Full rewrite of SVG map and animation logic |
+| `supabase/functions/leads-auth/index.ts` | Add `create_all_city_pages` and `deduplicate_city_pages` actions; update `create_city_pages` with closest-PIT upsert logic |
+| `src/pages/Leads.tsx` | Add "Create All City Pages" button with confirmation modal, "Remove Duplicates" button with confirmation modal, related state variables |
 
-### Technical Detail
-- The route path will be something like: `M 70,160 L 200,160 A 10,10 0 0 0 210,150 L 210,100 A 10,10 0 0 1 220,90 L 520,90` — straight road segments with rounded corner arcs
-- Forward path uses `offsetDistance: ["0%", "100%"]`, return uses a reversed path with same approach
-- Truck swap via opacity at the turnaround point, both using `offsetRotate: "auto"` so the truck always faces forward
-- Animation loop: drive forward (3s) → pause at destination (1.5s) → drive back (2.5s) → pause at origin (1s)
+### Not Changed
+- Discovery logic (radial grid, reverse geocode) — reused as-is from the existing `discover_cities` action
+- Existing city page content, RLS policies, Stripe, order flow, homepage components
+- `generate-city-page` edge function (called as-is)
 
