@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+import { GOOGLE_MAPS_API_KEY, pollForGoogleMaps } from "@/lib/google-maps";
 
 type EstimateResult = {
   distance: number;
