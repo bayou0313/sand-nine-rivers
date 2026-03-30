@@ -33,18 +33,27 @@ async function getDrivingDistances(
     const batch = destinations.slice(i, i + BATCH);
     const destsStr = batch.map(d => `${d.lat},${d.lng}`).join("|");
     try {
-      const resp = await fetch(
+      const url =
         `https://maps.googleapis.com/maps/api/distancematrix/json` +
         `?origins=${originLat},${originLon}` +
-        `&destinations=${encodeURIComponent(destsStr)}` +
+        `&destinations=${destsStr}` +
         `&units=imperial&mode=driving&avoid=ferries` +
-        `&key=${apiKey}`
-      );
+        `&key=${apiKey}`;
+      const resp = await fetch(url);
       const data = await resp.json();
+      if (data.status && data.status !== "OK") {
+        console.error(`[getDrivingDistances] API top-level error: ${data.status} — ${data.error_message || "no message"}`);
+        continue;
+      }
       const elements = data.rows?.[0]?.elements || [];
+      if (elements.length === 0) {
+        console.error(`[getDrivingDistances] No elements returned. rows: ${JSON.stringify(data.rows?.length)}, status: ${data.status}`);
+      }
       for (let j = 0; j < elements.length; j++) {
         if (elements[j]?.status === "OK" && elements[j].distance?.value) {
           results[i + j] = elements[j].distance.value / 1609.344;
+        } else {
+          console.warn(`[getDrivingDistances] Element ${i+j} status: ${elements[j]?.status}`);
         }
       }
     } catch (e) {
