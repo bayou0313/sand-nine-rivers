@@ -1896,7 +1896,7 @@ const Leads = () => {
                           className="rounded"
                         />
                       </th>
-                      {["City", "State", "URL", "PIT", "Distance", "Price", "Status", "Views", "Actions"].map(h => (
+                      {["City", "State", "Region", "URL", "PIT", "Distance", "Price", "Status", "Views", "Actions"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
