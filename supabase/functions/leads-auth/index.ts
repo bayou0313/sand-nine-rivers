@@ -1119,6 +1119,7 @@ serve(async (req) => {
               price: city.base_price,
               free_miles: pitData?.free_miles ?? parseFloat(gs.default_free_miles || "15"),
               saturday_available: pitData?.operating_days ? pitData.operating_days.includes(6) : true,
+              multi_pit_coverage: isMultiPit,
             }),
           });
           if (genResp.ok) {

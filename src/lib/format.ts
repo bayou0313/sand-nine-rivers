@@ -77,6 +77,14 @@ export function getTaxRateFromAddress(address: string): { rate: number; parish: 
     "destrehan": "st. charles",
     "laplace": "st. john the baptist",
     "reserve": "st. john the baptist",
+    "new orleans east": "orleans",
+    "algiers": "orleans",
+    "gentilly": "orleans",
+    "lakeview": "orleans",
+    "mid-city": "orleans",
+    "uptown": "orleans",
+    "bywater": "orleans",
+    "treme": "orleans",
   };
 
   for (const [city, parish] of Object.entries(cityToParish)) {

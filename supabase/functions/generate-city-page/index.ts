@@ -101,6 +101,19 @@ CITY DATA:
 - Free delivery radius: ${free_miles} miles
 - Saturday available: ${saturday_available ? "yes" : "no"}
 ${multiPitInstructions}
+${city_name.toLowerCase() === "algiers" ? `
+IMPORTANT — ALGIERS ROUTING:
+Algiers is on the west bank of the Mississippi River within Orleans Parish.
+All delivery routes from east bank PITs cross via the Crescent City Connection bridge.
+Mention this in delivery_details and local_expertise — it demonstrates genuine
+local knowledge and sets accurate expectations.
+` : ""}${city_name.toLowerCase() === "new orleans east" ? `
+IMPORTANT — NEW ORLEANS EAST ROUTING:
+New Orleans East is east of the Industrial Canal, accessed primarily via I-10.
+It is significantly further from the CBD than its Orleans Parish designation suggests.
+Reference I-10, Chef Menteur Highway, or specific New Orleans East landmarks
+(NASA Michoud, Lake Forest Boulevard, Read Boulevard) in local content.
+` : ""}
 CONTENT REQUIREMENTS:
 - meta_title: Max 60 chars. Must include city name and 'river sand delivery'. Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day | River Sand"
 - meta_description: Max 160 chars. Must include city name, same-day delivery${isMultiPit ? ", instant pricing" : `, price ($${price})`}, and payment options (cash or card). Written to maximize click-through from search results.
