@@ -3979,6 +3979,63 @@ const Leads = () => {
                         <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Select from suggestions to capture coordinates</p>
                       )}
                     </div>
+                    {newPit.lat != null && newPit.lon != null &&
+                      Number(newPit.lat) >= 24 && Number(newPit.lat) <= 50 &&
+                      Number(newPit.lon) >= -125 && Number(newPit.lon) <= -66 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs" style={{ color: "#4A6A8A" }}>
+                          ✓ {Number(newPit.lat).toFixed(5)}, {Number(newPit.lon).toFixed(5)}
+                        </p>
+                        <a
+                          href={`https://www.google.com/maps?q=${newPit.lat},${newPit.lon}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs underline"
+                          style={{ color: BRAND_GOLD }}
+                        >
+                          Verify on Google Maps ↗
+                        </a>
+                      </div>
+                    )}
+                    <div className="mt-2">
+                      <p className="text-xs mb-1 font-medium" style={{ color: SECTION_LABEL }}>
+                        GPS Coordinates (optional — use if address is not a full street address)
+                      </p>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-xs mb-0.5 block" style={{ color: "#666" }}>Latitude</label>
+                          <Input
+                            className="h-8 text-xs font-mono"
+                            placeholder="e.g. 29.9073"
+                            type="number"
+                            step="0.00001"
+                            value={newPit.lat ?? ""}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              setNewPit(prev => ({ ...prev, lat: isNaN(val) ? null : val }));
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs mb-0.5 block" style={{ color: "#666" }}>Longitude</label>
+                          <Input
+                            className="h-8 text-xs font-mono"
+                            placeholder="e.g. -90.1721"
+                            type="number"
+                            step="0.00001"
+                            value={newPit.lon ?? ""}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              setNewPit(prev => ({ ...prev, lon: isNaN(val) ? null : val }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: "#999" }}>
+                        If filled, these override the address geocoding.
+                        Find coordinates by right-clicking your pit location in Google Maps.
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
