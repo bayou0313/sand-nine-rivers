@@ -1,0 +1,7 @@
+ALTER TABLE public.city_pages
+ADD COLUMN IF NOT EXISTS hero_intro TEXT,
+ADD COLUMN IF NOT EXISTS why_choose_intro TEXT,
+ADD COLUMN IF NOT EXISTS delivery_details TEXT,
+ADD COLUMN IF NOT EXISTS local_uses TEXT,
+ADD COLUMN IF NOT EXISTS local_expertise TEXT,
+ADD COLUMN IF NOT EXISTS faq_items JSONB;
