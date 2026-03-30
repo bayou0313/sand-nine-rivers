@@ -1906,6 +1906,7 @@ const Leads = () => {
                 price: cp.base_price || 195,
                 free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
                 saturday_available: pitData?.operating_days?.includes(6) ?? false,
+                multi_pit_coverage: cp.multi_pit_coverage || false,
               },
             });
             if (fnError) throw fnError;
@@ -2523,25 +2524,16 @@ const Leads = () => {
                     <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>Edit — {editingCityPage.city_name}</h2>
                   </div>
                   <div className="p-6 space-y-4">
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>City Name</label>
-                      <Input value={editingCityPage.city_name || ""} onChange={e => setEditingCityPage({ ...editingCityPage, city_name: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Meta Title <span className="float-right" style={{ color: (editingCityPage.meta_title?.length || 0) > 60 ? "#EF4444" : "#999" }}>{editingCityPage.meta_title?.length || 0}/60</span></label>
-                      <Input value={editingCityPage.meta_title || ""} onChange={e => setEditingCityPage({ ...editingCityPage, meta_title: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Meta Description <span className="float-right" style={{ color: (editingCityPage.meta_description?.length || 0) > 160 ? "#EF4444" : "#999" }}>{editingCityPage.meta_description?.length || 0}/160</span></label>
-                      <Textarea rows={3} value={editingCityPage.meta_description || ""} onChange={e => setEditingCityPage({ ...editingCityPage, meta_description: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>H1 Text</label>
-                      <Input value={editingCityPage.h1_text || ""} onChange={e => setEditingCityPage({ ...editingCityPage, h1_text: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Region</label>
-                      <Input value={editingCityPage.region || ""} onChange={e => setEditingCityPage({ ...editingCityPage, region: e.target.value })} placeholder="e.g. East Bank, West Bank, North Shore" />
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "#666" }}>City Name</label>
+                        <Input value={editingCityPage.city_name || ""} onChange={e => setEditingCityPage({ ...editingCityPage, city_name: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "#666" }}>Region</label>
+                        <Input value={editingCityPage.region || ""} onChange={e => setEditingCityPage({ ...editingCityPage, region: e.target.value })} placeholder="e.g. Jefferson Parish" />
+                      </div>
                     </div>
                     <div>
                       <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
@@ -2551,10 +2543,78 @@ const Leads = () => {
                         <option value="inactive">Inactive</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Content (HTML)</label>
-                      <Textarea rows={10} value={editingCityPage.content || ""} onChange={e => setEditingCityPage({ ...editingCityPage, content: e.target.value })} className="font-mono text-xs" />
+
+                    {/* SEO */}
+                    <div className="pt-2 border-t">
+                      <p className="text-[11px] font-bold tracking-wider mb-3" style={{ color: "#999" }}>SEO</p>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>Meta Title <span className="float-right" style={{ color: (editingCityPage.meta_title?.length || 0) > 60 ? "#EF4444" : "#999" }}>{editingCityPage.meta_title?.length || 0}/60</span></label>
+                          <Input value={editingCityPage.meta_title || ""} maxLength={60} onChange={e => setEditingCityPage({ ...editingCityPage, meta_title: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>Meta Description <span className="float-right" style={{ color: (editingCityPage.meta_description?.length || 0) > 160 ? "#EF4444" : "#999" }}>{editingCityPage.meta_description?.length || 0}/160</span></label>
+                          <Textarea rows={3} maxLength={160} value={editingCityPage.meta_description || ""} onChange={e => setEditingCityPage({ ...editingCityPage, meta_description: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>H1 Text <span className="float-right" style={{ color: (editingCityPage.h1_text?.length || 0) > 70 ? "#EF4444" : "#999" }}>{editingCityPage.h1_text?.length || 0}/70</span></label>
+                          <Input value={editingCityPage.h1_text || ""} maxLength={70} onChange={e => setEditingCityPage({ ...editingCityPage, h1_text: e.target.value })} />
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Page Content */}
+                    <div className="pt-2 border-t">
+                      <p className="text-[11px] font-bold tracking-wider mb-3" style={{ color: "#999" }}>PAGE CONTENT</p>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>Hero Intro</label>
+                          <Textarea rows={3} value={editingCityPage.hero_intro || ""} onChange={e => setEditingCityPage({ ...editingCityPage, hero_intro: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>Why Choose Intro</label>
+                          <Textarea rows={2} value={editingCityPage.why_choose_intro || ""} onChange={e => setEditingCityPage({ ...editingCityPage, why_choose_intro: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>Delivery Details</label>
+                          <Textarea rows={2} value={editingCityPage.delivery_details || ""} onChange={e => setEditingCityPage({ ...editingCityPage, delivery_details: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>Local Uses (HTML)</label>
+                          <Textarea rows={4} value={editingCityPage.local_uses || ""} onChange={e => setEditingCityPage({ ...editingCityPage, local_uses: e.target.value })} className="font-mono text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>Local Expertise</label>
+                          <Textarea rows={3} value={editingCityPage.local_expertise || ""} onChange={e => setEditingCityPage({ ...editingCityPage, local_expertise: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs mb-1 block" style={{ color: "#666" }}>FAQ Items (JSON)</label>
+                          <Textarea rows={6} value={typeof editingCityPage.faq_items === 'string' ? editingCityPage.faq_items : JSON.stringify(editingCityPage.faq_items || [], null, 2)} onChange={e => {
+                            try {
+                              const parsed = JSON.parse(e.target.value);
+                              setEditingCityPage({ ...editingCityPage, faq_items: parsed });
+                            } catch {
+                              setEditingCityPage({ ...editingCityPage, faq_items: e.target.value });
+                            }
+                          }} className="font-mono text-xs" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Read-only Info */}
+                    <div className="pt-2 border-t">
+                      <p className="text-[11px] font-bold tracking-wider mb-3" style={{ color: "#999" }}>INFO</p>
+                      <div className="grid grid-cols-3 gap-2 text-xs" style={{ color: "#888" }}>
+                        <div>Distance: <strong>{editingCityPage.distance_from_pit ? `${Number(editingCityPage.distance_from_pit).toFixed(1)} mi` : "—"}</strong></div>
+                        <div>Price: <strong>{editingCityPage.base_price ? `$${Number(editingCityPage.base_price).toFixed(0)}` : "—"}</strong></div>
+                        <div>PIT: <strong>{editingCityPage.pits?.name || "—"}</strong></div>
+                        <div>Generated: <strong>{editingCityPage.content_generated_at ? new Date(editingCityPage.content_generated_at).toLocaleDateString() : "Never"}</strong></div>
+                        <div>Version: <strong>{editingCityPage.prompt_version || "—"}</strong></div>
+                        <div>Views: <strong>{editingCityPage.page_views || 0}</strong></div>
+                        {editingCityPage.multi_pit_coverage && <div className="col-span-3"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>Multi-PIT Coverage</span></div>}
+                      </div>
+                    </div>
+
                     <Button onClick={() => regenerateContent(editingCityPage)} disabled={generatingContent === editingCityPage.id} variant="outline" className="w-full" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}>
                       {generatingContent === editingCityPage.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                       Regenerate with AI
