@@ -32,7 +32,10 @@ export type Database = {
           meta_title: string | null
           page_views: number | null
           pit_id: string | null
+          pit_reassigned: boolean | null
+          price_changed: boolean | null
           prompt_version: string | null
+          regen_reason: string | null
           region: string | null
           state: string
           status: string | null
@@ -56,7 +59,10 @@ export type Database = {
           meta_title?: string | null
           page_views?: number | null
           pit_id?: string | null
+          pit_reassigned?: boolean | null
+          price_changed?: boolean | null
           prompt_version?: string | null
+          regen_reason?: string | null
           region?: string | null
           state?: string
           status?: string | null
@@ -80,7 +86,10 @@ export type Database = {
           meta_title?: string | null
           page_views?: number | null
           pit_id?: string | null
+          pit_reassigned?: boolean | null
+          price_changed?: boolean | null
           prompt_version?: string | null
+          regen_reason?: string | null
           region?: string | null
           state?: string
           status?: string | null
