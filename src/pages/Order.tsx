@@ -831,12 +831,6 @@ const Order = () => {
                     maxLength={500}
                     onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
                   />
-                  {!GOOGLE_MAPS_API_KEY && (
-                    <p className="text-sm text-muted-foreground font-body flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-accent" />
-                      Google Maps API key not configured.
-                    </p>
-                  )}
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
