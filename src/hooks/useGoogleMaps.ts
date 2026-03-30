@@ -3,9 +3,8 @@ import { useState, useEffect } from "react";
 const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyCXc2SGKbNr40Y3KsELlnSGGDDRSfo6lLg";
 
 /**
- * Shared Google Maps loader. Call this in any component that
- * needs Maps/Places. Handles deduplication — the script is only
- * ever injected once regardless of how many components call this hook.
+ * Shared Google Maps loader for UI features (autocomplete, geocoding).
+ * Distance calculations are handled server-side — no Distance Matrix needed here.
  * Returns { loaded: boolean }.
  */
 export function useGoogleMaps(): { loaded: boolean } {
@@ -41,7 +40,7 @@ export function useGoogleMaps(): { loaded: boolean } {
     const script = document.createElement("script");
     script.src =
       `https://maps.googleapis.com/maps/api/js` +
-      `?key=${MAPS_KEY}&libraries=places`;
+      `?key=${MAPS_KEY}&libraries=places&loading=async&v=weekly`;
     script.async = true;
     script.defer = true;
     script.onload = () => setLoaded(true);
