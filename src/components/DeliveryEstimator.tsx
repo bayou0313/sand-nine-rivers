@@ -12,7 +12,7 @@ import OutOfAreaModal from "@/components/OutOfAreaModal";
 import { supabase } from "@/integrations/supabase/client";
 import { type PitData, type GlobalPricing, findBestPitDriving, parseGlobalSettings, getEffectivePrice, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 
-import { pollForGoogleMaps } from "@/lib/google-maps";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 
 type EstimateResult = {
   distance: number;
