@@ -1,13 +1,11 @@
-import { Truck, Clock, Shield, MapPin, ThumbsUp, Ruler } from "lucide-react";
+import { Truck, Clock, MapPin, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
-  { icon: Truck, title: "FAST DELIVERY", desc: "Same-day and next-day delivery available across our service area." },
-  { icon: Shield, title: "QUALITY SAND", desc: "Clean, screened river sand — consistent quality every time." },
-  { icon: MapPin, title: "LOCAL SERVICE", desc: "Proudly serving the Greater New Orleans area." },
-  { icon: Clock, title: "EASY ORDERING", desc: "Order online or call — no hassle, no hidden fees." },
-  { icon: ThumbsUp, title: "TRUSTED", desc: "Over 1,000 loads delivered with a 4.9-star rating." },
-  { icon: Ruler, title: "9 CUBIC YARDS", desc: "Full dump truck load per delivery, every time." },
+  { icon: Truck, title: "SAME-DAY DELIVERY", desc: "Order by midday and get your sand delivered before end of day." },
+  { icon: Zap, title: "INSTANT PRICE QUOTE", desc: "Enter your address and get a real price in seconds — no phone calls needed." },
+  { icon: MapPin, title: "LOCAL & RELIABLE", desc: "Gulf South drivers who know the area and show up on time." },
+  { icon: Clock, title: "CASH ON DELIVERY", desc: "No card required. Pay the driver in cash when the load arrives." },
 ];
 
 const container = {
@@ -22,14 +20,14 @@ const item = {
 
 const Features = () => {
   return (
-    <section className="py-24 bg-card">
+    <section className="py-24 bg-card overflow-x-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">WHY US</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Delivery Schedule & Availability</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Why Customers Choose River Sand</motion.h2>
         </div>
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto"
           variants={container}
           initial="hidden"
           whileInView="visible"

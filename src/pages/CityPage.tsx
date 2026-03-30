@@ -111,11 +111,6 @@ const CityPage = () => {
     priceRange: "$$",
   });
 
-  const cityTrustBadges = [
-    { icon: ShieldCheck, text: "Same-day delivery available" },
-    { icon: MapPin, text: `Serving ${cityPage.city_name} area` },
-    { icon: Truck, text: "Local dispatch team" },
-  ];
 
   return (
     <div className="min-h-screen pb-14 lg:pb-0">
@@ -135,7 +130,6 @@ const CityPage = () => {
       <Hero
         h1Override={cityPage.h1_text || `SAME-DAY RIVER SAND DELIVERY IN ${cityPage.city_name.toUpperCase()}`}
         subtitleOverride={`Quality river sand for landscaping, drainage, backfill, and construction projects in ${cityPage.city_name}, ${cityPage.state}. Order before noon for same-day delivery.`}
-        trustBadges={cityTrustBadges}
       />
       <Stats />
       <DeliveryEstimator />

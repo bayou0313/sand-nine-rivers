@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import DeliveryEstimator from "@/components/DeliveryEstimator";
-import About from "@/components/About";
-import Stats from "@/components/Stats";
-import RiverSandInfo from "@/components/RiverSandInfo";
+import SocialProofStrip from "@/components/SocialProofStrip";
 import Features from "@/components/Features";
 import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
+import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
+import RiverSandInfo from "@/components/RiverSandInfo";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import MobilePhoneBar from "@/components/MobilePhoneBar";
@@ -58,7 +57,6 @@ const Index = () => {
     };
     init();
 
-    // Fetch SEO settings
     const fetchSeo = async () => {
       try {
         const { data } = await supabase
@@ -81,7 +79,6 @@ const Index = () => {
     if (el) el.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // Build schema markup
   const productSchema = seoSettings.seo_schema_product === "true" ? JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Product",
@@ -134,15 +131,14 @@ const Index = () => {
       </Helmet>
       <Navbar />
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
-      <Hero />
-      <Stats />
-      <DeliveryEstimator prefillAddress={returnAddress} />
-      <About />
-      <RiverSandInfo />
+      <Hero prefillAddress={returnAddress} />
+      <SocialProofStrip />
       <Features />
       <Testimonials />
       <CTA />
+      <Pricing />
       <FAQ />
+      <RiverSandInfo />
       <ContactForm />
       <Footer />
       <MobilePhoneBar />
