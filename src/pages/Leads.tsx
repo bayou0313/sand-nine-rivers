@@ -11,7 +11,7 @@ declare global {
   interface Window { google: any; }
 }
 
-import { pollForGoogleMaps } from "@/lib/google-maps";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const SIDEBAR_HOVER = "#142845";
