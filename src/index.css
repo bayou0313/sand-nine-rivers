@@ -86,6 +86,71 @@
   animation: cta-pulse 2.5s ease-in-out infinite;
 }
 
+/* PlaceAutocompleteElement styling */
+.place-autocomplete-container {
+  width: 100%;
+}
+
+.place-autocomplete-container gmp-place-autocomplete {
+  width: 100%;
+  --gmp-mat-color-surface: hsl(var(--background));
+  --gmp-mat-color-on-surface: hsl(var(--foreground));
+}
+
+.place-autocomplete-container gmp-place-autocomplete::part(input) {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  height: 3rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.place-autocomplete-container gmp-place-autocomplete::part(input):focus {
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
+/* Embedded (hero) variant — dark input */
+.place-autocomplete-embedded gmp-place-autocomplete::part(input) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.place-autocomplete-embedded gmp-place-autocomplete::part(input)::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.place-autocomplete-embedded gmp-place-autocomplete::part(input):focus {
+  border-color: hsl(var(--accent) / 0.5);
+}
+
+/* Order page taller input */
+.place-autocomplete-order gmp-place-autocomplete::part(input) {
+  height: 3.5rem;
+  border-color: hsl(var(--border) / 0.5);
+  box-shadow: 0 1px 2px hsl(var(--border) / 0.3);
+}
+
+.place-autocomplete-order gmp-place-autocomplete::part(input):focus {
+  box-shadow: 0 4px 6px hsl(var(--border) / 0.3);
+}
+
+/* Admin (Leads) compact input */
+.place-autocomplete-admin gmp-place-autocomplete::part(input) {
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+}
+
 /* Print styles for order confirmation */
 @media print {
   body { background: white !important; }
