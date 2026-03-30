@@ -740,12 +740,15 @@ serve(async (req) => {
           .maybeSingle();
         if (existing) {
           if (city.distance < (existing.distance_from_pit ?? 999)) {
-            // New PIT is closer — update existing page
+            // New PIT is closer — update existing page, flag for regen
             const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
             await supabase.from("city_pages").update({
               pit_id, distance_from_pit: city.distance, base_price: newPrice,
+              pit_reassigned: true, price_changed: false,
+              prompt_version: null, regen_reason: 'pit_reassigned',
+              updated_at: new Date().toISOString(),
             }).eq("id", existing.id);
-            console.log(`Updated ${city.city_slug} to closer PIT (${city.distance} mi)`);
+            console.log(`Updated ${city.city_slug} to closer PIT (${city.distance} mi) — flagged for regen`);
           } else {
             console.log(`Skipped ${city.city_slug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
           }
