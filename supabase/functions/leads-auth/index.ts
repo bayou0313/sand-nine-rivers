@@ -589,7 +589,7 @@ serve(async (req) => {
         return true;
       };
 
-      const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
+      const VALID_TYPES = ["sublocality_level_1", "locality", "administrative_area_level_3"];
 
       // Generate sample points at various distances and directions
       const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= maxDist);
