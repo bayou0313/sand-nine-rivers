@@ -1093,12 +1093,15 @@ serve(async (req) => {
       let failed = 0;
 
       for (const city of toCreate) {
+        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
+        const isMultiPit = forceSuppressPrice; // multi-PIT detection not done in bulk yet
         const { data: inserted, error: insertErr } = await supabase
           .from("city_pages")
           .insert({
             pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
             state: city.state, lat: city.lat, lng: city.lng,
-            distance_from_pit: city.distance_from_pit, base_price: city.base_price, status: "draft",
+            distance_from_pit: city.distance_from_pit, base_price: city.base_price,
+            multi_pit_coverage: isMultiPit, status: "draft",
           })
           .select().single();
         if (insertErr) { console.error("Insert error:", insertErr); failed++; continue; }
