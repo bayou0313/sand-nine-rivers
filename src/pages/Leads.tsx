@@ -1912,6 +1912,53 @@ const Leads = () => {
               </div>
             )}
 
+            {/* Keep Best / Deactivate Duplicates Confirmation Modal */}
+            {showDeactivateDupsConfirm && (() => {
+              const selectedArr = Array.from(selectedCityPages);
+              const selectedPages = cityPages.filter((cp: any) => selectedArr.includes(cp.id));
+              // Group selected by slug
+              const bySlug: Record<string, any[]> = {};
+              selectedPages.forEach((cp: any) => {
+                if (!bySlug[cp.city_slug]) bySlug[cp.city_slug] = [];
+                bySlug[cp.city_slug].push(cp);
+              });
+              // For each slug group with >1, keep highest views, deactivate rest
+              const toDeactivate: string[] = [];
+              for (const [, group] of Object.entries(bySlug)) {
+                if (group.length <= 1) continue;
+                const sorted = [...group].sort((a, b) => (b.page_views || 0) - (a.page_views || 0));
+                for (let i = 1; i < sorted.length; i++) toDeactivate.push(sorted[i].id);
+              }
+              return (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                    <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Keep Best, Deactivate Rest</h3>
+                    <p className="text-sm text-gray-600">
+                      This will deactivate <strong>{toDeactivate.length}</strong> duplicate pages, keeping the one with the most views for each city.
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                      <Button variant="outline" onClick={() => setShowDeactivateDupsConfirm(false)}>Cancel</Button>
+                      <Button
+                        style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+                        onClick={async () => {
+                          if (toDeactivate.length === 0) { setShowDeactivateDupsConfirm(false); return; }
+                          try {
+                            await supabase.functions.invoke("leads-auth", {
+                              body: { password: storedPassword(), action: "deactivate_city_pages", ids: toDeactivate },
+                            });
+                            toast({ title: `${toDeactivate.length} duplicates deactivated`, description: "Highest-traffic page kept for each city." });
+                            setSelectedCityPages(new Set());
+                            setShowDeactivateDupsConfirm(false);
+                            fetchCityPages();
+                          } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+                        }}
+                      >Confirm ({toDeactivate.length} pages)</Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Table */}
             <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
               {cityPagesLoading ? (
