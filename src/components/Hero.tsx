@@ -51,8 +51,8 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            <h1 className="text-5xl md:text-6xl lg:text-[4.3rem] leading-[0.9] text-primary-foreground tracking-wide">
-              {h1Override || "Same-Day River Sand Delivery — See Your Price Instantly"}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.05] text-primary-foreground tracking-wide">
+              {h1Override || "Same-Day River Sand Delivery"}
             </h1>
             <div className="w-32 h-1 bg-accent mt-3 rounded-full" />
           </motion.div>
@@ -60,10 +60,19 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-lg md:text-xl font-body text-primary-foreground/75 max-w-lg leading-relaxed"
+            transition={{ delay: 0.45 }}
+            className="text-lg md:text-xl font-body text-primary-foreground/85 max-w-lg leading-relaxed"
           >
-            {subtitleOverride || "Serving the Gulf South · No minimums · Cash or card accepted · Real driver, real load"}
+            {subtitleOverride || "See your exact price in seconds — no account needed"}
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.55 }}
+            className="text-sm font-body text-primary-foreground/50 max-w-lg"
+          >
+            Serving the Gulf South · No minimums · Cash or card accepted · Real driver, real load
           </motion.p>
 
           {/* Embedded DeliveryEstimator */}

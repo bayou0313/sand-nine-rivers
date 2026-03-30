@@ -1,5 +1,6 @@
-import { Star, Quote } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const testimonials = [
   {
@@ -33,6 +34,8 @@ const card = {
 };
 
 const Testimonials = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
   return (
     <section className="py-24 bg-primary">
       <div className="container mx-auto px-6">
@@ -41,8 +44,9 @@ const Testimonials = () => {
           <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-primary-foreground">What Our Customers Say</motion.h2>
         </div>
 
+        {/* Desktop: 3-col grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+          className="hidden md:grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
           variants={container}
           initial="hidden"
           whileInView="visible"
@@ -54,7 +58,7 @@ const Testimonials = () => {
               variants={card}
               whileHover={{ y: -8, boxShadow: "0 25px 50px -12px hsl(209 87% 12% / 0.2)" }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="bg-primary-foreground/5 border border-primary-foreground/10 rounded-2xl p-8 space-y-5 transition-colors duration-300 hover:border-accent/40"
+              className="bg-primary-foreground/5 border border-primary-foreground/10 rounded-2xl p-8 min-h-[200px] space-y-5 transition-colors duration-300 hover:border-accent/40"
             >
               <Quote className="w-8 h-8 text-accent/40" />
               <div className="flex gap-1">
@@ -62,12 +66,12 @@ const Testimonials = () => {
                   <Star key={i} className="w-4 h-4 text-accent fill-accent" />
                 ))}
               </div>
-              <p className="font-body text-primary-foreground/80 leading-relaxed italic">
+              <p className="font-body text-base text-primary-foreground/80 leading-relaxed italic">
                 "{t.quote}"
               </p>
               <div className="flex items-center gap-3 pt-2">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <span className="font-display text-sm font-bold text-foreground">{t.initials}</span>
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                  <span className="font-display text-sm font-bold text-accent">{t.initials}</span>
                 </div>
                 <div>
                   <p className="font-display text-primary-foreground text-sm">{t.name}</p>
@@ -77,6 +81,64 @@ const Testimonials = () => {
             </motion.div>
           ))}
         </motion.div>
+
+        {/* Mobile: single card carousel */}
+        <div className="md:hidden max-w-sm mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeIndex}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.3 }}
+              className="bg-primary-foreground/5 border border-primary-foreground/10 rounded-2xl p-6 min-h-[200px] space-y-4"
+            >
+              <Quote className="w-7 h-7 text-accent/40" />
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 text-accent fill-accent" />
+                ))}
+              </div>
+              <p className="font-body text-base text-primary-foreground/80 leading-relaxed italic">
+                "{testimonials[activeIndex].quote}"
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                  <span className="font-display text-sm font-bold text-accent">{testimonials[activeIndex].initials}</span>
+                </div>
+                <div>
+                  <p className="font-display text-primary-foreground text-sm">{testimonials[activeIndex].name}</p>
+                  <p className="font-body text-primary-foreground/50 text-xs">{testimonials[activeIndex].location}</p>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-center gap-4 mt-5">
+            <button
+              onClick={() => setActiveIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1))}
+              className="w-8 h-8 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-primary-foreground/60" />
+            </button>
+            <div className="flex gap-2">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveIndex(i)}
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${i === activeIndex ? "bg-accent" : "bg-primary-foreground/20"}`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => setActiveIndex((prev) => (prev === testimonials.length - 1 ? 0 : prev + 1))}
+              className="w-8 h-8 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-primary-foreground/60" />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
