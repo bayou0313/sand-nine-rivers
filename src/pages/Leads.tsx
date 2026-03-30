@@ -216,6 +216,7 @@ const Leads = () => {
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
   });
+  const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
   const [geocoding, setGeocoding] = useState(false);
   // Driving distance cache: key -> miles
   const [drivingCache, setDrivingCache] = useState<Record<string, number>>(() => {
