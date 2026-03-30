@@ -756,6 +756,9 @@ serve(async (req) => {
       let generated = 0;
       let failed = 0;
       let skipped = 0;
+      // Google Maps API key for driving distance lookups
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+
       // Fetch all active PITs for multi-PIT coverage detection (driving distance)
       const { data: allActivePits } = await supabase
         .from("pits")
