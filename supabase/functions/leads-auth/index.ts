@@ -682,7 +682,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, created_ids: created, count: created.length, generated, failed }),
+        JSON.stringify({ success: true, created_ids: created, count: created.length, generated, failed, skipped }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
