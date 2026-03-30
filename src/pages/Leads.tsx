@@ -12,6 +12,7 @@ declare global {
 }
 
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const SIDEBAR_HOVER = "#142845";
