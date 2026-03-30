@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id } = await req.json();
+    const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile } = await req.json();
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
@@ -607,6 +607,8 @@ serve(async (req) => {
       for (const row of gsForGen || []) gsMap[row.key] = row.value;
 
       const pitFreeMiles = pitForGen?.free_miles ?? parseFloat(gsMap.default_free_miles || "15");
+      const pitBasePrice = pitForGen?.base_price ?? parseFloat(gsMap.default_base_price || "195");
+      const pitExtraPerMile = pitForGen?.price_per_extra_mile ?? parseFloat(gsMap.default_extra_per_mile || "5");
       const satAvailable = pitForGen?.operating_days ? pitForGen.operating_days.includes(6) : true;
       const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
 
@@ -637,7 +639,7 @@ serve(async (req) => {
             lat: city.lat,
             lng: city.lng,
             distance_from_pit: city.distance,
-            base_price: city.price,
+            base_price: Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile)),
             status: "draft",
           })
           .select()
@@ -723,6 +725,37 @@ serve(async (req) => {
       if (error) throw error;
       return new Response(
         JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── RECALCULATE CITY PRICES ──
+    if (action === "recalculate_city_prices") {
+      if (!pit_id || base_price == null || free_miles == null || price_per_extra_mile == null) {
+        return new Response(JSON.stringify({ error: "Missing pit_id or pricing fields" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { data: cpData, error: fetchErr } = await supabase
+        .from("city_pages")
+        .select("id, distance_from_pit")
+        .eq("pit_id", pit_id);
+      if (fetchErr) throw fetchErr;
+
+      let updated = 0;
+      for (const city of (cpData || [])) {
+        const dist = city.distance_from_pit || 0;
+        const extraMiles = Math.max(0, dist - free_miles);
+        const newPrice = Math.max(base_price, Math.round(base_price + extraMiles * price_per_extra_mile));
+        const { error: upErr } = await supabase
+          .from("city_pages")
+          .update({ base_price: newPrice, updated_at: new Date().toISOString() })
+          .eq("id", city.id);
+        if (!upErr) updated++;
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, updated }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
