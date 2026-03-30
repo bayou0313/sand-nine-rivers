@@ -312,6 +312,8 @@ const Leads = () => {
   const [regenQueue, setRegenQueue] = useState<{ total: number; current: number; currentCity: string; status: "idle" | "running" | "complete" } | null>(null);
   const regenCancelRef = useRef(false);
   const [deleteAllTypeInput, setDeleteAllTypeInput] = useState("");
+  const [cityPageSortKey, setCityPageSortKey] = useState<"city_name" | "state" | "distance_from_pit" | "base_price" | "status" | "page_views">("city_name");
+  const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
   const [deletingAll, setDeletingAll] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
