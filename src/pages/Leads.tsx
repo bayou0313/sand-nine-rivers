@@ -2411,6 +2411,21 @@ const Leads = () => {
                             {cp.status?.charAt(0).toUpperCase() + cp.status?.slice(1)}
                           </span>
                         </td>
+                        <td className="px-3 py-2">
+                          {(() => {
+                            const isCurrent = cp.prompt_version === "2.0" && cp.content_generated_at;
+                            const isMissing = cp.status === "active" && !cp.content_generated_at;
+                            const isOutdated = !isCurrent && !isMissing;
+                            const dotColor = isCurrent ? "#22C55E" : isMissing ? "#EF4444" : "#F59E0B";
+                            const label = isCurrent ? "Current" : isMissing ? "Missing" : "Outdated";
+                            return (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
+                                <span className="text-xs" style={{ color: dotColor }}>{label}</span>
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-3 py-2 text-xs">{cp.page_views || 0}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
