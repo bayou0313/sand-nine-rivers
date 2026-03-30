@@ -431,7 +431,7 @@ const Order = () => {
         setLoading(false); return;
       }
 
-      const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing, GOOGLE_MAPS_API_KEY);
+      const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");

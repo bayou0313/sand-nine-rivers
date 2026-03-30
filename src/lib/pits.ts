@@ -111,8 +111,8 @@ export function calcFinalPrice(effective: EffectivePricing, distance: number, qt
 
 /**
  * CANONICAL distance function for the entire codebase.
- * Uses Google Maps Distance Matrix — roads only, no ferries.
- * If apiKey is missing → throws an error. Do not call without a key.
+ * Uses Google Maps Distance Matrix JS SDK — roads only, no ferries.
+ * Requires window.google.maps to be loaded before calling.
  * If a specific route returns no result → returns null for that index.
  *   Callers must skip/exclude nulls. Never substitute haversine.
  * Batches in groups of 25 (Distance Matrix API limit per call).
@@ -122,34 +122,31 @@ export function calcFinalPrice(effective: EffectivePricing, distance: number, qt
 export async function getDrivingDistanceBatch(
   originLat: number,
   originLon: number,
-  destinations: { lat: number; lng: number }[],
-  apiKey: string
+  destinations: { lat: number; lng: number }[]
 ): Promise<(number | null)[]> {
-  if (!apiKey) {
+  if (!window.google?.maps) {
     throw new Error(
-      "getDrivingDistanceBatch: Google Maps API key is required. " +
-      "Set VITE_GOOGLE_MAPS_KEY in your environment. " +
-      "Haversine is not a valid fallback — cross-water distances will be wrong."
+      "getDrivingDistanceBatch: Google Maps JS SDK is not loaded. " +
+      "Ensure the script is loaded before calling distance functions."
     );
   }
   if (destinations.length === 0) return [];
 
   const results: (number | null)[] = new Array(destinations.length).fill(null);
   const BATCH = 25;
+  const service = new window.google.maps.DistanceMatrixService();
 
   for (let i = 0; i < destinations.length; i += BATCH) {
     const batch = destinations.slice(i, i + BATCH);
-    const destsStr = batch.map(d => `${d.lat},${d.lng}`).join("|");
     try {
-      const resp = await fetch(
-        `https://maps.googleapis.com/maps/api/distancematrix/json` +
-        `?origins=${originLat},${originLon}` +
-        `&destinations=${encodeURIComponent(destsStr)}` +
-        `&units=imperial&mode=driving&avoid=ferries` +
-        `&key=${apiKey}`
-      );
-      const data = await resp.json();
-      const elements = data.rows?.[0]?.elements || [];
+      const response = await service.getDistanceMatrix({
+        origins: [{ lat: originLat, lng: originLon }],
+        destinations: batch.map(d => ({ lat: d.lat, lng: d.lng })),
+        travelMode: window.google.maps.TravelMode.DRIVING,
+        unitSystem: window.google.maps.UnitSystem.IMPERIAL,
+        avoidFerries: true,
+      });
+      const elements = response.rows?.[0]?.elements || [];
       for (let j = 0; j < elements.length; j++) {
         if (elements[j]?.status === "OK" && elements[j].distance?.value) {
           results[i + j] = elements[j].distance.value / 1609.344;
@@ -166,36 +163,34 @@ export async function getDrivingDistanceBatch(
 
 /**
  * Find the best PIT for a customer location using driving distance.
- * Uses Google Maps Distance Matrix — no haversine fallback.
+ * Uses Google Maps Distance Matrix JS SDK — no haversine fallback.
+ * Requires window.google.maps to be loaded before calling.
  * If the API fails or returns no results, returns null.
  */
 export async function findBestPitDriving(
   pits: PitData[],
   customerLat: number,
   customerLng: number,
-  globalPricing: GlobalPricing,
-  googleMapsApiKey: string
+  globalPricing: GlobalPricing
 ): Promise<FindBestPitResult | null> {
-  if (!googleMapsApiKey) {
-    throw new Error("findBestPitDriving: Google Maps API key is required.");
+  if (!window.google?.maps) {
+    throw new Error("findBestPitDriving: Google Maps JS SDK is not loaded.");
   }
   const activePits = pits.filter(p => p.status === "active");
   if (activePits.length === 0) return null;
 
-  const origins = activePits.map(p => `${p.lat},${p.lon}`).join("|");
-  const destination = `${customerLat},${customerLng}`;
+  const service = new window.google.maps.DistanceMatrixService();
 
   let drivingDistances: (number | null)[];
   try {
-    const resp = await fetch(
-      `https://maps.googleapis.com/maps/api/distancematrix/json` +
-      `?origins=${encodeURIComponent(origins)}` +
-      `&destinations=${encodeURIComponent(destination)}` +
-      `&units=imperial&mode=driving&avoid=ferries` +
-      `&key=${googleMapsApiKey}`
-    );
-    const data = await resp.json();
-    drivingDistances = (data.rows || []).map((row: any) => {
+    const response = await service.getDistanceMatrix({
+      origins: activePits.map(p => ({ lat: p.lat, lng: p.lon })),
+      destinations: [{ lat: customerLat, lng: customerLng }],
+      travelMode: window.google.maps.TravelMode.DRIVING,
+      unitSystem: window.google.maps.UnitSystem.IMPERIAL,
+      avoidFerries: true,
+    });
+    drivingDistances = (response.rows || []).map((row: any) => {
       const el = row.elements?.[0];
       if (el?.status === "OK" && el.distance?.value) {
         return el.distance.value / 1609.344;
