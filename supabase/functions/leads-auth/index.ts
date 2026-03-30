@@ -639,7 +639,7 @@ serve(async (req) => {
             lat: city.lat,
             lng: city.lng,
             distance_from_pit: city.distance,
-            base_price: city.price,
+            base_price: Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile)),
             status: "draft",
           })
           .select()
