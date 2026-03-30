@@ -588,12 +588,28 @@ serve(async (req) => {
       const freeMiles = pitData.free_miles ?? parseFloat(gs.default_free_miles || "15");
       const extraPerMile = pitData.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
 
-      // Build final results
+      // Build final results — use driving distance instead of straight-line
       const discovered: any[] = [];
       const seenSlugs = new Set<string>();
 
-      for (const [, city] of cityMap) {
-        const distance = hav(pitData.lat, pitData.lon, city.lat, city.lng);
+      // First pass: pre-filter cities within haversine range, collect their coords
+      const candidateCities: { key: string; city: { name: string; state: string; lat: number; lng: number } }[] = [];
+      for (const [key, city] of cityMap) {
+        const straightLine = haversine(pitData.lat, pitData.lon, city.lat, city.lng);
+        if (straightLine > maxDist * 1.5) continue; // generous pre-filter (driving is ~1.3x straight-line)
+        candidateCities.push({ key, city });
+      }
+
+      // Get driving distances for all candidates in one batch
+      const drivingDists = await getDrivingDistances(
+        pitData.lat, pitData.lon,
+        candidateCities.map(c => ({ lat: c.city.lat, lng: c.city.lng })),
+        apiKey
+      );
+
+      for (let idx = 0; idx < candidateCities.length; idx++) {
+        const { city } = candidateCities[idx];
+        const distance = drivingDists[idx] ?? haversine(pitData.lat, pitData.lon, city.lat, city.lng);
         if (distance > maxDist) continue;
 
         let slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
