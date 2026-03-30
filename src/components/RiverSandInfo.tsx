@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Droplets, Calculator, HelpCircle, CheckCircle, XCircle } from "lucide-react";
+import { Droplets, Calculator, HelpCircle, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 const RiverSandInfo = () => {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <section className="py-24 bg-card">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -24,23 +27,39 @@ const RiverSandInfo = () => {
           </motion.h2>
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-12">
-          {/* Intro */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+        <div className="max-w-4xl mx-auto">
+          {/* Always-visible intro */}
+          <div className="mb-6">
             <p className="font-body text-muted-foreground leading-relaxed text-lg">
               Not all sand is the same, and in a city like New Orleans — where drainage is everything — using the right material for the right application is the difference between a project that holds and one that fails inside two wet seasons.
             </p>
             <p className="font-body text-muted-foreground leading-relaxed text-lg mt-4">
               The river sand RIVERSAND.NET delivers is pumped directly from the Mississippi River. It's a natural, unscreened material sourced from one of the most active waterways in North America, which gives it a distinct set of properties that make it particularly well-suited for the soil conditions and drainage challenges common across Southeast Louisiana.
             </p>
-            <p className="font-body text-muted-foreground leading-relaxed text-lg mt-4">
+
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="mt-4 flex items-center gap-1.5 text-sm font-display text-accent hover:text-accent/80 transition-colors tracking-wider mx-auto"
+            >
+              {expanded ? (
+                <>Show less <ChevronUp className="w-4 h-4" /></>
+              ) : (
+                <>Read more <ChevronDown className="w-4 h-4" /></>
+              )}
+            </button>
+          </div>
+
+          {expanded && (
+          <div className="space-y-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+            <p className="font-body text-muted-foreground leading-relaxed text-lg">
               The rounded grain also means it compacts consistently without fully sealing, which is critical in low-lying areas where water management is the primary concern. It settles firmly underfoot or under pavers without creating an impermeable base that traps water below the surface — a problem that affects poorly chosen fill materials in flood-prone areas like the Orleans and Jefferson Parish lowlands.
             </p>
-          </motion.div>
+            </motion.div>
 
           {/* Callout: Pumped from the Mississippi */}
           <motion.div
@@ -232,6 +251,8 @@ const RiverSandInfo = () => {
               </p>
             </div>
           </motion.div>
+          </div>
+          )}
         </div>
       </div>
     </section>

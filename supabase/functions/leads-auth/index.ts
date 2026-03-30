@@ -351,6 +351,7 @@ serve(async (req) => {
           content: city_page.content,
           status: city_page.status,
           city_name: city_page.city_name,
+          region: city_page.region ?? null,
         })
         .eq("id", city_page_id);
       if (error) throw error;

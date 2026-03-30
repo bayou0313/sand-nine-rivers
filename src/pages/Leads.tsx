@@ -1896,7 +1896,7 @@ const Leads = () => {
                           className="rounded"
                         />
                       </th>
-                      {["City", "State", "URL", "PIT", "Distance", "Price", "Status", "Views", "Actions"].map(h => (
+                      {["City", "State", "Region", "URL", "PIT", "Distance", "Price", "Status", "Views", "Actions"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
@@ -1918,6 +1918,7 @@ const Leads = () => {
                         </td>
                         <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: cp.region ? BRAND_NAVY : "#ccc" }}>{cp.region || "—"}</td>
                         <td className="px-3 py-2 text-xs">
                           <a href={`/${cp.city_slug}/river-sand-delivery`} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: BRAND_GOLD }}>
                             /{cp.city_slug}/river-sand-delivery
@@ -2031,6 +2032,10 @@ const Leads = () => {
                     <div>
                       <label className="text-xs mb-1 block" style={{ color: "#666" }}>H1 Text</label>
                       <Input value={editingCityPage.h1_text || ""} onChange={e => setEditingCityPage({ ...editingCityPage, h1_text: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Region</label>
+                      <Input value={editingCityPage.region || ""} onChange={e => setEditingCityPage({ ...editingCityPage, region: e.target.value })} placeholder="e.g. East Bank, West Bank, North Shore" />
                     </div>
                     <div>
                       <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
