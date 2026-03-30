@@ -18,10 +18,7 @@ import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
 
-const DEFAULT_TITLE = "Same-Day River Sand Delivery | New Orleans Metro & Gulf South | River Sand";
-const DEFAULT_DESCRIPTION = "Get same-day bulk river sand delivered anywhere in the Gulf South. Instant price quote by address. Cash or card accepted. Order online in minutes.";
-
-const localBusinessJsonLd = JSON.stringify({
+const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "River Sand",
@@ -40,12 +37,38 @@ const localBusinessJsonLd = JSON.stringify({
   "priceRange": "$$",
   "paymentAccepted": "Cash, Credit Card",
   "openingHours": "Mo-Sa 07:00-17:00",
-});
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How quickly can you deliver river sand?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Same-day delivery for orders placed before noon, Monday through Saturday." }
+    },
+    {
+      "@type": "Question",
+      "name": "What areas do you serve?",
+      "acceptedAnswer": { "@type": "Answer", "text": "We serve the greater Gulf South region including Metairie, Kenner, Gretna, and surrounding areas." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I pay with cash?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. We offer cash on delivery (COD) at no extra charge. You can also pay by card online." }
+    },
+  ]
+};
+
+const DEFAULT_TITLE = "Same-Day River Sand Delivery | New Orleans Metro & Gulf South | River Sand";
+const DEFAULT_DESCRIPTION = "Get same-day bulk river sand delivered anywhere in the Gulf South. Instant price quote by address. Cash or card accepted. Order online in minutes.";
+const DEFAULT_H1 = "Same-Day River Sand Delivery";
 
 const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [returnAddress, setReturnAddress] = useState<string | null>(null);
-  const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
+  const [seo, setSeo] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const init = async () => {
@@ -66,7 +89,7 @@ const Index = () => {
         if (data) {
           const settings: Record<string, string> = {};
           data.forEach((row: any) => { settings[row.key] = row.value; });
-          setSeoSettings(settings);
+          setSeo(settings);
         }
       } catch { /* fallback to defaults */ }
     };
@@ -79,59 +102,27 @@ const Index = () => {
     if (el) el.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const productSchema = seoSettings.seo_schema_product === "true" ? JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": "River Sand — 9 Cubic Yards",
-    "description": "Natural Mississippi River sand delivered same-day",
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock",
-      "areaServed": "Greater New Orleans"
-    }
-  }) : null;
-
-  const faqSchema = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "How quickly can you deliver river sand?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Same-day delivery for orders placed before noon, Monday through Saturday." }
-      },
-      {
-        "@type": "Question",
-        "name": "What areas do you serve?",
-        "acceptedAnswer": { "@type": "Answer", "text": "We serve the greater Gulf South region including Metairie, Kenner, Gretna, and surrounding areas." }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I pay with cash?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Yes. We offer cash on delivery (COD) at no extra charge. You can also pay by card online." }
-      },
-    ]
-  });
-
   return (
     <div className="min-h-screen pb-14 lg:pb-0">
       <Helmet>
-        <title>{seoSettings.seo_meta_title || DEFAULT_TITLE}</title>
-        <meta name="description" content={seoSettings.seo_meta_description || DEFAULT_DESCRIPTION} />
-        {seoSettings.seo_robots && <meta name="robots" content={seoSettings.seo_robots} />}
-        <link rel="canonical" href={seoSettings.seo_canonical || "https://riversand.net/"} />
-        {seoSettings.seo_og_title && <meta property="og:title" content={seoSettings.seo_og_title} />}
-        {seoSettings.seo_og_description && <meta property="og:description" content={seoSettings.seo_og_description} />}
-        {seoSettings.seo_og_image && <meta property="og:image" content={seoSettings.seo_og_image} />}
-        {seoSettings.seo_gsc_id && <meta name="google-site-verification" content={seoSettings.seo_gsc_id} />}
-        <script type="application/ld+json">{localBusinessJsonLd}</script>
-        <script type="application/ld+json">{faqSchema}</script>
-        {productSchema && <script type="application/ld+json">{productSchema}</script>}
+        <title>{seo.seo_homepage_title || DEFAULT_TITLE}</title>
+        <meta name="description" content={seo.seo_homepage_description || DEFAULT_DESCRIPTION} />
+        <meta name="robots" content={seo.seo_robots || "index, follow"} />
+        <link rel="canonical" href={seo.seo_canonical_url || "https://riversand.net/"} />
+        {seo.seo_og_title && <meta property="og:title" content={seo.seo_og_title} />}
+        {seo.seo_og_description && <meta property="og:description" content={seo.seo_og_description} />}
+        {seo.seo_og_image_url && <meta property="og:image" content={seo.seo_og_image_url} />}
+        {seo.seo_gsc_verification && <meta name="google-site-verification" content={seo.seo_gsc_verification} />}
+        {seo.seo_schema_local_business === "true" && (
+          <script type="application/ld+json">{JSON.stringify(localBusinessJsonLd)}</script>
+        )}
+        {seo.seo_schema_faq === "true" && (
+          <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+        )}
       </Helmet>
       <Navbar />
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
-      <Hero prefillAddress={returnAddress} />
+      <Hero h1Override={seo.seo_homepage_h1 || DEFAULT_H1} prefillAddress={returnAddress} />
       <SocialProofStrip />
       <Features />
       <Testimonials />
