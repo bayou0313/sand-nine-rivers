@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyCXc2SGKbNr40Y3KsELlnSGGDDRSfo6lLg";
 
 /**
  * Shared Google Maps loader. Call this in any component that
