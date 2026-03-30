@@ -915,22 +915,11 @@ const Leads = () => {
         }
       }
 
-      // If pricing changed, trigger bulk recalculation
-      const newBP = pitPayload.base_price ?? parseFloat(globalSettings.default_base_price || "195");
-      const newFM = pitPayload.free_miles ?? parseFloat(globalSettings.default_free_miles || "15");
-      const newEPM = pitPayload.price_per_extra_mile ?? parseFloat(globalSettings.default_extra_per_mile || "5");
-
-      if (pricePreviewData.length > 0) {
-        try {
-          const { data: recalcData, error: recalcErr } = await supabase.functions.invoke("leads-auth", {
-            body: { password: storedPassword(), action: "recalculate_city_prices", pit_id: pitPayload.id, base_price: newBP, free_miles: newFM, price_per_extra_mile: newEPM },
-          });
-          if (recalcErr) throw recalcErr;
-          toast({ title: "PIT saved", description: `${recalcData?.updated || 0} city page prices updated automatically.` });
-          fetchCityPages();
-        } catch (recalcErr: any) {
-          toast({ title: "PIT saved, but price update failed", description: "Please use Regen on affected city pages.", variant: "destructive" });
-        }
+      // Server handles price rollover automatically
+      const pricesUpdated = data?.prices_updated || 0;
+      if (pricesUpdated > 0) {
+        toast({ title: "PIT saved", description: `${pricesUpdated} city page prices updated.` });
+        fetchCityPages();
       } else {
         toast({ title: "PIT updated" });
       }
@@ -938,10 +927,6 @@ const Leads = () => {
       setEditingPitId(null);
       setEditPitData({});
       setShowDeleteConfirm(false);
-      setShowPricePreview(false);
-      setPricePreviewData([]);
-      setPendingPitPayload(null);
-      setPendingPitMeta(null);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
