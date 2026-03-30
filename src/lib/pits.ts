@@ -114,7 +114,7 @@ export function calcPitPrice(effective: EffectivePricing, distance: number, qty:
 }
 
 /**
- * Find the best PIT for a customer location.
+ * Find the best PIT for a customer location (straight-line pre-filter).
  * Returns nearest serviceable PIT (tie-break on price).
  * If none serviceable, returns nearest with serviceable=false for lead capture.
  */
@@ -150,6 +150,82 @@ export function findBestPit(
   // Primary: shortest distance. Tie-breaker: lowest price
   serviceable.sort((a, b) => {
     if (Math.abs(a.distance - b.distance) < 0.1) {
+      return a.price - b.price;
+    }
+    return a.distance - b.distance;
+  });
+
+  return { ...serviceable[0], serviceable: true };
+}
+
+/**
+ * Find the best PIT using actual driving distance via Google Distance Matrix API.
+ * 1) Pre-filters with Haversine to top 5 closest PITs (saves API calls)
+ * 2) Calls Distance Matrix for driving distance
+ * 3) Returns best result based on real road miles
+ */
+export async function findBestPitDriving(
+  pits: PitData[],
+  customerLat: number,
+  customerLng: number,
+  globalPricing: GlobalPricing,
+  googleMapsApiKey: string
+): Promise<FindBestPitResult | null> {
+  const activePits = pits.filter(p => p.status === "active");
+  if (activePits.length === 0) return null;
+
+  // Step 1: Pre-filter with Haversine — keep top 5 closest
+  const preFiltered = activePits
+    .map(pit => ({
+      pit,
+      straightLine: haversineDistance(Number(pit.lat), Number(pit.lon), customerLat, customerLng),
+    }))
+    .sort((a, b) => a.straightLine - b.straightLine)
+    .slice(0, 5);
+
+  // Step 2: Call Google Distance Matrix for driving distances
+  const origins = preFiltered.map(p => `${p.pit.lat},${p.pit.lon}`).join("|");
+  const destination = `${customerLat},${customerLng}`;
+
+  let drivingDistances: (number | null)[];
+  try {
+    const resp = await fetch(
+      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origins)}&destinations=${encodeURIComponent(destination)}&units=imperial&key=${googleMapsApiKey}`
+    );
+    const data = await resp.json();
+
+    drivingDistances = (data.rows || []).map((row: any) => {
+      const el = row.elements?.[0];
+      if (el?.status === "OK" && el.distance?.value) {
+        // Convert meters to miles
+        return el.distance.value / 1609.344;
+      }
+      return null;
+    });
+  } catch {
+    // If Distance Matrix fails, fall back to Haversine
+    console.warn("Distance Matrix API failed, falling back to straight-line distance");
+    return findBestPit(pits, customerLat, customerLng, globalPricing);
+  }
+
+  // Step 3: Build results with driving distances (fall back to straight-line if API missed one)
+  const results = preFiltered.map((item, i) => {
+    const distance = drivingDistances[i] ?? item.straightLine;
+    const effective = getEffectivePrice(item.pit, globalPricing);
+    const price = calcPitPrice(effective, distance, 1);
+    const serviceable = distance <= effective.max_distance;
+    return { pit: item.pit, distance, price, serviceable };
+  });
+
+  const serviceable = results.filter(r => r.serviceable);
+
+  if (serviceable.length === 0) {
+    results.sort((a, b) => a.distance - b.distance);
+    return { ...results[0], serviceable: false };
+  }
+
+  serviceable.sort((a, b) => {
+    if (Math.abs(a.distance - b.distance) < 0.5) {
       return a.price - b.price;
     }
     return a.distance - b.distance;
