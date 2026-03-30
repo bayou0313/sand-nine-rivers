@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+import { GOOGLE_MAPS_API_KEY, pollForGoogleMaps } from "@/lib/google-maps";
 
 type EstimateResult = {
   distance: number;
@@ -374,17 +374,7 @@ const Order = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!GOOGLE_MAPS_API_KEY) return;
-    if (window.google?.maps?.places) {
-      setApiLoaded(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setApiLoaded(true);
-    document.head.appendChild(script);
+    return pollForGoogleMaps(() => setApiLoaded(true));
   }, []);
 
   useEffect(() => {
