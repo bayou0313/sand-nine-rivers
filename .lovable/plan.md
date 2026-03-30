@@ -1,58 +1,42 @@
 
 
-## Plan: Bulk City Page Creation + Closest-PIT Deduplication
+## Plan: Auto Price Rollover + Remove Preview Modal
 
-### Summary
-Add three capabilities: (1) "Create All Cities" button that discovers cities across all active PITs with closest-PIT dedup, (2) "Remove Duplicates" button for retroactive cleanup, (3) update single-PIT creation to use closest-PIT logic instead of skip-if-exists.
+### What Already Exists
+- Closest-PIT dedup on `create_city_pages` — already implemented
+- `deduplicate_city_pages` action and "Remove Duplicates" button — already implemented
+- `create_all_city_pages` bulk action — already implemented
+- `recalculate_city_prices` action — already exists as separate action
 
-### Changes
+### What Changes
 
-#### 1. Edge Function — New Actions (`supabase/functions/leads-auth/index.ts`)
+#### 1. Edge Function — `save_pit` action (`supabase/functions/leads-auth/index.ts`, lines 225-266)
 
-**`create_all_city_pages` action** (insert before the final "Invalid action" response):
-- Fetch all active PITs
-- For each PIT, reuse the existing radial-grid + reverse-geocode discovery logic (extracted into a helper or inlined)
-- Collect all candidate cities with their `distance_from_pit`, `pit_id`, and calculated `base_price`
-- Deduplicate: for each `city_slug`, keep only the candidate with the lowest `distance_from_pit`
-- Fetch existing `city_slugs` from `city_pages` table — skip any slug that already exists
-- Insert new pages as `draft`, then call `generate-city-page` for each and activate on success
-- Return `{ success, created, skipped, generated, failed }`
+Modify `save_pit` to:
+- Fetch existing PIT pricing before overwriting
+- After upsert, compare old vs new pricing fields (`base_price`, `free_miles`, `price_per_extra_mile`)
+- If changed: fetch all city pages with `pit_id`, recalculate `base_price` for each using the corrected formula, bulk update
+- Return `{ success, pit, prices_updated: N }` so the frontend can show a single toast
 
-**`deduplicate_city_pages` action**:
-- Fetch all city pages with `id, city_slug, pit_id, distance_from_pit, status, page_views`
-- Group by `city_slug`; for groups with >1 page, sort by `distance_from_pit` ASC (tiebreak: `page_views` DESC)
-- Keep the first (closest PIT), set rest to `status: 'inactive'`
-- Return `{ success, deactivated }`
+This eliminates the need for a separate `recalculate_city_prices` call from the frontend.
 
-**Update existing `create_city_pages` action** (Fix 4):
-- Before inserting, check if a page with the same `city_slug` already exists via `.maybeSingle()`
-- If existing page has higher `distance_from_pit` → update its `pit_id`, `distance_from_pit`, `base_price`
-- If existing page has lower `distance_from_pit` → skip
-- If no existing page → insert as before
+#### 2. Admin UI — Remove price preview modal (`src/pages/Leads.tsx`)
 
-#### 2. Admin UI — New Buttons (`src/pages/Leads.tsx`)
-
-**"Create All City Pages" button** in the City Pages header (next to Discover Cities):
-- New state: `bulkCreating`, `bulkProgress` (string for status messages), `showBulkCreateConfirm`
-- On click → show confirmation dialog (AlertDialog or simple modal) with the text from the spec
-- On confirm → call `leads-auth` with `action: "create_all_city_pages"`
-- Show loading spinner with "Creating city pages for all PITs..."
-- On completion → toast with created/skipped counts, refresh city pages list
-
-**"Remove Duplicates" button** in the filter bar:
-- On click → show confirmation dialog with duplicate count
-- On confirm → call `leads-auth` with `action: "deduplicate_city_pages"`
-- On completion → toast with deactivated count, refresh list
+- Remove state: `showPricePreview`, `pricePreviewData`, `pendingPitPayload`, `pendingPitMeta`
+- Remove the `previewNewPrice` helper function
+- Simplify `handleSavePit`: remove the pricing-changed check that opens the modal — just call `executePitSave` directly every time
+- Simplify `executePitSave`: remove the client-side `recalculate_city_prices` call — the edge function now handles it server-side
+- Update toast: show "PIT saved. X city page prices updated." if `prices_updated > 0`, else "PIT saved."
+- Delete the entire price preview modal JSX block (~lines 3913-3980)
 
 ### Files Changed
 
 | File | Change |
 |---|---|
-| `supabase/functions/leads-auth/index.ts` | Add `create_all_city_pages` and `deduplicate_city_pages` actions; update `create_city_pages` with closest-PIT upsert logic |
-| `src/pages/Leads.tsx` | Add "Create All City Pages" button with confirmation modal, "Remove Duplicates" button with confirmation modal, related state variables |
+| `supabase/functions/leads-auth/index.ts` | Enhance `save_pit` to auto-recalculate city page prices inline |
+| `src/pages/Leads.tsx` | Remove price preview modal, simplify save flow to single step |
 
 ### Not Changed
-- Discovery logic (radial grid, reverse geocode) — reused as-is from the existing `discover_cities` action
-- Existing city page content, RLS policies, Stripe, order flow, homepage components
-- `generate-city-page` edge function (called as-is)
+- `create_city_pages`, `deduplicate_city_pages`, `create_all_city_pages` — already correct
+- Discovery logic, RLS, Stripe, auth, homepage components
 
