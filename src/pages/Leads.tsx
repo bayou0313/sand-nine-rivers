@@ -107,6 +107,43 @@ const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
+/**
+ * Fetch driving distances from one origin to multiple destinations using Google Distance Matrix.
+ * Returns array of distances in miles (null if route not found).
+ */
+async function fetchDrivingDistances(
+  originLat: number, originLon: number,
+  destinations: { lat: number; lon: number }[],
+  apiKey: string
+): Promise<(number | null)[]> {
+  if (destinations.length === 0) return [];
+  const results: (number | null)[] = new Array(destinations.length).fill(null);
+  const BATCH = 25;
+  for (let i = 0; i < destinations.length; i += BATCH) {
+    const batch = destinations.slice(i, i + BATCH);
+    const destsStr = batch.map(d => `${d.lat},${d.lon}`).join("|");
+    try {
+      const resp = await fetch(
+        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLon}&destinations=${encodeURIComponent(destsStr)}&units=imperial&key=${apiKey}`
+      );
+      const data = await resp.json();
+      const elements = data.rows?.[0]?.elements || [];
+      for (let j = 0; j < elements.length; j++) {
+        if (elements[j]?.status === "OK" && elements[j].distance?.value) {
+          results[i + j] = elements[j].distance.value / 1609.344;
+        }
+      }
+    } catch (e) {
+      console.error("Distance Matrix batch failed:", e);
+    }
+  }
+  return results;
+}
+
+// Cache key for driving distance: "pitLat,pitLon->destLat,destLon"
+const drivingDistKey = (lat1: number, lon1: number, lat2: number, lon2: number) =>
+  `${lat1.toFixed(5)},${lon1.toFixed(5)}->${lat2.toFixed(5)},${lon2.toFixed(5)}`;
+
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
 type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "cash_orders" | "city_pages" | "profile" | "settings";
@@ -179,8 +216,12 @@ const Leads = () => {
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
   });
-  const [geocoding, setGeocoding] = useState(false);
   const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
+  const [geocoding, setGeocoding] = useState(false);
+  // Driving distance cache: key -> miles
+  const [drivingCache, setDrivingCache] = useState<Record<string, number>>(() => {
+    try { return JSON.parse(sessionStorage.getItem("drivingcache") || "{}"); } catch { return {}; }
+  });
   const pitInputRef = useRef<HTMLInputElement>(null);
   const editPitInputRef = useRef<HTMLInputElement>(null);
   const addPitAutocompleteRef = useRef<any>(null);
@@ -654,13 +695,19 @@ const Leads = () => {
     return null;
   };
 
+  // Helper: get driving distance if cached, else fallback to haversine
+  const getDist = useCallback((pitLat: number, pitLon: number, destLat: number, destLon: number) => {
+    const key = drivingDistKey(pitLat, pitLon, destLat, destLon);
+    return drivingCache[key] ?? haversine(pitLat, pitLon, destLat, destLon);
+  }, [drivingCache]);
+
   const checkActivationLeads = (pit: Pit) => {
     const eff = getEffectivePrice(pit, globalSettings);
     const reachable: Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }> = [];
     for (const l of parsedLeads) {
       const cached = geocodeCache[l.address];
       if (!cached) continue;
-      const dist = haversine(pit.lat, pit.lon, cached.lat, cached.lon);
+      const dist = getDist(pit.lat, pit.lon, cached.lat, cached.lon);
       if (dist <= eff.max_distance) {
         const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
         const price = eff.base_price + extra;
@@ -1057,14 +1104,14 @@ const Leads = () => {
       const cached = geocodeCache[l.address];
       const hqDist = l.distance_miles || 0;
       if (!cached) return { lead: l, hqDist, pitDist: null, delta: 0, newPrice: 0, status: "unknown" as const };
-      const pitDist = haversine(selectedPit.lat, selectedPit.lon, cached.lat, cached.lon);
+      const pitDist = getDist(selectedPit.lat, selectedPit.lon, cached.lat, cached.lon);
       const delta = hqDist - pitDist;
       const extra = pitDist > eff.free_miles ? (pitDist - eff.free_miles) * eff.extra_per_mile : 0;
       const newPrice = eff.base_price + extra;
       const status = pitDist <= eff.max_distance ? "serviceable" : pitDist < hqDist ? "closer" : "same";
       return { lead: l, hqDist, pitDist, delta, newPrice, status: status as "serviceable" | "closer" | "same" };
     }).filter(d => d.pitDist !== null).sort((a, b) => (a.pitDist || 0) - (b.pitDist || 0));
-  }, [selectedPit, parsedLeads, geocodeCache, globalSettings]);
+  }, [selectedPit, parsedLeads, geocodeCache, globalSettings, getDist]);
 
   const geocodeAllLeads = async () => {
     setGeocoding(true);
@@ -1074,8 +1121,40 @@ const Leads = () => {
         await new Promise(r => setTimeout(r, 200));
       }
     }
+
+    // Batch-fetch driving distances for all geocoded leads against all active PITs
+    const activePits = pits.filter(p => p.status === "active");
+    const geocodedLeads = parsedLeads.filter(l => geocodeCache[l.address]);
+    if (geocodedLeads.length > 0 && activePits.length > 0) {
+      const newDrivingCache = { ...drivingCache };
+      for (const pit of activePits) {
+        // Filter leads that don't have a cached driving distance for this PIT yet
+        const needsDriving = geocodedLeads.filter(l => {
+          const gc = geocodeCache[l.address];
+          const key = drivingDistKey(pit.lat, pit.lon, gc.lat, gc.lon);
+          return !newDrivingCache[key];
+        });
+        if (needsDriving.length === 0) continue;
+
+        const dests = needsDriving.map(l => {
+          const gc = geocodeCache[l.address];
+          return { lat: gc.lat, lon: gc.lon };
+        });
+        const distances = await fetchDrivingDistances(pit.lat, pit.lon, dests, GOOGLE_MAPS_API_KEY);
+        for (let i = 0; i < needsDriving.length; i++) {
+          if (distances[i] != null) {
+            const gc = geocodeCache[needsDriving[i].address];
+            const key = drivingDistKey(pit.lat, pit.lon, gc.lat, gc.lon);
+            newDrivingCache[key] = distances[i]!;
+          }
+        }
+      }
+      setDrivingCache(newDrivingCache);
+      sessionStorage.setItem("drivingcache", JSON.stringify(newDrivingCache));
+    }
+
     setGeocoding(false);
-    toast({ title: "Geocoding complete" });
+    toast({ title: "Geocoding & driving distances complete" });
   };
 
   const sendProposals = async () => {
@@ -1144,8 +1223,8 @@ const Leads = () => {
     }
     const cached = geocodeCache[quickProposalLead.address];
     if (!cached) return null;
-    return haversine(qpSelectedPit.lat, qpSelectedPit.lon, cached.lat, cached.lon);
-  }, [quickProposalLead, qpSelectedPit, qpPitId, geocodeCache]);
+    return getDist(qpSelectedPit.lat, qpSelectedPit.lon, cached.lat, cached.lon);
+  }, [quickProposalLead, qpSelectedPit, qpPitId, geocodeCache, getDist]);
 
   useEffect(() => {
     if (!qpSelectedPit || qpDistance == null) return;
@@ -3436,7 +3515,7 @@ const Leads = () => {
                     const dist = quickProposalLead.nearest_pit_id === p.id && quickProposalLead.nearest_pit_distance != null
                       ? quickProposalLead.nearest_pit_distance.toFixed(1)
                       : geocodeCache[quickProposalLead.address]
-                        ? haversine(p.lat, p.lon, geocodeCache[quickProposalLead.address].lat, geocodeCache[quickProposalLead.address].lon).toFixed(1)
+                        ? getDist(p.lat, p.lon, geocodeCache[quickProposalLead.address].lat, geocodeCache[quickProposalLead.address].lon).toFixed(1)
                         : "?";
                     return <option key={p.id} value={p.id}>{p.name} — {dist} mi away</option>;
                   })}
