@@ -105,18 +105,18 @@ const Index = () => {
   return (
     <div className="min-h-screen pb-14 lg:pb-0">
       <Helmet>
-        <title>{seo.seo_homepage_title || DEFAULT_TITLE}</title>
-        <meta name="description" content={seo.seo_homepage_description || DEFAULT_DESCRIPTION} />
+        <title>{seo.seo_meta_title || DEFAULT_TITLE}</title>
+        <meta name="description" content={seo.seo_meta_description || DEFAULT_DESCRIPTION} />
         <meta name="robots" content={seo.seo_robots || "index, follow"} />
-        <link rel="canonical" href={seo.seo_canonical_url || "https://riversand.net/"} />
+        <link rel="canonical" href={seo.seo_canonical || "https://riversand.net/"} />
         {seo.seo_og_title && <meta property="og:title" content={seo.seo_og_title} />}
         {seo.seo_og_description && <meta property="og:description" content={seo.seo_og_description} />}
-        {seo.seo_og_image_url && <meta property="og:image" content={seo.seo_og_image_url} />}
-        {seo.seo_gsc_verification && <meta name="google-site-verification" content={seo.seo_gsc_verification} />}
-        {seo.seo_schema_local_business === "true" && (
+        {seo.seo_og_image && <meta property="og:image" content={seo.seo_og_image} />}
+        {seo.seo_gsc_id && <meta name="google-site-verification" content={seo.seo_gsc_id} />}
+        {seo.seo_schema_localbusiness !== "false" && (
           <script type="application/ld+json">{JSON.stringify(localBusinessJsonLd)}</script>
         )}
-        {seo.seo_schema_faq === "true" && (
+        {seo.seo_schema_faq !== "false" && (
           <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
         )}
       </Helmet>
