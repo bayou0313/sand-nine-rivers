@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { password, city_page_id, city_name, state, region, pit_name, pit_city, distance, price, free_miles, saturday_available, same_day_cutoff } = await req.json();
+    const { password, city_page_id, city_name, state, region, pit_name, pit_city, distance, price, free_miles, saturday_available, same_day_cutoff, multi_pit_coverage } = await req.json();
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
@@ -47,6 +47,15 @@ Your content must:
     const effectiveRegion = region || state;
     const effectiveCutoff = same_day_cutoff || "12:00 PM";
 
+    const isMultiPit = multi_pit_coverage === true;
+
+    const multiPitInstructions = isMultiPit ? `
+IMPORTANT — Multi-PIT Coverage is TRUE for this city:
+- "delivery_details" must NOT mention a specific price or distance. Instead write: "${city_name} is served by multiple River Sand dispatch locations. Your exact delivery price depends on your specific address — enter it above for an instant quote."
+- FAQ price answer must NOT mention a specific dollar amount. Instead write: "Delivery pricing to ${city_name} varies by location within the city. Enter your address in the estimator above and you'll see your exact price instantly — no phone call needed."
+- All other fields (hero_intro, why_choose_intro, local_uses, local_expertise) write normally with local knowledge.
+- meta_description should NOT include a specific price — instead emphasize "instant pricing" and "same-day delivery".` : "";
+
     const userPrompt = `Generate structured local SEO content for this city page. Return ONLY the structured tool call — no markdown, no explanation.
 
 CITY DATA:
@@ -57,23 +66,24 @@ CITY DATA:
 - Delivery price: $${price}
 - PIT name: ${pit_name}
 - PIT location city: ${pit_city || pit_name}
+- Multi-PIT coverage: ${isMultiPit ? "TRUE" : "FALSE"}
 - Operating days: Monday through Saturday
 - Same-day cutoff: ${effectiveCutoff}
 - Free delivery radius: ${free_miles} miles
 - Saturday available: ${saturday_available ? "yes" : "no"}
-
+${multiPitInstructions}
 CONTENT REQUIREMENTS:
 - meta_title: Max 60 chars. Must include city name and 'river sand delivery'. Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day | River Sand"
-- meta_description: Max 160 chars. Must include city name, same-day delivery, price ($${price}), and payment options (cash or card). Written to maximize click-through from search results.
+- meta_description: Max 160 chars. Must include city name, same-day delivery${isMultiPit ? ", instant pricing" : `, price ($${price})`}, and payment options (cash or card). Written to maximize click-through from search results.
 - h1_text: Max 70 chars. MUST start with "River Sand Delivery in". Format: "River Sand Delivery in ${city_name}, ${state} — Same-Day Service". NO pipe characters (|) — pipes are for meta_title only. Must read as a natural headline, not an SEO tag.
 - hero_intro: 2-3 sentences. Opens with city name and a specific local reference (road, landmark, project type common to this area). States the core offer. Ends with a confidence signal. NO generic phrases.
 - why_choose_intro: 1-2 sentences. Establishes LOCAL AUTHORITY for this specific parish/area. Reference the parish name, local terrain challenge, or why a local supplier matters here. Demonstrates E-E-A-T.
-- delivery_details: 1-2 sentences. Specific logistics: pit name, exact distance (${distance} miles), the actual road(s) used to reach this city (reference real LA highways like LA-18, US-90, I-10, etc.), delivery price ($${price}). Shows we know the route.
+- delivery_details: ${isMultiPit ? "1-2 sentences. Do NOT mention a specific price or distance — this city is covered by multiple dispatch locations. Emphasize that pricing depends on exact address and direct them to the estimator." : `1-2 sentences. Specific logistics: pit name, exact distance (${distance} miles), the actual road(s) used to reach this city (reference real LA highways like LA-18, US-90, I-10, etc.), delivery price ($${price}). Shows we know the route.`}
 - local_uses: Exactly 4 items. Each is 1 sentence describing a SPECIFIC common use case for river sand in THIS city's context. Consider: river proximity (levee work), industrial (fill), residential (drainage, landscaping), agricultural (arena/garden). Make each feel local.
 - local_expertise: 2-3 sentences. Demonstrates deep local knowledge: geography (river proximity, elevation, flood zone characteristics), soil conditions (silty, clay-heavy, etc.), specific challenges projects face in this area.
 - faq_items: Exactly 3 FAQ items. Each with "question" and "answer" fields:
   1. City-specific question about delivery schedule or availability — answer mentions city name
-  2. City-specific question about price or distance — answer mentions exact price ($${price}), exact distance (${distance} miles)
+  2. ${isMultiPit ? "City-specific question about pricing — answer says pricing varies by location and directs to the estimator, do NOT mention a specific dollar amount" : `City-specific question about price or distance — answer mentions exact price ($${price}), exact distance (${distance} miles)`}
   3. Local use-case question specific to this city's geography — confident, specific answer
 - schema_service_area: City name formatted for schema: "${city_name}, ${state}"`;
 

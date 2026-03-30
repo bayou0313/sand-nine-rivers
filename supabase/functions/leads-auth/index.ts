@@ -731,7 +731,22 @@ serve(async (req) => {
       let generated = 0;
       let failed = 0;
       let skipped = 0;
+      // Fetch all active PITs for multi-PIT coverage detection
+      const { data: allActivePits } = await supabase
+        .from("pits")
+        .select("id, lat, lon, max_distance")
+        .eq("status", "active");
+
       for (const city of cities) {
+        // ── Multi-PIT coverage detection ──
+        const competingPits = (allActivePits ?? []).filter(otherPit => {
+          if (otherPit.id === pit_id) return false;
+          const dist = haversine(city.lat, city.lng, otherPit.lat, otherPit.lon);
+          return dist <= (otherPit.max_distance || 30);
+        });
+        const isMultiPit = competingPits.length > 0;
+        const competingIds = isMultiPit ? competingPits.map(p => p.id) : null;
+
         // ── Closest-PIT dedup: check if slug already exists ──
         const { data: existing } = await supabase
           .from("city_pages")
@@ -744,12 +759,20 @@ serve(async (req) => {
             const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
             await supabase.from("city_pages").update({
               pit_id, distance_from_pit: city.distance, base_price: newPrice,
+              multi_pit_coverage: isMultiPit, competing_pit_ids: competingIds,
               pit_reassigned: true, price_changed: false,
               prompt_version: null, regen_reason: 'pit_reassigned',
               updated_at: new Date().toISOString(),
             }).eq("id", existing.id);
             console.log(`Updated ${city.city_slug} to closer PIT (${city.distance} mi) — flagged for regen`);
           } else {
+            // Existing PIT is closer — but update multi-PIT status if needed
+            if (isMultiPit) {
+              await supabase.from("city_pages").update({
+                multi_pit_coverage: true, competing_pit_ids: competingIds,
+                updated_at: new Date().toISOString(),
+              }).eq("id", existing.id);
+            }
             console.log(`Skipped ${city.city_slug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
           }
           skipped++;
@@ -767,6 +790,8 @@ serve(async (req) => {
             lng: city.lng,
             distance_from_pit: city.distance,
             base_price: Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile)),
+            multi_pit_coverage: isMultiPit,
+            competing_pit_ids: competingIds,
             status: "draft",
             page_views: 0,
             pit_reassigned: false,
@@ -798,6 +823,7 @@ serve(async (req) => {
               price: city.price,
               free_miles: pitFreeMiles,
               saturday_available: satAvailable,
+              multi_pit_coverage: isMultiPit,
             }),
           });
           if (genResp.ok) {
