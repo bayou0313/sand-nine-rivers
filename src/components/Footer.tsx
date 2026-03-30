@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import { Phone, Mail, MapPin, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import logoImg from "@/assets/riversand-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -13,11 +15,30 @@ const fadeUp: Variants = {
   }),
 };
 
+interface CityLink {
+  city_slug: string;
+  city_name: string;
+}
+
 const Footer = () => {
+  const [cityLinks, setCityLinks] = useState<CityLink[]>([]);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      const { data } = await supabase
+        .from("city_pages")
+        .select("city_slug, city_name")
+        .eq("status", "active")
+        .limit(8);
+      if (data) setCityLinks(data);
+    };
+    fetchCities();
+  }, []);
+
   return (
     <footer className="bg-foreground pt-8">
       <div className="container mx-auto px-6 pb-[23px]">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+        <div className={`grid grid-cols-1 gap-8 mb-10 ${cityLinks.length > 0 ? "md:grid-cols-5" : "md:grid-cols-4"}`}>
           <motion.div
             className="flex flex-col justify-start"
             initial="hidden"
@@ -83,6 +104,24 @@ const Footer = () => {
               <p>Licensed & Insured</p>
             </div>
           </motion.div>
+
+          {cityLinks.length > 0 && (
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} custom={4} variants={fadeUp}>
+              <p className="font-display text-lg text-background tracking-widest mb-4">CITIES WE SERVE</p>
+              <div className="space-y-2 font-body text-sm text-background/40">
+                {cityLinks.map((city) => (
+                  <motion.div key={city.city_slug} whileHover={{ x: 4 }}>
+                    <Link
+                      to={`/${city.city_slug}/river-sand-delivery`}
+                      className="block hover:text-accent transition-colors duration-300"
+                    >
+                      {city.city_name}
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         <motion.div

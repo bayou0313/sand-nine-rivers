@@ -21,8 +21,12 @@ type EstimateResult = {
   sameDayCutoff?: string | null;
 } | null;
 
-const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
-  const { prefillAddress } = props;
+interface DeliveryEstimatorProps {
+  prefillAddress?: string | null;
+  embedded?: boolean;
+}
+
+const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps) => {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EstimateResult>(null);
@@ -37,24 +41,18 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
   const autocompleteRef = useRef<any>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // Dynamic data from DB
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
   const [pits, setPits] = useState<PitData[]>([]);
   const [matchedEffective, setMatchedEffective] = useState<{ free_miles: number; extra_per_mile: number; saturday_surcharge: number } | null>(null);
 
-  // Fetch PITs + global settings on mount
   useEffect(() => {
     const fetchData = async () => {
       const [settingsRes, pitsRes] = await Promise.all([
         supabase.from("global_settings").select("key, value"),
         supabase.from("pits").select("id, name, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active"),
       ]);
-      if (settingsRes.data) {
-        setGlobalPricing(parseGlobalSettings(settingsRes.data as any));
-      }
-      if (pitsRes.data) {
-        setPits(pitsRes.data as any);
-      }
+      if (settingsRes.data) setGlobalPricing(parseGlobalSettings(settingsRes.data as any));
+      if (pitsRes.data) setPits(pitsRes.data as any);
     };
     fetchData();
   }, []);
@@ -97,7 +95,6 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
     });
   }, [apiLoaded]);
 
-  // Prefill address from return visitor banner
   useEffect(() => {
     if (prefillAddress && apiLoaded) {
       setAddress(prefillAddress);
@@ -108,11 +105,10 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
     }
   }, [prefillAddress, apiLoaded]);
 
-  // Scroll to result on mobile after price is calculated
   useEffect(() => {
     if (result && resultRef.current) {
       setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 200);
     }
   }, [result]);
@@ -124,9 +120,8 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
       const [hours, minutes] = cutoff.split(":").map(Number);
       const cutoffDate = new Date();
       cutoffDate.setHours(hours, minutes, 0, 0);
-      // Check if today is a weekday (Mon-Sat)
       const day = now.getDay();
-      if (day === 0) return false; // Sunday
+      if (day === 0) return false;
       return now < cutoffDate;
     } catch {
       return false;
@@ -234,8 +229,111 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
     }
   }, [address, customerCoords, pits, globalPricing]);
 
+  const estimatorContent = (
+    <>
+      <div id="estimator" className={embedded
+        ? "bg-foreground/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl"
+        : "bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
+      }>
+        <div className="space-y-4">
+          <label className={`font-display text-lg tracking-wider flex items-center gap-2 ${embedded ? "text-primary-foreground" : "text-foreground"}`}>
+            <MapPin className="w-5 h-5 text-accent" /> DELIVERY ADDRESS
+          </label>
+          <p className={`text-sm font-body ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+            Get an exact delivery price in seconds — no account needed.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Enter your delivery address..."
+              value={address}
+              onChange={(e) => { setAddress(e.target.value); setCustomerCoords(null); }}
+              className={`flex-1 h-12 min-h-[44px] text-base rounded-xl ${embedded ? "bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-accent/50" : ""}`}
+              maxLength={500}
+              onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
+            />
+            <Button data-estimator-btn onClick={calculateDistance} disabled={loading} className="h-12 min-h-[44px] font-display tracking-wider text-base px-8 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
+            </Button>
+          </div>
+
+          {!GOOGLE_MAPS_API_KEY && (
+            <p className="text-sm text-muted-foreground font-body flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-accent" />
+              Google Maps API key not configured.
+            </p>
+          )}
+        </div>
+
+        {error && (
+          <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+            <p className="font-body text-sm text-destructive">{error}</p>
+          </div>
+        )}
+
+        {result && (
+          <motion.div
+            ref={resultRef}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 p-6 bg-primary/10 border border-primary/20 rounded-2xl space-y-4"
+          >
+            <div className="flex items-center gap-2 text-primary">
+              <CheckCircle2 className="w-6 h-6" />
+              <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
+            </div>
+            <div className={`text-center p-4 rounded-xl ${embedded ? "bg-white/10" : "bg-background"}`}>
+              <p className={`font-body text-xs uppercase ${embedded ? "text-primary-foreground/50" : "text-muted-foreground"}`}>Per Load Starting At</p>
+              <p className="font-display text-3xl text-accent flex items-center justify-center">
+                {formatCurrency(result.price)}
+              </p>
+            </div>
+
+            {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
+              <div className="flex items-center gap-2 justify-center text-green-400">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm font-body font-medium">
+                  ✓ Same-day delivery available — order by {formatCutoffTime(result.sameDayCutoff)}
+                </span>
+              </div>
+            )}
+
+            <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
+              9 cubic yards of river sand • {matchedEffective && result.distance > matchedEffective.free_miles
+                ? `Includes ${formatCurrency((result.distance - matchedEffective.free_miles) * matchedEffective.extra_per_mile)} extended-area surcharge`
+                : "Local delivery included"
+              } • Saturday +{formatCurrency(matchedEffective?.saturday_surcharge ?? globalPricing.saturday_surcharge)}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
+                <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}`}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
+              </Button>
+              <Button variant="outline" className={`flex-1 h-12 font-display tracking-wider text-lg rounded-xl ${embedded ? "border-white/20 text-white hover:bg-white/10" : ""}`} asChild>
+                <a href="tel:+18554689297">CALL TO ORDER</a>
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      <OutOfAreaModal
+        open={showOutOfAreaModal}
+        onClose={() => setShowOutOfAreaModal(false)}
+        address={outOfAreaAddress}
+        distanceMiles={outOfAreaDistance}
+        nearestPit={nearestPitInfo}
+      />
+    </>
+  );
+
+  if (embedded) {
+    return estimatorContent;
+  }
+
   return (
-    <section id="estimator" className="py-24 bg-background">
+    <section id="estimator" className="py-24 bg-background overflow-x-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">INSTANT ESTIMATE</motion.p>
@@ -250,93 +348,10 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
           >
-            <div className="space-y-4">
-              <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" /> DELIVERY ADDRESS
-              </label>
-              <p className="text-sm text-muted-foreground font-body">
-                Get an exact delivery price in seconds — no account needed.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Enter your delivery address..."
-                  value={address}
-                  onChange={(e) => { setAddress(e.target.value); setCustomerCoords(null); }}
-                  className="flex-1 h-12 text-base rounded-xl"
-                  maxLength={500}
-                  onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
-                />
-                <Button data-estimator-btn onClick={calculateDistance} disabled={loading} className="h-12 font-display tracking-wider text-base px-8 rounded-xl">
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
-                </Button>
-              </div>
-
-              {!GOOGLE_MAPS_API_KEY && (
-                <p className="text-sm text-muted-foreground font-body flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-accent" />
-                  Google Maps API key not configured.
-                </p>
-              )}
-            </div>
-
-            {error && (
-              <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
-                <p className="font-body text-sm text-destructive">{error}</p>
-              </div>
-            )}
-
-            {result && (
-              <motion.div
-                ref={resultRef}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 p-6 bg-primary/5 border border-primary/20 rounded-2xl space-y-4"
-              >
-                <div className="flex items-center gap-2 text-primary">
-                  <CheckCircle2 className="w-6 h-6" />
-                  <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
-                </div>
-                <div className="text-center p-4 bg-background rounded-xl">
-                  <p className="font-body text-xs text-muted-foreground uppercase">Per Load Starting At</p>
-                  <p className="font-display text-3xl text-primary flex items-center justify-center">
-                    {formatCurrency(result.price)}
-                  </p>
-                </div>
-
-                {/* Same-day urgency signal */}
-                {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
-                  <div className="flex items-center gap-2 justify-center text-green-600">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm font-body font-medium">
-                      ✓ Same-day delivery available — order by {formatCutoffTime(result.sameDayCutoff)}
-                    </span>
-                  </div>
-                )}
-
-                <p className="font-body text-sm text-muted-foreground text-center">
-                  9 cubic yards of river sand • {matchedEffective && result.distance > matchedEffective.free_miles
-                    ? `Includes ${formatCurrency((result.distance - matchedEffective.free_miles) * matchedEffective.extra_per_mile)} extended-area surcharge`
-                    : "Local delivery included"
-                  } • Saturday +{formatCurrency(matchedEffective?.saturday_surcharge ?? globalPricing.saturday_surcharge)}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
-                    <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}`}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
-                  </Button>
-                  <Button variant="outline" className="flex-1 h-12 font-display tracking-wider text-lg rounded-xl" asChild>
-                    <a href="tel:+18554689297">CALL TO ORDER</a>
-                  </Button>
-                </div>
-              </motion.div>
-            )}
+            {estimatorContent}
           </motion.div>
 
-          {/* Show prompt to enter address when no result yet */}
           {!result && !error && !loading && (
             <div className="mt-8 text-center">
               <p className="font-display text-xl text-muted-foreground tracking-wider">
@@ -349,14 +364,6 @@ const DeliveryEstimator = (props: { prefillAddress?: string | null }) => {
           )}
         </div>
       </div>
-
-      <OutOfAreaModal
-        open={showOutOfAreaModal}
-        onClose={() => setShowOutOfAreaModal(false)}
-        address={outOfAreaAddress}
-        distanceMiles={outOfAreaDistance}
-        nearestPit={nearestPitInfo}
-      />
     </section>
   );
 };
