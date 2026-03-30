@@ -60,7 +60,7 @@ const Order = () => {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
-  const [apiLoaded, setApiLoaded] = useState(false);
+  const { loaded: apiLoaded } = useGoogleMaps();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
