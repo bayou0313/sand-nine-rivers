@@ -617,14 +617,23 @@ serve(async (req) => {
       let failed = 0;
       let skipped = 0;
       for (const city of cities) {
-        // ── Dedup check: skip if slug already exists ──
+        // ── Closest-PIT dedup: check if slug already exists ──
         const { data: existing } = await supabase
           .from("city_pages")
-          .select("id, city_slug")
+          .select("id, distance_from_pit")
           .eq("city_slug", city.city_slug)
           .maybeSingle();
         if (existing) {
-          console.log(`Skipped duplicate: ${city.city_slug} (already exists as ${existing.id})`);
+          if (city.distance < (existing.distance_from_pit ?? 999)) {
+            // New PIT is closer — update existing page
+            const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
+            await supabase.from("city_pages").update({
+              pit_id, distance_from_pit: city.distance, base_price: newPrice,
+            }).eq("id", existing.id);
+            console.log(`Updated ${city.city_slug} to closer PIT (${city.distance} mi)`);
+          } else {
+            console.log(`Skipped ${city.city_slug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
+          }
           skipped++;
           continue;
         }
@@ -725,6 +734,232 @@ serve(async (req) => {
       if (error) throw error;
       return new Response(
         JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── CREATE ALL CITY PAGES (bulk across all PITs with closest-PIT dedup) ──
+    if (action === "create_all_city_pages") {
+      const { data: allPits, error: pitsErr } = await supabase
+        .from("pits").select("*").eq("status", "active");
+      if (pitsErr) throw pitsErr;
+      if (!allPits || allPits.length === 0) {
+        return new Response(JSON.stringify({ error: "No active PITs found" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "GOOGLE_MAPS_SERVER_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const R = 3958.8;
+      const hav = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      };
+
+      const cleanCityName = (name: string): string => {
+        return name.replace(/^City of /i, "").replace(/^Town of /i, "").replace(/^Village of /i, "")
+          .replace(/\/.+$/, "").replace(/\s+Area$/i, "").replace(/\s+District$/i, "").replace(/\s+CDP$/i, "").trim();
+      };
+
+      const EXCLUDE_WORDS = [
+        "inc", "llc", "corp", "association", "club", "center", "centre",
+        "park", "farm", "commission", "community", "fitness", "beach",
+        "golf", "volleyball", "action", "development", "recreation",
+        "school", "church", "hospital", "museum", "library", "university",
+        "college", "foundation", "institute", "authority", "department",
+        "council", "services", "group", "company", "studio", "restaurant",
+        "hotel", "motel", "plaza", "mall", "shop", "store", "market",
+        "yacht", "marina", "gym", "theater", "theatre", "arena",
+      ];
+
+      const isValidCityName = (name: string): boolean => {
+        if (!name) return false;
+        const lower = name.toLowerCase();
+        for (const word of EXCLUDE_WORDS) { if (lower.includes(word)) return false; }
+        const words = name.split(/\s+/);
+        if (words.length > 4) return false;
+        if (words.some(w => w.length > 20)) return false;
+        return true;
+      };
+
+      const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
+
+      // Get global settings for pricing
+      const { data: gsData } = await supabase.from("global_settings").select("key, value");
+      const gs: Record<string, string> = {};
+      for (const row of gsData || []) gs[row.key] = row.value;
+
+      // Collect all candidates across all PITs
+      const allCandidates: Array<{
+        city_name: string; city_slug: string; state: string;
+        lat: number; lng: number; distance_from_pit: number;
+        pit_id: string; pit_name: string; base_price: number;
+      }> = [];
+
+      for (const pit of allPits) {
+        const maxDist = pit.max_distance || 30;
+        const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= maxDist);
+        const directions = [0, 45, 90, 135, 180, 225, 270, 315];
+        const samplePoints: { lat: number; lng: number }[] = [{ lat: pit.lat, lng: pit.lon }];
+        for (const dist of distances) {
+          for (const dir of directions) {
+            const rad = dir * Math.PI / 180;
+            const dLat = (dist / 69) * Math.cos(rad);
+            const dLng = (dist / (69 * Math.cos(pit.lat * Math.PI / 180))) * Math.sin(rad);
+            samplePoints.push({ lat: pit.lat + dLat, lng: pit.lon + dLng });
+          }
+        }
+        console.log(`[bulk] Sampling ${samplePoints.length} points for PIT ${pit.name}`);
+
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
+          const batch = samplePoints.slice(i, i + BATCH_SIZE);
+          const promises = batch.map(async (pt) => {
+            try {
+              const resp = await fetch(
+                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${pt.lat},${pt.lng}&result_type=locality|sublocality_level_1|administrative_area_level_3&key=${apiKey}`
+              );
+              return (await resp.json()).results || [];
+            } catch { return []; }
+          });
+          const batchResults = await Promise.all(promises);
+          for (const results of batchResults) {
+            for (const result of results) {
+              const types = result.types || [];
+              if (!types.some((t: string) => VALID_TYPES.includes(t))) continue;
+              const components = result.address_components || [];
+              let cityName = "";
+              let stateCode = "";
+              for (const prio of VALID_TYPES) {
+                const comp = components.find((c: any) => c.types?.includes(prio));
+                if (comp && !cityName) cityName = comp.long_name;
+              }
+              const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
+              if (stateComp) stateCode = stateComp.short_name;
+              if (!cityName) continue;
+              cityName = cleanCityName(cityName);
+              if (!isValidCityName(cityName)) continue;
+              const loc = result.geometry?.location;
+              if (!loc) continue;
+              const distance = hav(pit.lat, pit.lon, loc.lat, loc.lng);
+              if (distance > maxDist) continue;
+              const slug = cityName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+              const bPrice = pit.base_price ?? parseFloat(gs.default_base_price || "195");
+              const freeMiles = pit.free_miles ?? parseFloat(gs.default_free_miles || "15");
+              const extraPerMile = pit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+              const extraMiles = Math.max(0, distance - freeMiles);
+              const price = Math.max(bPrice, Math.round(bPrice + extraMiles * extraPerMile));
+
+              allCandidates.push({
+                city_name: cityName, city_slug: slug, state: stateCode || "LA",
+                lat: loc.lat, lng: loc.lng, distance_from_pit: Math.round(distance * 10) / 10,
+                pit_id: pit.id, pit_name: pit.name, base_price: price,
+              });
+            }
+          }
+        }
+      }
+
+      // Deduplicate: for each city_slug keep lowest distance_from_pit
+      const bestBySlug = new Map<string, typeof allCandidates[0]>();
+      for (const c of allCandidates) {
+        const existing = bestBySlug.get(c.city_slug);
+        if (!existing || c.distance_from_pit < existing.distance_from_pit) {
+          bestBySlug.set(c.city_slug, c);
+        }
+      }
+
+      // Fetch existing slugs
+      const { data: existingPages } = await supabase.from("city_pages").select("city_slug");
+      const existingSlugs = new Set(existingPages?.map(p => p.city_slug) ?? []);
+
+      const toCreate = [...bestBySlug.values()].filter(c => !existingSlugs.has(c.city_slug));
+      console.log(`[bulk] ${allCandidates.length} total candidates, ${bestBySlug.size} unique, ${toCreate.length} new to create`);
+
+      const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
+      let created = 0;
+      let generated = 0;
+      let failed = 0;
+
+      for (const city of toCreate) {
+        const { data: inserted, error: insertErr } = await supabase
+          .from("city_pages")
+          .insert({
+            pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
+            state: city.state, lat: city.lat, lng: city.lng,
+            distance_from_pit: city.distance_from_pit, base_price: city.base_price, status: "draft",
+          })
+          .select().single();
+        if (insertErr) { console.error("Insert error:", insertErr); failed++; continue; }
+        created++;
+
+        // Generate AI content
+        try {
+          const pitData = allPits.find(p => p.id === city.pit_id);
+          const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-city-page`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
+            body: JSON.stringify({
+              password: leadsPasswordForGen, city_page_id: inserted.id,
+              city_name: city.city_name, state: city.state,
+              pit_name: city.pit_name, distance: city.distance_from_pit,
+              price: city.base_price,
+              free_miles: pitData?.free_miles ?? parseFloat(gs.default_free_miles || "15"),
+              saturday_available: pitData?.operating_days ? pitData.operating_days.includes(6) : true,
+            }),
+          });
+          if (genResp.ok) {
+            await supabase.from("city_pages").update({ status: "active" }).eq("id", inserted.id);
+            generated++;
+          } else { console.error("AI gen failed for", city.city_name); failed++; }
+        } catch (genErr) { console.error("AI gen error:", genErr); failed++; }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, created, generated, failed, skipped: existingSlugs.size, total_candidates: allCandidates.length, unique_cities: bestBySlug.size }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── DEDUPLICATE CITY PAGES ──
+    if (action === "deduplicate_city_pages") {
+      const { data: allPages, error: fetchErr } = await supabase
+        .from("city_pages")
+        .select("id, city_slug, pit_id, distance_from_pit, status, page_views")
+        .order("city_slug");
+      if (fetchErr) throw fetchErr;
+
+      const grouped = new Map<string, typeof allPages>();
+      for (const page of allPages ?? []) {
+        const group = grouped.get(page.city_slug) ?? [];
+        group.push(page);
+        grouped.set(page.city_slug, group);
+      }
+
+      let deactivated = 0;
+      for (const [, pages] of grouped) {
+        if (pages!.length <= 1) continue;
+        pages!.sort((a, b) => {
+          if ((a.distance_from_pit ?? 999) !== (b.distance_from_pit ?? 999)) {
+            return (a.distance_from_pit ?? 999) - (b.distance_from_pit ?? 999);
+          }
+          return (b.page_views ?? 0) - (a.page_views ?? 0);
+        });
+        const [, ...deactivate] = pages!;
+        for (const page of deactivate) {
+          await supabase.from("city_pages").update({ status: "inactive" }).eq("id", page.id);
+          deactivated++;
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, deactivated, unique_cities: grouped.size }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

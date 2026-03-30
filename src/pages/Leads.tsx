@@ -265,6 +265,10 @@ const Leads = () => {
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [showDeactivateDupsConfirm, setShowDeactivateDupsConfirm] = useState(false);
+  const [bulkCreating, setBulkCreating] = useState(false);
+  const [showBulkCreateConfirm, setShowBulkCreateConfirm] = useState(false);
+  const [deduplicating, setDeduplicating] = useState(false);
+  const [showDeduplicateConfirm, setShowDeduplicateConfirm] = useState(false);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
@@ -1882,6 +1886,15 @@ const Leads = () => {
                 {discoverLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
                 Discover Cities
               </Button>
+              <Button
+                onClick={() => setShowBulkCreateConfirm(true)}
+                disabled={bulkCreating}
+                size="sm"
+                style={{ backgroundColor: BRAND_NAVY, color: "white" }}
+              >
+                {bulkCreating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-4 h-4 mr-1" />}
+                Create All City Pages
+              </Button>
             </div>
 
             {/* Metrics */}
@@ -1915,7 +1928,91 @@ const Leads = () => {
                 <AlertTriangle className="w-3 h-3 inline mr-1" />
                 Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
               </button>
+              {duplicateCount > 0 && (
+                <Button
+                  onClick={() => setShowDeduplicateConfirm(true)}
+                  disabled={deduplicating}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                >
+                  {deduplicating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                  Remove Duplicates ({duplicateCount})
+                </Button>
+              )}
             </div>
+
+            {/* Bulk Create All Confirmation Modal */}
+            {showBulkCreateConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Create city pages for all PITs?</h3>
+                  <p className="text-sm text-gray-600">
+                    This will discover cities near all {pits.filter(p => p.status === "active").length} active PITs and create pages for any cities not already covered. Each city will be assigned to its closest PIT. Existing pages will not be overwritten.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setShowBulkCreateConfirm(false)}>Cancel</Button>
+                    <Button
+                      style={{ backgroundColor: BRAND_NAVY, color: "white" }}
+                      onClick={async () => {
+                        setShowBulkCreateConfirm(false);
+                        setBulkCreating(true);
+                        try {
+                          const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                            body: { password: storedPassword(), action: "create_all_city_pages" },
+                          });
+                          if (fnError) throw fnError;
+                          if (data?.error) throw new Error(data.error);
+                          toast({
+                            title: `Created ${data?.created || 0} new city pages`,
+                            description: `${data?.generated || 0} generated, ${data?.failed || 0} failed, ${data?.unique_cities || 0} unique cities found.`,
+                          });
+                          fetchCityPages();
+                        } catch (err: any) {
+                          toast({ title: "Bulk creation failed", description: err.message, variant: "destructive" });
+                        } finally { setBulkCreating(false); }
+                      }}
+                    >Create All City Pages</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Deduplicate Confirmation Modal */}
+            {showDeduplicateConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Remove duplicate city pages?</h3>
+                  <p className="text-sm text-gray-600">
+                    This will deactivate duplicate city pages, keeping only the page assigned to the closest PIT for each city. {duplicateCount} duplicate pages will be deactivated.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setShowDeduplicateConfirm(false)}>Cancel</Button>
+                    <Button
+                      style={{ backgroundColor: "#F59E0B", color: "white" }}
+                      onClick={async () => {
+                        setShowDeduplicateConfirm(false);
+                        setDeduplicating(true);
+                        try {
+                          const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                            body: { password: storedPassword(), action: "deduplicate_city_pages" },
+                          });
+                          if (fnError) throw fnError;
+                          if (data?.error) throw new Error(data.error);
+                          toast({
+                            title: `Deactivated ${data?.deactivated || 0} duplicate pages`,
+                            description: `${data?.unique_cities || 0} unique cities remain.`,
+                          });
+                          fetchCityPages();
+                        } catch (err: any) {
+                          toast({ title: "Deduplication failed", description: err.message, variant: "destructive" });
+                        } finally { setDeduplicating(false); }
+                      }}
+                    >Remove Duplicates</Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Bulk Actions Bar */}
             {selectedCityPages.size > 0 && (
