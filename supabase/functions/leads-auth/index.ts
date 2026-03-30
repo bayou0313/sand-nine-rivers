@@ -793,8 +793,9 @@ serve(async (req) => {
           if (drivingDist === null || drivingDist === undefined) return false; // No road route — not competing
           return drivingDist <= (otherPit.max_distance || 30);
         });
-        const isMultiPit = competingPits.length > 0;
-        const competingIds = isMultiPit ? competingPits.map(p => p.id) : null;
+        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
+        const isMultiPit = competingPits.length > 0 || forceSuppressPrice;
+        const competingIds = competingPits.length > 0 ? competingPits.map(p => p.id) : null;
 
         // Closest-PIT dedup
         const { data: existing } = await supabase
