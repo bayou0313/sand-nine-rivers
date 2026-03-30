@@ -925,7 +925,7 @@ const Leads = () => {
       // Server handles price rollover automatically
       const pricesUpdated = data?.prices_updated || 0;
       if (pricesUpdated > 0) {
-        toast({ title: "PIT saved", description: `${pricesUpdated} city page prices updated.` });
+        toast({ title: "PIT saved", description: `${pricesUpdated} city page prices updated. Pages flagged for content refresh.` });
         fetchCityPages();
       } else {
         toast({ title: "PIT updated" });
