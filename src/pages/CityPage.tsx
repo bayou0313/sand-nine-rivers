@@ -88,9 +88,9 @@ const CityPage = () => {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://riversand.net/" },
-      { "@type": "ListItem", position: 2, name: cityPage.city_name, item: canonicalUrl },
-      { "@type": "ListItem", position: 3, name: "River Sand Delivery", item: canonicalUrl },
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://riversand.net" },
+      { "@type": "ListItem", position: 2, name: "River Sand Delivery", item: "https://riversand.net" },
+      { "@type": "ListItem", position: 3, name: cityPage.city_name, item: canonicalUrl },
     ],
   });
 
@@ -98,17 +98,36 @@ const CityPage = () => {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "River Sand",
-    description: `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}`,
     url: canonicalUrl,
     telephone: "1-855-GOT-WAYS",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: cityPage.city_name,
-      addressRegion: cityPage.state,
-      addressCountry: "US",
+    description: cityPage.meta_description || `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}`,
+    areaServed: {
+      "@type": "City",
+      name: cityPage.city_name,
+      containedInPlace: {
+        "@type": "AdministrativeArea",
+        name: cityPage.region ?? cityPage.state,
+      },
     },
-    areaServed: `${cityPage.city_name}, ${cityPage.state}`,
     priceRange: "$$",
+    paymentAccepted: "Cash, Credit Card",
+    openingHours: "Mo-Sa 07:00-17:00",
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "River Sand Delivery Services",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: `River Sand Delivery in ${cityPage.city_name}`,
+            description: `Same-day bulk river sand delivery to ${cityPage.city_name}, ${cityPage.state}`,
+            areaServed: cityPage.city_name,
+            ...(cityPage.base_price ? { price: cityPage.base_price, priceCurrency: "USD" } : {}),
+          },
+        },
+      ],
+    },
   });
 
 
@@ -164,7 +183,7 @@ const CityPage = () => {
                 >
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-accent" />
-                    <span className="font-display text-foreground">{c.city_name}, {c.state}</span>
+                    <span className="font-display text-foreground">River Sand Delivery in {c.city_name}, {c.state}</span>
                   </div>
                 </Link>
               ))}

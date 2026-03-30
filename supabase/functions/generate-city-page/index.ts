@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { password, city_page_id, city_name, state, pit_name, distance, price, free_miles, saturday_available } = await req.json();
+    const { password, city_page_id, city_name, state, region, pit_name, pit_city, distance, price, free_miles, saturday_available, same_day_cutoff } = await req.json();
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
@@ -31,30 +31,51 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `You are an SEO content writer for River Sand, a same-day bulk river sand delivery company. Write compelling, locally relevant content that helps the page rank for '[city] river sand delivery'. Write in a direct, trustworthy tone. Never use corporate jargon. Always emphasize same-day delivery and local expertise. Content must be unique per city — mention local context, common construction projects in the area, why river sand is used there, and local geography where relevant.`;
+    const systemPrompt = `You are a local SEO expert writing city landing page content for a river sand delivery service in Louisiana and the Gulf South. You apply principles from The Art of SEO to maximize local search visibility.
 
-    const userPrompt = `Generate a complete city landing page for river sand delivery in ${city_name}, ${state}.
+Your content must:
+1. Target TRANSACTIONAL local search intent — the reader has already decided they want river sand and is choosing a supplier
+2. Include the city name and state naturally in each content section (not forced)
+3. Demonstrate LOCAL EXPERTISE — reference real local geography, roads, landmarks, parishes, soil conditions
+4. Build E-E-A-T signals — show Experience (we've delivered here), Expertise (we know the terrain), Authoritativeness (we're the local choice), Trustworthiness (transparent pricing)
+5. Match the PRIMARY KEYWORD INTENT: "[city name] river sand delivery" and "river sand delivery near me"
+6. Include SECONDARY KEYWORDS naturally: bulk sand delivery, same-day sand delivery, fill sand, river sand [parish name]
+7. Write for PEOPLE FIRST — content must be genuinely useful to someone planning a delivery in this specific city
+8. Never use generic filler — every sentence must be specific to this city, parish, or region
+9. Never use phrases like "look no further", "we've got you covered", "your one-stop shop", or similar corporate clichés`;
 
-PIT serving this city: ${pit_name}
-Distance from dispatch: ${distance} miles
-Delivery price: $${price}
-Free delivery radius: ${free_miles} miles
-Saturday available: ${saturday_available ? "yes" : "no"}
+    const effectiveRegion = region || state;
+    const effectiveCutoff = same_day_cutoff || "12:00 PM";
 
-Generate:
-1. meta_title (under 60 chars): Format: 'River Sand Delivery ${city_name} ${state} | Same-Day | $${price}'
-2. meta_description (under 160 chars): Mention same-day, price, city, state, and call to action.
-3. h1_text: Format: 'Same-Day River Sand Delivery in ${city_name}, ${state}'
-4. page_content (HTML): Include these sections:
-   - Hero paragraph about river sand delivery in ${city_name}, ${state}
-   - Why choose River Sand section
-   - Delivery details for ${city_name} area
-   - Common uses in ${city_name} (construction, drainage, fill)
-   - Delivery schedule and pricing
-   - Local context paragraph mentioning ${city_name} specifically
-   - FAQ section (3-5 questions specific to ${city_name} delivery)
-   Use proper HTML: <h2>, <h3>, <p>, <ul>, <li>
-   No inline styles. No placeholder text. All content must be specific to ${city_name}, ${state} — never generic.`;
+    const userPrompt = `Generate structured local SEO content for this city page. Return ONLY the structured tool call — no markdown, no explanation.
+
+CITY DATA:
+- City: ${city_name}
+- State: ${state} (Louisiana = uses "Parish" not "County")
+- Parish/County: ${effectiveRegion}
+- Distance from pit: ${distance} miles
+- Delivery price: $${price}
+- PIT name: ${pit_name}
+- PIT location city: ${pit_city || pit_name}
+- Operating days: Monday through Saturday
+- Same-day cutoff: ${effectiveCutoff}
+- Free delivery radius: ${free_miles} miles
+- Saturday available: ${saturday_available ? "yes" : "no"}
+
+CONTENT REQUIREMENTS:
+- meta_title: Max 60 chars. Must include city name and 'river sand delivery'. Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day | River Sand"
+- meta_description: Max 160 chars. Must include city name, same-day delivery, price ($${price}), and payment options (cash or card). Written to maximize click-through from search results.
+- h1_text: Max 70 chars. Primary keyword first. Must be transactional, not informational. City name required.
+- hero_intro: 2-3 sentences. Opens with city name and a specific local reference (road, landmark, project type common to this area). States the core offer. Ends with a confidence signal. NO generic phrases.
+- why_choose_intro: 1-2 sentences. Establishes LOCAL AUTHORITY for this specific parish/area. Reference the parish name, local terrain challenge, or why a local supplier matters here. Demonstrates E-E-A-T.
+- delivery_details: 1-2 sentences. Specific logistics: pit name, exact distance (${distance} miles), the actual road(s) used to reach this city (reference real LA highways like LA-18, US-90, I-10, etc.), delivery price ($${price}). Shows we know the route.
+- local_uses: Exactly 4 items. Each is 1 sentence describing a SPECIFIC common use case for river sand in THIS city's context. Consider: river proximity (levee work), industrial (fill), residential (drainage, landscaping), agricultural (arena/garden). Make each feel local.
+- local_expertise: 2-3 sentences. Demonstrates deep local knowledge: geography (river proximity, elevation, flood zone characteristics), soil conditions (silty, clay-heavy, etc.), specific challenges projects face in this area.
+- faq_items: Exactly 3 FAQ items. Each with "question" and "answer" fields:
+  1. City-specific question about delivery schedule or availability — answer mentions city name
+  2. City-specific question about price or distance — answer mentions exact price ($${price}), exact distance (${distance} miles)
+  3. Local use-case question specific to this city's geography — confident, specific answer
+- schema_service_area: City name formatted for schema: "${city_name}, ${state}"`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -73,16 +94,38 @@ Generate:
             type: "function",
             function: {
               name: "generate_city_page_content",
-              description: "Return the generated city page content",
+              description: "Return the generated city page content with local SEO optimization",
               parameters: {
                 type: "object",
                 properties: {
-                  meta_title: { type: "string", description: "Meta title under 60 chars" },
-                  meta_description: { type: "string", description: "Meta description under 160 chars" },
-                  h1_text: { type: "string", description: "H1 heading text" },
-                  content: { type: "string", description: "Full HTML content for the page body" },
+                  meta_title: { type: "string", description: "Meta title under 60 chars with city name and 'river sand delivery'" },
+                  meta_description: { type: "string", description: "Meta description under 160 chars with city, price, same-day" },
+                  h1_text: { type: "string", description: "H1 heading, max 70 chars, transactional keyword-first" },
+                  hero_intro: { type: "string", description: "2-3 sentence hero intro with local reference" },
+                  why_choose_intro: { type: "string", description: "1-2 sentences establishing local authority and E-E-A-T" },
+                  delivery_details: { type: "string", description: "1-2 sentences with exact logistics, roads, distance, price" },
+                  local_uses: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Exactly 4 local use cases, each 1 sentence"
+                  },
+                  local_expertise: { type: "string", description: "2-3 sentences showing deep local knowledge" },
+                  faq_items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        question: { type: "string" },
+                        answer: { type: "string" }
+                      },
+                      required: ["question", "answer"],
+                      additionalProperties: false
+                    },
+                    description: "Exactly 3 city-specific FAQ items"
+                  },
+                  schema_service_area: { type: "string", description: "City, State for schema areaServed" }
                 },
-                required: ["meta_title", "meta_description", "h1_text", "content"],
+                required: ["meta_title", "meta_description", "h1_text", "hero_intro", "why_choose_intro", "delivery_details", "local_uses", "local_expertise", "faq_items", "schema_service_area"],
                 additionalProperties: false,
               },
             },
@@ -125,6 +168,38 @@ Generate:
 
     const generated = JSON.parse(toolCall.function.arguments);
 
+    // Build the full HTML content from structured sections
+    const localUsesHtml = (generated.local_uses || [])
+      .map((item: string) => `<li>${item}</li>`)
+      .join("\n      ");
+
+    const faqHtml = (generated.faq_items || [])
+      .map((faq: { question: string; answer: string }) =>
+        `<div class="faq-item">\n        <h3>${faq.question}</h3>\n        <p>${faq.answer}</p>\n      </div>`
+      )
+      .join("\n      ");
+
+    const fullContent = `<div class="city-page-content">
+      <p class="hero-intro">${generated.hero_intro || ""}</p>
+
+      <h2>Why Choose River Sand in ${city_name}</h2>
+      <p>${generated.why_choose_intro || ""}</p>
+
+      <h2>Delivery Details for ${city_name}</h2>
+      <p>${generated.delivery_details || ""}</p>
+
+      <h2>Common Uses for River Sand in ${city_name}</h2>
+      <ul>
+      ${localUsesHtml}
+      </ul>
+
+      <h2>Local Expertise</h2>
+      <p>${generated.local_expertise || ""}</p>
+
+      <h2>Frequently Asked Questions — ${city_name} River Sand Delivery</h2>
+      ${faqHtml}
+    </div>`;
+
     // Update city_pages record if city_page_id provided
     if (city_page_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -137,8 +212,9 @@ Generate:
           meta_title: generated.meta_title,
           meta_description: generated.meta_description,
           h1_text: generated.h1_text,
-          content: generated.content,
+          content: fullContent,
           content_generated_at: new Date().toISOString(),
+          status: "active",
         })
         .eq("id", city_page_id);
 
@@ -147,7 +223,7 @@ Generate:
       }
     }
 
-    return new Response(JSON.stringify({ success: true, generated }), {
+    return new Response(JSON.stringify({ success: true, generated: { ...generated, content: fullContent } }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
