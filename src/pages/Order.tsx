@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-import { GOOGLE_MAPS_API_KEY, pollForGoogleMaps } from "@/lib/google-maps";
+import { pollForGoogleMaps } from "@/lib/google-maps";
 
 type EstimateResult = {
   distance: number;
@@ -411,15 +411,15 @@ const Order = () => {
 
       // Fallback geocode if coords not captured from Places
       if (custLat == null || custLng == null) {
-        if (!GOOGLE_MAPS_API_KEY) {
-          setError("Google Maps API key not configured.");
+        if (!window.google?.maps?.Geocoder) {
+          setError("Maps not loaded yet. Please wait a moment and try again.");
           setLoading(false); return;
         }
-        const geocodeResp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
-        const geocodeData = await geocodeResp.json();
-        if (geocodeData.results?.[0]) {
-          custLat = geocodeData.results[0].geometry.location.lat;
-          custLng = geocodeData.results[0].geometry.location.lng;
+        const geocoder = new window.google.maps.Geocoder();
+        const geocodeResult = await geocoder.geocode({ address });
+        if (geocodeResult.results?.[0]?.geometry?.location) {
+          custLat = geocodeResult.results[0].geometry.location.lat();
+          custLng = geocodeResult.results[0].geometry.location.lng();
         } else {
           setError("Could not locate that address. Please try again.");
           setLoading(false); return;
@@ -831,12 +831,6 @@ const Order = () => {
                     maxLength={500}
                     onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
                   />
-                  {!GOOGLE_MAPS_API_KEY && (
-                    <p className="text-sm text-muted-foreground font-body flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-accent" />
-                      Google Maps API key not configured.
-                    </p>
-                  )}
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}

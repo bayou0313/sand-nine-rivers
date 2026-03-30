@@ -11,7 +11,7 @@ declare global {
   interface Window { google: any; }
 }
 
-import { GOOGLE_MAPS_API_KEY, pollForGoogleMaps } from "@/lib/google-maps";
+import { pollForGoogleMaps } from "@/lib/google-maps";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const SIDEBAR_HOVER = "#142845";
@@ -689,13 +689,14 @@ const Leads = () => {
   const geocodeAddress = async (address: string): Promise<{ lat: number; lon: number; location_type?: string; formatted_address?: string } | null> => {
     if (geocodeCache[address]) return geocodeCache[address];
     try {
-      const resp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`);
-      const data = await resp.json();
-      if (data.results?.[0]) {
-        const loc = data.results[0].geometry.location;
-        const location_type = data.results[0].geometry.location_type || "UNKNOWN";
-        const formatted_address = data.results[0].formatted_address || address;
-        const result = { lat: loc.lat, lon: loc.lng, location_type, formatted_address };
+      if (!window.google?.maps?.Geocoder) return null;
+      const geocoder = new window.google.maps.Geocoder();
+      const geocodeResult = await geocoder.geocode({ address });
+      if (geocodeResult.results?.[0]) {
+        const loc = geocodeResult.results[0].geometry.location;
+        const location_type = (geocodeResult.results[0] as any).geometry?.location_type || "UNKNOWN";
+        const formatted_address = geocodeResult.results[0].formatted_address || address;
+        const result = { lat: loc.lat(), lon: loc.lng(), location_type, formatted_address };
         const newCache = { ...geocodeCache, [address]: result };
         setGeocodeCache(newCache);
         sessionStorage.setItem("geocache", JSON.stringify(newCache));
