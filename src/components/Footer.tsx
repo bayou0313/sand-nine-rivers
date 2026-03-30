@@ -43,7 +43,7 @@ const Footer = () => {
     const fetchCities = async () => {
       const { data } = await supabase
         .from("city_pages")
-        .select("city_slug, city_name, region")
+        .select("city_slug, city_name, region, state")
         .eq("status", "active")
         .order("region", { ascending: true, nullsFirst: false })
         .order("city_name", { ascending: true });
