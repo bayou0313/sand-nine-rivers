@@ -1815,7 +1815,7 @@ const Leads = () => {
             </div>
 
             {/* PIT Filter */}
-            <div className="mb-4">
+            <div className="mb-4 flex flex-wrap gap-2 items-center">
               <select
                 value={cityPageFilter}
                 onChange={e => setCityPageFilter(e.target.value)}
@@ -1825,6 +1825,18 @@ const Leads = () => {
                 <option value="all">All PITs</option>
                 {pits.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
+              <button
+                onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
+                className="h-9 px-3 rounded-md border text-xs font-bold transition-colors"
+                style={{
+                  borderColor: showDuplicatesOnly ? "#F59E0B" : BRAND_NAVY + "30",
+                  backgroundColor: showDuplicatesOnly ? "#FEF3C7" : "white",
+                  color: showDuplicatesOnly ? "#92400E" : BRAND_NAVY,
+                }}
+              >
+                <AlertTriangle className="w-3 h-3 inline mr-1" />
+                Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
+              </button>
             </div>
 
             {/* Bulk Actions Bar */}
