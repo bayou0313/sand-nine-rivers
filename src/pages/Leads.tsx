@@ -217,7 +217,10 @@ const Leads = () => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
   });
   const [geocoding, setGeocoding] = useState(false);
-  const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
+  // Driving distance cache: key -> miles
+  const [drivingCache, setDrivingCache] = useState<Record<string, number>>(() => {
+    try { return JSON.parse(sessionStorage.getItem("drivingcache") || "{}"); } catch { return {}; }
+  });
   const pitInputRef = useRef<HTMLInputElement>(null);
   const editPitInputRef = useRef<HTMLInputElement>(null);
   const addPitAutocompleteRef = useRef<any>(null);
