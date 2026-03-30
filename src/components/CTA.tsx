@@ -10,14 +10,14 @@ const CTA = () => {
   };
 
   return (
-    <section className="py-24 bg-gray-50 relative overflow-hidden">
+    <section className="py-24 bg-muted/50 relative overflow-hidden">
       <div className="container mx-auto px-6 text-center space-y-8 relative z-10">
         <motion.h2
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-3xl md:text-5xl text-gray-900"
+          className="text-3xl md:text-5xl text-foreground"
         >
           Get your sand delivered today.
         </motion.h2>
@@ -26,7 +26,7 @@ const CTA = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-xl font-body text-gray-600 max-w-xl mx-auto"
+          className="text-xl font-body text-muted-foreground max-w-xl mx-auto"
         >
           Check your address for an instant price. Same-day delivery available in most areas.
         </motion.p>
@@ -46,9 +46,12 @@ const CTA = () => {
               See My Price <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </motion.div>
+          <p className="font-body text-muted-foreground/60 text-sm mt-1">
+            No account needed · Same-day available · Cash or card accepted
+          </p>
           <a
             href="tel:+18554689297"
-            className="font-body text-gray-500 text-sm hover:text-gray-700 transition-colors flex items-center gap-1.5"
+            className="font-body text-muted-foreground/50 text-sm hover:text-muted-foreground/70 transition-colors flex items-center gap-1.5"
           >
             <Phone className="w-3.5 h-3.5" />
             or call us: 1-855-GOT-WAYS

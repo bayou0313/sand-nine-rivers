@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 const features = [
   { icon: Truck, title: "SAME-DAY DELIVERY", desc: "Order by midday and get your sand delivered before end of day." },
   { icon: Zap, title: "INSTANT PRICE QUOTE", desc: "Enter your address and get a real price in seconds — no phone calls needed." },
-  { icon: MapPin, title: "LOCAL & RELIABLE", desc: "Gulf South drivers who know the area and show up on time." },
   { icon: Clock, title: "CASH ON DELIVERY", desc: "No card required. Pay the driver in cash when the load arrives." },
+  { icon: MapPin, title: "LOCAL & RELIABLE", desc: "Gulf South drivers who know the area and show up on time." },
 ];
 
 const container = {
@@ -27,7 +27,7 @@ const Features = () => {
           <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Why Customers Choose River Sand</motion.h2>
         </div>
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto"
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto"
           variants={container}
           initial="hidden"
           whileInView="visible"
@@ -39,7 +39,7 @@ const Features = () => {
               variants={item}
               whileHover={{ y: -6, boxShadow: "0 20px 40px -12px hsl(209 87% 12% / 0.15)" }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="flex items-start gap-4 p-6 bg-background border border-border rounded-2xl hover:border-accent/50 transition-colors duration-300 group cursor-default"
+              className="flex flex-col items-center text-center gap-3 p-5 md:p-6 bg-background border border-border rounded-2xl hover:border-accent/50 transition-colors duration-300 group cursor-default"
             >
               <motion.div
                 className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors duration-300"
@@ -48,8 +48,8 @@ const Features = () => {
                 <f.icon className="w-6 h-6 text-primary group-hover:text-accent transition-colors duration-300" />
               </motion.div>
               <div>
-                <h3 className="font-display text-xl text-foreground mb-1">{f.title}</h3>
-                <p className="font-body text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
+                <h3 className="font-display text-sm md:text-base text-foreground mb-1">{f.title}</h3>
+                <p className="font-body text-muted-foreground text-xs md:text-sm leading-relaxed">{f.desc}</p>
               </div>
             </motion.div>
           ))}

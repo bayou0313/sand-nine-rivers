@@ -34,18 +34,16 @@ const Pricing = () => {
   }, []);
 
   return (
-    <section id="pricing" className="relative py-24 bg-foreground overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--accent)/0.08),transparent_60%)]" />
-
+    <section id="pricing" className="relative py-24 bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-12">
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">
             SIMPLE PRICING
           </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl text-background font-display">
+          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl text-foreground font-display">
             Pricing
           </motion.h2>
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.15 }} className="font-body text-background/60 mt-3 text-lg max-w-xl mx-auto">
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.15 }} className="font-body text-muted-foreground mt-3 text-lg max-w-xl mx-auto">
             9 cubic yards per load · Clean, unscreened river sand · Dumped where you need it
           </motion.p>
         </div>
@@ -56,19 +54,19 @@ const Pricing = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="max-w-lg mx-auto bg-background/10 backdrop-blur-md border border-background/20 rounded-3xl p-8 md:p-10 text-center"
+          className="max-w-lg mx-auto bg-background border border-border rounded-3xl p-8 md:p-10 text-center shadow-sm"
         >
-          <p className="font-body text-background/70 text-base leading-relaxed mb-4">
-            A delivery <strong className="text-background/90">5 miles</strong> from our pit starts at{" "}
+          <p className="font-body text-muted-foreground text-base leading-relaxed mb-4">
+            A delivery <strong className="text-foreground">5 miles</strong> from our pit starts at{" "}
             <strong className="text-accent">{formatCurrency(globalPricing.base_price)}</strong>.
           </p>
-          <p className="font-body text-background/70 text-base leading-relaxed mb-4">
+          <p className="font-body text-muted-foreground text-base leading-relaxed mb-4">
             15 miles out? You'll pay{" "}
             <strong className="text-accent">
               {formatCurrency(globalPricing.base_price + (15 - globalPricing.free_miles) * globalPricing.extra_per_mile)}
             </strong>.
           </p>
-          <p className="font-body text-background/50 text-sm">
+          <p className="font-body text-muted-foreground/70 text-sm">
             Enter your address above for your exact price — takes 10 seconds.
           </p>
         </motion.div>
@@ -77,7 +75,7 @@ const Pricing = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="mt-8 text-center text-background/50 text-sm font-body max-w-xl mx-auto"
+          className="mt-8 text-center text-muted-foreground/70 text-sm font-body max-w-xl mx-auto"
         >
           ⚠️ All deliveries are curbside only. Due to liability, we cannot deliver inside backyards or enclosed areas.
         </motion.p>
@@ -93,7 +91,7 @@ const Pricing = () => {
             { icon: MapPin, text: "Greater New Orleans" },
             { icon: Package, text: "No hidden fees" },
           ].map((item) => (
-            <div key={item.text} className="flex items-center gap-2 text-background/60 font-body">
+            <div key={item.text} className="flex items-center gap-2 text-muted-foreground font-body">
               <item.icon className="w-5 h-5 text-accent" /> {item.text}
             </div>
           ))}
