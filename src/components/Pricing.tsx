@@ -122,7 +122,7 @@ const Pricing = () => {
 
               {/* Origin */}
               <g>
-                <motion.circle cx="55" cy="155" r="20" className="fill-accent" opacity="0.08" animate={{ r: [20, 26, 20] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
+                <motion.circle cx="55" cy="155" r={20} className="fill-accent" opacity="0.08" animate={{ r: [20, 26, 20] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
                 <circle cx="55" cy="155" r="14" className="fill-background stroke-accent" strokeWidth="2" />
                 <circle cx="55" cy="155" r="4.5" className="fill-accent" />
                 <text x="55" y="180" textAnchor="middle" className="fill-foreground" fontSize="9" fontWeight="700" fontFamily="sans-serif">Our Pit</text>
@@ -130,7 +130,7 @@ const Pricing = () => {
 
               {/* Destination */}
               <g>
-                <motion.circle cx="540" cy="143" r="20" className="fill-primary" opacity="0.06" animate={{ r: [20, 26, 20] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1 }} />
+                <motion.circle cx="540" cy="143" r={20} className="fill-primary" opacity="0.06" animate={{ r: [20, 26, 20] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1 }} />
                 <circle cx="540" cy="143" r="14" className="fill-background stroke-primary" strokeWidth="2" />
                 <path d="M533,147 L540,138 L547,147 L547,152 L533,152 Z" className="fill-primary/40 stroke-primary" strokeWidth="1.2" strokeLinejoin="round" />
                 <rect x="537" y="148" width="6" height="4" rx="0.5" className="fill-primary/60" />
