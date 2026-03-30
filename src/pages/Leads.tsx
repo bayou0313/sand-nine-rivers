@@ -917,6 +917,17 @@ const Leads = () => {
       if (originalPit && editPitData.address !== originalPit.address && (lat === originalPit.lat && lon === originalPit.lon)) {
         const coords = await geocodeAddress(editPitData.address!);
         if (!coords) { toast({ title: "Geocode failed", variant: "destructive" }); setSavingPit(false); return; }
+        // Block save if geocoded location is too imprecise
+        const imprecise = ["GEOMETRIC_CENTER", "APPROXIMATE", "UNKNOWN"];
+        if (imprecise.includes(coords.location_type)) {
+          toast({
+            title: "Address not specific enough",
+            description: `Google returned a "${coords.location_type}" result for "${coords.formatted_address}". This is the center of a city or region, not a real location. Enter a full street address, select from the autocomplete dropdown, or provide GPS coordinates.`,
+            variant: "destructive",
+          });
+          setSavingPit(false);
+          return;
+        }
         lat = coords.lat;
         lon = coords.lon;
       }
