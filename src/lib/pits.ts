@@ -1,11 +1,13 @@
 /**
  * Shared PIT (Point of Interest / Distribution) utilities.
- * Driving distance via Google Maps Distance Matrix, effective pricing, price calculation, and best-PIT selection.
+ * Pricing logic, effective pricing, and best-PIT selection.
  *
- * IMPORTANT: haversine / straight-line distance has been removed from this codebase.
- * All distance calculations use the Google Maps Distance Matrix API (mode=driving, avoid=ferries).
- * If a driving distance cannot be obtained, the result is null and the caller must skip it.
+ * Distance calculations are performed server-side via the
+ * `calculate-distances` edge function using GOOGLE_MAPS_SERVER_KEY.
+ * No client-side Distance Matrix calls.
  */
+
+import { supabase } from "@/integrations/supabase/client";
 
 export interface PitData {
   id: string;
@@ -110,62 +112,35 @@ export function calcFinalPrice(effective: EffectivePricing, distance: number, qt
 }
 
 /**
- * CANONICAL distance function for the entire codebase.
- * Uses Google Maps Distance Matrix JS SDK — roads only, no ferries.
- * Requires window.google.maps to be loaded before calling.
- * If a specific route returns no result → returns null for that index.
- *   Callers must skip/exclude nulls. Never substitute haversine.
- * Batches in groups of 25 (Distance Matrix API limit per call).
- *
- * Server-side mirror: getDrivingDistances() in leads_index.ts — must stay in sync.
+ * CANONICAL distance function — calls the backend edge function.
+ * Single origin → multiple destinations. Returns miles[] (null if no route).
  */
 export async function getDrivingDistanceBatch(
   originLat: number,
   originLon: number,
   destinations: { lat: number; lng: number }[]
 ): Promise<(number | null)[]> {
-  if (!window.google?.maps) {
-    throw new Error(
-      "getDrivingDistanceBatch: Google Maps JS SDK is not loaded. " +
-      "Ensure the script is loaded before calling distance functions."
-    );
-  }
   if (destinations.length === 0) return [];
 
-  const results: (number | null)[] = new Array(destinations.length).fill(null);
-  const BATCH = 25;
-  const service = new window.google.maps.DistanceMatrixService();
+  const { data, error } = await supabase.functions.invoke("calculate-distances", {
+    body: {
+      mode: "batch",
+      origin: { lat: originLat, lng: originLon },
+      destinations,
+    },
+  });
 
-  for (let i = 0; i < destinations.length; i += BATCH) {
-    const batch = destinations.slice(i, i + BATCH);
-    try {
-      const response = await service.getDistanceMatrix({
-        origins: [{ lat: originLat, lng: originLon }],
-        destinations: batch.map(d => ({ lat: d.lat, lng: d.lng })),
-        travelMode: window.google.maps.TravelMode.DRIVING,
-        unitSystem: window.google.maps.UnitSystem.IMPERIAL,
-        avoidFerries: true,
-      });
-      const elements = response.rows?.[0]?.elements || [];
-      for (let j = 0; j < elements.length; j++) {
-        if (elements[j]?.status === "OK" && elements[j].distance?.value) {
-          results[i + j] = elements[j].distance.value / 1609.344;
-        }
-        // If status is not OK → result stays null → caller skips this destination
-      }
-    } catch (e) {
-      console.error("[getDrivingDistanceBatch] Batch request failed:", e);
-      // Results for this batch stay null — caller skips them
-    }
+  if (error) {
+    console.error("[getDrivingDistanceBatch] Edge function error:", error);
+    return new Array(destinations.length).fill(null);
   }
-  return results;
+
+  return data?.distances || new Array(destinations.length).fill(null);
 }
 
 /**
- * Find the best PIT for a customer location using driving distance.
- * Uses Google Maps Distance Matrix JS SDK — no haversine fallback.
- * Requires window.google.maps to be loaded before calling.
- * If the API fails or returns no results, returns null.
+ * Find the best PIT for a customer location using server-side driving distance.
+ * No browser Google Maps dependency — uses the calculate-distances edge function.
  */
 export async function findBestPitDriving(
   pits: PitData[],
@@ -173,39 +148,28 @@ export async function findBestPitDriving(
   customerLng: number,
   globalPricing: GlobalPricing
 ): Promise<FindBestPitResult | null> {
-  if (!window.google?.maps) {
-    throw new Error("findBestPitDriving: Google Maps JS SDK is not loaded.");
-  }
   const activePits = pits.filter(p => p.status === "active");
   if (activePits.length === 0) return null;
 
-  const service = new window.google.maps.DistanceMatrixService();
-
-  let drivingDistances: (number | null)[];
-  try {
-    const response = await service.getDistanceMatrix({
+  const { data, error } = await supabase.functions.invoke("calculate-distances", {
+    body: {
+      mode: "find_best_pit",
       origins: activePits.map(p => ({ lat: p.lat, lng: p.lon })),
-      destinations: [{ lat: customerLat, lng: customerLng }],
-      travelMode: window.google.maps.TravelMode.DRIVING,
-      unitSystem: window.google.maps.UnitSystem.IMPERIAL,
-      avoidFerries: true,
-    });
-    drivingDistances = (response.rows || []).map((row: any) => {
-      const el = row.elements?.[0];
-      if (el?.status === "OK" && el.distance?.value) {
-        return el.distance.value / 1609.344;
-      }
-      return null;
-    });
-  } catch (e) {
-    console.error("[findBestPitDriving] Distance Matrix request failed:", e);
+      destination: { lat: customerLat, lng: customerLng },
+    },
+  });
+
+  if (error) {
+    console.error("[findBestPitDriving] Edge function error:", error);
     return null;
   }
+
+  const drivingDistances: (number | null)[] = data?.distances || [];
 
   const results = activePits
     .map((pit, i) => {
       const distance = drivingDistances[i];
-      if (distance === null) return null; // No road route — exclude this PIT
+      if (distance === null || distance === undefined) return null;
       const effective = getEffectivePrice(pit, globalPricing);
       const price = calcPitPrice(effective, distance, 1);
       const serviceable = distance <= effective.max_distance;
