@@ -1803,9 +1803,15 @@ const Leads = () => {
         const needsRegenCount = cityPages.filter((cp: any) => cp.pit_reassigned || cp.price_changed || !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION || !cp.content_generated_at).length;
 
         const regenOutdated = async () => {
-          const outdated = cityPages.filter(
-            (p: any) => !p.prompt_version || p.prompt_version !== CURRENT_PROMPT_VERSION
-          );
+          const toRegen = cityPages.filter(
+            (p: any) => p.pit_reassigned || p.price_changed || !p.prompt_version || p.prompt_version !== CURRENT_PROMPT_VERSION || !p.content_generated_at
+          ).sort((a: any, b: any) => {
+            const priority = (p: any) =>
+              p.pit_reassigned ? 0 :
+              p.price_changed ? 1 :
+              !p.content_generated_at ? 2 : 3;
+            return priority(a) - priority(b);
+          });
           regenCancelRef.current = false;
           setRegenQueue({ total: outdated.length, current: 0, currentCity: "", status: "running" });
 
