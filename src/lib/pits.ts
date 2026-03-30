@@ -199,7 +199,7 @@ export async function findBestPitDriving(
   let drivingDistances: (number | null)[];
   try {
     const resp = await fetch(
-      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origins)}&destinations=${encodeURIComponent(destination)}&units=imperial&key=${googleMapsApiKey}`
+      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origins)}&destinations=${encodeURIComponent(destination)}&units=imperial&mode=driving&avoid=ferries&key=${googleMapsApiKey}`
     );
     const data = await resp.json();
 
