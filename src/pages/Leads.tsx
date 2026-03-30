@@ -446,10 +446,6 @@ const Leads = () => {
     }
   }, []);
 
-  // Load Google Maps Places library
-  useEffect(() => {
-    return pollForGoogleMaps(() => setGoogleLoaded(true));
-  }, []);
 
   useEffect(() => {
     const saved = storedPassword();

@@ -373,9 +373,6 @@ const Order = () => {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    return pollForGoogleMaps(() => setApiLoaded(true));
-  }, []);
 
   useEffect(() => {
     if (!apiLoaded || !inputRef.current) return;

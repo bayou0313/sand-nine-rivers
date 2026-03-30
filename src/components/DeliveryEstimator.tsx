@@ -57,9 +57,6 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     fetchData();
   }, []);
 
-  useEffect(() => {
-    return pollForGoogleMaps(() => setApiLoaded(true));
-  }, []);
 
   useEffect(() => {
     if (!apiLoaded || !inputRef.current) return;
