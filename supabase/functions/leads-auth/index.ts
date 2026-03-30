@@ -607,6 +607,8 @@ serve(async (req) => {
       for (const row of gsForGen || []) gsMap[row.key] = row.value;
 
       const pitFreeMiles = pitForGen?.free_miles ?? parseFloat(gsMap.default_free_miles || "15");
+      const pitBasePrice = pitForGen?.base_price ?? parseFloat(gsMap.default_base_price || "195");
+      const pitExtraPerMile = pitForGen?.price_per_extra_mile ?? parseFloat(gsMap.default_extra_per_mile || "5");
       const satAvailable = pitForGen?.operating_days ? pitForGen.operating_days.includes(6) : true;
       const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
 
