@@ -237,12 +237,7 @@ const Leads = () => {
   const [drivingCache, setDrivingCache] = useState<Record<string, number | null>>(() => {
     try { return JSON.parse(sessionStorage.getItem("drivingcache") || "{}"); } catch { return {}; }
   });
-  const pitInputRef = useRef<HTMLInputElement>(null);
-  const editPitInputRef = useRef<HTMLInputElement>(null);
-  const addPitAutocompleteRef = useRef<any>(null);
-  const editPitAutocompleteRef = useRef<any>(null);
-  const profileAddressRef = useRef<HTMLInputElement>(null);
-  const profileAutocompleteRef = useRef<any>(null);
+  // Refs no longer needed for autocomplete — using PlaceAutocompleteInput component
 
   const [editingPitId, setEditingPitId] = useState<string | null>(null);
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
