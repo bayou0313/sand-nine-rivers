@@ -293,6 +293,9 @@ serve(async (req) => {
             const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
             await supabase.from("city_pages").update({
               base_price: newPrice,
+              price_changed: true,
+              prompt_version: null,
+              regen_reason: 'price_changed',
               updated_at: new Date().toISOString()
             }).eq("id", page.id);
             prices_updated++;
