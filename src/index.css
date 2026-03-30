@@ -86,20 +86,13 @@
   animation: cta-pulse 2.5s ease-in-out infinite;
 }
 
-/* PlaceAutocompleteElement styling */
+/* Place Autocomplete input styling */
 .place-autocomplete-container {
   width: 100%;
   display: flex;
 }
 
-.place-autocomplete-container gmp-place-autocomplete {
-  width: 100%;
-  display: block;
-  --gmp-mat-color-surface: hsl(var(--background));
-  --gmp-mat-color-on-surface: hsl(var(--foreground));
-}
-
-.place-autocomplete-container gmp-place-autocomplete::part(input) {
+.place-autocomplete-input {
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
   line-height: 1.5;
@@ -116,123 +109,71 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.place-autocomplete-container gmp-place-autocomplete::part(input):hover {
+.place-autocomplete-input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.place-autocomplete-input:hover {
   border-color: hsl(var(--ring) / 0.4);
   background: hsl(var(--muted) / 0.3);
 }
 
-.place-autocomplete-container gmp-place-autocomplete::part(input):focus {
+.place-autocomplete-input:focus {
   border-color: hsl(var(--accent));
   box-shadow: 0 0 0 3px hsl(var(--accent) / 0.15), 0 2px 8px hsl(var(--accent) / 0.1);
   background: hsl(var(--background));
 }
 
 /* Embedded (hero) variant — dark translucent input */
-.place-autocomplete-embedded gmp-place-autocomplete::part(input) {
+.place-autocomplete-embedded .place-autocomplete-input {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.18);
   color: white;
   backdrop-filter: blur(4px);
 }
 
-.place-autocomplete-embedded gmp-place-autocomplete::part(input)::placeholder {
+.place-autocomplete-embedded .place-autocomplete-input::placeholder {
   color: rgba(255, 255, 255, 0.45);
 }
 
-.place-autocomplete-embedded gmp-place-autocomplete::part(input):hover {
+.place-autocomplete-embedded .place-autocomplete-input:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-.place-autocomplete-embedded gmp-place-autocomplete::part(input):focus {
+.place-autocomplete-embedded .place-autocomplete-input:focus {
   border-color: hsl(var(--accent));
   box-shadow: 0 0 0 3px hsl(var(--accent) / 0.2), 0 2px 12px hsl(var(--accent) / 0.15);
   background: rgba(255, 255, 255, 0.1);
 }
 
 /* Order page taller input */
-.place-autocomplete-order gmp-place-autocomplete::part(input) {
+.place-autocomplete-order .place-autocomplete-input {
   height: 3.5rem;
   border-color: hsl(var(--border));
   box-shadow: 0 1px 3px hsl(var(--foreground) / 0.05);
 }
 
-.place-autocomplete-order gmp-place-autocomplete::part(input):focus {
+.place-autocomplete-order .place-autocomplete-input:focus {
   box-shadow: 0 0 0 3px hsl(var(--accent) / 0.15), 0 4px 8px hsl(var(--foreground) / 0.06);
 }
 
 /* Admin (Leads) compact input */
-.place-autocomplete-admin gmp-place-autocomplete::part(input) {
+.place-autocomplete-admin .place-autocomplete-input {
   height: 2.25rem;
   font-size: 0.875rem;
   border-radius: 0.5rem;
   border-width: 1px;
 }
 
-/* Fallback input (when PlaceAutocompleteElement isn't available) */
-.place-autocomplete-fallback {
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  line-height: 1.5;
-  height: 3rem;
-  min-height: 44px;
-  padding: 0.625rem 1rem;
+/* Google autocomplete dropdown styling */
+.pac-container {
   border-radius: 0.75rem;
-  border: 2px solid hsl(var(--input));
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-.place-autocomplete-fallback:hover {
-  border-color: hsl(var(--ring) / 0.4);
-  background: hsl(var(--muted) / 0.3);
-}
-
-.place-autocomplete-fallback:focus {
-  border-color: hsl(var(--accent));
-  box-shadow: 0 0 0 3px hsl(var(--accent) / 0.15), 0 2px 8px hsl(var(--accent) / 0.1);
-  background: hsl(var(--background));
-}
-
-/* Embedded (hero) fallback */
-.place-autocomplete-embedded .place-autocomplete-fallback {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: white;
-  backdrop-filter: blur(4px);
-}
-
-.place-autocomplete-embedded .place-autocomplete-fallback::placeholder {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.place-autocomplete-embedded .place-autocomplete-fallback:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.place-autocomplete-embedded .place-autocomplete-fallback:focus {
-  border-color: hsl(var(--accent));
-  box-shadow: 0 0 0 3px hsl(var(--accent) / 0.2), 0 2px 12px hsl(var(--accent) / 0.15);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Order page fallback */
-.place-autocomplete-order .place-autocomplete-fallback {
-  height: 3.5rem;
-  border-color: hsl(var(--border));
-  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.05);
-}
-
-/* Admin fallback */
-.place-autocomplete-admin .place-autocomplete-fallback {
-  height: 2.25rem;
-  font-size: 0.875rem;
-  border-radius: 0.5rem;
-  border-width: 1px;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 10px 25px hsl(var(--foreground) / 0.15);
+  margin-top: 4px;
+  font-family: 'Inter', sans-serif;
+  z-index: 9999;
 }
 
 /* Print styles for order confirmation */
