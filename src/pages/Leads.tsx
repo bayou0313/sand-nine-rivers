@@ -1008,24 +1008,10 @@ const Leads = () => {
   useEffect(() => {
     if (!showAddPit || !pitInputRef.current || !window.google?.maps?.places) return;
     if (addPitAutocompleteRef.current) return;
-    if (window.google.maps.places.PlaceAutocompleteElement) {
-      const acElement = new (window.google.maps.places as any).PlaceAutocompleteElement({ types: ["address"], componentRestrictions: { country: "us" } });
-      acElement.style.width = "100%";
-      if (pitInputRef.current.parentNode) { pitInputRef.current.parentNode.insertBefore(acElement, pitInputRef.current); pitInputRef.current.style.display = "none"; }
-      acElement.addEventListener("gmp-placeselect", async (event: any) => {
-        const place = event.place;
-        await place.fetchFields({ fields: ["formattedAddress", "location"] });
-        const lat = place.location?.lat(); const lng = place.location?.lng();
-        if (lat != null && lng != null) { setNewPit(prev => ({ ...prev, address: place.formattedAddress || prev.address, lat, lon: lng })); }
-      });
-      addPitAutocompleteRef.current = acElement;
-      return () => { acElement.remove(); addPitAutocompleteRef.current = null; };
-    } else {
-      const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-      ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.geometry?.location) { setNewPit(prev => ({ ...prev, address: place.formatted_address || prev.address, lat: place.geometry!.location.lat(), lon: place.geometry!.location.lng() })); } });
-      addPitAutocompleteRef.current = ac;
-      return () => { addPitAutocompleteRef.current = null; };
-    }
+    const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
+    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.geometry?.location) { setNewPit(prev => ({ ...prev, address: place.formatted_address || prev.address, lat: place.geometry!.location.lat(), lon: place.geometry!.location.lng() })); } });
+    addPitAutocompleteRef.current = ac;
+    return () => { addPitAutocompleteRef.current = null; };
   }, [showAddPit, googleLoaded]);
 
   // Google Places Autocomplete for Edit PIT
