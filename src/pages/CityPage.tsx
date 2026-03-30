@@ -135,7 +135,6 @@ const CityPage = () => {
       <Hero
         h1Override={cityPage.h1_text || `SAME-DAY RIVER SAND DELIVERY IN ${cityPage.city_name.toUpperCase()}`}
         subtitleOverride={`Quality river sand for landscaping, drainage, backfill, and construction projects in ${cityPage.city_name}, ${cityPage.state}. Order before noon for same-day delivery.`}
-        trustBadges={cityTrustBadges}
       />
       <Stats />
       <DeliveryEstimator />
