@@ -46,7 +46,7 @@ const CTA = () => {
             <Button
               size="lg"
               onClick={scrollToEstimator}
-              className="text-lg font-display tracking-wider px-10 py-6 bg-accent hover:bg-[#C8911A] text-accent-foreground rounded-2xl shadow-xl transition-all duration-200"
+              className="text-lg font-display tracking-wider px-10 py-6 bg-white hover:opacity-90 text-gray-900 rounded-2xl shadow-xl transition-all duration-200"
             >
               See My Price <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

@@ -2034,6 +2034,10 @@ const Leads = () => {
                       <Input value={editingCityPage.h1_text || ""} onChange={e => setEditingCityPage({ ...editingCityPage, h1_text: e.target.value })} />
                     </div>
                     <div>
+                      <label className="text-xs mb-1 block" style={{ color: "#666" }}>Region</label>
+                      <Input value={editingCityPage.region || ""} onChange={e => setEditingCityPage({ ...editingCityPage, region: e.target.value })} placeholder="e.g. East Bank, West Bank, North Shore" />
+                    </div>
+                    <div>
                       <label className="text-xs mb-1 block" style={{ color: "#666" }}>Status</label>
                       <select value={editingCityPage.status || "draft"} onChange={e => setEditingCityPage({ ...editingCityPage, status: e.target.value })} className="w-full h-10 px-3 rounded-md border text-sm">
                         <option value="active">Active</option>
