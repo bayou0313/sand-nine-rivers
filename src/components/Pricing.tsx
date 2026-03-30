@@ -1,14 +1,33 @@
 import { Truck, MapPin, Package, DollarSign, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-const LOOP_DURATION = 3.5;
-const PAUSE = 1.8;
-const TOTAL = LOOP_DURATION + PAUSE;
+// Road-following route: east on road, turn south, east again, turn north-east to destination
+const forwardPath = "M 55,155 L 195,155 A 8,8 0 0 1 203,147 L 203,95 A 8,8 0 0 1 211,87 L 395,87 A 8,8 0 0 0 403,95 L 403,135 A 8,8 0 0 0 411,143 L 540,143";
+const returnPath = "M 540,143 L 411,143 A 8,8 0 0 1 403,135 L 403,95 A 8,8 0 0 1 395,87 L 211,87 A 8,8 0 0 0 203,95 L 203,147 A 8,8 0 0 0 195,155 L 55,155";
+
+const FWD_DUR = 3;
+const PAUSE_DEST = 1.5;
+const RET_DUR = 2.5;
+const PAUSE_ORIGIN = 1;
+const TOTAL = FWD_DUR + PAUSE_DEST + RET_DUR + PAUSE_ORIGIN;
+
+const TruckIcon = () => (
+  <g>
+    <rect x="-14" y="-14" width="28" height="28" rx="7" className="fill-accent" />
+    <g transform="translate(-7,-7) scale(0.58)" className="text-accent-foreground">
+      <path d="M1 3h15v13H1z" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M16 8h4l3 3v5h-7V8z" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" />
+      <circle cx="5.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="18.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
+    </g>
+  </g>
+);
 
 const Pricing = () => {
-  const routePath = "M 60,140 C 120,60 200,180 300,100 C 380,40 440,120 540,130";
-  // Reversed path for return trip
-  const returnPath = "M 540,130 C 440,120 380,40 300,100 C 200,180 120,60 60,140";
+  // Timeline fractions
+  const t1 = FWD_DUR / TOTAL;
+  const t2 = (FWD_DUR + PAUSE_DEST) / TOTAL;
+  const t3 = (FWD_DUR + PAUSE_DEST + RET_DUR) / TOTAL;
 
   return (
     <section id="pricing" className="relative py-20 md:py-28 bg-muted/30 overflow-hidden">
@@ -38,200 +57,217 @@ const Pricing = () => {
             <svg viewBox="0 0 600 260" className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <pattern id="mapGrid" width="30" height="30" patternUnits="userSpaceOnUse">
-                  <path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" strokeWidth="0.4" className="text-foreground" opacity="0.05" />
+                  <path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" strokeWidth="0.3" className="text-foreground" opacity="0.06" />
                 </pattern>
-                <pattern id="grassPattern" width="8" height="8" patternUnits="userSpaceOnUse">
-                  <circle cx="4" cy="4" r="0.6" fill="currentColor" className="text-green-600" opacity="0.08" />
-                </pattern>
-                <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(200 60% 70%)" stopOpacity="0.12" />
-                  <stop offset="100%" stopColor="hsl(200 60% 60%)" stopOpacity="0.18" />
+                <linearGradient id="waterGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="hsl(200 55% 72%)" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="hsl(200 55% 60%)" stopOpacity="0.2" />
                 </linearGradient>
               </defs>
 
-              {/* Base */}
+              {/* Base fill */}
+              <rect width="600" height="260" className="fill-background" />
               <rect width="600" height="260" fill="url(#mapGrid)" />
-              <rect width="600" height="260" fill="url(#grassPattern)" />
 
-              {/* Water feature - river/bayou */}
-              <path d="M -10,20 C 80,35 140,10 200,30 C 260,50 300,25 370,15 C 430,5 500,25 610,10" fill="none" stroke="url(#waterGrad)" strokeWidth="18" strokeLinecap="round" />
-              <path d="M -10,20 C 80,35 140,10 200,30 C 260,50 300,25 370,15 C 430,5 500,25 610,10" fill="none" stroke="hsl(200 50% 65%)" strokeWidth="1" strokeLinecap="round" opacity="0.15" />
+              {/* River / bayou */}
+              <path d="M -10,28 C 60,42 130,15 200,35 C 270,55 340,22 420,18 C 490,14 560,30 620,20" fill="none" stroke="url(#waterGrad)" strokeWidth="20" strokeLinecap="round" />
+              <path d="M -10,28 C 60,42 130,15 200,35 C 270,55 340,22 420,18 C 490,14 560,30 620,20" fill="none" stroke="hsl(200 50% 60%)" strokeWidth="0.8" opacity="0.15" />
 
-              {/* Major roads (horizontal) */}
-              <line x1="0" y1="80" x2="600" y2="80" className="stroke-border" strokeWidth="3" opacity="0.15" />
-              <line x1="0" y1="180" x2="600" y2="180" className="stroke-border" strokeWidth="2" opacity="0.1" />
-              <line x1="0" y1="220" x2="600" y2="220" className="stroke-border" strokeWidth="2" opacity="0.08" />
+              {/* === ROAD NETWORK === */}
+              {/* Highway (horizontal, thick) */}
+              <line x1="0" y1="87" x2="600" y2="87" className="stroke-border" strokeWidth="12" opacity="0.08" />
+              <line x1="0" y1="87" x2="600" y2="87" className="stroke-border" strokeWidth="1" opacity="0.2" />
 
-              {/* Major roads (vertical) */}
-              <line x1="100" y1="40" x2="100" y2="260" className="stroke-border" strokeWidth="2" opacity="0.12" />
-              <line x1="200" y1="0" x2="200" y2="260" className="stroke-border" strokeWidth="3" opacity="0.15" />
-              <line x1="300" y1="40" x2="300" y2="260" className="stroke-border" strokeWidth="2" opacity="0.1" />
-              <line x1="400" y1="0" x2="400" y2="260" className="stroke-border" strokeWidth="3" opacity="0.15" />
-              <line x1="500" y1="40" x2="500" y2="260" className="stroke-border" strokeWidth="2" opacity="0.12" />
+              {/* Secondary horizontal roads */}
+              <line x1="0" y1="155" x2="600" y2="155" className="stroke-border" strokeWidth="8" opacity="0.06" />
+              <line x1="0" y1="155" x2="600" y2="155" className="stroke-border" strokeWidth="0.8" opacity="0.15" />
+              <line x1="0" y1="210" x2="600" y2="210" className="stroke-border" strokeWidth="6" opacity="0.05" />
+              <line x1="0" y1="210" x2="600" y2="210" className="stroke-border" strokeWidth="0.6" opacity="0.12" />
+              <line x1="0" y1="55" x2="600" y2="55" className="stroke-border" strokeWidth="5" opacity="0.04" />
 
-              {/* Minor streets */}
-              <line x1="150" y1="60" x2="150" y2="200" className="stroke-border" strokeWidth="1" opacity="0.06" />
-              <line x1="250" y1="50" x2="250" y2="240" className="stroke-border" strokeWidth="1" opacity="0.06" />
-              <line x1="350" y1="40" x2="350" y2="220" className="stroke-border" strokeWidth="1" opacity="0.06" />
-              <line x1="450" y1="50" x2="450" y2="240" className="stroke-border" strokeWidth="1" opacity="0.06" />
-              <line x1="0" y1="130" x2="600" y2="130" className="stroke-border" strokeWidth="1" opacity="0.06" />
+              {/* Major vertical roads */}
+              <line x1="100" y1="0" x2="100" y2="260" className="stroke-border" strokeWidth="7" opacity="0.06" />
+              <line x1="100" y1="0" x2="100" y2="260" className="stroke-border" strokeWidth="0.8" opacity="0.14" />
+              <line x1="203" y1="0" x2="203" y2="260" className="stroke-border" strokeWidth="10" opacity="0.07" />
+              <line x1="203" y1="0" x2="203" y2="260" className="stroke-border" strokeWidth="1" opacity="0.18" />
+              <line x1="300" y1="0" x2="300" y2="260" className="stroke-border" strokeWidth="7" opacity="0.06" />
+              <line x1="300" y1="0" x2="300" y2="260" className="stroke-border" strokeWidth="0.8" opacity="0.14" />
+              <line x1="403" y1="0" x2="403" y2="260" className="stroke-border" strokeWidth="10" opacity="0.07" />
+              <line x1="403" y1="0" x2="403" y2="260" className="stroke-border" strokeWidth="1" opacity="0.18" />
+              <line x1="500" y1="0" x2="500" y2="260" className="stroke-border" strokeWidth="7" opacity="0.06" />
 
-              {/* City blocks / buildings */}
-              {/* Downtown cluster */}
-              <rect x="205" y="85" width="28" height="18" rx="2" className="fill-muted-foreground" opacity="0.08" />
-              <rect x="240" y="85" width="20" height="24" rx="2" className="fill-muted-foreground" opacity="0.06" />
-              <rect x="205" y="108" width="15" height="15" rx="2" className="fill-muted-foreground" opacity="0.07" />
-              <rect x="225" y="112" width="35" height="12" rx="2" className="fill-muted-foreground" opacity="0.05" />
+              {/* Minor vertical streets */}
+              <line x1="150" y1="55" x2="150" y2="210" className="stroke-border" strokeWidth="3" opacity="0.04" />
+              <line x1="250" y1="55" x2="250" y2="210" className="stroke-border" strokeWidth="3" opacity="0.04" />
+              <line x1="350" y1="55" x2="350" y2="210" className="stroke-border" strokeWidth="3" opacity="0.04" />
+              <line x1="450" y1="55" x2="450" y2="210" className="stroke-border" strokeWidth="3" opacity="0.04" />
+              <line x1="550" y1="55" x2="550" y2="210" className="stroke-border" strokeWidth="3" opacity="0.04" />
 
-              {/* Residential blocks left */}
-              <rect x="105" y="85" width="18" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.06" />
-              <rect x="128" y="85" width="14" height="16" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="105" y="135" width="22" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.06" />
-              <rect x="132" y="138" width="12" height="10" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="105" y="185" width="16" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              {/* Minor horizontal */}
+              <line x1="100" y1="120" x2="500" y2="120" className="stroke-border" strokeWidth="3" opacity="0.04" />
+              <line x1="100" y1="180" x2="500" y2="180" className="stroke-border" strokeWidth="3" opacity="0.04" />
 
-              {/* Residential blocks right */}
-              <rect x="405" y="55" width="20" height="15" rx="1.5" className="fill-muted-foreground" opacity="0.06" />
-              <rect x="430" y="58" width="14" height="18" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="405" y="85" width="35" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="455" y="85" width="18" height="15" rx="1.5" className="fill-muted-foreground" opacity="0.06" />
-              <rect x="505" y="85" width="24" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="505" y="135" width="20" height="18" rx="1.5" className="fill-muted-foreground" opacity="0.06" />
-              <rect x="530" y="138" width="14" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              {/* === BUILDING BLOCKS === */}
+              {/* Between roads - downtown cluster */}
+              <rect x="210" y="58" width="22" height="14" rx="2" className="fill-muted-foreground" opacity="0.07" />
+              <rect x="238" y="58" width="16" height="18" rx="2" className="fill-muted-foreground" opacity="0.06" />
+              <rect x="260" y="60" width="30" height="12" rx="2" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="210" y="95" width="25" height="18" rx="2" className="fill-muted-foreground" opacity="0.06" />
+              <rect x="240" y="98" width="18" height="14" rx="2" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="265" y="95" width="28" height="18" rx="2" className="fill-muted-foreground" opacity="0.06" />
+
+              {/* Left residential */}
+              <rect x="108" y="95" width="14" height="10" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="128" y="93" width="16" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="108" y="125" width="18" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="130" y="128" width="12" height="8" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="108" y="160" width="14" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="155" y="160" width="20" height="10" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+
+              {/* Right residential */}
+              <rect x="410" y="58" width="18" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="435" y="60" width="12" height="18" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="455" y="58" width="20" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="410" y="95" width="30" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="450" y="95" width="16" height="16" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="505" y="95" width="22" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="505" y="148" width="18" height="16" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="530" y="150" width="12" height="10" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
 
               {/* Mid blocks */}
-              <rect x="305" y="135" width="25" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.06" />
-              <rect x="335" y="138" width="14" height="20" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="305" y="185" width="30" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="270" y="185" width="20" height="16" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="310" y="95" width="22" height="16" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="340" y="98" width="14" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="310" y="160" width="26" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
+              <rect x="342" y="162" width="12" height="10" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
 
-              {/* Bottom area blocks */}
-              <rect x="155" y="222" width="18" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
-              <rect x="405" y="185" width="22" height="14" rx="1.5" className="fill-muted-foreground" opacity="0.05" />
-              <rect x="455" y="222" width="16" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              {/* Bottom blocks */}
+              <rect x="210" y="160" width="20" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="410" y="160" width="24" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.04" />
+              <rect x="155" y="215" width="16" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.03" />
+              <rect x="310" y="215" width="20" height="12" rx="1.5" className="fill-muted-foreground" opacity="0.03" />
+              <rect x="455" y="215" width="16" height="10" rx="1.5" className="fill-muted-foreground" opacity="0.03" />
 
-              {/* Park / green space */}
-              <ellipse cx="480" cy="200" rx="18" ry="14" className="fill-green-600" opacity="0.06" />
-              <ellipse cx="160" cy="200" rx="12" ry="10" className="fill-green-600" opacity="0.05" />
+              {/* Parks / green */}
+              <ellipse cx="470" cy="190" rx="16" ry="12" className="fill-green-600" opacity="0.06" />
+              <circle cx="466" cy="186" r="2.5" className="fill-green-600" opacity="0.1" />
+              <circle cx="474" cy="193" r="2" className="fill-green-600" opacity="0.08" />
+              <circle cx="469" cy="195" r="1.8" className="fill-green-600" opacity="0.09" />
+              <ellipse cx="155" cy="195" rx="12" ry="9" className="fill-green-600" opacity="0.05" />
+              <circle cx="153" cy="192" r="2" className="fill-green-600" opacity="0.08" />
+              <circle cx="158" cy="198" r="1.5" className="fill-green-600" opacity="0.07" />
 
-              {/* Small tree dots */}
-              <circle cx="475" cy="195" r="3" className="fill-green-600" opacity="0.1" />
-              <circle cx="485" cy="205" r="2.5" className="fill-green-600" opacity="0.08" />
-              <circle cx="478" cy="203" r="2" className="fill-green-600" opacity="0.09" />
-              <circle cx="158" cy="197" r="2.5" className="fill-green-600" opacity="0.08" />
-              <circle cx="163" cy="203" r="2" className="fill-green-600" opacity="0.07" />
+              {/* Road labels */}
+              <text x="50" y="84" fontSize="5.5" className="fill-muted-foreground" opacity="0.3" fontFamily="sans-serif" fontWeight="600">HWY 90</text>
+              <text x="50" y="152" fontSize="5" className="fill-muted-foreground" opacity="0.25" fontFamily="sans-serif">RIVER RD</text>
+              <text x="206" y="50" fontSize="5" className="fill-muted-foreground" opacity="0.25" fontFamily="sans-serif" transform="rotate(-90 206 50)">CAUSEWAY</text>
+              <text x="406" y="50" fontSize="5" className="fill-muted-foreground" opacity="0.25" fontFamily="sans-serif" transform="rotate(-90 406 50)">VETERANS</text>
 
+              {/* === ROUTE HIGHLIGHT === */}
               {/* Route road shadow */}
-              <path d={routePath} fill="none" className="stroke-foreground" strokeWidth="10" strokeLinecap="round" opacity="0.04" />
-
+              <path d={forwardPath} fill="none" className="stroke-foreground" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" opacity="0.03" />
               {/* Route road fill */}
-              <path d={routePath} fill="none" className="stroke-border" strokeWidth="7" strokeLinecap="round" />
+              <path d={forwardPath} fill="none" className="stroke-accent" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.25" />
+              {/* Center dashes */}
+              <path d={forwardPath} fill="none" stroke="white" strokeWidth="0.8" strokeDasharray="5 7" strokeLinecap="round" opacity="0.2" />
 
               {/* Route animated highlight */}
               <motion.path
-                d={routePath}
+                d={forwardPath}
                 fill="none"
                 className="stroke-accent"
-                strokeWidth="4"
+                strokeWidth="3"
                 strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0.6 }}
-                animate={{ pathLength: [0, 1, 1, 0], opacity: [0.6, 0.6, 0.6, 0] }}
+                strokeLinejoin="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{
+                  pathLength: [0, 1, 1, 1, 0],
+                  opacity: [0.7, 0.7, 0.7, 0.7, 0],
+                }}
                 transition={{
                   duration: TOTAL,
-                  times: [0, LOOP_DURATION / TOTAL, (LOOP_DURATION + 0.3) / TOTAL, 1],
+                  times: [0, t1, t2, t3, 1],
                   repeat: Infinity,
-                  repeatDelay: 0.5,
                   ease: "easeInOut",
                 }}
               />
 
-              {/* Route dashed center line */}
-              <path d={routePath} fill="none" stroke="white" strokeWidth="1" strokeDasharray="6 8" strokeLinecap="round" opacity="0.25" />
-
-              {/* Origin marker */}
+              {/* === MARKERS === */}
+              {/* Origin - Our Pit */}
               <g>
-                <motion.circle cx="60" cy="140" r="22" className="fill-accent" opacity="0.1"
-                  animate={{ r: [22, 28, 22] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                <motion.circle cx="55" cy="155" r="20" className="fill-accent" opacity="0.08"
+                  animate={{ r: [20, 26, 20] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                 />
-                <circle cx="60" cy="140" r="16" className="fill-background stroke-accent" strokeWidth="2.5" />
-                <circle cx="60" cy="140" r="5" className="fill-accent" />
-                <text x="60" y="172" textAnchor="middle" className="fill-foreground" fontSize="10" fontWeight="700" fontFamily="sans-serif">Our Pit</text>
+                <circle cx="55" cy="155" r="14" className="fill-background stroke-accent" strokeWidth="2" />
+                <circle cx="55" cy="155" r="4.5" className="fill-accent" />
+                <text x="55" y="180" textAnchor="middle" className="fill-foreground" fontSize="9" fontWeight="700" fontFamily="sans-serif">Our Pit</text>
               </g>
 
-              {/* Destination marker */}
+              {/* Destination - Your Place */}
               <g>
-                <motion.circle cx="540" cy="130" r="22" className="fill-primary" opacity="0.08"
-                  animate={{ r: [22, 28, 22] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                <motion.circle cx="540" cy="143" r="20" className="fill-primary" opacity="0.06"
+                  animate={{ r: [20, 26, 20] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                 />
-                <circle cx="540" cy="130" r="16" className="fill-background stroke-primary" strokeWidth="2.5" />
-                {/* House */}
-                <path d="M533,134 L540,125 L547,134 L547,139 L533,139 Z" className="fill-primary/40 stroke-primary" strokeWidth="1.5" strokeLinejoin="round" />
-                <rect x="537" y="135" width="6" height="4" rx="0.5" className="fill-primary/60" />
-                <text x="540" y="162" textAnchor="middle" className="fill-foreground" fontSize="10" fontWeight="700" fontFamily="sans-serif">Your Place</text>
+                <circle cx="540" cy="143" r="14" className="fill-background stroke-primary" strokeWidth="2" />
+                <path d="M533,147 L540,138 L547,147 L547,152 L533,152 Z" className="fill-primary/40 stroke-primary" strokeWidth="1.2" strokeLinejoin="round" />
+                <rect x="537" y="148" width="6" height="4" rx="0.5" className="fill-primary/60" />
+                <text x="540" y="172" textAnchor="middle" className="fill-foreground" fontSize="9" fontWeight="700" fontFamily="sans-serif">Your Place</text>
               </g>
 
-              {/* Truck going forward */}
+              {/* === TRUCK (forward) === */}
               <motion.g
-                animate={{ opacity: [1, 1, 0, 0, 0, 1] }}
+                animate={{
+                  opacity: [1, 1, 1, 0, 0, 0, 0, 1],
+                }}
                 transition={{
-                  duration: TOTAL + 0.5,
-                  times: [0, LOOP_DURATION / (TOTAL + 0.5), (LOOP_DURATION + 0.01) / (TOTAL + 0.5), (LOOP_DURATION + 0.02) / (TOTAL + 0.5), TOTAL / (TOTAL + 0.5), 1],
+                  duration: TOTAL,
+                  times: [0, t1 - 0.01, t1, t1 + 0.01, t2 - 0.01, t2, t2 + 0.01, 1],
                   repeat: Infinity,
-                  repeatDelay: 0,
                 }}
               >
                 <motion.g
-                  style={{ offsetPath: `path("${routePath}")`, offsetRotate: "auto" }}
-                  animate={{ offsetDistance: ["0%", "88%"] }}
+                  style={{
+                    offsetPath: `path("${forwardPath}")`,
+                    offsetRotate: "auto" as any,
+                  }}
+                  animate={{ offsetDistance: ["0%", "100%", "100%"] }}
                   transition={{
-                    duration: LOOP_DURATION,
+                    duration: TOTAL,
+                    times: [0, t1, 1],
                     repeat: Infinity,
-                    repeatDelay: PAUSE + 0.5,
                     ease: "easeInOut",
                   }}
                 >
-                  <rect x="-15" y="-15" width="30" height="30" rx="8" className="fill-accent" />
-                  <rect x="-15" y="-15" width="30" height="30" rx="8" fill="black" opacity="0.15" transform="translate(0,2)" />
-                  <g transform="translate(-8,-8) scale(0.67)" className="text-accent-foreground">
-                    <path d="M1 3h15v13H1z" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-                    <path d="M16 8h4l3 3v5h-7V8z" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-                    <circle cx="5.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <circle cx="18.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
-                  </g>
+                  <TruckIcon />
                 </motion.g>
               </motion.g>
 
-              {/* Truck going back (turned around) */}
+              {/* === TRUCK (return) === */}
               <motion.g
-                animate={{ opacity: [0, 0, 1, 1, 1, 0] }}
+                animate={{
+                  opacity: [0, 0, 0, 1, 1, 1, 1, 0],
+                }}
                 transition={{
-                  duration: TOTAL + 0.5,
-                  times: [0, LOOP_DURATION / (TOTAL + 0.5), (LOOP_DURATION + 0.01) / (TOTAL + 0.5), (LOOP_DURATION + 0.02) / (TOTAL + 0.5), TOTAL / (TOTAL + 0.5), 1],
+                  duration: TOTAL,
+                  times: [0, t1 - 0.01, t1, t1 + 0.01, t3 - 0.01, t3, t3 + 0.01, 1],
                   repeat: Infinity,
-                  repeatDelay: 0,
                 }}
               >
                 <motion.g
-                  style={{ offsetPath: `path("${returnPath}")`, offsetRotate: "auto" }}
-                  animate={{ offsetDistance: ["0%", "88%"] }}
+                  style={{
+                    offsetPath: `path("${returnPath}")`,
+                    offsetRotate: "auto" as any,
+                  }}
+                  animate={{ offsetDistance: ["0%", "0%", "100%", "100%"] }}
                   transition={{
-                    duration: PAUSE - 0.1,
-                    delay: LOOP_DURATION + 0.2,
+                    duration: TOTAL,
+                    times: [0, t2, t3, 1],
                     repeat: Infinity,
-                    repeatDelay: LOOP_DURATION + 0.6,
                     ease: "easeInOut",
                   }}
                 >
-                  <rect x="-15" y="-15" width="30" height="30" rx="8" className="fill-accent" />
-                  <rect x="-15" y="-15" width="30" height="30" rx="8" fill="black" opacity="0.15" transform="translate(0,2)" />
-                  <g transform="translate(-8,-8) scale(0.67)" className="text-accent-foreground">
-                    <path d="M1 3h15v13H1z" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-                    <path d="M16 8h4l3 3v5h-7V8z" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-                    <circle cx="5.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <circle cx="18.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
-                  </g>
+                  <TruckIcon />
                 </motion.g>
               </motion.g>
             </svg>
