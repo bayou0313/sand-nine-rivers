@@ -114,7 +114,7 @@ const Pricing = () => {
                 {/* Dashed center line */}
                 <div className="absolute top-1/2 -translate-y-[0.5px] left-2 right-2 border-t-2 border-dashed border-accent/20" />
 
-                {/* Truck — loops */}
+                {/* Truck — loops with flip on return */}
                 <motion.div
                   animate={{ left: ["5%", "72%", "72%", "5%"] }}
                   transition={{
@@ -126,7 +126,17 @@ const Pricing = () => {
                   }}
                   className="absolute top-1/2 -translate-y-1/2 z-10"
                 >
-                  <div className="relative">
+                  <motion.div
+                    animate={{ scaleX: [1, 1, -1, -1, 1] }}
+                    transition={{
+                      duration: TOTAL + 0.5,
+                      times: [0, LOOP_DURATION / (TOTAL + 0.5), (LOOP_DURATION + 0.05) / (TOTAL + 0.5), TOTAL / (TOTAL + 0.5), 1],
+                      repeat: Infinity,
+                      repeatDelay: 0,
+                      ease: "linear",
+                    }}
+                    className="relative"
+                  >
                     <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-lg shadow-accent/30">
                       <Truck className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
@@ -136,12 +146,7 @@ const Pricing = () => {
                       transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.3 }}
                       className="absolute -left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-muted-foreground/15 blur-[2px]"
                     />
-                    <motion.div
-                      animate={{ opacity: [0, 0.2, 0], x: [-4, -14], scale: [0.3, 1] }}
-                      transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5, delay: 0.2 }}
-                      className="absolute -left-3 top-1/3 w-2 h-2 rounded-full bg-muted-foreground/10 blur-[2px]"
-                    />
-                  </div>
+                  </motion.div>
                 </motion.div>
               </div>
 
