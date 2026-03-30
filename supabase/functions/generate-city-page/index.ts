@@ -208,28 +208,42 @@ CONTENT REQUIREMENTS:
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const generatedAt = new Date().toISOString();
 
-      const { error: updateErr } = await supabase
+      const baseUpdate = {
+        meta_title: generated.meta_title,
+        meta_description: generated.meta_description,
+        h1_text: generated.h1_text,
+        content: fullContent,
+        prompt_version: "2.0",
+        pit_reassigned: false,
+        price_changed: false,
+        regen_reason: null,
+        content_generated_at: generatedAt,
+        status: "active",
+      };
+
+      const structuredUpdate = {
+        ...baseUpdate,
+        hero_intro: generated.hero_intro || null,
+        why_choose_intro: generated.why_choose_intro || null,
+        delivery_details: generated.delivery_details || null,
+        local_uses: localUsesHtml ? `<ul>${localUsesHtml}</ul>` : null,
+        local_expertise: generated.local_expertise || null,
+        faq_items: generated.faq_items || null,
+      };
+
+      let { error: updateErr } = await supabase
         .from("city_pages")
-        .update({
-          meta_title: generated.meta_title,
-          meta_description: generated.meta_description,
-          h1_text: generated.h1_text,
-          hero_intro: generated.hero_intro || null,
-          why_choose_intro: generated.why_choose_intro || null,
-          delivery_details: generated.delivery_details || null,
-          local_uses: localUsesHtml ? `<ul>${localUsesHtml}</ul>` : null,
-          local_expertise: generated.local_expertise || null,
-          faq_items: generated.faq_items || null,
-          content: fullContent,
-          prompt_version: "2.0",
-          pit_reassigned: false,
-          price_changed: false,
-          regen_reason: null,
-          content_generated_at: new Date().toISOString(),
-          status: "active",
-        })
+        .update(structuredUpdate)
         .eq("id", city_page_id);
+
+      if (updateErr?.code === "PGRST204") {
+        ({ error: updateErr } = await supabase
+          .from("city_pages")
+          .update(baseUpdate)
+          .eq("id", city_page_id));
+      }
 
       if (updateErr) {
         console.error("Failed to update city page:", updateErr);
