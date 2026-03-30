@@ -1104,14 +1104,14 @@ const Leads = () => {
       const cached = geocodeCache[l.address];
       const hqDist = l.distance_miles || 0;
       if (!cached) return { lead: l, hqDist, pitDist: null, delta: 0, newPrice: 0, status: "unknown" as const };
-      const pitDist = haversine(selectedPit.lat, selectedPit.lon, cached.lat, cached.lon);
+      const pitDist = getDist(selectedPit.lat, selectedPit.lon, cached.lat, cached.lon);
       const delta = hqDist - pitDist;
       const extra = pitDist > eff.free_miles ? (pitDist - eff.free_miles) * eff.extra_per_mile : 0;
       const newPrice = eff.base_price + extra;
       const status = pitDist <= eff.max_distance ? "serviceable" : pitDist < hqDist ? "closer" : "same";
       return { lead: l, hqDist, pitDist, delta, newPrice, status: status as "serviceable" | "closer" | "same" };
     }).filter(d => d.pitDist !== null).sort((a, b) => (a.pitDist || 0) - (b.pitDist || 0));
-  }, [selectedPit, parsedLeads, geocodeCache, globalSettings]);
+  }, [selectedPit, parsedLeads, geocodeCache, globalSettings, getDist]);
 
   const geocodeAllLeads = async () => {
     setGeocoding(true);
