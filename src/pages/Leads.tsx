@@ -1795,9 +1795,12 @@ const Leads = () => {
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
         const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
         const CURRENT_PROMPT_VERSION = "2.0";
-        const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at).length;
-        const outdatedCount = cityPages.filter((cp: any) => !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION).length;
-        const missingCount = cityPages.filter((cp: any) => cp.status === "active" && !cp.content_generated_at).length;
+        const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed).length;
+        const pitChangedCount = cityPages.filter((cp: any) => cp.pit_reassigned).length;
+        const priceChangedCount = cityPages.filter((cp: any) => cp.price_changed && !cp.pit_reassigned).length;
+        const outdatedCount = cityPages.filter((cp: any) => (!cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION) && !cp.pit_reassigned && !cp.price_changed && cp.content_generated_at).length;
+        const missingCount = cityPages.filter((cp: any) => !cp.content_generated_at).length;
+        const needsRegenCount = cityPages.filter((cp: any) => cp.pit_reassigned || cp.price_changed || !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION || !cp.content_generated_at).length;
 
         const regenOutdated = async () => {
           const outdated = cityPages.filter(
