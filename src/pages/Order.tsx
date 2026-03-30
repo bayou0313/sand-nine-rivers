@@ -62,8 +62,7 @@ const Order = () => {
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
   const { loaded: apiLoaded } = useGoogleMaps();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const addressContainerRef = useRef<HTMLDivElement>(null);
 
   // Dynamic pricing from global_settings + PITs
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
