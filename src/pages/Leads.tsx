@@ -858,11 +858,6 @@ const Leads = () => {
     setShowDeleteConfirm(false);
   };
 
-  const previewNewPrice = (distanceFromPit: number, newBasePrice: number, newFreeMiles: number, newPricePerExtraMile: number): number => {
-    const extraMiles = Math.max(0, distanceFromPit - newFreeMiles);
-    const raw = newBasePrice + extraMiles * newPricePerExtraMile;
-    return Math.max(newBasePrice, Math.round(raw));
-  };
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
