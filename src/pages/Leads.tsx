@@ -1862,6 +1862,21 @@ const Leads = () => {
                   className="text-xs px-3 py-1.5 rounded border font-bold hover:bg-amber-50"
                   style={{ borderColor: "#F59E0B40", color: "#F59E0B" }}
                 >Deactivate Selected</button>
+                {/* Keep Best / Deactivate Duplicates */}
+                {(() => {
+                  const selectedArr = Array.from(selectedCityPages);
+                  const selectedPages = cityPages.filter((cp: any) => selectedArr.includes(cp.id));
+                  const selectedSlugs = new Set(selectedPages.map((cp: any) => cp.city_slug));
+                  const hasDups = [...selectedSlugs].some(s => duplicateSlugs.has(s));
+                  if (!hasDups) return null;
+                  return (
+                    <button
+                      onClick={() => setShowDeactivateDupsConfirm(true)}
+                      className="text-xs px-3 py-1.5 rounded border font-bold hover:bg-blue-50"
+                      style={{ borderColor: "#3B82F640", color: "#3B82F6" }}
+                    >Keep Best, Deactivate Rest</button>
+                  );
+                })()}
                 <button
                   onClick={() => setSelectedCityPages(new Set())}
                   className="text-xs px-3 py-1.5 rounded border hover:bg-gray-50"
