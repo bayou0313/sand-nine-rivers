@@ -825,10 +825,9 @@ const Order = () => {
                 <p className="font-body text-muted-foreground mb-6">Enter your delivery address to get your instant price. {quantity > 1 ? `${quantity} loads × ` : ""}9 cubic yards of quality river sand.</p>
 
                 <div className="space-y-4">
-                  <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
-                    <label htmlFor="order-address" className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
+                  <label htmlFor="order-address" className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" /> DELIVERY ADDRESS
-                    </label>
+                  </label>
                   <Input
                     ref={inputRef}
                     type="text"
