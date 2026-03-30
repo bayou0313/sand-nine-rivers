@@ -802,19 +802,21 @@ const Order = () => {
                   <label htmlFor="order-address" className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" /> DELIVERY ADDRESS
                   </label>
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    id="order-address"
-                    name="delivery-address"
-                    autoComplete="street-address"
-                    placeholder="Enter your delivery address..."
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="h-14 text-base rounded-xl border-border/50 shadow-sm focus:shadow-md transition-shadow"
-                    maxLength={500}
-                    onKeyDown={(e) => e.key === "Enter" && calculateDistance()}
-                  />
+                  <div ref={addressContainerRef}>
+                    {apiLoaded ? (
+                      <PlaceAutocompleteInput
+                        onPlaceSelect={handleOrderPlaceSelect}
+                        onInputChange={(val) => setAddress(val)}
+                        onEnterKey={calculateDistance}
+                        placeholder="Enter your delivery address..."
+                        initialValue={address || undefined}
+                        id="order-address"
+                        containerClassName="place-autocomplete-order"
+                      />
+                    ) : (
+                      <div className="h-14 rounded-xl border border-input bg-background animate-pulse" />
+                    )}
+                  </div>
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
