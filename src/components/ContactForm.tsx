@@ -79,10 +79,22 @@ const ContactForm = () => {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <h3 className="font-display text-2xl text-foreground tracking-wider mb-4">SEND US A MESSAGE</h3>
-                <Input placeholder="Your Name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" />
-                <EmailInput value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-12 rounded-xl" />
-                <Input type="tel" placeholder="Phone Number" maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
-                <Textarea placeholder="How can we help?" required maxLength={1000} rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="rounded-xl" />
+                <div>
+                  <label htmlFor="contact-name" className="sr-only">Your Name</label>
+                  <Input id="contact-name" name="name" autoComplete="name" placeholder="Your Name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" />
+                </div>
+                <div>
+                  <label htmlFor="contact-email" className="sr-only">Email</label>
+                  <EmailInput id="contact-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-12 rounded-xl" />
+                </div>
+                <div>
+                  <label htmlFor="contact-phone" className="sr-only">Phone Number</label>
+                  <Input id="contact-phone" name="phone" type="tel" autoComplete="tel" placeholder="Phone Number" maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
+                </div>
+                <div>
+                  <label htmlFor="contact-message" className="sr-only">Message</label>
+                  <Textarea id="contact-message" name="message" placeholder="How can we help?" required maxLength={1000} rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="rounded-xl" />
+                </div>
                 <Button type="submit" className="w-full h-12 font-display tracking-wider text-lg rounded-xl shadow-md shadow-primary/20">
                   <Send className="w-5 h-5 mr-2" />
                   SEND MESSAGE
