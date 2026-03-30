@@ -1791,6 +1791,13 @@ const Leads = () => {
         if (showDuplicatesOnly) {
           filteredCityPages = filteredCityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug));
         }
+        filteredCityPages = [...filteredCityPages].sort((a: any, b: any) => {
+          const aVal = a[cityPageSortKey] ?? "";
+          const bVal = b[cityPageSortKey] ?? "";
+          const dir = cityPageSortDir === "asc" ? 1 : -1;
+          if (typeof aVal === "number" && typeof bVal === "number") return (aVal - bVal) * dir;
+          return String(aVal).localeCompare(String(bVal)) * dir;
+        });
         const activeCount = cityPages.filter((cp: any) => cp.status === "active").length;
         const totalViews = cityPages.reduce((sum: number, cp: any) => sum + (cp.page_views || 0), 0);
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
