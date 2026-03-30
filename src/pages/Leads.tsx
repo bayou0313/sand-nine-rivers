@@ -1813,12 +1813,13 @@ const Leads = () => {
             return priority(a) - priority(b);
           });
           regenCancelRef.current = false;
-          setRegenQueue({ total: outdated.length, current: 0, currentCity: "", status: "running" });
+          setRegenQueue({ total: toRegen.length, current: 0, currentCity: "", status: "running" });
 
-          for (let i = 0; i < outdated.length; i++) {
+          for (let i = 0; i < toRegen.length; i++) {
             if (regenCancelRef.current) break;
-            const page = outdated[i];
-            setRegenQueue(q => q ? { ...q, current: i + 1, currentCity: page.city_name } : q);
+            const page = toRegen[i];
+            const reason = page.pit_reassigned ? "PIT reassigned" : page.price_changed ? "Price changed" : !page.content_generated_at ? "Missing content" : "Outdated prompt";
+            setRegenQueue(q => q ? { ...q, current: i + 1, currentCity: `${page.city_name} — ${reason}` } : q);
 
             try {
               const pitData = pits.find((p: any) => p.id === page.pit_id);
@@ -1835,18 +1836,18 @@ const Leads = () => {
                   saturday_available: pitData?.operating_days?.includes(6) ?? false,
                 },
               });
-              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, content_generated_at: new Date().toISOString(), status: "active" } : cp));
+              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, pit_reassigned: false, price_changed: false, regen_reason: null, content_generated_at: new Date().toISOString(), status: "active" } : cp));
             } catch (err) {
               console.error(`Failed to regen ${page.city_name}:`, err);
             }
 
-            if (i < outdated.length - 1 && !regenCancelRef.current) {
+            if (i < toRegen.length - 1 && !regenCancelRef.current) {
               await new Promise(resolve => setTimeout(resolve, 3000));
             }
           }
 
           setRegenQueue(q => q ? { ...q, current: q.total, status: "complete" } : q);
-          toast({ title: "Regeneration complete", description: `${outdated.length} pages updated.` });
+          toast({ title: "Regeneration complete", description: `${toRegen.length} pages updated.` });
           fetchCityPages();
         };
 
