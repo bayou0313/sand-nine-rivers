@@ -997,35 +997,18 @@ const Leads = () => {
     }
   };
 
-  // Google Places Autocomplete for Add PIT
-  useEffect(() => {
-    if (!showAddPit || !pitInputRef.current || !window.google?.maps?.places) return;
-    if (addPitAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(pitInputRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.geometry?.location) { setNewPit(prev => ({ ...prev, address: place.formatted_address || prev.address, lat: place.geometry!.location.lat(), lon: place.geometry!.location.lng() })); } });
-    addPitAutocompleteRef.current = ac;
-    return () => { addPitAutocompleteRef.current = null; };
-  }, [showAddPit, googleLoaded]);
+  // Autocomplete handlers for PlaceAutocompleteInput components
+  const handleAddPitPlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setNewPit(prev => ({ ...prev, address: result.formattedAddress, lat: result.lat, lon: result.lng }));
+  }, []);
 
-  // Google Places Autocomplete for Edit PIT
-  useEffect(() => {
-    if (!editingPitId || !editPitInputRef.current || !window.google?.maps?.places) return;
-    if (editPitAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(editPitInputRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.geometry?.location) { setEditPitData(prev => ({ ...prev, address: place.formatted_address || prev.address, lat: place.geometry!.location.lat(), lon: place.geometry!.location.lng() })); } });
-    editPitAutocompleteRef.current = ac;
-    return () => { editPitAutocompleteRef.current = null; };
-  }, [editingPitId, googleLoaded]);
+  const handleEditPitPlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setEditPitData(prev => ({ ...prev, address: result.formattedAddress, lat: result.lat, lon: result.lng }));
+  }, []);
 
-  // Google Places Autocomplete for Business Profile address
-  useEffect(() => {
-    if (activePage !== "profile" || !profileAddressRef.current || !window.google?.maps?.places) return;
-    if (profileAutocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(profileAddressRef.current, { types: ["address"], fields: ["formatted_address", "geometry"], componentRestrictions: { country: "us" } });
-    ac.addListener("place_changed", () => { const place = ac.getPlace(); if (place?.formatted_address) { setProfileSettings(prev => ({ ...prev, business_address: place.formatted_address })); } });
-    profileAutocompleteRef.current = ac;
-    return () => { profileAutocompleteRef.current = null; };
-  }, [activePage, googleLoaded]);
+  const handleProfilePlaceSelect = useCallback((result: PlaceSelectResult) => {
+    setProfileSettings(prev => ({ ...prev, business_address: result.formattedAddress }));
+  }, []);
 
   // Fetch abandoned sessions when navigating to that page
   useEffect(() => {
