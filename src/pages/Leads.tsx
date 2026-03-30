@@ -181,7 +181,7 @@ async function fetchDrivingDistances(
     const destsStr = batch.map(d => `${d.lat},${d.lon}`).join("|");
     try {
       const resp = await fetch(
-        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLon}&destinations=${encodeURIComponent(destsStr)}&units=imperial&key=${apiKey}`
+        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLon}&destinations=${encodeURIComponent(destsStr)}&units=imperial&mode=driving&avoid=ferries&key=${apiKey}`
       );
       const data = await resp.json();
       const elements = data.rows?.[0]?.elements || [];
