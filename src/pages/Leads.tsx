@@ -99,6 +99,63 @@ const formatLeadDate = (d: string) => {
   } catch { return d; }
 };
 
+/**
+ * Parse the legacy HTML `content` blob into structured fields for the edit modal.
+ * The HTML structure from generate-city-page is:
+ *   <p class="hero-intro">...</p>
+ *   <h2>Why Choose...</h2> <p>...</p>
+ *   <h2>Delivery Details...</h2> <p>...</p>
+ *   <h2>Common Uses...</h2> <ul>...</ul>
+ *   <h2>Local Expertise</h2> <p>...</p>
+ *   <h2>Frequently Asked Questions...</h2> <div class="faq-item">...</div>...
+ */
+const parseCityPageContent = (cp: any) => {
+  // If structured fields already exist on the record, use them
+  if (cp.hero_intro || cp.why_choose_intro || cp.delivery_details) return {};
+  
+  const html = cp.content;
+  if (!html) return {};
+
+  const result: Record<string, any> = {};
+
+  // Hero intro
+  const heroMatch = html.match(/<p class="hero-intro">([\s\S]*?)<\/p>/);
+  if (heroMatch) result.hero_intro = heroMatch[1].trim();
+
+  // Extract sections by splitting on <h2> tags
+  const sections = html.split(/<h2>/);
+  for (const section of sections) {
+    const h2End = section.indexOf("</h2>");
+    if (h2End === -1) continue;
+    const heading = section.substring(0, h2End).toLowerCase();
+    const body = section.substring(h2End + 5).trim();
+
+    if (heading.includes("why choose")) {
+      const pMatch = body.match(/<p>([\s\S]*?)<\/p>/);
+      if (pMatch) result.why_choose_intro = pMatch[1].trim();
+    } else if (heading.includes("delivery details")) {
+      const pMatch = body.match(/<p>([\s\S]*?)<\/p>/);
+      if (pMatch) result.delivery_details = pMatch[1].trim();
+    } else if (heading.includes("common uses")) {
+      const ulMatch = body.match(/<ul>([\s\S]*?)<\/ul>/);
+      if (ulMatch) result.local_uses = `<ul>${ulMatch[1].trim()}</ul>`;
+    } else if (heading.includes("local expertise")) {
+      const pMatch = body.match(/<p>([\s\S]*?)<\/p>/);
+      if (pMatch) result.local_expertise = pMatch[1].trim();
+    } else if (heading.includes("frequently asked")) {
+      const faqItems: { question: string; answer: string }[] = [];
+      const faqRegex = /<h3>([\s\S]*?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g;
+      let m;
+      while ((m = faqRegex.exec(body)) !== null) {
+        faqItems.push({ question: m[1].trim(), answer: m[2].trim() });
+      }
+      if (faqItems.length > 0) result.faq_items = faqItems;
+    }
+  }
+
+  return result;
+}
+
 const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 3958.8;
   const dLat = (lat2 - lat1) * Math.PI / 180;
