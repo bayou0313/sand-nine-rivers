@@ -898,6 +898,20 @@ const Leads = () => {
         lat = coords.lat;
         lon = coords.lon;
       }
+      if (
+        lat == null || lon == null ||
+        (lat === 0 && lon === 0) ||
+        lat < 24 || lat > 50 ||
+        lon < -125 || lon > -66
+      ) {
+        toast({
+          title: "Cannot save PIT — invalid coordinates",
+          description: `This PIT has missing or implausible coordinates (lat: ${lat}, lon: ${lon}). Open Edit, retype the address, and select from the autocomplete dropdown to fix it.`,
+          variant: "destructive",
+        });
+        setSavingPit(false);
+        return;
+      }
       const pitPayload = {
         id: editingPitId,
         name: editPitData.name,
