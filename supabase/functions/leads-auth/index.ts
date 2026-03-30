@@ -7,46 +7,48 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Haversine fallback (miles) — used only as pre-filter
-const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 3958.8;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
 /**
- * Get driving distances from one origin to multiple destinations using Google Distance Matrix API.
- * Returns array of distances in miles (null if route not found).
- * Batches in groups of 25 destinations per API call.
+ * Server-side canonical distance function.
+ * Mirror of getDrivingDistanceBatch in src/lib/pits.ts — keep in sync.
+ * Roads only. No haversine fallback. Nulls mean skip, not approximate.
  */
 async function getDrivingDistances(
-  originLat: number, originLon: number,
+  originLat: number,
+  originLon: number,
   destinations: { lat: number; lng: number }[],
   apiKey: string
 ): Promise<(number | null)[]> {
+  if (!apiKey) {
+    throw new Error(
+      "getDrivingDistances: GOOGLE_MAPS_SERVER_KEY is not configured. " +
+      "Cannot calculate road distances. Set the secret in Supabase Dashboard."
+    );
+  }
   if (destinations.length === 0) return [];
+
   const results: (number | null)[] = new Array(destinations.length).fill(null);
-  const BATCH = 25; // Distance Matrix max elements per call with 1 origin
+  const BATCH = 25;
 
   for (let i = 0; i < destinations.length; i += BATCH) {
     const batch = destinations.slice(i, i + BATCH);
     const destsStr = batch.map(d => `${d.lat},${d.lng}`).join("|");
     try {
       const resp = await fetch(
-        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLon}&destinations=${encodeURIComponent(destsStr)}&units=imperial&mode=driving&avoid=ferries&key=${apiKey}`
+        `https://maps.googleapis.com/maps/api/distancematrix/json` +
+        `?origins=${originLat},${originLon}` +
+        `&destinations=${encodeURIComponent(destsStr)}` +
+        `&units=imperial&mode=driving&avoid=ferries` +
+        `&key=${apiKey}`
       );
       const data = await resp.json();
       const elements = data.rows?.[0]?.elements || [];
       for (let j = 0; j < elements.length; j++) {
         if (elements[j]?.status === "OK" && elements[j].distance?.value) {
-          results[i + j] = elements[j].distance.value / 1609.344; // meters to miles
+          results[i + j] = elements[j].distance.value / 1609.344;
         }
       }
     } catch (e) {
-      console.error("Distance Matrix batch failed:", e);
-      // Leave as null — caller will fall back to haversine
+      console.error("[getDrivingDistances] Batch request failed:", e);
     }
   }
   return results;
@@ -198,7 +200,6 @@ serve(async (req) => {
           .eq("key", key);
         if (error) throw error;
       }
-      // Return updated settings
       const { data, error } = await supabase
         .from("global_settings").select("key, value");
       if (error) throw error;
@@ -247,7 +248,6 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Fetch existing PIT pricing before overwriting (for auto price rollover)
       let existingPit: any = null;
       if (pit.id) {
         const { data: ep } = await supabase
@@ -285,7 +285,6 @@ serve(async (req) => {
         savedPit = data;
       }
 
-      // Auto price rollover: if pricing fields changed, recalculate all city page prices
       let prices_updated = 0;
       if (existingPit && pit.id) {
         const pricingChanged =
@@ -294,7 +293,6 @@ serve(async (req) => {
           (pit.price_per_extra_mile ?? null) !== (existingPit.price_per_extra_mile ?? null);
 
         if (pricingChanged) {
-          // Fetch global defaults for fallback
           const { data: gs } = await supabase.from("global_settings").select("key, value");
           const gMap: Record<string, string> = {};
           for (const r of gs || []) gMap[r.key] = r.value;
@@ -399,7 +397,6 @@ serve(async (req) => {
           .single();
         if (updateErr) throw updateErr;
 
-        // Send confirmation email if requested
         if (send_email && updatedOrder.customer_email) {
           try {
             const emailResp = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
@@ -481,14 +478,12 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Missing id" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      // Fetch city page to get pit_id and slug before deleting
       const { data: pageToDelete } = await supabase
         .from("city_pages").select("pit_id, city_slug").eq("id", id).maybeSingle();
 
       const { error } = await supabase.from("city_pages").delete().eq("id", id);
       if (error) throw error;
 
-      // Clear this city from PIT's served_cities cache
       if (pageToDelete?.pit_id) {
         const { data: pitRec } = await supabase
           .from("pits").select("served_cities").eq("id", pageToDelete.pit_id).maybeSingle();
@@ -541,9 +536,6 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // (haversine is now a top-level function used as pre-filter only)
-
-      // Clean city name helper
       const cleanCityName = (name: string): string => {
         return name
           .replace(/^City of /i, "")
@@ -556,7 +548,6 @@ serve(async (req) => {
           .trim();
       };
 
-      // Exclusion words — organizations, businesses, POIs
       const EXCLUDE_WORDS = [
         "inc", "llc", "corp", "association", "club", "center", "centre",
         "park", "farm", "commission", "community", "fitness", "beach",
@@ -571,27 +562,22 @@ serve(async (req) => {
       const isValidCityName = (name: string): boolean => {
         if (!name) return false;
         const lower = name.toLowerCase();
-        // Exclude if contains organization words
         for (const word of EXCLUDE_WORDS) {
           if (lower.includes(word)) return false;
         }
-        // Exclude if more than 4 words
         const words = name.split(/\s+/);
         if (words.length > 4) return false;
-        // Exclude if any word is longer than 20 chars
         if (words.some(w => w.length > 20)) return false;
         return true;
       };
 
-      // Valid geocoding result types for real cities/towns
       const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
 
-      // ── STRATEGY: Reverse geocode from radial grid points ──
       // Generate sample points at various distances and directions
       const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= maxDist);
-      const directions = [0, 45, 90, 135, 180, 225, 270, 315]; // N, NE, E, SE, S, SW, W, NW
+      const directions = [0, 45, 90, 135, 180, 225, 270, 315];
       const samplePoints: { lat: number; lng: number }[] = [
-        { lat: pitData.lat, lng: pitData.lon }, // center point
+        { lat: pitData.lat, lng: pitData.lon },
       ];
       for (const dist of distances) {
         for (const dir of directions) {
@@ -603,10 +589,8 @@ serve(async (req) => {
       }
       console.log(`Sampling ${samplePoints.length} points for reverse geocoding`);
 
-      // Reverse geocode each point — collect unique cities
       const cityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
 
-      // Process in batches of 10 to avoid rate limits
       const BATCH_SIZE = 10;
       for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
         const batch = samplePoints.slice(i, i + BATCH_SIZE);
@@ -625,12 +609,10 @@ serve(async (req) => {
         const batchResults = await Promise.all(promises);
         for (const results of batchResults) {
           for (const result of results) {
-            // Only accept results whose primary type is a valid city type
             const types = result.types || [];
             const hasValidType = types.some((t: string) => VALID_TYPES.includes(t));
             if (!hasValidType) continue;
 
-            // Extract city name and state from address_components
             const components = result.address_components || [];
             let cityName = "";
             let stateCode = "";
@@ -674,33 +656,25 @@ serve(async (req) => {
       const freeMiles = pitData.free_miles ?? parseFloat(gs.default_free_miles || "15");
       const extraPerMile = pitData.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
 
-      // Build final results — use driving distance instead of straight-line
+      // Build final results — pass ALL cities directly to Distance Matrix (no haversine pre-filter)
       const discovered: any[] = [];
       const seenSlugs = new Set<string>();
 
-      // First pass: pre-filter cities within haversine range, collect their coords
-      const candidateCities: { key: string; city: { name: string; state: string; lat: number; lng: number } }[] = [];
-      for (const [key, city] of cityMap) {
-        const straightLine = haversine(pitData.lat, pitData.lon, city.lat, city.lng);
-        if (straightLine > maxDist * 1.5) continue; // generous pre-filter (driving is ~1.3x straight-line)
-        candidateCities.push({ key, city });
-      }
-
-      // Get driving distances for all candidates in one batch
+      const allCities = [...cityMap.entries()];
       const drivingDists = await getDrivingDistances(
         pitData.lat, pitData.lon,
-        candidateCities.map(c => ({ lat: c.city.lat, lng: c.city.lng })),
+        allCities.map(([, city]) => ({ lat: city.lat, lng: city.lng })),
         apiKey
       );
 
-      for (let idx = 0; idx < candidateCities.length; idx++) {
-        const { city } = candidateCities[idx];
-        const distance = drivingDists[idx] ?? haversine(pitData.lat, pitData.lon, city.lat, city.lng);
+      for (let idx = 0; idx < allCities.length; idx++) {
+        const [, city] = allCities[idx];
+        const distance = drivingDists[idx];
+        if (distance === null) continue; // No road route found — skip this city
         if (distance > maxDist) continue;
 
         let slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-        // Handle duplicate slug from different states
         if (seenSlugs.has(slug) || (existingSlugs.has(slug) && existingSlugs.get(slug).pit_id !== pit_id)) {
           slug = `${slug}-${(city.state || "us").toLowerCase()}`;
         }
@@ -740,7 +714,6 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Get PIT details for AI generation
       const { data: pitForGen } = await supabase.from("pits").select("*").eq("id", pit_id).single();
       const { data: gsForGen } = await supabase.from("global_settings").select("key, value");
       const gsMap: Record<string, string> = {};
@@ -756,10 +729,9 @@ serve(async (req) => {
       let generated = 0;
       let failed = 0;
       let skipped = 0;
-      // Google Maps API key for driving distance lookups
       const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
 
-      // Fetch all active PITs for multi-PIT coverage detection (driving distance)
+      // Fetch all active PITs for multi-PIT coverage detection
       const { data: allActivePits } = await supabase
         .from("pits")
         .select("id, lat, lon, max_distance")
@@ -767,43 +739,31 @@ serve(async (req) => {
 
       const otherPits = (allActivePits ?? []).filter(p => p.id !== pit_id);
 
-      // Pre-compute driving distances from each other PIT to all cities in one batch per PIT
-      // Key: `${pitId}:${cityIndex}` → driving distance in miles (or null)
+      // Pre-compute driving distances from each other PIT to all cities — no haversine pre-filter
       const multiPitDrivingCache = new Map<string, number | null>();
       for (const otherPit of otherPits) {
-        // Haversine pre-filter: only query Distance Matrix for cities plausibly in range
-        const maxDRange = (otherPit.max_distance || 30) * 1.5;
-        const candidateIndices: number[] = [];
-        const candidateCoords: { lat: number; lng: number }[] = [];
-        for (let ci = 0; ci < cities.length; ci++) {
-          const straight = haversine(otherPit.lat, otherPit.lon, cities[ci].lat, cities[ci].lng);
-          if (straight <= maxDRange) {
-            candidateIndices.push(ci);
-            candidateCoords.push({ lat: cities[ci].lat, lng: cities[ci].lng });
-          }
-        }
-        if (candidateCoords.length > 0) {
-          const dists = await getDrivingDistances(otherPit.lat, otherPit.lon, candidateCoords, apiKey);
-          for (let j = 0; j < candidateIndices.length; j++) {
-            multiPitDrivingCache.set(`${otherPit.id}:${candidateIndices[j]}`, dists[j]);
+        const cityCoords = cities.map((c: any) => ({ lat: c.lat, lng: c.lng }));
+        if (cityCoords.length > 0) {
+          const dists = await getDrivingDistances(otherPit.lat, otherPit.lon, cityCoords, apiKey);
+          for (let j = 0; j < cities.length; j++) {
+            multiPitDrivingCache.set(`${otherPit.id}:${j}`, dists[j]);
           }
         }
       }
 
       for (const city of cities) {
-        // ── Multi-PIT coverage detection (driving distance) ──
+        // Multi-PIT coverage detection (driving distance only)
         const cityIdx = cities.indexOf(city);
         const competingPits = otherPits.filter(otherPit => {
           const cacheKey = `${otherPit.id}:${cityIdx}`;
           const drivingDist = multiPitDrivingCache.get(cacheKey);
-          // If we have a driving distance, use it; otherwise fall back to haversine
-          const dist = drivingDist ?? haversine(city.lat, city.lng, otherPit.lat, otherPit.lon);
-          return dist <= (otherPit.max_distance || 30);
+          if (drivingDist === null || drivingDist === undefined) return false; // No road route — not competing
+          return drivingDist <= (otherPit.max_distance || 30);
         });
         const isMultiPit = competingPits.length > 0;
         const competingIds = isMultiPit ? competingPits.map(p => p.id) : null;
 
-        // ── Closest-PIT dedup: check if slug already exists ──
+        // Closest-PIT dedup
         const { data: existing } = await supabase
           .from("city_pages")
           .select("id, distance_from_pit")
@@ -811,7 +771,6 @@ serve(async (req) => {
           .maybeSingle();
         if (existing) {
           if (city.distance < (existing.distance_from_pit ?? 999)) {
-            // New PIT is closer — update existing page, flag for regen
             const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
             await supabase.from("city_pages").update({
               pit_id, distance_from_pit: city.distance, base_price: newPrice,
@@ -822,7 +781,6 @@ serve(async (req) => {
             }).eq("id", existing.id);
             console.log(`Updated ${city.city_slug} to closer PIT (${city.distance} mi) — flagged for regen`);
           } else {
-            // Existing PIT is closer — but update multi-PIT status if needed
             if (isMultiPit) {
               await supabase.from("city_pages").update({
                 multi_pit_coverage: true, competing_pit_ids: competingIds,
@@ -864,7 +822,6 @@ serve(async (req) => {
           continue;
         }
 
-        // Auto-generate AI content
         try {
           const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-city-page`, {
             method: "POST",
@@ -959,8 +916,6 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // (using top-level haversine + getDrivingDistances helpers)
-
       const cleanCityName = (name: string): string => {
         return name.replace(/^City of /i, "").replace(/^Town of /i, "").replace(/^Village of /i, "")
           .replace(/\/.+$/, "").replace(/\s+Area$/i, "").replace(/\s+District$/i, "").replace(/\s+CDP$/i, "").trim();
@@ -989,12 +944,10 @@ serve(async (req) => {
 
       const VALID_TYPES = ["locality", "sublocality_level_1", "administrative_area_level_3"];
 
-      // Get global settings for pricing
       const { data: gsData } = await supabase.from("global_settings").select("key, value");
       const gs: Record<string, string> = {};
       for (const row of gsData || []) gs[row.key] = row.value;
 
-      // Collect all candidates across all PITs
       const allCandidates: Array<{
         city_name: string; city_slug: string; state: string;
         lat: number; lng: number; distance_from_pit: number;
@@ -1016,7 +969,6 @@ serve(async (req) => {
         }
         console.log(`[bulk] Sampling ${samplePoints.length} points for PIT ${pit.name}`);
 
-        // Collect unique cities from reverse geocoding first
         const pitCityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
         const BATCH_SIZE = 10;
         for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
@@ -1048,9 +1000,6 @@ serve(async (req) => {
               if (!isValidCityName(cityName)) continue;
               const loc = result.geometry?.location;
               if (!loc) continue;
-              // Pre-filter with haversine (generous 1.5x)
-              const straightLine = haversine(pit.lat, pit.lon, loc.lat, loc.lng);
-              if (straightLine > maxDist * 1.5) continue;
               const key = cityName.toLowerCase();
               if (!pitCityMap.has(key)) {
                 pitCityMap.set(key, { name: cityName, state: stateCode || "LA", lat: loc.lat, lng: loc.lng });
@@ -1059,7 +1008,7 @@ serve(async (req) => {
           }
         }
 
-        // Get driving distances for all cities discovered for this PIT
+        // Get driving distances for all cities discovered for this PIT — no haversine pre-filter
         const pitCities = [...pitCityMap.values()];
         const drivingDists = await getDrivingDistances(
           pit.lat, pit.lon,
@@ -1073,7 +1022,8 @@ serve(async (req) => {
 
         for (let idx = 0; idx < pitCities.length; idx++) {
           const city = pitCities[idx];
-          const distance = drivingDists[idx] ?? haversine(pit.lat, pit.lon, city.lat, city.lng);
+          const distance = drivingDists[idx];
+          if (distance === null) continue; // No road route found — skip this city
           if (distance > maxDist) continue;
           const slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
           const extraMiles = Math.max(0, distance - freeMiles);
@@ -1097,7 +1047,6 @@ serve(async (req) => {
         }
       }
 
-      // Fetch existing slugs
       const { data: existingPages } = await supabase.from("city_pages").select("city_slug");
       const existingSlugs = new Set(existingPages?.map(p => p.city_slug) ?? []);
 
@@ -1121,7 +1070,6 @@ serve(async (req) => {
         if (insertErr) { console.error("Insert error:", insertErr); failed++; continue; }
         created++;
 
-        // Generate AI content
         try {
           const pitData = allPits.find(p => p.id === city.pit_id);
           const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-city-page`, {
@@ -1194,7 +1142,6 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Fetch all pits and global settings
       const [{ data: allPits }, { data: gsRows }] = await Promise.all([
         supabase.from("pits").select("*").eq("status", "active"),
         supabase.from("global_settings").select("key, value"),
@@ -1206,7 +1153,6 @@ serve(async (req) => {
       const defaultFree = parseFloat(gs.default_free_miles || "15");
       const defaultExtra = parseFloat(gs.default_extra_per_mile || "5");
 
-      // Get all city pages
       const { data: allPages, error: pagesErr } = await supabase
         .from("city_pages")
         .select("id, city_name, lat, lng, pit_id, distance_from_pit, base_price");
@@ -1215,7 +1161,6 @@ serve(async (req) => {
       let updated = 0;
       let errors = 0;
 
-      // Group pages by pit_id for batch processing
       const byPit: Record<string, any[]> = {};
       for (const page of (allPages || [])) {
         if (!page.pit_id || page.lat == null || page.lng == null) continue;
@@ -1231,7 +1176,6 @@ serve(async (req) => {
         const effectiveFree = pit.free_miles ?? defaultFree;
         const effectiveExtra = pit.price_per_extra_mile ?? defaultExtra;
 
-        // Fetch driving distances in batches
         const dests = pages.map((p: any) => ({ lat: Number(p.lat), lng: Number(p.lng) }));
         const distances = await getDrivingDistances(Number(pit.lat), Number(pit.lon), dests, googleKey);
 

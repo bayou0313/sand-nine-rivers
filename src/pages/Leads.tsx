@@ -156,50 +156,7 @@ const parseCityPageContent = (cp: any) => {
   return result;
 }
 
-const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 3958.8;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-/**
- * Fetch driving distances from one origin to multiple destinations using Google Distance Matrix.
- * Returns array of distances in miles (null if route not found).
- */
-async function fetchDrivingDistances(
-  originLat: number, originLon: number,
-  destinations: { lat: number; lon: number }[],
-  apiKey: string
-): Promise<(number | null)[]> {
-  if (destinations.length === 0) return [];
-  const results: (number | null)[] = new Array(destinations.length).fill(null);
-  const BATCH = 25;
-  for (let i = 0; i < destinations.length; i += BATCH) {
-    const batch = destinations.slice(i, i + BATCH);
-    const destsStr = batch.map(d => `${d.lat},${d.lon}`).join("|");
-    try {
-      const resp = await fetch(
-        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLon}&destinations=${encodeURIComponent(destsStr)}&units=imperial&mode=driving&avoid=ferries&key=${apiKey}`
-      );
-      const data = await resp.json();
-      const elements = data.rows?.[0]?.elements || [];
-      for (let j = 0; j < elements.length; j++) {
-        if (elements[j]?.status === "OK" && elements[j].distance?.value) {
-          results[i + j] = elements[j].distance.value / 1609.344;
-        }
-      }
-    } catch (e) {
-      console.error("Distance Matrix batch failed:", e);
-    }
-  }
-  return results;
-}
-
-// Cache key for driving distance: "pitLat,pitLon->destLat,destLon"
-const drivingDistKey = (lat1: number, lon1: number, lat2: number, lon2: number) =>
-  `${lat1.toFixed(5)},${lon1.toFixed(5)}->${lat2.toFixed(5)},${lon2.toFixed(5)}`;
+import { getDrivingDistanceBatch } from "@/lib/pits";
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
@@ -275,8 +232,8 @@ const Leads = () => {
   });
   const [simSelected, setSimSelected] = useState<Set<string>>(new Set());
   const [geocoding, setGeocoding] = useState(false);
-  // Driving distance cache: key -> miles
-  const [drivingCache, setDrivingCache] = useState<Record<string, number>>(() => {
+  // Driving distance cache: key -> miles (populated via getDrivingDistanceBatch)
+  const [drivingCache, setDrivingCache] = useState<Record<string, number | null>>(() => {
     try { return JSON.parse(sessionStorage.getItem("drivingcache") || "{}"); } catch { return {}; }
   });
   const pitInputRef = useRef<HTMLInputElement>(null);
@@ -746,11 +703,16 @@ const Leads = () => {
     return null;
   };
 
-  // Helper: get driving distance if cached, else fallback to haversine
-  const getDist = useCallback((pitLat: number, pitLon: number, destLat: number, destLon: number) => {
+  // Cache key for driving distance
+  const drivingDistKey = useCallback((lat1: number, lon1: number, lat2: number, lon2: number) =>
+    `${lat1.toFixed(5)},${lon1.toFixed(5)}->${lat2.toFixed(5)},${lon2.toFixed(5)}`, []);
+
+  // Helper: get driving distance from cache. Returns null if not cached (no haversine fallback).
+  const getDist = useCallback((pitLat: number, pitLon: number, destLat: number, destLon: number): number | null => {
     const key = drivingDistKey(pitLat, pitLon, destLat, destLon);
-    return drivingCache[key] ?? haversine(pitLat, pitLon, destLat, destLon);
-  }, [drivingCache]);
+    const val = drivingCache[key];
+    return val !== undefined ? val : null;
+  }, [drivingCache, drivingDistKey]);
 
   const checkActivationLeads = (pit: Pit) => {
     const eff = getEffectivePrice(pit, globalSettings);
@@ -759,6 +721,7 @@ const Leads = () => {
       const cached = geocodeCache[l.address];
       if (!cached) continue;
       const dist = getDist(pit.lat, pit.lon, cached.lat, cached.lon);
+      if (dist === null) continue; // No driving distance available — skip
       if (dist <= eff.max_distance) {
         const extra = dist > eff.free_miles ? (dist - eff.free_miles) * eff.extra_per_mile : 0;
         const price = eff.base_price + extra;
@@ -1131,6 +1094,7 @@ const Leads = () => {
       const hqDist = l.distance_miles || 0;
       if (!cached) return { lead: l, hqDist, pitDist: null, delta: 0, newPrice: 0, status: "unknown" as const };
       const pitDist = getDist(selectedPit.lat, selectedPit.lon, cached.lat, cached.lon);
+      if (pitDist === null) return { lead: l, hqDist, pitDist: null, delta: 0, newPrice: 0, status: "unknown" as const };
       const delta = hqDist - pitDist;
       const extra = pitDist > eff.free_miles ? (pitDist - eff.free_miles) * eff.extra_per_mile : 0;
       const newPrice = eff.base_price + extra;
@@ -1164,9 +1128,9 @@ const Leads = () => {
 
         const dests = needsDriving.map(l => {
           const gc = geocodeCache[l.address];
-          return { lat: gc.lat, lon: gc.lon };
+          return { lat: gc.lat, lng: gc.lon };
         });
-        const distances = await fetchDrivingDistances(pit.lat, pit.lon, dests, GOOGLE_MAPS_API_KEY);
+        const distances = await getDrivingDistanceBatch(pit.lat, pit.lon, dests, GOOGLE_MAPS_API_KEY);
         for (let i = 0; i < needsDriving.length; i++) {
           if (distances[i] != null) {
             const gc = geocodeCache[needsDriving[i].address];
@@ -3897,11 +3861,12 @@ const Leads = () => {
                 <label className="text-xs text-gray-400 block mb-1">Select PIT</label>
                 <select value={qpPitId} onChange={e => setQpPitId(e.target.value)} className="w-full h-10 px-3 rounded-md border text-sm">
                   {pits.filter(p => p.status === "active").map(p => {
-                    const dist = quickProposalLead.nearest_pit_id === p.id && quickProposalLead.nearest_pit_distance != null
-                      ? quickProposalLead.nearest_pit_distance.toFixed(1)
+                    const rawDist = quickProposalLead.nearest_pit_id === p.id && quickProposalLead.nearest_pit_distance != null
+                      ? quickProposalLead.nearest_pit_distance
                       : geocodeCache[quickProposalLead.address]
-                        ? getDist(p.lat, p.lon, geocodeCache[quickProposalLead.address].lat, geocodeCache[quickProposalLead.address].lon).toFixed(1)
-                        : "?";
+                        ? getDist(p.lat, p.lon, geocodeCache[quickProposalLead.address].lat, geocodeCache[quickProposalLead.address].lon)
+                        : null;
+                    const dist = rawDist !== null ? rawDist.toFixed(1) : "—";
                     return <option key={p.id} value={p.id}>{p.name} — {dist} mi away</option>;
                   })}
                 </select>
