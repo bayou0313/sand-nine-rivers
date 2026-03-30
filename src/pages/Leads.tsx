@@ -2081,6 +2081,15 @@ const Leads = () => {
                   {deduplicating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
                   Remove Duplicates ({duplicateCount})
                 </Button>
+               )}
+              {cityPageSortKey !== "city_name" && (
+                <button
+                  onClick={() => { setCityPageSortKey("city_name"); setCityPageSortDir("asc"); }}
+                  className="h-9 px-3 rounded-md border text-xs hover:bg-gray-50"
+                  style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}
+                >
+                  Reset Sort
+                </button>
               )}
               <Button
                 onClick={() => setShowRegenOutdatedConfirm(true)}
