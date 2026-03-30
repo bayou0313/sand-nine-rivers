@@ -169,6 +169,72 @@
   border-width: 1px;
 }
 
+/* Fallback input (when PlaceAutocompleteElement isn't available) */
+.place-autocomplete-fallback {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  height: 3rem;
+  min-height: 44px;
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid hsl(var(--input));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.place-autocomplete-fallback:hover {
+  border-color: hsl(var(--ring) / 0.4);
+  background: hsl(var(--muted) / 0.3);
+}
+
+.place-autocomplete-fallback:focus {
+  border-color: hsl(var(--accent));
+  box-shadow: 0 0 0 3px hsl(var(--accent) / 0.15), 0 2px 8px hsl(var(--accent) / 0.1);
+  background: hsl(var(--background));
+}
+
+/* Embedded (hero) fallback */
+.place-autocomplete-embedded .place-autocomplete-fallback {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: white;
+  backdrop-filter: blur(4px);
+}
+
+.place-autocomplete-embedded .place-autocomplete-fallback::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.place-autocomplete-embedded .place-autocomplete-fallback:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.place-autocomplete-embedded .place-autocomplete-fallback:focus {
+  border-color: hsl(var(--accent));
+  box-shadow: 0 0 0 3px hsl(var(--accent) / 0.2), 0 2px 12px hsl(var(--accent) / 0.15);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Order page fallback */
+.place-autocomplete-order .place-autocomplete-fallback {
+  height: 3.5rem;
+  border-color: hsl(var(--border));
+  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.05);
+}
+
+/* Admin fallback */
+.place-autocomplete-admin .place-autocomplete-fallback {
+  height: 2.25rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  border-width: 1px;
+}
+
 /* Print styles for order confirmation */
 @media print {
   body { background: white !important; }
