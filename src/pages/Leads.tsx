@@ -1669,11 +1669,20 @@ const Leads = () => {
         );
 
       case "city_pages": {
-        const filteredCityPages = cityPageFilter === "all" ? cityPages : cityPages.filter((cp: any) => cp.pit_id === cityPageFilter);
+        // Detect duplicate slugs
+        const slugCounts: Record<string, number> = {};
+        cityPages.forEach((cp: any) => { slugCounts[cp.city_slug] = (slugCounts[cp.city_slug] || 0) + 1; });
+        const duplicateSlugs = new Set(Object.keys(slugCounts).filter(s => slugCounts[s] > 1));
+
+        let filteredCityPages = cityPageFilter === "all" ? cityPages : cityPages.filter((cp: any) => cp.pit_id === cityPageFilter);
+        if (showDuplicatesOnly) {
+          filteredCityPages = filteredCityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug));
+        }
         const activeCount = cityPages.filter((cp: any) => cp.status === "active").length;
         const totalViews = cityPages.reduce((sum: number, cp: any) => sum + (cp.page_views || 0), 0);
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
+        const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
 
         const discoverCities = async (pitId: string) => {
           setDiscoverLoading(true);
