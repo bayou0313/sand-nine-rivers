@@ -220,6 +220,9 @@ CONTENT REQUIREMENTS:
           faq_items: generated.faq_items || null,
           content: fullContent,
           prompt_version: "2.0",
+          pit_reassigned: false,
+          price_changed: false,
+          regen_reason: null,
           content_generated_at: new Date().toISOString(),
           status: "active",
         })

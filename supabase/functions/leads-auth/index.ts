@@ -768,6 +768,11 @@ serve(async (req) => {
             distance_from_pit: city.distance,
             base_price: Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile)),
             status: "draft",
+            page_views: 0,
+            pit_reassigned: false,
+            price_changed: false,
+            prompt_version: null,
+            regen_reason: 'missing_content',
           })
           .select()
           .single();
