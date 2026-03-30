@@ -23,12 +23,17 @@ export type Database = {
           content: string | null
           content_generated_at: string | null
           created_at: string | null
+          delivery_details: string | null
           distance_from_pit: number | null
+          faq_items: Json | null
           h1_text: string | null
+          hero_intro: string | null
           id: string
           last_viewed_at: string | null
           lat: number | null
           lng: number | null
+          local_expertise: string | null
+          local_uses: string | null
           meta_description: string | null
           meta_title: string | null
           multi_pit_coverage: boolean | null
@@ -42,6 +47,7 @@ export type Database = {
           state: string
           status: string | null
           updated_at: string | null
+          why_choose_intro: string | null
           zip_codes: string[] | null
         }
         Insert: {
@@ -52,12 +58,17 @@ export type Database = {
           content?: string | null
           content_generated_at?: string | null
           created_at?: string | null
+          delivery_details?: string | null
           distance_from_pit?: number | null
+          faq_items?: Json | null
           h1_text?: string | null
+          hero_intro?: string | null
           id?: string
           last_viewed_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_expertise?: string | null
+          local_uses?: string | null
           meta_description?: string | null
           meta_title?: string | null
           multi_pit_coverage?: boolean | null
@@ -71,6 +82,7 @@ export type Database = {
           state?: string
           status?: string | null
           updated_at?: string | null
+          why_choose_intro?: string | null
           zip_codes?: string[] | null
         }
         Update: {
@@ -81,12 +93,17 @@ export type Database = {
           content?: string | null
           content_generated_at?: string | null
           created_at?: string | null
+          delivery_details?: string | null
           distance_from_pit?: number | null
+          faq_items?: Json | null
           h1_text?: string | null
+          hero_intro?: string | null
           id?: string
           last_viewed_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_expertise?: string | null
+          local_uses?: string | null
           meta_description?: string | null
           meta_title?: string | null
           multi_pit_coverage?: boolean | null
@@ -100,6 +117,7 @@ export type Database = {
           state?: string
           status?: string | null
           updated_at?: string | null
+          why_choose_intro?: string | null
           zip_codes?: string[] | null
         }
         Relationships: [
