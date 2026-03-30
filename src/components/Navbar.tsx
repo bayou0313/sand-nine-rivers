@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = ["Pricing", "Get Estimate", "About", "FAQ", "Contact"];
 
-const Navbar = ({ solid = false }: { solid?: boolean }) => {
+const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?: string }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(solid);
 
