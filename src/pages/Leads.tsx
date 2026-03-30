@@ -2004,7 +2004,7 @@ const Leads = () => {
                 Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
               </button>
               {duplicateCount > 0 && (
-  const [showDeduplicateConfirm2, _] = [showDeduplicateConfirm, setShowDeduplicateConfirm];
+  
               <Button
                   onClick={() => setShowDeduplicateConfirm(true)}
                   disabled={deduplicating}
