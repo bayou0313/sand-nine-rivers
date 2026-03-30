@@ -1,0 +1,2 @@
+ALTER TABLE city_pages
+ADD COLUMN IF NOT EXISTS prompt_version text DEFAULT NULL;
