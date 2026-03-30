@@ -1794,6 +1794,52 @@ const Leads = () => {
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
         const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
+        const CURRENT_PROMPT_VERSION = "2.0";
+        const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at).length;
+        const outdatedCount = cityPages.filter((cp: any) => !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION).length;
+        const missingCount = cityPages.filter((cp: any) => cp.status === "active" && !cp.content_generated_at).length;
+
+        const regenOutdated = async () => {
+          const outdated = cityPages.filter(
+            (p: any) => !p.prompt_version || p.prompt_version !== CURRENT_PROMPT_VERSION
+          );
+          regenCancelRef.current = false;
+          setRegenQueue({ total: outdated.length, current: 0, currentCity: "", status: "running" });
+
+          for (let i = 0; i < outdated.length; i++) {
+            if (regenCancelRef.current) break;
+            const page = outdated[i];
+            setRegenQueue(q => q ? { ...q, current: i + 1, currentCity: page.city_name } : q);
+
+            try {
+              const pitData = pits.find((p: any) => p.id === page.pit_id);
+              await supabase.functions.invoke("generate-city-page", {
+                body: {
+                  password: storedPassword(),
+                  city_page_id: page.id,
+                  city_name: page.city_name,
+                  state: page.state,
+                  pit_name: pitData?.name || "HQ",
+                  distance: page.distance_from_pit || 0,
+                  price: page.base_price || 195,
+                  free_miles: pitData?.free_miles ?? parseFloat(globalSettings.default_free_miles || "15"),
+                  saturday_available: pitData?.operating_days?.includes(6) ?? false,
+                },
+              });
+              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, content_generated_at: new Date().toISOString(), status: "active" } : cp));
+            } catch (err) {
+              console.error(`Failed to regen ${page.city_name}:`, err);
+            }
+
+            if (i < outdated.length - 1 && !regenCancelRef.current) {
+              await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+          }
+
+          setRegenQueue(q => q ? { ...q, current: q.total, status: "complete" } : q);
+          toast({ title: "Regeneration complete", description: `${outdated.length} pages updated.` });
+          fetchCityPages();
+        };
 
         const discoverCities = async (pitId: string) => {
           setDiscoverLoading(true);
