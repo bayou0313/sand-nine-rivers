@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-import { GOOGLE_MAPS_API_KEY, pollForGoogleMaps } from "@/lib/google-maps";
+import { pollForGoogleMaps } from "@/lib/google-maps";
 
 type EstimateResult = {
   distance: number;
