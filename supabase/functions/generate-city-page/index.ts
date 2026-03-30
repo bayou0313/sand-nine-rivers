@@ -229,7 +229,7 @@ CONTENT REQUIREMENTS:
       }
     }
 
-    return new Response(JSON.stringify({ success: true, generated: { ...generated, content: fullContent } }), {
+    return new Response(JSON.stringify({ success: true, generated: { ...generated, content: fullContent, local_uses: localUsesHtml ? `<ul>${localUsesHtml}</ul>` : null } }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
