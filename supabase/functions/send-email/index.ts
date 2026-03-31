@@ -814,7 +814,7 @@ serve(async (req) => {
       const dispatchSubject = `[${isPaidForSubject ? 'PAID' : 'COD'}] ${orderNumber} — ${data.customer_name || "Customer"} — ${dispatchDeliveryDate}`;
 
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
+        sendMail(resend, ownerEmail, `New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
         // Dispatch notification
         sendMail(
           resend,
