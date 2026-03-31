@@ -115,8 +115,8 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
               { icon: CheckCircle, text: "Same-day available" },
               { icon: ShieldCheck, text: "Licensed & insured" },
             ].map((item) => (
-              <div key={item.text} className="flex items-center gap-1.5 text-primary-foreground/50 font-body text-sm">
-                <item.icon className="w-4 h-4 text-accent/80 shrink-0" />
+              <div key={item.text} className="flex items-center gap-1.5 text-primary-foreground/70 font-body text-sm">
+                <item.icon className="w-4 h-4 text-accent shrink-0" />
                 {item.text}
               </div>
             ))}
