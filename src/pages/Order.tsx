@@ -243,13 +243,19 @@ const Order = () => {
               const orderTaxRate = order.tax_rate || 0;
               const orderTaxAmount = order.tax_amount || 0;
               const orderSatSurcharge = order.saturday_surcharge_amount || 0;
-              const orderSubtotal = order.price - orderTaxAmount;
-              const orderProcessingFee = order.payment_method === "stripe-link"
-                ? parseFloat(((order.price - orderTaxAmount - orderSatSurcharge) * 0.035).toFixed(2))
+              const isStripe = order.payment_method === "stripe-link";
+              // For Stripe orders, order.price includes the processing fee
+              const orderProcessingFee = isStripe
+                ? parseFloat((order.price / 1.035 * 0.035).toFixed(2))
                 : 0;
+              const orderTotalWithFee = order.price;
+              const orderTotalWithoutFee = isStripe
+                ? parseFloat((order.price - orderProcessingFee).toFixed(2))
+                : order.price;
+              const orderSubtotal = orderTotalWithoutFee - orderTaxAmount;
               setConfirmedTotals({
-                totalPrice: order.price,
-                totalWithProcessingFee: order.price,
+                totalPrice: orderTotalWithoutFee,
+                totalWithProcessingFee: orderTotalWithFee,
                 processingFee: orderProcessingFee,
                 taxAmount: orderTaxAmount,
                 subtotal: orderSubtotal,
@@ -260,16 +266,16 @@ const Order = () => {
               if (order.distance_miles) {
                 setResult({
                   distance: order.distance_miles,
-                  price: order.price / (order.quantity || 1),
+                  price: orderTotalWithoutFee / (order.quantity || 1),
                   address: `${order.distance_miles.toFixed(1)} miles away`,
                   duration: "",
                 });
               }
+              setStep("success");
             }
           } catch (err) {
             console.error("[Order] Failed to fetch order for confirmation:", err);
-          }
-          setStep("success");
+            setStep("success"); // Still show success — payment went through
         })();
       } else {
         setStep("success");
