@@ -31,7 +31,7 @@ export function useGoogleMaps(): { loaded: boolean } {
     // Fetch the key from the backend and inject the script
     async function loadMaps() {
       // First try the build-time env var
-      let key = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+      let key = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyALI_GnekVryYGyUeXV8BvaGV74MIvk3SI";
 
       // If not available at build time, fetch from backend
       if (!key) {
