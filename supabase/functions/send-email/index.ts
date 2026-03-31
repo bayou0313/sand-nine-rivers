@@ -916,7 +916,7 @@ Phone: ${data.customer_phone || "Not provided"}
 
 Submitted: ${data.created_at ? new Date(data.created_at).toLocaleString("en-US") : "N/A"}
 ─────────────────────────────
-riversand.net | ${PHONE} | Haulogix, LLC`.trim();
+riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
 
       await sendMail(
         resend,
