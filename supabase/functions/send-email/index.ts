@@ -218,7 +218,7 @@ function orderCustomerEmail(order: any): string {
                     <td style="padding:0;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                         <tr>
-                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">📍 Address</td>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Address</td>
                           <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">${deliveryAddress}</td>
                         </tr>
                         <tr>
