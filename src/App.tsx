@@ -198,6 +198,13 @@ function AppContent() {
     };
   }, []);
 
+  // Set CSS variable for banner offset so Navbar shifts down
+  useEffect(() => {
+    const showBanner = stripeMode === "test" && !isAdminRoute;
+    document.documentElement.style.setProperty("--banner-offset", showBanner ? "36px" : "0px");
+    return () => { document.documentElement.style.setProperty("--banner-offset", "0px"); };
+  }, [stripeMode, isAdminRoute]);
+
   if (siteMode === "maintenance" && !isAdminRoute) {
     return <MaintenancePage />;
   }
@@ -205,7 +212,11 @@ function AppContent() {
   return (
     <>
       {stripeMode === "test" && !isAdminRoute && (
-        <div style={{
+        <div id="stripe-test-banner" style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
           width: "100%",
           backgroundColor: "#EA580C",
           color: "#FFFFFF",
@@ -214,8 +225,11 @@ function AppContent() {
           fontSize: "13px",
           fontWeight: "bold",
           letterSpacing: "0.5px",
-          position: "relative",
-          zIndex: 1000,
+          zIndex: 9999,
+          height: "36px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}>
           🔧 PAYMENT TEST MODE — Orders placed will not be charged &nbsp;|&nbsp;
           <a
