@@ -7,15 +7,10 @@
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://lclbexhytmpfxzcztzva.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjbGJleGh5dG1wZnh6Y3p0enZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0ODMxMzMsImV4cCI6MjA5MDA1OTEzM30.w8uMZgeAmAOCe2kQ7u-lM4KVWjkzRgVp5qmKBTJrGQg';
 const DIST = join(process.cwd(), 'dist');
 const SITE = 'https://riversand.net';
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(1);
-}
 
 async function query(table, params = '') {
   const res = await fetch(
