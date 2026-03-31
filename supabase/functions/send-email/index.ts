@@ -843,10 +843,15 @@ serve(async (req) => {
     } else if (type === "order_notification") {
       // Standalone dispatch notification
       const orderNumber = data.order_number || "";
+      const isPaidForSubject = data.payment_status === "paid" || data.payment_method === "stripe-link" || data.payment_method === "stripe";
+      const dispatchDeliveryDate = data.delivery_date
+        ? new Date(data.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+        : "—";
+      const dispatchSubject = `[${isPaidForSubject ? 'PAID' : 'COD'}] ${orderNumber} — ${data.customer_name || "Customer"} — ${dispatchDeliveryDate}`;
       await sendMail(
         resend,
         DISPATCH_EMAIL,
-        `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
+        dispatchSubject,
         orderDispatchEmail(data),
         undefined, FROM, REPLY_TO
       );
