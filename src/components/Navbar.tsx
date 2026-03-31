@@ -23,8 +23,8 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
       transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-background/95 backdrop-blur-md shadow-lg shadow-foreground/5"
-          : "bg-background/60 backdrop-blur-sm shadow-sm"
+          ? "bg-black/80 backdrop-blur-md shadow-lg"
+          : "bg-black/40 backdrop-blur-sm shadow-sm"
       }`}
     >
       <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4 md:px-0">
@@ -47,7 +47,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
               key={item}
               href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
               className={`font-body text-sm transition-colors duration-300 hover:text-accent relative ${
-                scrolled ? "text-muted-foreground" : "text-foreground/70"
+                scrolled ? "text-white/90" : "text-white/70"
               }`}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -90,7 +90,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             whileTap={{ scale: 0.95 }}
             className="hidden lg:block"
           >
-            <Button size="sm" variant="outline" className={`font-display tracking-wider rounded-lg ${scrolled ? "border-border text-foreground hover:bg-muted" : "border-border text-foreground hover:bg-muted"}`} asChild>
+            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white hover:bg-white/10" asChild>
               <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" />
                 1-855-GOT-WAYS
@@ -99,7 +99,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           </motion.div>
 
           <motion.button
-            className="lg:hidden transition-colors text-foreground"
+            className="lg:hidden transition-colors text-white"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
             whileTap={{ scale: 0.9, rotate: 90 }}
@@ -117,13 +117,13 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="lg:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-4 space-y-3 shadow-xl overflow-hidden"
+            className="lg:hidden bg-black/90 backdrop-blur-md border-t border-white/10 px-6 py-4 space-y-3 shadow-xl overflow-hidden"
           >
             {navLinks.map((item, i) => (
               <motion.a
                 key={item}
                 href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
-                className="block font-body text-sm text-muted-foreground hover:text-accent transition-colors"
+                className="block font-body text-sm text-white/70 hover:text-accent transition-colors"
                 onClick={() => setMenuOpen(false)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
