@@ -158,15 +158,18 @@ const MaintenancePage = () => (
   </div>
 );
 
-const App = () => {
-  const [siteMode, setSiteMode] = useState<string | null>(null);
-  const [siteModeLoading, setSiteModeLoading] = useState(true);
+function AppContent() {
+  const location = useLocation();
+  const [siteMode, setSiteMode] = useState("live");
+
+  const isAdminRoute =
+    location.pathname.startsWith("/leads") ||
+    location.pathname.startsWith("/admin");
 
   useEffect(() => {
     let cancelled = false;
-    // Safety timeout — never block rendering for more than 3s
     const timeout = setTimeout(() => {
-      if (!cancelled) { setSiteMode("live"); setSiteModeLoading(false); }
+      if (!cancelled) setSiteMode("live");
     }, 3000);
 
     supabase
@@ -178,45 +181,48 @@ const App = () => {
         if (cancelled) return;
         clearTimeout(timeout);
         setSiteMode(error || !data ? "live" : data.value || "live");
-        setSiteModeLoading(false);
       });
 
-    return () => { cancelled = true; clearTimeout(timeout); };
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, []);
-
-  const isAdminRoute = window.location.pathname.startsWith('/leads')
-    || window.location.pathname.startsWith('/admin');
-
-  if (siteModeLoading && !isAdminRoute) return null;
 
   if (siteMode === "maintenance" && !isAdminRoute) {
     return <MaintenancePage />;
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <PageViewTracker />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/products/river-sand" element={<Navigate to="/" replace />} />
-              <Route path="/order" element={<Order />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/leads" element={<Leads />} />
-              <Route path="/:citySlug/river-sand-delivery" element={<CityPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </HelmetProvider>
-    </QueryClientProvider>
+    <>
+      <PageViewTracker />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/products/river-sand" element={<Navigate to="/" replace />} />
+        <Route path="/order" element={<Order />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/leads" element={<Leads />} />
+        <Route path="/:citySlug/river-sand-delivery" element={<CityPage />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
-};
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <HelmetProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </HelmetProvider>
+  </QueryClientProvider>
+);
 
 export default App;
