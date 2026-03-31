@@ -90,7 +90,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             whileTap={{ scale: 0.95 }}
             className="hidden lg:block"
           >
-            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white hover:bg-white/10" asChild>
+            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white bg-orange-500" asChild>
               <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" />
                 1-855-GOT-WAYS
