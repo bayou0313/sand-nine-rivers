@@ -571,11 +571,11 @@ interface SendMailOptions {
   attachments?: Array<{ filename: string; content: string }>;
 }
 
-async function sendMail(resend: InstanceType<typeof Resend>, to: string, subject: string, html: string, attachments?: Array<{ filename: string; content: string }>) {
+async function sendMail(resend: InstanceType<typeof Resend>, to: string, subject: string, html: string, attachments?: Array<{ filename: string; content: string }>, fromOverride?: string, replyToOverride?: string) {
   const payload: any = {
-    from: FROM,
+    from: fromOverride || `${DEFAULT_FROM_NAME} <${DEFAULT_FROM_EMAIL}>`,
     to,
-    replyTo: REPLY_TO,
+    replyTo: replyToOverride || DEFAULT_REPLY_TO,
     subject,
     html,
   };
