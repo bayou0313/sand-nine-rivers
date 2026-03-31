@@ -835,7 +835,8 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
         resend,
         data.customer_email,
         `River Sand is now available near ${data.zip_code || "you"} — Your price: $${Number(data.new_price || 195).toFixed(2)}`,
-        proposalHtml
+        proposalHtml,
+        undefined, FROM, REPLY_TO
       );
       console.log("[email] Pit proposal sent to:", data.customer_email);
 
