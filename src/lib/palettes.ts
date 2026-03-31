@@ -95,3 +95,12 @@ export function deriveCssVars(palette: Palette): Record<string, string> {
 export function getPaletteById(id: string): Palette {
   return PALETTES.find(p => p.id === id) || PALETTES[0];
 }
+
+/** Deterministically pick a palette based on a string slug */
+export function getPaletteForSlug(slug: string): Palette {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) {
+    hash = ((hash << 5) - hash + slug.charCodeAt(i)) | 0;
+  }
+  return PALETTES[Math.abs(hash) % PALETTES.length];
+}
