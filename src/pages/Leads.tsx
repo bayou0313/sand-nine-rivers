@@ -158,7 +158,7 @@ const parseCityPageContent = (cp: any) => {
   return result;
 }
 
-import { supabase } from "@/integrations/supabase/client";
+// getDrivingDistanceBatch replaced by edge function calls inline
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
