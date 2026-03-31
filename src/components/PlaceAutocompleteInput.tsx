@@ -54,54 +54,59 @@ export default function PlaceAutocompleteInput({
           componentRestrictions: { country: "us" },
         });
 
-      el.style.width = "100%";
-      el.style.display = "block";
-      if (id) el.id = id;
+        el.style.width = "100%";
+        el.style.display = "block";
+        if (id) el.id = id;
 
-      el.addEventListener("gmp-placeselect", async (event: any) => {
-        const place = event.place;
-        try {
-          await place.fetchFields({
-            fields: ["formattedAddress", "location", "addressComponents"],
-          });
-          const lat = place.location?.lat();
-          const lng = place.location?.lng();
-          if (lat != null && lng != null) {
-            setHasValue(true);
-            onInputChangeRef.current?.(place.formattedAddress || "");
-            onPlaceSelectRef.current({
-              formattedAddress: place.formattedAddress || "",
-              lat,
-              lng,
-              addressComponents: place.addressComponents || [],
+        el.addEventListener("gmp-placeselect", async (event: any) => {
+          console.log("[PlaceAutocompleteInput] gmp-placeselect fired", event);
+          const place = event.place;
+          try {
+            await place.fetchFields({
+              fields: ["formattedAddress", "location", "addressComponents"],
             });
+            const lat = place.location?.lat();
+            const lng = place.location?.lng();
+            if (lat != null && lng != null) {
+              setHasValue(true);
+              onInputChangeRef.current?.(place.formattedAddress || "");
+              onPlaceSelectRef.current({
+                formattedAddress: place.formattedAddress || "",
+                lat,
+                lng,
+                addressComponents: place.addressComponents || [],
+              });
+            }
+          } catch (err) {
+            console.error("[PlaceAutocompleteInput] fetchFields failed:", err);
           }
-        } catch (err) {
-          console.error("[PlaceAutocompleteInput] fetchFields failed:", err);
+        });
+
+        el.addEventListener("input", (event: any) => {
+          const val = event.target?.value || "";
+          setHasValue(val.length > 0);
+          onInputChangeRef.current?.(val);
+        });
+
+        el.addEventListener("keydown", (event: any) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            onEnterKeyRef.current?.();
+          }
+        });
+
+        if (initialValue) {
+          el.value = initialValue;
+          setHasValue(true);
         }
-      });
 
-      el.addEventListener("input", (event: any) => {
-        const val = event.target?.value || "";
-        setHasValue(val.length > 0);
-        onInputChangeRef.current?.(val);
-      });
-
-      el.addEventListener("keydown", (event: any) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          onEnterKeyRef.current?.();
-        }
-      });
-
-      if (initialValue) {
-        el.value = initialValue;
-        setHasValue(true);
+        containerRef.current!.appendChild(el);
+        elementRef.current = el;
+        return true;
+      } catch (err) {
+        console.error("[PlaceAutocompleteInput] init failed:", err);
+        return false;
       }
-
-      containerRef.current!.appendChild(el);
-      elementRef.current = el;
-      return true;
     };
 
     if (init()) return;
