@@ -76,13 +76,15 @@ const Footer = () => {
         }}
       >
         <div className="flex flex-col items-center gap-3">
-          <img
-            src={WAYS_LOGO_DARK}
-            alt="WAYS"
-            className="object-contain"
-            style={{ width: 64 }}
-            loading="lazy"
-          />
+          <a href="https://ways.us" target="_blank" rel="noopener noreferrer">
+            <img
+              src={WAYS_LOGO_DARK}
+              alt="WAYS"
+              className="object-contain"
+              style={{ width: 90 }}
+              loading="lazy"
+            />
+          </a>
           <p style={{ color: "#888888", fontSize: 11 }}>
             © 2026 WAYS® Materials LLC
           </p>
