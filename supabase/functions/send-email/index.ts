@@ -686,17 +686,18 @@ serve(async (req) => {
       }
 
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data)),
+        sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
         // Dispatch notification
         sendMail(
           resend,
           DISPATCH_EMAIL,
           `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
-          orderDispatchEmail(data)
+          orderDispatchEmail(data),
+          undefined, FROM, REPLY_TO
         ),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data), attachments));
+        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data), attachments, FROM, REPLY_TO));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);
