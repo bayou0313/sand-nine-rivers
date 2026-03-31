@@ -134,6 +134,8 @@ export async function getDrivingDistanceBatch(
     `&key=${GOOGLE_MAPS_API_KEY}`
   );
   const data = await resp.json();
+  console.log("[findBestPitDriving] raw API response:", 
+    JSON.stringify(data).slice(0, 500));
 
   if (data.status !== "OK") {
     console.error("[getDrivingDistanceBatch] API error:", data.status, data.error_message);
