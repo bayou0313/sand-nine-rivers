@@ -45,6 +45,10 @@ serve(async (req) => {
       ],
       mode: "payment",
       customer_email: customer_email || undefined,
+      customer_creation: "always",
+      payment_intent_data: {
+        setup_future_usage: "off_session",
+      },
       metadata: {
         order_id: order_id || "",
         order_number: order_number || "",
