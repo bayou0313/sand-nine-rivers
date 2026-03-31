@@ -1,62 +1,81 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-serve(async (req) => {
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: cityPages } = await supabase
+    const { data: cityPages, error } = await supabase
       .from("city_pages")
       .select("city_slug, updated_at")
-      .eq("status", "active");
+      .eq("status", "active")
+      .order("city_name");
+
+    if (error) {
+      console.error("Failed to fetch city pages:", error);
+    }
 
     const baseUrl = "https://riversand.net";
     const now = new Date().toISOString().split("T")[0];
 
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    let urls = `
   <url>
     <loc>${baseUrl}/</loc>
-    <lastmod>${now}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <lastmod>${now}</lastmod>
   </url>
   <url>
     <loc>${baseUrl}/order</loc>
-    <lastmod>${now}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <lastmod>${now}</lastmod>
   </url>`;
 
-    if (cityPages) {
-      for (const page of cityPages) {
-        const lastmod = page.updated_at ? new Date(page.updated_at).toISOString().split("T")[0] : now;
-        xml += `
+    for (const page of cityPages || []) {
+      const lastmod = page.updated_at
+        ? page.updated_at.split("T")[0]
+        : now;
+      urls += `
   <url>
     <loc>${baseUrl}/${page.city_slug}/river-sand-delivery</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <lastmod>${lastmod}</lastmod>
   </url>`;
-      }
     }
 
-    xml += `
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
 </urlset>`;
 
-    return new Response(xml, {
-      status: 200,
+    return new Response(sitemap, {
       headers: {
+        ...corsHeaders,
         "Content-Type": "application/xml",
         "Cache-Control": "public, max-age=3600",
       },
     });
-  } catch (error) {
-    console.error("[generate-sitemap] Error:", error);
-    return new Response(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`, {
-      status: 200,
+  } catch (err: any) {
+    console.error("Sitemap error:", err);
+    return new Response(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://riversand.net/</loc>
+    <priority>1.0</priority>
+  </url>
+</urlset>`, {
       headers: { "Content-Type": "application/xml" },
     });
   }
