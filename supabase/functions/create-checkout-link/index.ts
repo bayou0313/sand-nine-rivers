@@ -40,7 +40,7 @@ serve(async (req) => {
       ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
       : Deno.env.get("STRIPE_SECRET_KEY");
 
-    console.log(`[create-checkout-link] Using Stripe ${stripeMode} mode`);
+    console.log(`[create-checkout-link] stripe_mode: ${stripeMode}, key starts with: ${stripeKey?.slice(0, 8)}`);
 
     const stripe = new Stripe(stripeKey || "", {
       apiVersion: "2025-08-27.basil",
