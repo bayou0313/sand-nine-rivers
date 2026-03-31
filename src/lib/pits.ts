@@ -166,6 +166,9 @@ export async function findBestPitDriving(
 
   const drivingDistances: (number | null)[] = data?.distances || [];
 
+  console.log("[findBestPitDriving] pits:", activePits.length);
+  console.log("[findBestPitDriving] driving distances:", drivingDistances);
+
   const results = activePits
     .map((pit, i) => {
       const distance = drivingDistances[i];
