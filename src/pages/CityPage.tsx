@@ -145,7 +145,13 @@ const CityPage = () => {
       <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} />
       <Hero
         h1Override={cityPage.h1_text || `River Sand Delivery in ${cityPage.city_name}, ${cityPage.state} — Same-Day Service`}
-        subtitleOverride={cityPage.hero_intro || `Quality river sand for landscaping, drainage, backfill, and construction projects in ${cityPage.city_name}, ${cityPage.state}. Order before noon for same-day delivery.`}
+        subtitleOverride={
+          cityPage.hero_intro
+            ? cityPage.hero_intro.length > 130
+              ? cityPage.hero_intro.slice(0, 127) + "..."
+              : cityPage.hero_intro
+            : `Same-day bulk river sand delivery to ${cityPage.city_name}, ${cityPage.state}.`
+        }
       />
 
       {/* Conditional price display for multi-PIT vs single-PIT cities */}
