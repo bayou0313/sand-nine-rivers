@@ -13,8 +13,468 @@ const BRAND_RED = "#C21F32";
 const FROM = "River Sand <no_reply@riversand.net>";
 const REPLY_TO = "no_reply@riversand.net";
 const INTERNAL_EMAIL = "cmo@haulogix.com";
+const DISPATCH_EMAIL = "dispatch@ways.us";
 const PHONE = "1-855-GOT-WAYS";
 
+const RIVERSAND_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
+const WAYS_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
+const RIVERSAND_ICON = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/RIVERSAND_-_ICON_-_512.png.png";
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "TBD";
+  try {
+    const d = new Date(dateStr + (dateStr.includes("T") ? "" : "T12:00:00"));
+    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
+function paymentMethodLabel(method: string): string {
+  if (method === "stripe-link" || method === "card") return "Credit Card";
+  if (method === "check") return "Check";
+  return "Cash";
+}
+
+function fmt(n: number): string {
+  return n.toFixed(2);
+}
+
+function orderCustomerEmail(order: any): string {
+  const customerName = order.customer_name || "there";
+  const orderNumber = order.order_number || "N/A";
+  const deliveryAddress = order.delivery_address || "";
+  const deliveryDate = formatDate(order.delivery_date);
+  const qty = order.quantity || 1;
+  const isStripePaid = order.payment_method === "stripe-link" || order.payment_method === "card";
+  const customerEmail = order.customer_email || "";
+
+  const basePrice = 195;
+  const baseLine = basePrice * qty;
+  const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
+  const taxAmount = Number(order.tax_amount || 0);
+  const taxParish = order.tax_parish || "";
+  const taxRate = (Number(order.tax_rate || 0) * 100).toFixed(2);
+  const totalPrice = fmt(Number(order.price || 0));
+
+  // Calculate processing fee for stripe
+  const subtotalBeforeFee = baseLine + satSurcharge + taxAmount;
+  const distanceMiles = Number(order.distance_miles || 0);
+  const distanceFee = distanceMiles > 15 ? (distanceMiles - 15) * 5.5 * qty : 0;
+  const subtotalWithDist = subtotalBeforeFee + distanceFee;
+  const processingFeeAmt = isStripePaid ? Math.max(0, Number(order.price) - subtotalWithDist) : 0;
+  const processingFee = fmt(processingFeeAmt);
+  const totalWithFee = fmt(Number(order.price || 0));
+  const stripeReference = order.stripe_payment_id || "";
+  const paymentMethod = paymentMethodLabel(order.payment_method);
+
+  // Saturday row
+  const satRow = satSurcharge > 0 ? `
+                    <tr>
+                      <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
+                        Saturday Surcharge
+                      </td>
+                      <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
+                        $${fmt(satSurcharge)}
+                      </td>
+                    </tr>` : "";
+
+  // Processing fee row (stripe only)
+  const feeRow = isStripePaid && processingFeeAmt > 0.01 ? `
+                    <tr>
+                      <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
+                        Processing Fee (3.5%)
+                      </td>
+                      <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
+                        $${processingFee}
+                      </td>
+                    </tr>` : "";
+
+  // Stripe reference row
+  const refRow = stripeReference ? `
+                    <tr>
+                      <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
+                        Reference
+                      </td>
+                      <td style="padding:10px 16px;font-size:13px;color:#999;text-align:right;font-family:monospace;border-bottom:1px solid #E8E5DD;">
+                        ${stripeReference}
+                      </td>
+                    </tr>` : "";
+
+  // Payment status rows
+  const paymentStatusRow = isStripePaid
+    ? `<tr>
+                      <td colspan="2" style="padding:10px 16px;font-size:14px;color:#22C55E;font-weight:600;">
+                        Nothing due at delivery ✓
+                      </td>
+                    </tr>`
+    : `<tr>
+                      <td colspan="2" style="padding:10px 16px;font-size:14px;color:#D97706;font-weight:600;">
+                        ⚠ Please have exact $${totalPrice} ready
+                        — driver carries no change
+                      </td>
+                    </tr>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+  </head>
+  <body style="margin:0;padding:0;background-color:#F0EDE5;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0EDE5;">
+      <tr>
+        <td align="center" style="padding:24px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+            <!-- HEADER -->
+            <tr>
+              <td style="background-color:${BRAND_COLOR};padding:28px 32px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="text-align:left;width:45%;">
+                      <img src="${RIVERSAND_WHITE_LOGO}" alt="River Sand" width="160" style="display:block;max-width:160px;height:auto;">
+                    </td>
+                    <td style="text-align:right;width:45%;">
+                      <img src="${WAYS_WHITE_LOGO}" alt="WAYS" width="100" style="display:block;max-width:100px;height:auto;margin-left:auto;">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="text-align:center;padding-top:12px;">
+                      <span style="color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:1px;">Powered by</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- GOLD DIVIDER -->
+            <tr><td style="height:3px;background-color:${BRAND_GOLD};"></td></tr>
+
+            <!-- PAYMENT STATUS BANNER -->
+            <tr>
+              <td style="background-color:${isStripePaid ? '#F0FDF4' : '#FFFBEB'};padding:20px 32px;text-align:center;border-bottom:1px solid ${isStripePaid ? '#BBF7D0' : '#FDE68A'};">
+                <p style="margin:0 0 4px;font-size:18px;font-weight:700;color:${isStripePaid ? '#166534' : '#92400E'};">
+                  ${isStripePaid ? '✅ PAYMENT CONFIRMED' : '💵 PAYMENT DUE AT DELIVERY'}
+                </p>
+                <p style="margin:0;font-size:14px;color:${isStripePaid ? '#15803D' : '#B45309'};">
+                  ${isStripePaid
+                    ? 'Your card has been charged. Nothing due at delivery.'
+                    : `Please have $${totalPrice} ready. Driver carries no change.`}
+                </p>
+              </td>
+            </tr>
+
+            <!-- BODY -->
+            <tr>
+              <td style="background-color:#FFFFFF;padding:32px;">
+
+                <!-- Greeting -->
+                <p style="margin:0 0 4px;font-size:20px;font-weight:700;color:${BRAND_COLOR};">
+                  Hi ${customerName}! 👋
+                </p>
+                <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.6;">
+                  Your river sand delivery is confirmed. Here's everything you need to know.
+                </p>
+
+                <!-- ORDER DETAILS -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
+                  <tr>
+                    <td style="background-color:#F8F7F2;padding:12px 16px;border-bottom:1px solid #E8E5DD;">
+                      <p style="margin:0;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">
+                        📦 ORDER DETAILS
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Order Number</td>
+                          <td style="padding:10px 16px;font-size:14px;color:${BRAND_GOLD};text-align:right;font-weight:700;font-family:monospace;border-bottom:1px solid #E8E5DD;">${orderNumber}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Product</td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">River Sand — 9 Cubic Yard Load</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;">Quantity</td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;">${qty} load${qty > 1 ? 's' : ''}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- DELIVERY INFO -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
+                  <tr>
+                    <td style="background-color:#F8F7F2;padding:12px 16px;border-bottom:1px solid #E8E5DD;">
+                      <p style="margin:0;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">
+                        🚚 DELIVERY INFORMATION
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">📍 Address</td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">${deliveryAddress}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">📅 Delivery Date</td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">${deliveryDate}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;">⏰ Window</td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;">8:00 AM – 5:00 PM</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- PRICING SUMMARY -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
+                  <tr>
+                    <td style="background-color:#F8F7F2;padding:12px 16px;border-bottom:1px solid #E8E5DD;">
+                      <p style="margin:0;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">
+                        💰 PRICING SUMMARY
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
+                            River Sand (×${qty})
+                          </td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
+                            $${fmt(baseLine)}
+                          </td>
+                        </tr>
+                        ${satRow}
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;${satSurcharge > 0 ? '' : 'background-color:#F8F7F2;'}">
+                            Tax (${taxParish} ${taxRate}%)
+                          </td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;${satSurcharge > 0 ? '' : 'background-color:#F8F7F2;'}">
+                            $${fmt(taxAmount)}
+                          </td>
+                        </tr>
+                        ${feeRow}
+                        <tr>
+                          <td colspan="2" style="padding:0;"><hr style="border:none;border-top:2px solid ${BRAND_GOLD};margin:0;"></td>
+                        </tr>
+                        <tr style="background-color:#F8F7F2;">
+                          <td style="padding:14px 16px;font-size:16px;font-weight:700;color:${BRAND_COLOR};">
+                            ${isStripePaid ? 'TOTAL CHARGED' : 'TOTAL DUE AT DELIVERY'}
+                          </td>
+                          <td style="padding:14px 16px;font-size:18px;font-weight:700;color:${BRAND_GOLD};text-align:right;">
+                            $${totalPrice}
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- PAYMENT -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
+                  <tr>
+                    <td style="background-color:#F8F7F2;padding:12px 16px;border-bottom:1px solid #E8E5DD;">
+                      <p style="margin:0;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">
+                        💳 PAYMENT
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Method</td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">${paymentMethod}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Status</td>
+                          <td style="padding:10px 16px;font-size:14px;text-align:right;font-weight:700;border-bottom:1px solid #E8E5DD;color:${isStripePaid ? '#22C55E' : '#D97706'};">
+                            ${isStripePaid ? '✅ PAID IN FULL' : '⏳ DUE AT DELIVERY'}
+                          </td>
+                        </tr>
+                        ${refRow}
+                        ${paymentStatusRow}
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- DELIVERY INSTRUCTIONS -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
+                  <tr>
+                    <td style="background-color:#F8F7F2;padding:12px 16px;border-bottom:1px solid #E8E5DD;">
+                      <p style="margin:0;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">
+                        📋 DELIVERY INSTRUCTIONS
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:16px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Our driver will call 30 minutes before arrival</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Please ensure clear access to delivery area</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Someone must be present to receive delivery</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Delivery is curbside — curb to sidewalk/driveway</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">✗ Driver will not enter backyard or gated areas</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">✗ Ways Materials LLC not responsible for property damage</td></tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- CTA -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                  <tr>
+                    <td style="text-align:center;">
+                      <a href="https://riversand.net" style="display:inline-block;background-color:${BRAND_GOLD};color:#FFFFFF;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">
+                        VISIT RIVERSAND.NET
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- CONTACT -->
+                <p style="margin:0 0 8px;font-size:14px;color:#555;text-align:center;">
+                  Questions about your order? We're here to help.
+                </p>
+                <p style="margin:0 0 4px;text-align:center;">
+                  <a href="tel:+18554689297" style="color:${BRAND_COLOR};font-size:15px;font-weight:700;text-decoration:none;">
+                    📞 ${PHONE}
+                  </a>
+                </p>
+                <p style="margin:0;text-align:center;">
+                  <a href="mailto:orders@riversand.net" style="color:#666;font-size:13px;text-decoration:none;">
+                    orders@riversand.net
+                  </a>
+                </p>
+
+              </td>
+            </tr>
+
+            <!-- FOOTER -->
+            <tr>
+              <td style="background-color:${BRAND_COLOR};padding:24px 32px;text-align:center;">
+                <img src="${RIVERSAND_ICON}" alt="River Sand" width="40" style="display:block;margin:0 auto 12px;width:40px;height:40px;">
+                <p style="margin:0 0 4px;color:rgba(255,255,255,0.8);font-size:13px;">
+                  River Sand by Ways Materials LLC
+                </p>
+                <p style="margin:0 0 4px;color:rgba(255,255,255,0.5);font-size:12px;">
+                  Greater New Orleans, Louisiana
+                </p>
+                <p style="margin:0;color:rgba(255,255,255,0.4);font-size:11px;">
+                  This email was sent to ${customerEmail} because you placed an order at riversand.net
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+function orderDispatchEmail(order: any): string {
+  const customerName = order.customer_name || "Unknown";
+  const orderNumber = order.order_number || "N/A";
+  const orderDate = formatDate(order.created_at);
+  const deliveryAddress = order.delivery_address || "";
+  const deliveryDate = formatDate(order.delivery_date);
+  const qty = order.quantity || 1;
+  const isStripePaid = order.payment_method === "stripe-link" || order.payment_method === "card";
+  const totalPrice = fmt(Number(order.price || 0));
+  const customerPhone = order.customer_phone || "";
+  const customerEmail = order.customer_email || "";
+  const notes = order.notes || "";
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(deliveryAddress)}`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;">
+    <tr>
+      <td align="center" style="padding:16px;">
+        <table role="presentation" width="500" cellpadding="0" cellspacing="0" style="max-width:500px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:${BRAND_COLOR};padding:20px 24px;text-align:center;">
+              <p style="margin:0;font-size:20px;font-weight:700;color:#fff;">🚚 NEW DELIVERY ORDER</p>
+              <p style="margin:6px 0 0;font-size:14px;color:rgba(255,255,255,0.7);">${orderNumber} — ${orderDate}</p>
+            </td>
+          </tr>
+
+          <!-- Payment Banner -->
+          <tr>
+            <td style="background:${isStripePaid ? '#F0FDF4' : '#FFFBEB'};padding:14px 24px;text-align:center;border-bottom:1px solid ${isStripePaid ? '#BBF7D0' : '#FDE68A'};">
+              <p style="margin:0;font-size:16px;font-weight:700;color:${isStripePaid ? '#166534' : '#92400E'};">
+                ${isStripePaid
+                  ? '✅ PAID — $' + totalPrice + ' — Card'
+                  : '💵 COD — $' + totalPrice + ' — Collect at delivery'}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Customer -->
+          <tr>
+            <td style="padding:20px 24px;border-bottom:1px solid #eee;">
+              <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:${BRAND_COLOR};">${customerName}</p>
+              <p style="margin:0 0 4px;">
+                <a href="tel:${customerPhone.replace(/\D/g, '')}" style="color:${BRAND_COLOR};font-size:16px;font-weight:600;text-decoration:none;">📞 ${customerPhone}</a>
+              </p>
+              ${customerEmail ? `<p style="margin:0;font-size:14px;color:#666;">${customerEmail}</p>` : ''}
+            </td>
+          </tr>
+
+          <!-- Delivery -->
+          <tr>
+            <td style="padding:20px 24px;border-bottom:1px solid #eee;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">DELIVERY</p>
+              <p style="margin:0 0 4px;font-size:16px;font-weight:600;color:#333;">📅 ${deliveryDate}</p>
+              <p style="margin:0 0 8px;font-size:14px;color:#555;">⏰ 8:00 AM – 5:00 PM</p>
+              <a href="${mapsUrl}" style="display:inline-block;background:#4285F4;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin-bottom:8px;">📍 Open in Google Maps</a>
+              <p style="margin:8px 0 0;font-size:14px;color:#555;">${deliveryAddress}</p>
+            </td>
+          </tr>
+
+          <!-- Order -->
+          <tr>
+            <td style="padding:20px 24px;border-bottom:1px solid #eee;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">ORDER</p>
+              <p style="margin:0 0 4px;font-size:15px;color:#333;">📦 River Sand — 9 cu yd × ${qty}</p>
+              ${notes ? `<p style="margin:4px 0 0;font-size:14px;color:#666;">📝 ${notes}</p>` : ''}
+            </td>
+          </tr>
+
+          <!-- Dashboard Link -->
+          <tr>
+            <td style="padding:20px 24px;text-align:center;">
+              <a href="https://riversand.net/admin" style="display:inline-block;background:${BRAND_GOLD};color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">VIEW IN DASHBOARD</a>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// Keep existing helper functions for other email types
 function emailWrapper(body: string) {
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -42,154 +502,6 @@ function emailWrapper(body: string) {
     <p><a href="https://riversand.net">riversand.net</a></p>
   </div>
 </div></body></html>`;
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "TBD";
-  try {
-    const d = new Date(dateStr + (dateStr.includes("T") ? "" : "T12:00:00"));
-    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
-}
-
-function paymentMethodLabel(method: string): string {
-  if (method === "stripe-link" || method === "card") return "Credit Card";
-  if (method === "check") return "Check";
-  return "Cash";
-}
-
-function invoiceBlock(order: any): string {
-  const orderNumber = order.order_number || "N/A";
-  const invoiceDate = formatDate(order.created_at);
-  const isCard = order.payment_method === "stripe-link" || order.payment_method === "card";
-  const dueDate = isCard
-    ? `Paid — ${invoiceDate}`
-    : `Due at delivery — ${formatDate(order.delivery_date)}`;
-
-  const basePrice = 195;
-  const qty = order.quantity || 1;
-  const baseLine = basePrice * qty;
-
-  const distanceMiles = Number(order.distance_miles || 0);
-  const distanceFee = distanceMiles > 15 ? parseFloat(((distanceMiles - 15) * 3.49 * qty).toFixed(2)) : 0;
-
-  const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 35) : 0;
-
-  const total = Number(order.price || 0).toFixed(2);
-
-  const paymentStatus = isCard ? "PAID — Thank you" : "PAYMENT DUE AT DELIVERY";
-  const amountDue = isCard ? "$0.00" : `$${total}`;
-
-  let lineItems = `
-    <tr>
-      <td style="padding:10px;border:1px solid #DDDDDD;color:${BRAND_COLOR}">River Sand — 9 cu/yd load, delivered</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:center">${qty}</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$195.00</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${baseLine.toFixed(2)}</td>
-    </tr>`;
-
-  if (distanceFee > 0) {
-    lineItems += `
-    <tr>
-      <td style="padding:10px;border:1px solid #DDDDDD;color:${BRAND_COLOR}">Distance delivery fee</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:center">1</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${distanceFee.toFixed(2)}</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${distanceFee.toFixed(2)}</td>
-    </tr>`;
-  }
-
-  if (satSurcharge > 0) {
-    lineItems += `
-    <tr>
-      <td style="padding:10px;border:1px solid #DDDDDD;color:${BRAND_COLOR}">Saturday delivery surcharge</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:center">1</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${Number(satSurcharge).toFixed(2)}</td>
-      <td style="padding:10px;border:1px solid #DDDDDD;text-align:right">$${Number(satSurcharge).toFixed(2)}</td>
-    </tr>`;
-  }
-
-  return `
-  <div style="margin-top:32px;border:1px solid #DDDDDD;border-radius:8px;overflow:hidden">
-    <div style="background:#F2F2F2;padding:24px;border-bottom:1px solid #DDDDDD">
-      <h2 style="margin:0 0 16px;color:${BRAND_COLOR};font-size:22px;letter-spacing:2px">INVOICE</h2>
-      <p style="margin:4px 0;color:${BRAND_COLOR};font-size:14px"><strong>Ways Materials, LLC</strong></p>
-      <p style="margin:2px 0;color:#555;font-size:13px">Bridge City, Louisiana</p>
-      <p style="margin:2px 0;color:#555;font-size:13px">Phone: ${PHONE}</p>
-      <p style="margin:2px 0;color:#555;font-size:13px">Website: riversand.net</p>
-      <table style="margin-top:12px;font-size:13px;color:#555">
-        <tr><td style="padding:2px 12px 2px 0;font-weight:600;color:${BRAND_COLOR}">Invoice Number:</td><td>${orderNumber}</td></tr>
-        <tr><td style="padding:2px 12px 2px 0;font-weight:600;color:${BRAND_COLOR}">Invoice Date:</td><td>${invoiceDate}</td></tr>
-        <tr><td style="padding:2px 12px 2px 0;font-weight:600;color:${BRAND_COLOR}">Due Date:</td><td>${dueDate}</td></tr>
-      </table>
-    </div>
-
-    <div style="padding:20px 24px;border-bottom:1px solid #DDDDDD">
-      <p style="margin:0 0 8px;font-weight:600;color:${BRAND_COLOR};font-size:13px;text-transform:uppercase;letter-spacing:1px">Bill To:</p>
-      <p style="margin:2px 0;color:#555;font-size:14px">${order.customer_name || ""}</p>
-      <p style="margin:2px 0;color:#555;font-size:14px">${order.delivery_address || ""}</p>
-      ${order.customer_email ? `<p style="margin:2px 0;color:#555;font-size:14px">${order.customer_email}</p>` : ""}
-      ${order.customer_phone ? `<p style="margin:2px 0;color:#555;font-size:14px">${order.customer_phone}</p>` : ""}
-    </div>
-
-    <div style="padding:0">
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <thead>
-          <tr style="background:#F2F2F2">
-            <th style="padding:10px;border:1px solid #DDDDDD;text-align:left;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Description</th>
-            <th style="padding:10px;border:1px solid #DDDDDD;text-align:center;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Qty</th>
-            <th style="padding:10px;border:1px solid #DDDDDD;text-align:right;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Unit Price</th>
-            <th style="padding:10px;border:1px solid #DDDDDD;text-align:right;color:${BRAND_COLOR};font-size:12px;text-transform:uppercase;letter-spacing:1px">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${lineItems}
-          <tr style="background:${BRAND_GOLD}15">
-            <td colspan="3" style="padding:12px 10px;border:1px solid #DDDDDD;font-weight:700;color:${BRAND_COLOR};text-align:right;font-size:15px">TOTAL</td>
-            <td style="padding:12px 10px;border:1px solid #DDDDDD;font-weight:700;color:${BRAND_GOLD};text-align:right;font-size:15px">$${total}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div style="padding:20px 24px;border-top:1px solid #DDDDDD">
-      <table style="font-size:14px;color:#555">
-        <tr><td style="padding:3px 12px 3px 0;font-weight:600;color:${BRAND_COLOR}">Payment Method:</td><td>${paymentMethodLabel(order.payment_method)}</td></tr>
-        <tr><td style="padding:3px 12px 3px 0;font-weight:600;color:${BRAND_COLOR}">Payment Status:</td><td style="font-weight:600;color:${isCard ? "#22C55E" : BRAND_GOLD}">${paymentStatus}</td></tr>
-        <tr><td style="padding:3px 12px 3px 0;font-weight:600;color:${BRAND_COLOR}">Amount Due at Delivery:</td><td style="font-weight:600">${amountDue}</td></tr>
-      </table>
-    </div>
-
-    <div style="background:#F2F2F2;padding:16px 24px;border-top:1px solid #DDDDDD">
-      <p style="margin:0;color:#777;font-size:12px;line-height:1.5">This invoice is issued by Ways Materials, LLC operating as River Sand (riversand.net). For questions contact us at ${PHONE} or no_reply@riversand.net.</p>
-      <p style="margin:8px 0 0;color:#999;font-size:11px">Powered by Haulogix, LLC</p>
-    </div>
-  </div>`;
-}
-
-function orderCustomerEmail(order: any) {
-  const rows = [
-    ["Product", "River Sand — 9 cu yd load"],
-    ["Quantity", `${order.quantity} load${order.quantity > 1 ? "s" : ""}`],
-    ["Delivery Address", order.delivery_address],
-    ["Delivery Date", formatDate(order.delivery_date)],
-    ["Delivery Window", order.delivery_window || "8:00 AM – 5:00 PM"],
-    ["Total Price", `$${Number(order.price).toFixed(2)}`],
-    ["Payment Method", paymentMethodLabel(order.payment_method)],
-  ];
-  if (order.order_number) rows.unshift(["Order #", order.order_number]);
-
-  const tableRows = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
-
-  return emailWrapper(`
-    <h2>Order Confirmed! 🎉</h2>
-    <p>Thank you for your order${order.customer_name ? ", " + order.customer_name : ""}! Here's your order summary:</p>
-    <table class="info-table">${tableRows}</table>
-    ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ""}
-    ${invoiceBlock(order)}
-    <p style="margin-top:24px">If you have any questions, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
-  `);
 }
 
 function orderInternalEmail(order: any) {
@@ -246,19 +558,66 @@ function contactInternalEmail(contact: any) {
   `);
 }
 
-async function sendMail(resend: InstanceType<typeof Resend>, to: string, subject: string, html: string) {
-  const { data, error } = await resend.emails.send({
+interface SendMailOptions {
+  from?: string;
+  to: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+  attachments?: Array<{ filename: string; content: string }>;
+}
+
+async function sendMail(resend: InstanceType<typeof Resend>, to: string, subject: string, html: string, attachments?: Array<{ filename: string; content: string }>) {
+  const payload: any = {
     from: FROM,
     to,
     replyTo: REPLY_TO,
     subject,
     html,
-  });
+  };
+  if (attachments && attachments.length > 0) {
+    payload.attachments = attachments;
+  }
+  const { data, error } = await resend.emails.send(payload);
   if (error) {
     console.error("[email] Resend error:", error);
     throw new Error(error.message || "Resend send failed");
   }
   console.log("[email] Sent to:", to, "| Resend ID:", data?.id);
+}
+
+async function fetchInvoicePdf(orderNumber: string, lookupToken: string, orderId: string): Promise<string | null> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return null;
+
+    const resp = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({ order_id: orderId, lookup_token: lookupToken }),
+    });
+
+    if (!resp.ok) {
+      console.error("[email] Invoice fetch failed:", resp.status);
+      return null;
+    }
+
+    const arrayBuffer = await resp.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+    // Convert to base64
+    let binary = "";
+    for (let i = 0; i < uint8.length; i++) {
+      binary += String.fromCharCode(uint8[i]);
+    }
+    return btoa(binary);
+  } catch (err) {
+    console.error("[email] Invoice generation error:", err);
+    return null;
+  }
 }
 
 serve(async (req) => {
@@ -283,19 +642,52 @@ serve(async (req) => {
 
     if (type === "order" || type === "order_confirmation") {
       const customerEmail = data.customer_email;
-      const subject = data.order_number
-        ? `Order ${data.order_number} Confirmed — WAYS River Sand`
+      const orderNumber = data.order_number || "";
+      const subject = orderNumber
+        ? `Order ${orderNumber} Confirmed — WAYS River Sand`
         : "Order Confirmed — WAYS River Sand";
 
+      // Try to generate PDF invoice for attachment
+      let attachments: Array<{ filename: string; content: string }> | undefined;
+      if (data.id && data.lookup_token) {
+        const pdfBase64 = await fetchInvoicePdf(orderNumber, data.lookup_token, data.id);
+        if (pdfBase64) {
+          attachments = [{
+            filename: `RiverSand-Order-${orderNumber || "invoice"}.pdf`,
+            content: pdfBase64,
+          }];
+          console.log("[email] PDF invoice attached");
+        }
+      }
+
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `🔔 New Order ${data.order_number || ""}`.trim(), orderInternalEmail(data)),
+        sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data)),
+        // Dispatch notification
+        sendMail(
+          resend,
+          DISPATCH_EMAIL,
+          `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
+          orderDispatchEmail(data)
+        ),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data)));
+        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data), attachments));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);
       console.log("[email] Owner email sent to:", ownerEmail);
+      console.log("[email] Dispatch email sent to:", DISPATCH_EMAIL);
+
+    } else if (type === "order_notification") {
+      // Standalone dispatch notification
+      const orderNumber = data.order_number || "";
+      await sendMail(
+        resend,
+        DISPATCH_EMAIL,
+        `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
+        orderDispatchEmail(data)
+      );
+      console.log("[email] Dispatch notification sent to:", DISPATCH_EMAIL);
 
     } else if (type === "contact") {
       const customerEmail = data.email;
