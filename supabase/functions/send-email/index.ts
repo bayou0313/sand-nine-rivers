@@ -676,7 +676,7 @@ function contactInternalEmail(contact: any) {
   const tableRows = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 
   return emailWrapper(`
-    <h2>📬 New Contact Form Submission</h2>
+    <h2>New Contact Form Submission</h2>
     <table class="info-table">${tableRows}</table>
     <p><strong>Message:</strong></p>
     <p style="background:#f9f9f9;padding:16px;border-radius:6px;border-left:4px solid ${BRAND_GOLD}">${(contact.message || "").replace(/\n/g, "<br>")}</p>
