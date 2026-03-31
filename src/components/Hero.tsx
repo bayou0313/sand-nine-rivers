@@ -28,7 +28,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
         height={1080}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/95 via-sand-dark/85 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-sand-dark/60 via-transparent to-sand-dark/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-sand-dark/60 via-transparent to-sand-dark/30 pl-[7px] pr-[29px] mx-[6px]" />
 
       <div className="relative z-10 container mx-auto px-6 py-12">
         <div className="max-w-2xl space-y-5">
@@ -40,7 +40,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
             <div className="inline-flex items-center gap-2 bg-foreground/80 backdrop-blur-md px-5 py-2 rounded-xl shadow-lg shadow-black/20 border border-white/10">
               <Clock className="w-4 h-4 text-accent animate-pulse" />
               <div className="flex items-center gap-3">
-                <p className="font-display text-white tracking-wider text-sm">{label}</p>
+                <p className="font-display tracking-wider text-center text-xl font-light bg-[#48a4f9]/0 text-[#f50000]">{label}</p>
                 <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
               </div>
             </div>
