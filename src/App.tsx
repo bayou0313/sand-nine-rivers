@@ -206,6 +206,10 @@ function AppContent() {
     <>
       {stripeMode === "test" && !isAdminRoute && (
         <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
           width: "100%",
           backgroundColor: "#EA580C",
           color: "#FFFFFF",
@@ -214,8 +218,7 @@ function AppContent() {
           fontSize: "13px",
           fontWeight: "bold",
           letterSpacing: "0.5px",
-          position: "relative",
-          zIndex: 1000,
+          zIndex: 9999,
         }}>
           🔧 PAYMENT TEST MODE — Orders placed will not be charged &nbsp;|&nbsp;
           <a
@@ -230,6 +233,10 @@ function AppContent() {
           </a>
           &nbsp;for instant order assistance
         </div>
+      )}
+      {/* Spacer to push content below fixed banner */}
+      {stripeMode === "test" && !isAdminRoute && (
+        <div style={{ height: "36px" }} />
       )}
       <PageViewTracker />
       <Routes>
