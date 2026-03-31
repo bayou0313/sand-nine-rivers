@@ -454,10 +454,10 @@ export default function OrderConfirmation({
                 Please note
               </p>
               <ul className="space-y-2 text-sm" style={{ color: "#6B7280" }}>
-                <li>✗ Driver will not enter private property</li>
-                <li>✗ No delivery into backyards or gated areas</li>
-                <li>
-                  ✗ WAYS® Materials LLC not responsible for property damage
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />Driver will not enter private property</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />No delivery into backyards or gated areas</li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />WAYS® Materials LLC not responsible for property damage
                 </li>
               </ul>
             </div>
