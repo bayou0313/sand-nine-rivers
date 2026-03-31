@@ -57,23 +57,41 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
             <div className="w-32 h-1 bg-accent mt-3 rounded-full" />
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.45 }}
-            className="text-lg md:text-xl font-body text-primary-foreground/85 max-w-lg leading-relaxed"
-          >
-            {subtitleOverride || "See your exact price in seconds — no account needed"}
-          </motion.p>
+          {subtitleOverride && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45 }}
+              className="text-base md:text-lg font-body text-primary-foreground/80 max-w-xl leading-relaxed"
+            >
+              {subtitleOverride}
+            </motion.p>
+          )}
 
-          <motion.p
+          {!subtitleOverride && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45 }}
+              className="text-lg md:text-xl font-body text-primary-foreground/85 max-w-lg leading-relaxed"
+            >
+              See your exact price in seconds — no account needed
+            </motion.p>
+          )}
+
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.55 }}
-            className="text-sm font-body text-primary-foreground/50 max-w-lg"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-body text-primary-foreground/60"
           >
-            Serving the Gulf South · No minimums · Cash or card accepted · Real driver, real load
-          </motion.p>
+            {["Serving the Gulf South", "No minimums", "Cash or card accepted"].map((item, i) => (
+              <span key={item} className="flex items-center gap-1">
+                {i > 0 && <span className="text-primary-foreground/30">·</span>}
+                {item}
+              </span>
+            ))}
+          </motion.div>
 
           {/* Embedded DeliveryEstimator */}
           <motion.div
@@ -97,8 +115,8 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
               { icon: CheckCircle, text: "Same-day available" },
               { icon: ShieldCheck, text: "Licensed & insured" },
             ].map((item) => (
-              <div key={item.text} className="flex items-center gap-1.5 text-primary-foreground/50 font-body text-sm">
-                <item.icon className="w-4 h-4 text-accent/80 shrink-0" />
+              <div key={item.text} className="flex items-center gap-1.5 text-primary-foreground/70 font-body text-sm">
+                <item.icon className="w-4 h-4 text-accent shrink-0" />
                 {item.text}
               </div>
             ))}
