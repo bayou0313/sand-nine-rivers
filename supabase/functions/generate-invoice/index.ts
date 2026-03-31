@@ -36,21 +36,7 @@ function fmtShortDate(dateStr: string): string {
   } catch { return dateStr; }
 }
 
-async function fetchImageAsBase64(url: string): Promise<string | null> {
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) return null;
-    const buf = await resp.arrayBuffer();
-    const uint8 = new Uint8Array(buf);
-    let binary = "";
-    for (let i = 0; i < uint8.length; i++) {
-      binary += String.fromCharCode(uint8[i]);
-    }
-    return btoa(binary);
-  } catch {
-    return null;
-  }
-}
+// Removed fetchImageAsBase64 — using text-only rendering to keep PDF under 300KB
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -84,17 +70,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch logos
-    const [logoWhiteB64, waysWhiteB64, iconB64] = await Promise.all([
-      fetchImageAsBase64("https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png"),
-      fetchImageAsBase64("https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png"),
-      fetchImageAsBase64("https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/RIVERSAND_-_ICON_-_512.png.png"),
-    ]);
-
-    // Fetch QR code
-    const encodedAddr = encodeURIComponent(order.delivery_address || "");
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://www.google.com/maps/search/?api=1%26query=${encodedAddr}`;
-    const qrB64 = await fetchImageAsBase64(qrUrl);
+    // Text-only rendering — no image fetching to keep PDF small
 
     // Build PDF
     const doc = new jsPDF({ unit: "mm", format: "letter" });
@@ -108,24 +84,18 @@ serve(async (req) => {
     doc.setFillColor(...NAVY);
     doc.rect(0, 0, pw, 32, "F");
 
-    // Add logos to header
-    if (logoWhiteB64) {
-      try { doc.addImage(`data:image/png;base64,${logoWhiteB64}`, "PNG", mx, 6, 48, 20); } catch {}
-    } else {
-      doc.setTextColor(...WHITE);
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("RIVER SAND", mx, 18);
-    }
+    // Header text — RIVER SAND logo
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("RIVER SAND", mx, 18);
+    doc.setFontSize(9);
+    doc.text("by WAYS", mx, 24);
 
-    if (waysWhiteB64) {
-      try { doc.addImage(`data:image/png;base64,${waysWhiteB64}`, "PNG", pw - mx - 32, 8, 32, 16); } catch {}
-    } else {
-      doc.setTextColor(...WHITE);
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("WAYS", pw - mx, 18, { align: "right" });
-    }
+    // WAYS on right
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("WAYS", pw - mx, 18, { align: "right" });
 
     // Powered by line
     doc.setFontSize(7);
@@ -222,13 +192,7 @@ serve(async (req) => {
       y += 5.5;
     });
 
-    // QR code on right
-    if (qrB64) {
-      try {
-        const qrY = y - addrLines.length * 5.5;
-        doc.addImage(`data:image/png;base64,${qrB64}`, "PNG", pw - mx - 25, qrY - 2, 25, 25);
-      } catch {}
-    }
+    // QR code removed to reduce PDF size
 
     y += 4;
     doc.setDrawColor(...BORDER);
@@ -408,10 +372,11 @@ serve(async (req) => {
     doc.setFillColor(...NAVY);
     doc.rect(0, y, pw, Math.max(footerH, 28), "F");
 
-    // Icon
-    if (iconB64) {
-      try { doc.addImage(`data:image/png;base64,${iconB64}`, "PNG", pw / 2 - 8, y + 3, 16, 16); } catch {}
-    }
+    // Text-only footer icon
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("RS", pw / 2, y + 14, { align: "center" });
 
     doc.setTextColor(200, 200, 200);
     doc.setFontSize(8);

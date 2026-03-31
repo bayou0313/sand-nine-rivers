@@ -1460,7 +1460,7 @@ const Order = () => {
                   taxInfo={taxInfo}
                   basePricePerLoad={effectivePricing.base_price}
                   distanceFee={result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0}
-                  onPrint={() => window.print()}
+                  onPrint={handleDownloadInvoice}
                   onDownloadInvoice={handleDownloadInvoice}
                   downloadingInvoice={downloadingInvoice}
                   canDownload={!!confirmedOrderId}

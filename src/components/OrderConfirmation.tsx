@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Loader2, Printer, Download, ChevronDown } from "lucide-react";
+import { Loader2, Download, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -529,7 +529,7 @@ export default function OrderConfirmation({
               variant="outline"
               className="h-12 rounded-xl font-display tracking-wider"
             >
-              <Printer className="w-4 h-4 mr-2" /> Print Confirmation
+              <Download className="w-4 h-4 mr-2" /> Download PDF
             </Button>
             <Button
               onClick={onDownloadInvoice}

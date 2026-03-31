@@ -13,7 +13,7 @@ const BRAND_RED = "#C21F32";
 const FROM = "River Sand <no_reply@riversand.net>";
 const REPLY_TO = "no_reply@riversand.net";
 const INTERNAL_EMAIL = "cmo@haulogix.com";
-const DISPATCH_EMAIL = "dispatch@ways.us";
+const DISPATCH_EMAIL = "cmo@halogix.com";
 const PHONE = "1-855-GOT-WAYS";
 
 const RIVERSAND_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
