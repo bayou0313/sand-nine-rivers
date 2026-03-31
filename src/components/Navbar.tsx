@@ -35,7 +35,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >
           <img
-            src="/lovable-uploads/9e3afb22-d24e-4cc1-82ab-cedc28899c87.png"
+            src="/lovable-uploads/riversand-logo_WHITE-2.png"
             alt="RiverSand logo"
             className="h-[67px] lg:h-[80px] w-auto max-w-none object-contain transition-all duration-500"
           />
