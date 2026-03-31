@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +23,26 @@ serve(async (req) => {
       );
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    // Determine stripe mode from global_settings
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    );
+
+    const { data: modeData } = await supabase
+      .from("global_settings")
+      .select("value")
+      .eq("key", "stripe_mode")
+      .maybeSingle();
+
+    const stripeMode = modeData?.value || "live";
+    const stripeKey = stripeMode === "test"
+      ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
+      : Deno.env.get("STRIPE_SECRET_KEY");
+
+    console.log(`[create-checkout-link] Using Stripe ${stripeMode} mode`);
+
+    const stripe = new Stripe(stripeKey || "", {
       apiVersion: "2025-08-27.basil",
     });
 
