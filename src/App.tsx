@@ -163,21 +163,25 @@ const App = () => {
   const [siteModeLoading, setSiteModeLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMode = async () => {
-      try {
-        const { data } = await supabase
-          .from("global_settings")
-          .select("value")
-          .eq("key", "site_mode")
-          .single();
-        setSiteMode(data?.value || "live");
-      } catch {
-        setSiteMode("live");
-      } finally {
+    let cancelled = false;
+    // Safety timeout — never block rendering for more than 3s
+    const timeout = setTimeout(() => {
+      if (!cancelled) { setSiteMode("live"); setSiteModeLoading(false); }
+    }, 3000);
+
+    supabase
+      .from("global_settings")
+      .select("value")
+      .eq("key", "site_mode")
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        clearTimeout(timeout);
+        setSiteMode(error || !data ? "live" : data.value || "live");
         setSiteModeLoading(false);
-      }
-    };
-    fetchMode();
+      });
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   const isAdminRoute = window.location.pathname.startsWith('/leads')
