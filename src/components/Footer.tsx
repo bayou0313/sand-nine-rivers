@@ -90,7 +90,7 @@ const Footer = () => {
             orders@riversand.net · 1-855-GOT-WAYS
           </p>
           <p style={{ color: "#BBBBBB", fontSize: 10, fontStyle: "italic" }}>
-            River Sand — Real Sand. Real People.
+            River Sand.  Real Sand. Real People.
           </p>
         </div>
       </div>
