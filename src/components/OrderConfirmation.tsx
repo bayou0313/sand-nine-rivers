@@ -651,7 +651,7 @@ export default function OrderConfirmation({
           className="text-sm hover:underline"
           style={{ color: "#6B7280" }}
         >
-          ← Back to Home
+          Back to Home
         </Link>
       </div>
     </div>
