@@ -67,9 +67,37 @@ const Footer = () => {
 
   return (
     <footer>
+      {/* Logo bar */}
+      <div
+        className="py-8"
+        style={{
+          backgroundColor: "#F8F6F1",
+          borderBottom: cityLinks.length > 0 ? "1px solid #E8E5DC" : undefined,
+        }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <img
+            src={WAYS_LOGO_DARK}
+            alt="WAYS"
+            className="object-contain"
+            style={{ width: 64, opacity: 0.6 }}
+            loading="lazy"
+          />
+          <p style={{ color: "#888888", fontSize: 11 }}>
+            © 2026 WAYS® Materials LLC
+          </p>
+          <p style={{ color: "#AAAAAA", fontSize: 11 }}>
+            orders@riversand.net · 1-855-GOT-WAYS
+          </p>
+          <p style={{ color: "#BBBBBB", fontSize: 10, fontStyle: "italic" }}>
+            River Sand — Real Sand. Real People.
+          </p>
+        </div>
+      </div>
+
       {/* Cities section */}
       {cityLinks.length > 0 && (
-        <div className="container mx-auto px-6 pb-0">
+        <div className="container mx-auto px-6 py-6">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -130,34 +158,6 @@ const Footer = () => {
           </motion.div>
         </div>
       )}
-
-      {/* Minimal footer */}
-      <div
-        className="py-8 mt-0"
-        style={{
-          backgroundColor: "#F8F6F1",
-          borderTop: "1px solid #E8E5DC",
-        }}
-      >
-        <div className="flex flex-col items-center gap-3">
-          <img
-            src={WAYS_LOGO_DARK}
-            alt="WAYS"
-            className="object-contain"
-            style={{ width: 64, opacity: 0.6 }}
-            loading="lazy"
-          />
-          <p style={{ color: "#888888", fontSize: 11 }}>
-            © 2026 WAYS® Materials LLC
-          </p>
-          <p style={{ color: "#AAAAAA", fontSize: 11 }}>
-            orders@riversand.net · 1-855-GOT-WAYS
-          </p>
-          <p style={{ color: "#BBBBBB", fontSize: 10, fontStyle: "italic" }}>
-            River Sand — Real Sand. Real People.
-          </p>
-        </div>
-      </div>
     </footer>
   );
 };
