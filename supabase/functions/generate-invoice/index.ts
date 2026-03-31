@@ -84,24 +84,18 @@ serve(async (req) => {
     doc.setFillColor(...NAVY);
     doc.rect(0, 0, pw, 32, "F");
 
-    // Add logos to header
-    if (logoWhiteB64) {
-      try { doc.addImage(`data:image/png;base64,${logoWhiteB64}`, "PNG", mx, 6, 48, 20); } catch {}
-    } else {
-      doc.setTextColor(...WHITE);
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("RIVER SAND", mx, 18);
-    }
+    // Header text — RIVER SAND logo
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("RIVER SAND", mx, 18);
+    doc.setFontSize(9);
+    doc.text("by WAYS", mx, 24);
 
-    if (waysWhiteB64) {
-      try { doc.addImage(`data:image/png;base64,${waysWhiteB64}`, "PNG", pw - mx - 32, 8, 32, 16); } catch {}
-    } else {
-      doc.setTextColor(...WHITE);
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("WAYS", pw - mx, 18, { align: "right" });
-    }
+    // WAYS on right
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("WAYS", pw - mx, 18, { align: "right" });
 
     // Powered by line
     doc.setFontSize(7);
