@@ -652,7 +652,7 @@ function orderInternalEmail(order: any) {
   const tableRows = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 
   return emailWrapper(`
-    <h2>📦 New Order Received</h2>
+    <h2>New Order Received</h2>
     <table class="info-table">${tableRows}</table>
     ${order.notes ? `<p><strong>Customer Notes:</strong> ${order.notes}</p>` : ""}
   `);
