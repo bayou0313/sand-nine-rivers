@@ -1185,9 +1185,13 @@ const Order = () => {
                 )}
                 {/* Receipt-style confirmation */}
                 <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
+                  {/* Secure header */}
+                  <div className="bg-primary px-6 py-3 flex items-center justify-between">
+                    <h2 className="font-display text-sm text-primary-foreground tracking-wider">ORDER REVIEW</h2>
+                    <span className="flex items-center gap-1 text-primary-foreground/70 text-[10px] font-body"><Lock className="w-2.5 h-2.5" /> Secure Checkout</span>
+                  </div>
 
                   <div className="p-6 space-y-4">
-                    <h2 className="text-2xl font-display text-foreground text-center tracking-wider">CONFIRM YOUR ORDER</h2>
 
                     {/* Product */}
                     <div>
