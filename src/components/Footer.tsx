@@ -32,7 +32,7 @@ function formatRegionHeading(region: string, state: string): string {
 function getCitiesSectionHeading(cities: CityLink[]): string {
   const states = [...new Set(cities.map((c) => c.state))];
   if (states.length > 1) return "AREAS WE SERVE";
-  if (states[0] === "LA") return "PARISHES WE SERVE";
+  if (states[0] === "LA") return "CITIES WE SERVE";
   return "COUNTIES WE SERVE";
 }
 
