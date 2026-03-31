@@ -75,7 +75,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           </div>
 
           <button
-            className="lg:hidden transition-colors text-white hover:text-accent"
+            className="lg:hidden transition-colors text-primary-foreground hover:text-accent"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
