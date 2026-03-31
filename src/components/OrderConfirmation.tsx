@@ -195,8 +195,9 @@ export default function OrderConfirmation({
     <div className="print-confirmation">
       {/* ── HEADER ── */}
       <FadeIn delay={0}>
-        <div
-          className="flex flex-col items-center py-8 rounded-t-2xl"
+        <Link
+          to="/"
+          className="flex flex-col items-center py-8 rounded-t-2xl cursor-pointer"
           style={{ backgroundColor: "#0D2137" }}
         >
           <img
@@ -212,7 +213,7 @@ export default function OrderConfirmation({
               backgroundColor: "#C07A00",
             }}
           />
-        </div>
+        </Link>
       </FadeIn>
 
       {/* ── HERO STATUS ── */}
