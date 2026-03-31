@@ -40,9 +40,7 @@ export function useGoogleMaps(): { loaded: boolean } {
     const script = document.createElement("script");
     script.src =
       `https://maps.googleapis.com/maps/api/js` +
-      `?key=${MAPS_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
+      `?key=${MAPS_KEY}&libraries=places&loading=async`;
     script.onload = () => setLoaded(true);
     script.onerror = () =>
       console.error(
