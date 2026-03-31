@@ -42,71 +42,45 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
         </motion.a>
 
         <div className="hidden lg:flex items-center gap-8">
-          {navLinks.map((item, i) => (
-            <motion.a
+          {navLinks.map((item) => (
+            <a
               key={item}
               href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
-              className={`font-body text-sm transition-colors duration-300 hover:text-accent relative ${
+              className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
                 scrolled ? "text-white/90" : "text-white/70"
               }`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + i * 0.07, duration: 0.4 }}
-              whileHover={{ y: -2 }}
             >
               {item}
-              <motion.span
-                className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent rounded-full origin-left"
-                initial={{ scaleX: 0 }}
-                whileHover={{ scaleX: 1 }}
-                transition={{ duration: 0.25 }}
-              />
-            </motion.a>
+            </a>
           ))}
         </div>
 
         <div className="flex items-center gap-3">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden sm:block"
-          >
-            <Button size="sm" className="font-display tracking-wider bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg shadow-md shadow-accent/20" asChild>
+          <div className="hidden sm:block">
+            <Button size="sm" className="font-display tracking-wider bg-accent hover:bg-accent/80 text-accent-foreground rounded-lg" asChild>
               <Link to="/order">
                 <ShoppingCart className="w-4 h-4 mr-1" />
                 ORDER NOW
               </Link>
             </Button>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6, duration: 0.4 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden lg:block"
-          >
-            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white bg-orange-500" asChild>
+          <div className="hidden lg:block">
+            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white bg-orange-500 hover:bg-orange-600" asChild>
               <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" />
                 1-855-GOT-WAYS
               </a>
             </Button>
-          </motion.div>
+          </div>
 
-          <motion.button
-            className="lg:hidden transition-colors text-white"
+          <button
+            className="lg:hidden transition-colors text-white hover:text-accent"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
-            whileTap={{ scale: 0.9, rotate: 90 }}
-            transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </motion.button>
+          </button>
         </div>
       </div>
 

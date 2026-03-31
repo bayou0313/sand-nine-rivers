@@ -34,28 +34,26 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
       <div className="relative z-10 container mx-auto px-6 pt-[25px] my-px py-[37px] pb-[34px] mt-[3px]">
         <div className="max-w-2xl space-y-5">
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 bg-foreground/80 backdrop-blur-md px-5 py-2 rounded-xl shadow-lg shadow-black/20 border border-white/10">
-              <Clock className="w-4 h-4 text-accent animate-pulse" />
-              <div className="flex items-center gap-3">
-                <p className="font-display tracking-wider text-center text-xl font-light bg-[#48a4f9]/0 text-orange-600">{label}</p>
-                <span className="font-mono text-accent font-bold text-base tracking-wide">{timeLeft}</span>
-              </div>
+            <div className="inline-flex items-center gap-2 bg-foreground/60 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/10">
+              <Clock className="w-3.5 h-3.5 text-accent" />
+              <p className="font-display tracking-wider text-sm text-accent">{label}</p>
+              <span className="font-mono text-primary-foreground/90 font-medium text-sm tracking-wide">{timeLeft}</span>
             </div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.05] text-primary-foreground tracking-wide">
               {h1Override || "Same-Day River Sand Delivery"}
             </h1>
-            <div className="w-32 h-1 bg-accent mt-3 rounded-full" />
+            <div className="w-20 h-0.5 bg-accent mt-4" />
           </motion.div>
 
           {subtitleOverride && (
