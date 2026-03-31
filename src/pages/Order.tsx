@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { updateSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, Printer, Download } from "lucide-react";
+import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
+import OrderConfirmation from "@/components/OrderConfirmation";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
@@ -1356,148 +1357,35 @@ const Order = () => {
             )}
 
             {/* SUCCESS — Full Confirmation Page */}
-            {step === "success" && (() => {
-              const dt = confirmedTotals;
-              const displayTotal = dt?.totalPrice ?? totalPrice;
-              const displayTotalWithFee = dt?.totalWithProcessingFee ?? totalWithProcessingFee;
-              const displayProcessingFee = dt?.processingFee ?? processingFee;
-              const displayTaxAmount = dt?.taxAmount ?? taxAmount;
-              const displaySaturdaySurcharge = dt?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
-              const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0);
-              const displayTaxInfo = dt?.taxInfo ?? taxInfo;
-              const isStripe = paymentMethod === "stripe-link";
-              const isCod = !isStripe;
-              return (
-              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-5 print-confirmation">
-                {/* Print styles */}
-                <style>{`
-                  @media print {
-                    body * { visibility: hidden; }
-                    #order-confirmation, #order-confirmation * { visibility: visible; }
-                    #order-confirmation { position: absolute; left: 0; top: 0; width: 100%; }
-                    .print-hide { display: none !important; }
-                  }
-                `}</style>
-
-                <div id="order-confirmation">
-                  {/* Header */}
-                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                    <div className="bg-primary py-4 flex justify-center border-b border-border/50 rounded-t-2xl">
-                      <img src={logoImg} alt="RIVERSAND" className="h-[67px] lg:h-[80px] w-auto object-contain" />
-                    </div>
-                    <div className="p-8 text-center space-y-4">
-                      {isStripe ? (
-                        <>
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 }} className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                            <CheckCircle2 className="w-8 h-8 text-primary" />
-                          </motion.div>
-                          <h2 className="text-3xl font-display text-foreground">PAYMENT CONFIRMED</h2>
-                          <p className="font-body text-sm text-muted-foreground">Your card has been charged. Nothing due at delivery.</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-5xl">💵</p>
-                          <h2 className="text-3xl font-display text-foreground">PAYMENT DUE AT DELIVERY</h2>
-                          <p className="font-display text-2xl text-primary">{formatCurrency(displayTotal)}</p>
-                          <p className="font-body text-sm text-muted-foreground">Please have exact amount ready. Driver carries no change.</p>
-                        </>
-                      )}
-                      {form.email && (
-                        <p className="font-body text-sm text-muted-foreground">A copy of this confirmation has been sent to <strong className="text-foreground">{form.email}</strong></p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Order Details */}
-                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden mt-5">
-                    <div className="bg-foreground px-6 py-3">
-                      <h3 className="font-display text-sm text-background tracking-wider">ORDER DETAILS</h3>
-                    </div>
-                    <div className="p-6 space-y-2">
-                      {orderNumber && <ReceiptRow label="Order Number" value={orderNumber} accent />}
-                      <ReceiptRow label="Order Date" value={new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} />
-                      <ReceiptRow label="Product" value="River Sand — 9 Cubic Yard Load" />
-                      <ReceiptRow label="Quantity" value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
-                      <Separator className="my-2" />
-                      <ReceiptRow label="Delivery Address" value={address} />
-                      {selectedDeliveryDate && <ReceiptRow label="Delivery Date" value={selectedDeliveryDate.fullLabel} />}
-                      <ReceiptRow label="Delivery Window" value="8:00 AM – 5:00 PM" />
-                    </div>
-                  </div>
-
-                  {/* Pricing Summary */}
-                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden mt-5">
-                    <div className="bg-foreground px-6 py-3">
-                      <h3 className="font-display text-sm text-background tracking-wider">PRICING SUMMARY</h3>
-                    </div>
-                    <div className="p-6 space-y-2">
-                      <ReceiptRow label={`River Sand (×${quantity})`} value={formatCurrency(effectivePricing.base_price * quantity)} />
-                      {displayDistanceFee > 0 && <ReceiptRow label="Distance fee" value={formatCurrency(displayDistanceFee)} />}
-                      {displaySaturdaySurcharge > 0 && <ReceiptRow label="Saturday surcharge" value={formatCurrency(displaySaturdaySurcharge)} />}
-                      {displayTaxAmount > 0 && <ReceiptRow label={`Sales tax — ${displayTaxInfo.parish} (${(displayTaxInfo.rate * 100).toFixed(2)}%)`} value={formatCurrency(displayTaxAmount)} />}
-                      {isStripe && <ReceiptRow label="Processing fee (3.5%)" value={formatCurrency(displayProcessingFee)} />}
-                      <Separator className="my-2" />
-                      <ReceiptRow label="Total" value={formatCurrency(isStripe ? displayTotalWithFee : displayTotal)} bold />
-                    </div>
-                  </div>
-
-                  {/* Payment Info */}
-                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden mt-5">
-                    <div className="bg-foreground px-6 py-3">
-                      <h3 className="font-display text-sm text-background tracking-wider">
-                        {isStripe ? "PAYMENT" : "PAYMENT DUE AT DELIVERY"}
-                      </h3>
-                    </div>
-                    <div className="p-6 space-y-2">
-                      {isStripe ? (
-                        <>
-                          <ReceiptRow label="Method" value="Credit Card (Stripe)" />
-                          <ReceiptRow label="Amount Charged" value={formatCurrency(displayTotalWithFee)} bold />
-                          {stripePaymentId && <ReceiptRow label="Payment ID" value={stripePaymentId} small />}
-                          <ReceiptRow label="Status" value="Paid ✓" accent />
-                        </>
-                      ) : (
-                        <>
-                          <ReceiptRow label="Method" value={codSubOption === "check" ? "Check" : "Cash"} />
-                          <ReceiptRow label="Amount Due" value={formatCurrency(displayTotal)} bold />
-                          <ReceiptRow label="Due" value="At time of delivery" />
-                          <div className="mt-3 bg-accent/10 border border-accent/20 rounded-lg p-3">
-                            <p className="font-body text-xs text-accent-foreground">⚠ Please have exact amount ready. Our drivers do not carry change.</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Delivery Terms */}
-                  <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-2 mt-5">
-                    <p className="font-display text-xs tracking-wider text-muted-foreground">DELIVERY TERMS</p>
-                    <div className="space-y-1">
-                      <p className="font-body text-[11px] text-muted-foreground">• Delivery is curbside only — curb to nearest sidewalk or driveway edge</p>
-                      <p className="font-body text-[11px] text-muted-foreground">• Driver will not enter private property</p>
-                      <p className="font-body text-[11px] text-muted-foreground">• Ways Materials LLC is not responsible for property damage</p>
-                      <p className="font-body text-[11px] text-muted-foreground">• Customer or representative must be present at delivery</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 justify-center print-hide">
-                  <Button onClick={() => window.print()} variant="outline" className="flex-1 h-11 font-display tracking-wider rounded-xl">
-                    <Printer className="w-4 h-4 mr-2" /> Print Confirmation
-                  </Button>
-                  <Button onClick={handleDownloadInvoice} disabled={downloadingInvoice || !confirmedOrderId} variant="outline" className="flex-1 h-11 font-display tracking-wider rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground">
-                    {downloadingInvoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                    Download Invoice
-                  </Button>
-                </div>
-
-                <Button onClick={() => window.location.href = "/"} variant="outline" className="w-full h-11 font-display tracking-wider rounded-xl print-hide">
-                  BACK TO HOME
-                </Button>
+            {step === "success" && (
+              <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+                <OrderConfirmation
+                  orderNumber={orderNumber}
+                  address={address}
+                  deliveryDateLabel={selectedDeliveryDate?.fullLabel || "—"}
+                  quantity={quantity}
+                  paymentMethod={paymentMethod}
+                  codSubOption={codSubOption}
+                  stripePaymentId={stripePaymentId}
+                  customerName={form.name}
+                  customerEmail={form.email}
+                  customerPhone={form.phone}
+                  confirmedTotals={confirmedTotals}
+                  totalPrice={totalPrice}
+                  totalWithProcessingFee={totalWithProcessingFee}
+                  processingFee={processingFee}
+                  taxAmount={taxAmount}
+                  saturdaySurchargeTotal={saturdaySurchargeTotal}
+                  taxInfo={taxInfo}
+                  basePricePerLoad={effectivePricing.base_price}
+                  distanceFee={result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0}
+                  onPrint={() => window.print()}
+                  onDownloadInvoice={handleDownloadInvoice}
+                  downloadingInvoice={downloadingInvoice}
+                  canDownload={!!confirmedOrderId}
+                />
               </motion.div>
-              );
-            })()}
+            )}
           </AnimatePresence>
         </div>
       </div>

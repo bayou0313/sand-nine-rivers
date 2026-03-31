@@ -178,8 +178,9 @@
 
 /* Print styles for order confirmation */
 @media print {
-  body { background: white !important; }
+  body { background: white !important; color: black !important; }
   nav, footer, .print-hide, .sticky, button { display: none !important; }
   .print-confirmation { padding: 0 !important; }
-  .print-confirmation > div { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .print-confirmation > div { box-shadow: none !important; break-inside: avoid; }
+  .print-confirmation img { max-width: 160px !important; }
 }
