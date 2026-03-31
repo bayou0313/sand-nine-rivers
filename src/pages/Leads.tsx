@@ -2809,76 +2809,17 @@ const Leads = () => {
         const runSeoAudit = async () => {
           setSeoAuditing(true);
           try {
-            const res = await fetch("https://riversand.net/");
-            const html = await res.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-
-            // Title
-            const title = doc.querySelector("title")?.textContent || "";
-            const titleLen = title.length;
-            let titleScore = titleLen >= 50 && titleLen <= 60 ? 100 : titleLen >= 45 && titleLen <= 65 ? 80 : 50;
-            if (!title) titleScore = 0;
-            if (title.toLowerCase().includes("river sand")) titleScore = Math.min(100, titleScore + 10);
-            if (title.toLowerCase().includes("new orleans") || title.toLowerCase().includes("louisiana")) titleScore = Math.min(100, titleScore + 10);
-
-            // Meta desc
-            const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
-            const descLen = metaDesc.length;
-            let descScore = descLen >= 150 && descLen <= 160 ? 100 : descLen >= 130 && descLen <= 170 ? 80 : descLen > 0 ? 50 : 0;
-
-            // Headings
-            const h1s = doc.querySelectorAll("h1");
-            const h2s = doc.querySelectorAll("h2");
-            let headingScore = 0;
-            if (h1s.length === 1) headingScore += 40;
-            else if (h1s.length > 1) headingScore += 20;
-            if (h2s.length > 0) headingScore += 30;
-            if (h1s.length > 0 && h1s[0].textContent?.toLowerCase().includes("river sand")) headingScore += 30;
-
-            // Technical
-            const canonical = doc.querySelector('link[rel="canonical"]');
-            const robots = doc.querySelector('meta[name="robots"]');
-            const viewport = doc.querySelector('meta[name="viewport"]');
-            let techScore = 0;
-            if (canonical) techScore += 25;
-            if (robots) techScore += 25;
-            if (viewport) techScore += 25;
-            techScore += 25; // HTTPS always true
-
-            // Structured data
-            const jsonLds = doc.querySelectorAll('script[type="application/ld+json"]');
-            let schemaScore = 0;
-            const schemaTypes: string[] = [];
-            jsonLds.forEach(el => {
-              try {
-                const j = JSON.parse(el.textContent || "");
-                const t = j["@type"];
-                if (t) schemaTypes.push(t);
-              } catch { /* skip */ }
+            const { data: auditData, error: auditError } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "audit_seo", url: "https://riversand.net/" },
             });
-            schemaScore = Math.min(100, schemaTypes.length * 33);
-
-            const overall = Math.round((titleScore + descScore + headingScore + techScore + schemaScore) / 5);
-            const grade = overall >= 90 ? "A" : overall >= 80 ? "B" : overall >= 70 ? "C" : overall >= 60 ? "D" : "F";
-
-            const results = {
-              scannedAt: new Date().toISOString(),
-              overall, grade,
-              categories: [
-                { name: "Title Tag", score: titleScore, found: title, issues: titleScore < 80 ? [`Title is ${titleLen} chars (ideal: 50-60)`] : [] },
-                { name: "Meta Description", score: descScore, found: metaDesc, issues: descScore < 80 ? [`Description is ${descLen} chars (ideal: 150-160)`] : [] },
-                { name: "Heading Structure", score: headingScore, found: `${h1s.length} H1, ${h2s.length} H2`, issues: h1s.length !== 1 ? ["Should have exactly 1 H1"] : [] },
-                { name: "Technical SEO", score: techScore, found: `Canonical: ${!!canonical}, Robots: ${!!robots}, Viewport: ${!!viewport}`, issues: [] },
-                { name: "Structured Data", score: schemaScore, found: schemaTypes.join(", ") || "None", issues: schemaTypes.length === 0 ? ["No JSON-LD schemas found"] : [] },
-              ],
-            };
-
+            if (auditError) throw auditError;
+            if (auditData?.error) throw new Error(auditData.error);
+            const results = auditData.results;
             setSeoAuditResults(results);
             await supabase.functions.invoke("leads-auth", {
               body: { password: storedPassword(), action: "save_settings", settings: { seo_last_audit: JSON.stringify(results) } },
             });
-            toast({ title: "SEO audit complete", description: `Overall: ${grade} (${overall}/100)` });
+            toast({ title: "SEO audit complete", description: `Overall: ${results.grade} (${results.overall}/100)` });
           } catch (err: any) {
             toast({ title: "Audit failed", description: err.message, variant: "destructive" });
           } finally { setSeoAuditing(false); }
