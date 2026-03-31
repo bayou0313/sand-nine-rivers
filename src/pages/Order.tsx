@@ -944,9 +944,9 @@ const Order = () => {
 
                 <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                   {[
-                    { icon: "🚚", top: "LOCAL AREA", bot: "Delivery included" },
-                    { icon: "📍", top: "EXTENDED", bot: "Surcharge applies" },
-                    { icon: "📦", top: "9 CU YDS", bot: "Per load" },
+                    { icon: Truck, top: "LOCAL AREA", bot: "Delivery included" },
+                    { icon: MapPin, top: "EXTENDED", bot: "Surcharge applies" },
+                    { icon: Package, top: "9 CU YDS", bot: "Per load" },
                   ].map((item, i) => (
                     <motion.div
                       key={item.top}
@@ -955,7 +955,7 @@ const Order = () => {
                       transition={{ delay: 0.3 + i * 0.1 }}
                       className="p-3 bg-muted/50 border border-border/50 rounded-xl"
                     >
-                      <span className="text-lg">{item.icon}</span>
+                      <item.icon className="w-5 h-5 text-primary" />
                       <p className="font-display text-sm text-primary mt-1">{item.top}</p>
                       <p className="font-body text-[10px] text-muted-foreground">{item.bot}</p>
                     </motion.div>
@@ -1097,7 +1097,7 @@ const Order = () => {
 
                       {selectedDeliveryDate.isSameDay && (
                         <p className="font-body text-xs text-destructive bg-destructive/5 p-2 rounded-lg my-2">
-                          ⚡ Same-day request — our team will call to confirm availability.
+                          Same-day request — our team will call to confirm availability.
                         </p>
                       )}
 
@@ -1322,7 +1322,7 @@ const Order = () => {
 
                       {selectedDeliveryDate.isSameDay && (
                         <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-lg my-2">
-                          ⚡ Same-day request — we'll call to confirm availability.
+                          Same-day request — we'll call to confirm availability.
                         </p>
                       )}
 

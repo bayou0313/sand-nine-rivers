@@ -223,10 +223,10 @@ export default function OrderConfirmation({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.3 }}
-              className="w-20 h-20 rounded-full flex items-center justify-center text-4xl"
+              className="w-20 h-20 rounded-full flex items-center justify-center"
               style={{ backgroundColor: "#FEF3C7" }}
             >
-              💵
+              <span className="text-3xl font-bold" style={{ color: "#D97706" }}>$</span>
             </motion.div>
           )}
 
@@ -252,8 +252,8 @@ export default function OrderConfirmation({
             }
           >
             {isStripePaid
-              ? `✅ Paid in Full — ${formatCurrency(displayTotalWithFee)}`
-              : `💵 ${formatCurrency(displayTotal)} Due at Delivery`}
+              ? `Paid in Full — ${formatCurrency(displayTotalWithFee)}`
+              : `${formatCurrency(displayTotal)} Due at Delivery`}
           </div>
 
           {customerEmail && (
@@ -280,15 +280,14 @@ export default function OrderConfirmation({
                 DELIVERY
               </p>
               <div className="space-y-3">
-                <Row icon="📍" label="Address" value={address} />
-                <Row icon="📅" label="Date" value={deliveryDateLabel} />
-                <Row icon="⏰" label="Window" value="8:00 AM – 5:00 PM" />
+                <Row label="Address" value={address} />
+                <Row label="Date" value={deliveryDateLabel} />
+                <Row label="Window" value="8:00 AM – 5:00 PM" />
                 <Row
-                  icon="📦"
                   label="Product"
                   value={`River Sand — 9 Cubic Yard Load`}
                 />
-                <Row icon="🔢" label="Quantity" value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
+                <Row label="Quantity" value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
               </div>
             </div>
 
@@ -304,7 +303,6 @@ export default function OrderConfirmation({
                 {isStripePaid ? (
                   <>
                     <Row
-                      icon="✅"
                       label="Status"
                       value="Paid in Full"
                       valuePill={{ bg: "#DCFCE7", color: "#166534" }}
@@ -320,7 +318,7 @@ export default function OrderConfirmation({
                         {formatCurrency(displayTotalWithFee)}
                       </span>
                     </div>
-                    <Row icon="💳" label="Method" value="Credit Card" />
+                    <Row label="Method" value="Credit Card" />
                     {stripePaymentId && (
                       <div>
                         <span className="text-xs" style={{ color: "#6B7280" }}>
@@ -341,7 +339,6 @@ export default function OrderConfirmation({
                 ) : (
                   <>
                     <Row
-                      icon="⏳"
                       label="Status"
                       value="Due at Delivery"
                       valuePill={{ bg: "#FEF3C7", color: "#92400E" }}
@@ -358,7 +355,6 @@ export default function OrderConfirmation({
                       </span>
                     </div>
                     <Row
-                      icon="💵"
                       label="Method"
                       value={codSubOption === "check" ? "Check" : "Cash"}
                     />
@@ -447,10 +443,10 @@ export default function OrderConfirmation({
                 What to expect
               </p>
               <ul className="space-y-2 text-sm" style={{ color: "#374151" }}>
-                <li>✓ Driver calls 30 minutes before arrival</li>
-                <li>✓ Ensure clear access to delivery area</li>
-                <li>✓ Be present or designate a representative</li>
-                <li>✓ Curbside delivery — curb to sidewalk</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Driver calls 30 minutes before arrival</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Ensure clear access to delivery area</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Be present or designate a representative</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Curbside delivery — curb to sidewalk</li>
               </ul>
             </div>
             <div>
@@ -458,10 +454,10 @@ export default function OrderConfirmation({
                 Please note
               </p>
               <ul className="space-y-2 text-sm" style={{ color: "#6B7280" }}>
-                <li>✗ Driver will not enter private property</li>
-                <li>✗ No delivery into backyards or gated areas</li>
-                <li>
-                  ✗ WAYS® Materials LLC not responsible for property damage
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />Driver will not enter private property</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />No delivery into backyards or gated areas</li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />WAYS® Materials LLC not responsible for property damage
                 </li>
               </ul>
             </div>
@@ -555,7 +551,7 @@ export default function OrderConfirmation({
               className="font-display text-lg tracking-wider"
               style={{ color: "#C07A00" }}
             >
-              📞 1-855-GOT-WAYS
+              1-855-GOT-WAYS
             </a>
             <p className="text-xs" style={{ color: "#9CA3AF" }}>
               orders@riversand.net
@@ -655,7 +651,7 @@ export default function OrderConfirmation({
           className="text-sm hover:underline"
           style={{ color: "#6B7280" }}
         >
-          ← Back to Home
+          Back to Home
         </Link>
       </div>
     </div>
@@ -669,14 +665,14 @@ function Row({
   value,
   valuePill,
 }: {
-  icon: string;
+  icon?: string;
   label: string;
   value: string;
   valuePill?: { bg: string; color: string };
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-sm shrink-0">{icon}</span>
+      {icon && <span className="text-sm shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1">
         <p className="text-xs" style={{ color: "#9CA3AF" }}>
           {label}
