@@ -303,7 +303,6 @@ export default function OrderConfirmation({
                 {isStripePaid ? (
                   <>
                     <Row
-                      icon="✅"
                       label="Status"
                       value="Paid in Full"
                       valuePill={{ bg: "#DCFCE7", color: "#166534" }}
