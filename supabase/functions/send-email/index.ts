@@ -790,8 +790,8 @@ serve(async (req) => {
       const customerEmail = data.customer_email;
       const orderNumber = data.order_number || "";
       const subject = orderNumber
-        ? `Order ${orderNumber} Confirmed — WAYS River Sand`
-        : "Order Confirmed — WAYS River Sand";
+        ? `Order ${orderNumber} Confirmed — River Sand Delivery`
+        : "Order Confirmed — River Sand Delivery";
 
       // Try to generate PDF invoice for attachment
       let attachments: Array<{ filename: string; content: string }> | undefined;
