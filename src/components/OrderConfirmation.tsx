@@ -339,7 +339,6 @@ export default function OrderConfirmation({
                 ) : (
                   <>
                     <Row
-                      icon="⏳"
                       label="Status"
                       value="Due at Delivery"
                       valuePill={{ bg: "#FEF3C7", color: "#92400E" }}
