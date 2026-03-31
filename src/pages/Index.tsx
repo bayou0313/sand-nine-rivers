@@ -111,12 +111,6 @@ const Index = () => {
       })(window,document,'script','dataLayer','${gtmId}');
     `;
     document.head.appendChild(script);
-    if (!document.querySelector(`noscript[data-gtm="${gtmId}"]`)) {
-      const ns = document.createElement("noscript");
-      ns.setAttribute("data-gtm", gtmId);
-      ns.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
-      document.body.prepend(ns);
-    }
   }, [seo?.seo_gtm_id]);
 
   const handleRecalculate = useCallback((address: string) => {
