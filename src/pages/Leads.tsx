@@ -3752,6 +3752,11 @@ const Leads = () => {
         <div className="px-4 py-4">
           <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>DELIVERY LEADS</h2>
           <p className="text-xs mt-0.5" style={{ color: SECTION_LABEL }}>Live: {livePricing}</p>
+          {globalSettings.site_mode === 'maintenance' && (
+            <div className="text-xs font-bold px-2 py-1 rounded mt-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B' }}>
+              🔴 MAINTENANCE
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2">
