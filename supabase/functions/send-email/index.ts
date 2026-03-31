@@ -876,7 +876,7 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      await sendMail(resend, data.customer_email, `Payment Confirmed — Order #${data.order_number || "N/A"}`, cashHtml);
+      await sendMail(resend, data.customer_email, `Payment Confirmed — Order #${data.order_number || "N/A"}`, cashHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Cash payment confirmation sent to:", data.customer_email);
 
     } else {
