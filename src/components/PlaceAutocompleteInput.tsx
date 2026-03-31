@@ -16,14 +16,9 @@ interface PlaceAutocompleteInputProps {
   initialValue?: string;
   className?: string;
   id?: string;
-  /** Extra CSS class on the container div */
   containerClassName?: string;
 }
 
-/**
- * Google Places Autocomplete input using the legacy Autocomplete widget
- * wrapped around a standard <input> for full styling control.
- */
 export default function PlaceAutocompleteInput({
   onPlaceSelect,
   onInputChange,
@@ -34,9 +29,8 @@ export default function PlaceAutocompleteInput({
   id,
   containerClassName = "",
 }: PlaceAutocompleteInputProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
-  const [ready, setReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const elementRef = useRef<any>(null);
   const [hasValue, setHasValue] = useState(
     !!(initialValue && initialValue.length > 0)
   );
@@ -48,99 +42,105 @@ export default function PlaceAutocompleteInput({
   useEffect(() => { onInputChangeRef.current = onInputChange; }, [onInputChange]);
   useEffect(() => { onEnterKeyRef.current = onEnterKey; }, [onEnterKey]);
 
-  // Poll for Google Maps readiness then init Autocomplete
   useEffect(() => {
-    if (!inputRef.current) return;
+    if (!containerRef.current) return;
 
     const init = () => {
-      if (autocompleteRef.current || !inputRef.current) return;
-      if (!window.google?.maps?.places?.Autocomplete) return false;
+      if (elementRef.current) return true;
+      if (!window.google?.maps?.places?.PlaceAutocompleteElement) return false;
 
-      const ac = new window.google.maps.places.Autocomplete(inputRef.current!, {
+      const el = new window.google.maps.places.PlaceAutocompleteElement({
         componentRestrictions: { country: "us" },
         types: ["address"],
-        fields: ["formatted_address", "geometry", "address_components"],
       });
 
-      ac.addListener("place_changed", () => {
-        const place = ac.getPlace();
-        if (!place?.geometry?.location) return;
-        const result: PlaceSelectResult = {
-          formattedAddress: place.formatted_address || "",
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-          addressComponents: place.address_components || [],
-        };
-        onPlaceSelectRef.current(result);
+      el.style.width = "100%";
+      el.style.display = "block";
+      if (id) el.id = id;
+
+      el.addEventListener("gmp-placeselect", async (event: any) => {
+        const place = event.place;
+        try {
+          await place.fetchFields({
+            fields: ["formattedAddress", "location", "addressComponents"],
+          });
+          const lat = place.location?.lat();
+          const lng = place.location?.lng();
+          if (lat != null && lng != null) {
+            setHasValue(true);
+            onInputChangeRef.current?.(place.formattedAddress || "");
+            onPlaceSelectRef.current({
+              formattedAddress: place.formattedAddress || "",
+              lat,
+              lng,
+              addressComponents: place.addressComponents || [],
+            });
+          }
+        } catch (err) {
+          console.error("[PlaceAutocompleteInput] fetchFields failed:", err);
+        }
       });
 
-      autocompleteRef.current = ac;
-      setReady(true);
+      el.addEventListener("input", (event: any) => {
+        const val = event.target?.value || "";
+        setHasValue(val.length > 0);
+        onInputChangeRef.current?.(val);
+      });
+
+      el.addEventListener("keydown", (event: any) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          onEnterKeyRef.current?.();
+        }
+      });
+
+      if (initialValue) {
+        el.value = initialValue;
+        setHasValue(true);
+      }
+
+      containerRef.current!.appendChild(el);
+      elementRef.current = el;
       return true;
     };
 
     if (init()) return;
 
-    // Poll until Google Maps loads
     const interval = setInterval(() => {
       if (init()) clearInterval(interval);
     }, 200);
 
-    return () => clearInterval(interval);
-  }, []);
-
-  // Set initial value
-  useEffect(() => {
-    if (initialValue && inputRef.current && !inputRef.current.value) {
-      inputRef.current.value = initialValue;
-    }
-  }, [initialValue, ready]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      onEnterKeyRef.current?.();
-    }
-  }, []);
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setHasValue(e.target.value.length > 0);
-    onInputChangeRef.current?.(e.target.value);
+    return () => {
+      clearInterval(interval);
+      if (elementRef.current && containerRef.current) {
+        try { containerRef.current.removeChild(elementRef.current); } catch {}
+        elementRef.current = null;
+      }
+    };
   }, []);
 
   const handleClear = useCallback(() => {
-    if (inputRef.current) {
-      inputRef.current.value = "";
-      inputRef.current.focus();
+    if (elementRef.current) {
+      elementRef.current.value = "";
     }
     setHasValue(false);
     onInputChangeRef.current?.("");
   }, []);
 
   return (
-    <div className={`place-autocomplete-container relative ${containerClassName}`}>
-      <input
-        ref={inputRef}
-        type="text"
-        id={id}
-        placeholder={placeholder}
-        className={`place-autocomplete-input w-full ${hasValue ? "pr-8" : ""} ${className}`}
-        onKeyDown={handleKeyDown}
-        onChange={handleChange}
-        autoComplete="off"
-      />
+    <div ref={containerRef} className={`place-autocomplete-container relative ${containerClassName}`}>
       {hasValue && (
         <button
           type="button"
           onClick={handleClear}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted"
           aria-label="Clear address"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" 
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
       )}
@@ -148,11 +148,8 @@ export default function PlaceAutocompleteInput({
   );
 }
 
-/**
- * Helper: get the text value from the autocomplete input.
- */
 export function getPlaceInputValue(containerEl: HTMLElement | null): string {
   if (!containerEl) return "";
-  const input = containerEl.querySelector<HTMLInputElement>(".place-autocomplete-input");
-  return input?.value || "";
+  const el = containerEl.querySelector("gmp-placeautocomplete") as any;
+  return el?.value || "";
 }
