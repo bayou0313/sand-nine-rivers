@@ -28,7 +28,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
         height={1080}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/95 via-sand-dark/85 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-sand-dark/60 via-transparent to-sand-dark/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-sand-dark/60 via-transparent to-sand-dark/30 pl-[7px] pr-[29px] mx-[6px]" />
 
       <div className="relative z-10 container mx-auto px-6 py-12">
         <div className="max-w-2xl space-y-5">
