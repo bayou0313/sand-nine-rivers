@@ -81,7 +81,6 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           >
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
-          </motion.button>
         </div>
       </div>
 
