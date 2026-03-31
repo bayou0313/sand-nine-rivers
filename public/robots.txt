@@ -1,8 +1,18 @@
 User-agent: *
 Allow: /
-Disallow: /order
+
+# Internal dashboard — no SEO value, keep out of index
+Disallow: /dashboard
 Disallow: /admin
-Disallow: /admin/
 Disallow: /leads
+Disallow: /cash-orders
+Disallow: /pit-manager
+Disallow: /business-profile
+Disallow: /global-settings
+Disallow: /revenue-forecast
+Disallow: /zip-intelligence
+Disallow: /pipeline
+Disallow: /city-pages
+Disallow: /overview
 
 Sitemap: https://riversand.net/sitemap.xml

@@ -10,7 +10,22 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "postbuild": "react-snap"
+  },
+  "reactSnap": {
+    "source": "dist",
+    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
+    "crawl": false,
+    "include": ["/"],
+    "skipThirdPartyRequests": false,
+    "waitFor": 2500,
+    "headless": true,
+    "minifyHtml": {
+      "collapseWhitespace": false,
+      "removeComments": false
+    },
+    "inlineCss": false
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -87,6 +102,7 @@
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
+    "react-snap": "^1.23.0",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
