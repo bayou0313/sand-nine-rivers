@@ -848,25 +848,40 @@ const Order = () => {
 
                 <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                   {[
-                    { top: "LOCAL AREA", bot: "Included delivery" },
-                    { top: "EXTENDED", bot: "Surcharge applies" },
-                    { top: "9 YDS", bot: "Per load" },
+                    { icon: "🚚", top: "LOCAL AREA", bot: "Delivery included" },
+                    { icon: "📍", top: "EXTENDED", bot: "Surcharge applies" },
+                    { icon: "📦", top: "9 CU YDS", bot: "Per load" },
                   ].map((item, i) => (
                     <motion.div
                       key={item.top}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
-                      className="p-3 bg-muted/50 border border-border/50 rounded-xl hover:shadow-md transition-shadow"
+                      className="p-3 bg-muted/50 border border-border/50 rounded-xl"
                     >
-                      <p className="font-display text-lg text-primary">{item.top}</p>
-                      <p className="font-body text-xs text-muted-foreground">{item.bot}</p>
+                      <span className="text-lg">{item.icon}</span>
+                      <p className="font-display text-sm text-primary mt-1">{item.top}</p>
+                      <p className="font-body text-[10px] text-muted-foreground">{item.bot}</p>
                     </motion.div>
                   ))}
                 </div>
 
+                {/* Trust strip */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="mt-4 flex items-center justify-center gap-4 text-muted-foreground"
+                >
+                  <span className="flex items-center gap-1 text-[10px] font-body"><Lock className="w-3 h-3" /> Secure</span>
+                  <span className="w-px h-3 bg-border" />
+                  <span className="flex items-center gap-1 text-[10px] font-body"><ShieldCheck className="w-3 h-3" /> No Account Needed</span>
+                  <span className="w-px h-3 bg-border" />
+                  <span className="flex items-center gap-1 text-[10px] font-body"><CheckCircle2 className="w-3 h-3" /> Instant Pricing</span>
+                </motion.div>
+
                 <Link to="/" className="block mt-4">
-                  <Button variant="outline" className="w-full font-display tracking-wider">
+                  <Button variant="ghost" className="w-full font-display tracking-wider text-muted-foreground hover:text-foreground">
                     <ArrowLeft className="w-4 h-4 mr-2" /> BACK TO HOME
                   </Button>
                 </Link>
