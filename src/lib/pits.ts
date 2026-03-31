@@ -180,9 +180,12 @@ export async function findBestPitDriving(
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
 
+  console.log("[findBestPitDriving] results:", results);
+
   if (results.length === 0) return null;
 
   const serviceable = results.filter(r => r.serviceable);
+  console.log("[findBestPitDriving] serviceable:", serviceable);
 
   if (serviceable.length === 0) {
     results.sort((a, b) => a.distance - b.distance);
