@@ -2,12 +2,13 @@
  * Shared PIT (Point of Interest / Distribution) utilities.
  * Pricing logic, effective pricing, and best-PIT selection.
  *
- * Distance calculations are performed server-side via the
- * `calculate-distances` edge function using GOOGLE_MAPS_SERVER_KEY.
- * No client-side Distance Matrix calls.
+ * Distance calculations call the Google Distance Matrix API
+ * directly from the browser using the public Maps API key.
  */
 
-import { supabase } from "@/integrations/supabase/client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { GOOGLE_MAPS_API_KEY } from "@/lib/google-maps";
 
 export interface PitData {
   id: string;
@@ -112,7 +113,7 @@ export function calcFinalPrice(effective: EffectivePricing, distance: number, qt
 }
 
 /**
- * CANONICAL distance function — calls the backend edge function.
+ * CANONICAL distance function — calls Google Distance Matrix API directly.
  * Single origin → multiple destinations. Returns miles[] (null if no route).
  */
 export async function getDrivingDistanceBatch(
@@ -122,25 +123,35 @@ export async function getDrivingDistanceBatch(
 ): Promise<(number | null)[]> {
   if (destinations.length === 0) return [];
 
-  const { data, error } = await supabase.functions.invoke("calculate-distances", {
-    body: {
-      mode: "batch",
-      origin: { lat: originLat, lng: originLon },
-      destinations,
-    },
-  });
+  const originStr = `${originLat},${originLon}`;
+  const destsStr = destinations.map(d => `${d.lat},${d.lng}`).join("|");
 
-  if (error) {
-    console.error("[getDrivingDistanceBatch] Edge function error:", error);
+  const resp = await fetch(
+    `https://maps.googleapis.com/maps/api/distancematrix/json` +
+    `?origins=${encodeURIComponent(originStr)}` +
+    `&destinations=${encodeURIComponent(destsStr)}` +
+    `&units=imperial&mode=driving&avoid=ferries` +
+    `&key=${GOOGLE_MAPS_API_KEY}`
+  );
+  const data = await resp.json();
+
+  if (data.status !== "OK") {
+    console.error("[getDrivingDistanceBatch] API error:", data.status, data.error_message);
     return new Array(destinations.length).fill(null);
   }
 
-  return data?.distances || new Array(destinations.length).fill(null);
+  const elements = data.rows?.[0]?.elements || [];
+  return elements.map((el: any) => {
+    if (el?.status === "OK" && el.distance?.value) {
+      return el.distance.value / 1609.344;
+    }
+    return null;
+  });
 }
 
 /**
- * Find the best PIT for a customer location using server-side driving distance.
- * No browser Google Maps dependency — uses the calculate-distances edge function.
+ * Find the best PIT for a customer location using driving distance.
+ * Calls Google Distance Matrix API directly.
  */
 export async function findBestPitDriving(
   pits: PitData[],
@@ -151,20 +162,25 @@ export async function findBestPitDriving(
   const activePits = pits.filter(p => p.status === "active");
   if (activePits.length === 0) return null;
 
-  const { data, error } = await supabase.functions.invoke("calculate-distances", {
-    body: {
-      mode: "find_best_pit",
-      origins: activePits.map(p => ({ lat: p.lat, lng: p.lon })),
-      destination: { lat: customerLat, lng: customerLng },
-    },
-  });
+  const origins = activePits.map(p => `${p.lat},${p.lon}`).join("|");
+  const destination = `${customerLat},${customerLng}`;
 
-  if (error) {
-    console.error("[findBestPitDriving] Edge function error:", error);
+  const resp = await fetch(
+    `https://maps.googleapis.com/maps/api/distancematrix/json` +
+    `?origins=${encodeURIComponent(origins)}` +
+    `&destinations=${encodeURIComponent(destination)}` +
+    `&units=imperial&mode=driving&avoid=ferries` +
+    `&key=${GOOGLE_MAPS_API_KEY}`
+  );
+  const data = await resp.json();
+
+  const drivingDistances: (number | null)[] = (data.rows || []).map((row: any) => {
+    const el = row.elements?.[0];
+    if (el?.status === "OK" && el.distance?.value) {
+      return el.distance.value / 1609.344;
+    }
     return null;
-  }
-
-  const drivingDistances: (number | null)[] = data?.distances || [];
+  });
 
   console.log("[findBestPitDriving] pits:", activePits.length);
   console.log("[findBestPitDriving] driving distances:", drivingDistances);
