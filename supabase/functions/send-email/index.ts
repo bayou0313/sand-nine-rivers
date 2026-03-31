@@ -133,19 +133,14 @@ function orderCustomerEmail(order: any): string {
 
             <!-- HEADER -->
             <tr>
-              <td style="background-color:${BRAND_COLOR};padding:28px 32px;">
+              <td style="background-color:${BRAND_COLOR};padding:36px 32px;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="text-align:left;width:45%;">
-                      <img src="${RIVERSAND_WHITE_LOGO}" alt="River Sand" width="160" style="display:block;max-width:160px;height:auto;">
+                      <img src="${RIVERSAND_WHITE_LOGO}" alt="River Sand" width="200" style="display:block;max-width:200px;height:auto;">
                     </td>
                     <td style="text-align:right;width:45%;">
-                      <img src="${WAYS_WHITE_LOGO}" alt="WAYS" width="100" style="display:block;max-width:100px;height:auto;margin-left:auto;">
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colspan="2" style="text-align:center;padding-top:12px;">
-                      <span style="color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:1px;">Powered by</span>
+                      <img src="${WAYS_WHITE_LOGO}" alt="WAYS" width="80" style="display:block;max-width:80px;height:auto;margin-left:auto;">
                     </td>
                   </tr>
                 </table>
