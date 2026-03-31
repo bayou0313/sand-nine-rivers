@@ -53,11 +53,7 @@ export async function updateSession(
 export async function getSession(): Promise<any | null> {
   const token = getSessionToken();
   try {
-    const { data } = await (supabase as any)
-      .from("visitor_sessions")
-      .select("*")
-      .eq("session_token", token)
-      .single();
+    const { data } = await supabase.rpc("get_own_session" as any, { p_token: token });
     return data;
   } catch {
     return null;

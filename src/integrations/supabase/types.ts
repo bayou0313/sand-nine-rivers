@@ -542,6 +542,7 @@ export type Database = {
     }
     Functions: {
       create_order: { Args: { p_data: Json }; Returns: Json }
+      get_own_session: { Args: { p_token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
