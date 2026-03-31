@@ -56,21 +56,14 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
         </div>
 
         <div className="flex items-center gap-3">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden sm:block"
-          >
-            <Button size="sm" className="font-display tracking-wider bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg shadow-md shadow-accent/20" asChild>
+          <div className="hidden sm:block">
+            <Button size="sm" className="font-display tracking-wider bg-accent hover:bg-accent/80 text-accent-foreground rounded-lg" asChild>
               <Link to="/order">
                 <ShoppingCart className="w-4 h-4 mr-1" />
                 ORDER NOW
               </Link>
             </Button>
-          </motion.div>
+          </div>
 
           <motion.div
             initial={{ opacity: 0, x: 20 }}
