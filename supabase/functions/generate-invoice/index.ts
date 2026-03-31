@@ -312,7 +312,7 @@ serve(async (req) => {
     const bullets = [
       "Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.",
       "Customer must ensure clear, accessible delivery area before arrival.",
-      "Ways Materials LLC not liable for damage to driveways, landscaping, or property.",
+      "WAYS® Materials LLC not liable for damage to driveways, landscaping, or property.",
       "Customer or representative must be present at delivery.",
       "Same-day orders subject to dispatch confirmation within 30 minutes.",
     ];
@@ -340,7 +340,7 @@ serve(async (req) => {
     doc.setTextColor(180, 180, 180);
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text("Ways Materials LLC  |  Bridge City, LA  |  1-855-GOT-WAYS  |  orders@riversand.net", pw / 2, y + 6, { align: "center" });
+    doc.text("WAYS\u00AE Materials LLC  |  Bridge City, LA  |  1-855-GOT-WAYS  |  orders@riversand.net", pw / 2, y + 6, { align: "center" });
     doc.setFontSize(6);
     doc.setTextColor(130, 130, 130);
     doc.text("This document serves as your official delivery confirmation and receipt.", pw / 2, y + 10, { align: "center" });
