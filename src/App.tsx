@@ -153,8 +153,21 @@ const MaintenancePage = () => (
       fontSize: '12px',
       letterSpacing: '1px',
     }}>
-      River Sand — Real Sand. Real People.
+    River Sand — Real Sand. Real People.
     </p>
+    <a
+      href="/leads"
+      style={{
+        color: 'rgba(255,255,255,0.15)',
+        fontSize: '10px',
+        textDecoration: 'none',
+        marginTop: '24px',
+        display: 'block',
+        letterSpacing: '1px',
+      }}
+    >
+      admin
+    </a>
   </div>
 );
 
