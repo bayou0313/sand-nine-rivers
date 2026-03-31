@@ -238,6 +238,7 @@ export type Database = {
           saturday_surcharge: boolean
           saturday_surcharge_amount: number
           status: string
+          stripe_customer_id: string | null
           stripe_payment_id: string | null
           tax_amount: number
           tax_rate: number
@@ -272,6 +273,7 @@ export type Database = {
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
           status?: string
+          stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           tax_amount?: number
           tax_rate?: number
@@ -306,6 +308,7 @@ export type Database = {
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
           status?: string
+          stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           tax_amount?: number
           tax_rate?: number

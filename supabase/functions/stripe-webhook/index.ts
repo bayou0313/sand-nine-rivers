@@ -72,6 +72,30 @@ serve(async (req) => {
       orderId = session.metadata?.order_id || null;
       stripePaymentId = (session.payment_intent as string) || null;
       paymentStatus = session.payment_status === "paid" ? "paid" : "pending";
+
+      // Save Stripe customer data to the order
+      const stripeCustomerId = (session.customer as string) || null;
+      if (orderId && stripeCustomerId) {
+        await supabase
+          .from("orders")
+          .update({ stripe_customer_id: stripeCustomerId })
+          .eq("id", orderId);
+      }
+
+      // Also try matching by payment intent if order_id not in metadata
+      if (!orderId && stripePaymentId && stripeCustomerId) {
+        const { data: matchedOrder } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("stripe_payment_id", stripePaymentId)
+          .maybeSingle();
+        if (matchedOrder) {
+          await supabase
+            .from("orders")
+            .update({ stripe_customer_id: stripeCustomerId })
+            .eq("id", matchedOrder.id);
+        }
+      }
     } else if (event.type === "charge.refunded") {
       const charge = event.data.object as Stripe.Charge;
       stripePaymentId = (charge.payment_intent as string) || null;
