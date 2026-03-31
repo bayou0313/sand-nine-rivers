@@ -90,7 +90,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             whileTap={{ scale: 0.95 }}
             className="hidden lg:block"
           >
-            <Button size="sm" variant="outline" className={`font-display tracking-wider rounded-lg ${scrolled ? "border-border text-foreground hover:bg-muted" : "border-primary-foreground/60 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20"}`} asChild>
+            <Button size="sm" variant="outline" className={`font-display tracking-wider rounded-lg ${scrolled ? "border-border text-foreground hover:bg-muted" : "border-border text-foreground hover:bg-muted"}`} asChild>
               <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" />
                 1-855-GOT-WAYS
