@@ -2820,6 +2820,53 @@ const Leads = () => {
               body: { password: storedPassword(), action: "save_settings", settings: { seo_last_audit: JSON.stringify(results) } },
             });
             toast({ title: "SEO audit complete", description: `Overall: ${results.grade} (${results.overall}/100)` });
+
+            // Auto-check items we can verify programmatically
+            const autoChecks: Record<string, boolean> = {};
+
+            // Check sitemap returns 200
+            try {
+              const sitemapRes = await fetch("https://riversand.net/sitemap.xml", { method: "HEAD" });
+              autoChecks["sitemap_submitted"] = sitemapRes.ok;
+            } catch { autoChecks["sitemap_submitted"] = false; }
+
+            // Check page load time
+            const t0 = performance.now();
+            try {
+              await fetch("https://riversand.net/", { method: "HEAD" });
+              const loadTime = performance.now() - t0;
+              autoChecks["page_loads_fast"] = loadTime < 3000;
+            } catch { autoChecks["page_loads_fast"] = false; }
+
+            // Auto-mark items based on audit results
+            autoChecks["local_schema_added"] =
+              (results.categories.find((c: any) => c.name === "Structured Data")?.score || 0) > 0;
+
+            autoChecks["mobile_friendly"] =
+              results.categories.find((c: any) => c.name === "Technical SEO")?.score >= 75;
+
+            // Update checklist state with auto-checked items
+            const autoCheckMap: Record<string, string> = {
+              "sitemap_submitted": "tech_sitemap",
+              "page_loads_fast": "tech_speed",
+              "local_schema_added": "local_schema",
+              "mobile_friendly": "tech_mobile",
+            };
+
+            const updatedChecklist = { ...seoChecklist };
+            for (const [autoKey, checklistId] of Object.entries(autoCheckMap)) {
+              if (autoChecks[autoKey] && updatedChecklist[checklistId] !== undefined) {
+                updatedChecklist[checklistId] = {
+                  ...updatedChecklist[checklistId],
+                  done: true,
+                  notes: "Auto-verified by audit scan"
+                };
+              }
+            }
+
+            if (Object.keys(updatedChecklist).length > 0) {
+              saveChecklist(updatedChecklist);
+            }
           } catch (err: any) {
             toast({ title: "Audit failed", description: err.message, variant: "destructive" });
           } finally { setSeoAuditing(false); }
