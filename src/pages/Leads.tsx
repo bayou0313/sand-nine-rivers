@@ -3421,6 +3421,32 @@ const Leads = () => {
               <p className="text-xs text-gray-400 mt-3">Business address is used for internal dispatch only. Display city appears in customer emails and invoices.</p>
             </div>
 
+            {/* Email Settings */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Email Settings</h3>
+              <p className="text-xs text-gray-400 mb-4">Control where order notifications and customer emails are sent from.</p>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Dispatch Notification Email</label>
+                  <Input className="h-9" value={profileSettings.email_dispatch || ""} onChange={e => setProfileSettings({ ...profileSettings, email_dispatch: e.target.value })} placeholder="cmo@halogix.com" />
+                  <p className="text-xs text-gray-400 mt-1">Admin email that receives new order notifications</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">From Email</label>
+                  <Input className="h-9" value={profileSettings.email_from || ""} onChange={e => setProfileSettings({ ...profileSettings, email_from: e.target.value })} placeholder="no_reply@riversand.net" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">From Name</label>
+                  <Input className="h-9" value={profileSettings.email_from_name || ""} onChange={e => setProfileSettings({ ...profileSettings, email_from_name: e.target.value })} placeholder="River Sand" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Reply-To Email</label>
+                  <Input className="h-9" value={profileSettings.email_reply_to || ""} onChange={e => setProfileSettings({ ...profileSettings, email_reply_to: e.target.value })} placeholder="orders@riversand.net" />
+                </div>
+              </div>
+            </div>
+
             {/* Color Palette Picker */}
             <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
               <h3 className="font-medium mb-1 flex items-center gap-2" style={{ color: BRAND_NAVY }}><Palette className="w-4 h-4" /> Color Palette</h3>

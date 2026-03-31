@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,11 +11,14 @@ const corsHeaders = {
 const BRAND_COLOR = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
-const FROM = "River Sand <no_reply@riversand.net>";
-const REPLY_TO = "no_reply@riversand.net";
-const INTERNAL_EMAIL = "cmo@haulogix.com";
-const DISPATCH_EMAIL = "cmo@halogix.com";
 const PHONE = "1-855-GOT-WAYS";
+
+// Defaults — overridden by global_settings at runtime
+const DEFAULT_FROM_NAME = "River Sand";
+const DEFAULT_FROM_EMAIL = "no_reply@riversand.net";
+const DEFAULT_REPLY_TO = "orders@riversand.net";
+const DEFAULT_INTERNAL_EMAIL = "cmo@haulogix.com";
+const DEFAULT_DISPATCH_EMAIL = "cmo@halogix.com";
 
 const RIVERSAND_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
 const WAYS_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
@@ -567,11 +571,11 @@ interface SendMailOptions {
   attachments?: Array<{ filename: string; content: string }>;
 }
 
-async function sendMail(resend: InstanceType<typeof Resend>, to: string, subject: string, html: string, attachments?: Array<{ filename: string; content: string }>) {
+async function sendMail(resend: InstanceType<typeof Resend>, to: string, subject: string, html: string, attachments?: Array<{ filename: string; content: string }>, fromOverride?: string, replyToOverride?: string) {
   const payload: any = {
-    from: FROM,
+    from: fromOverride || `${DEFAULT_FROM_NAME} <${DEFAULT_FROM_EMAIL}>`,
     to,
-    replyTo: REPLY_TO,
+    replyTo: replyToOverride || DEFAULT_REPLY_TO,
     subject,
     html,
   };
@@ -628,6 +632,27 @@ serve(async (req) => {
   }
 
   try {
+    // Fetch email settings from global_settings
+    const sbUrl = Deno.env.get("SUPABASE_URL") || "";
+    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const sb = createClient(sbUrl, sbKey);
+    const { data: settingsData } = await sb
+      .from("global_settings")
+      .select("key, value")
+      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to"]);
+
+    const emailCfg: Record<string, string> = {};
+    for (const row of settingsData || []) {
+      emailCfg[row.key] = row.value;
+    }
+    const DISPATCH_EMAIL = emailCfg.email_dispatch || DEFAULT_DISPATCH_EMAIL;
+    const FROM_EMAIL = emailCfg.email_from || DEFAULT_FROM_EMAIL;
+    const FROM_NAME = emailCfg.email_from_name || DEFAULT_FROM_NAME;
+    const REPLY_TO = emailCfg.email_reply_to || DEFAULT_REPLY_TO;
+    const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
+
+    console.log("[send-email] Email config — dispatch:", DISPATCH_EMAIL, "from:", FROM);
+
     const resendKey = Deno.env.get("RESEND_API_KEY");
     console.log("[send-email] RESEND_API_KEY set:", !!resendKey);
     if (!resendKey) {
@@ -638,7 +663,7 @@ serve(async (req) => {
     const { type, data } = await req.json();
     console.log("[send-email] Email type:", type);
 
-    const ownerEmail = Deno.env.get("GMAIL_USER") || INTERNAL_EMAIL;
+    const ownerEmail = Deno.env.get("GMAIL_USER") || DEFAULT_INTERNAL_EMAIL;
 
     if (type === "order" || type === "order_confirmation") {
       const customerEmail = data.customer_email;
@@ -661,17 +686,18 @@ serve(async (req) => {
       }
 
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data)),
+        sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
         // Dispatch notification
         sendMail(
           resend,
           DISPATCH_EMAIL,
           `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
-          orderDispatchEmail(data)
+          orderDispatchEmail(data),
+          undefined, FROM, REPLY_TO
         ),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data), attachments));
+        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data), attachments, FROM, REPLY_TO));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);
@@ -685,17 +711,18 @@ serve(async (req) => {
         resend,
         DISPATCH_EMAIL,
         `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
-        orderDispatchEmail(data)
+        orderDispatchEmail(data),
+        undefined, FROM, REPLY_TO
       );
       console.log("[email] Dispatch notification sent to:", DISPATCH_EMAIL);
 
     } else if (type === "contact") {
       const customerEmail = data.email;
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data)),
+        sendMail(resend, ownerEmail, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data), undefined, FROM, REPLY_TO),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data)));
+        promises.push(sendMail(resend, customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data), undefined, FROM, REPLY_TO));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);
@@ -739,7 +766,7 @@ serve(async (req) => {
   </div>
 </div></body></html>`;
 
-      await sendMail(resend, ownerEmail, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml);
+      await sendMail(resend, ownerEmail, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Callback email sent to:", ownerEmail);
 
     } else if (type === "out_of_area_lead") {
@@ -762,7 +789,8 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
         resend,
         ownerEmail,
         `New Out-of-Area Lead — ${data.address || "Unknown"}`,
-        `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap">${leadHtml}</pre>`
+        `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap">${leadHtml}</pre>`,
+        undefined, FROM, REPLY_TO
       );
       console.log("[email] Out-of-area lead notification sent to:", ownerEmail);
 
@@ -807,7 +835,8 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
         resend,
         data.customer_email,
         `River Sand is now available near ${data.zip_code || "you"} — Your price: $${Number(data.new_price || 195).toFixed(2)}`,
-        proposalHtml
+        proposalHtml,
+        undefined, FROM, REPLY_TO
       );
       console.log("[email] Pit proposal sent to:", data.customer_email);
 
@@ -847,7 +876,7 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      await sendMail(resend, data.customer_email, `Payment Confirmed — Order #${data.order_number || "N/A"}`, cashHtml);
+      await sendMail(resend, data.customer_email, `Payment Confirmed — Order #${data.order_number || "N/A"}`, cashHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Cash payment confirmation sent to:", data.customer_email);
 
     } else {
