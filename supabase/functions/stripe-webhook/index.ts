@@ -2,10 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2025-08-27.basil",
-});
-
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") || "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
@@ -17,11 +13,38 @@ serve(async (req) => {
   }
 
   const signature = req.headers.get("stripe-signature");
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
-  if (!signature || !webhookSecret) {
-    return new Response("Missing signature or webhook secret", { status: 400 });
+  if (!signature) {
+    return new Response("Missing signature", { status: 400 });
   }
+
+  // Determine stripe mode from global_settings
+  const { data: modeData } = await supabase
+    .from("global_settings")
+    .select("value")
+    .eq("key", "stripe_mode")
+    .maybeSingle();
+
+  const stripeMode = modeData?.value || "live";
+
+  const stripeKey = stripeMode === "test"
+    ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
+    : Deno.env.get("STRIPE_SECRET_KEY");
+
+  const webhookSecret = stripeMode === "test"
+    ? Deno.env.get("STRIPE_TEST_WEBHOOK_SECRET")
+    : Deno.env.get("STRIPE_WEBHOOK_SECRET");
+
+  console.log(`[stripe-webhook] Using Stripe ${stripeMode} mode`);
+
+  if (!webhookSecret) {
+    console.error(`[stripe-webhook] No webhook secret found for ${stripeMode} mode`);
+    return new Response("Missing webhook secret", { status: 400 });
+  }
+
+  const stripe = new Stripe(stripeKey || "", {
+    apiVersion: "2025-08-27.basil",
+  });
 
   const body = await req.text();
   let event: Stripe.Event;
@@ -73,7 +96,6 @@ serve(async (req) => {
       stripePaymentId = (session.payment_intent as string) || null;
       paymentStatus = session.payment_status === "paid" ? "paid" : "pending";
 
-      // Save Stripe customer data to the order
       const stripeCustomerId = (session.customer as string) || null;
       if (orderId && stripeCustomerId) {
         await supabase
@@ -82,7 +104,6 @@ serve(async (req) => {
           .eq("id", orderId);
       }
 
-      // Also try matching by payment intent if order_id not in metadata
       if (!orderId && stripePaymentId && stripeCustomerId) {
         const { data: matchedOrder } = await supabase
           .from("orders")
@@ -116,7 +137,6 @@ serve(async (req) => {
       }
     }
 
-    // Find order by ID from metadata (checkout.session.completed) or by stripe_payment_id
     if (!orderId && stripePaymentId) {
       const { data: order } = await supabase
         .from("orders")
@@ -130,7 +150,6 @@ serve(async (req) => {
       const updateData: Record<string, string> = {
         payment_status: paymentStatus,
       };
-      // Store the stripe payment ID on the order for future lookups
       if (stripePaymentId) {
         updateData.stripe_payment_id = stripePaymentId;
       }
@@ -144,7 +163,6 @@ serve(async (req) => {
           updateData.status = "confirmed";
         }
 
-        // Send order confirmation emails after successful payment
         if (currentOrder) {
           try {
             console.log("[stripe-webhook] Sending order email for order:", orderId, "order_number:", currentOrder.order_number);
@@ -184,7 +202,7 @@ serve(async (req) => {
         return new Response("Database update failed", { status: 500 });
       }
     }
-    // Log event
+
     await supabase.from("payment_events").insert({
       order_id: orderId,
       stripe_payment_id: stripePaymentId,
