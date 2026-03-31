@@ -223,10 +223,10 @@ export default function OrderConfirmation({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.3 }}
-              className="w-20 h-20 rounded-full flex items-center justify-center text-4xl"
+              className="w-20 h-20 rounded-full flex items-center justify-center"
               style={{ backgroundColor: "#FEF3C7" }}
             >
-              💵
+              <span className="text-3xl font-bold" style={{ color: "#D97706" }}>$</span>
             </motion.div>
           )}
 
