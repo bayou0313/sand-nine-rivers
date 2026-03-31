@@ -1419,8 +1419,7 @@ const Order = () => {
                       <ReceiptRow label="Product" value="River Sand — 9 Cubic Yard Load" />
                       <ReceiptRow label="Quantity" value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
                       <Separator className="my-2" />
-                      <ReceiptRow label="Delivery Address" value="" />
-                      <p className="font-body text-sm text-foreground -mt-1 mb-2 text-right">{address}</p>
+                      <ReceiptRow label="Delivery Address" value={address} />
                       {selectedDeliveryDate && <ReceiptRow label="Delivery Date" value={selectedDeliveryDate.fullLabel} />}
                       <ReceiptRow label="Delivery Window" value="8:00 AM – 5:00 PM" />
                     </div>
