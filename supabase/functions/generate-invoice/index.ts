@@ -192,13 +192,7 @@ serve(async (req) => {
       y += 5.5;
     });
 
-    // QR code on right
-    if (qrB64) {
-      try {
-        const qrY = y - addrLines.length * 5.5;
-        doc.addImage(`data:image/png;base64,${qrB64}`, "PNG", pw - mx - 25, qrY - 2, 25, 25);
-      } catch {}
-    }
+    // QR code removed to reduce PDF size
 
     y += 4;
     doc.setDrawColor(...BORDER);
