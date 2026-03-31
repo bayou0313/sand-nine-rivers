@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyALI_GnekVryYGyUeXV8BvaGV74MIvk3SI";
+const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
 
 /**
  * Shared Google Maps loader for UI features (autocomplete, geocoding).
