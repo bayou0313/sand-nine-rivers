@@ -895,7 +895,7 @@ serve(async (req) => {
     <p style="background:#fff3f3;padding:12px;border-radius:6px;border-left:4px solid ${BRAND_RED};color:${BRAND_RED};font-weight:600">Please call this customer back as soon as possible.</p>
   </div>
   <div class="footer">
-    <p>WAYS River Sand &bull; Greater New Orleans, LA</p>
+    <p>© 2026 WAYS® Materials LLC</p>
   </div>
 </div></body></html>`;
 
