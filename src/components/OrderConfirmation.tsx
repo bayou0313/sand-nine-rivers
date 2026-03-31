@@ -46,7 +46,7 @@ const DELIVERY_TERMS = [
   },
   {
     title: "Liability",
-    body: "Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property. By placing an order you accept full responsibility for the delivery site.",
+    body: "WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property. By placing an order you accept full responsibility for the delivery site.",
   },
   {
     title: "Customer Presence",
