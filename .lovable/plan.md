@@ -1,30 +1,25 @@
 
 
-## Summary
+## Plan: Tighten city page AI prompt to v3.0
 
-Most of the 6 requested changes are **already applied** from previous work. Only **2 files** still need the hardcoded fallback Google Maps key removed.
+Two changes in `supabase/functions/generate-city-page/index.ts`:
 
-### Already Done (no action needed)
-- **FILE 2 (pits.ts)**: No Distance Matrix URL exists in this file — distance calls are server-side only
-- **FILE 3 (leads-auth/index.ts)**: Already has `mode=driving&avoid=ferries`
-- **FILE 4 (Leads.tsx)**: View button already uses `https://riversand.net/...`; sort state and sortable headers already implemented
-- **FILE 5 (generate-city-page/index.ts)**: hero_intro prompt already updated to "ONE sentence only. Maximum 120 characters..."
-- **FILE 6 (CityPage.tsx)**: subtitleOverride already has the 130-char truncation and short fallback
+### 1. Replace CONTENT REQUIREMENTS fields (lines 121-130)
 
-### Remaining Changes
+Replace the 6 field instructions (hero_intro, why_choose_intro, delivery_details, local_uses, local_expertise, faq_items) with the user's exact tightened versions that add:
+- Character limits to every field
+- Required keyword inclusion ("river sand", city name, parish name)
+- Stricter sentence count constraints (most fields now ONE sentence)
+- FAQ character caps (80 chars questions, 160 chars answers)
 
-**1. `src/hooks/useGoogleMaps.ts` (line 3)**
-Replace the hardcoded fallback key with an empty string:
-```
-const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
-```
-This ensures autocomplete fails visibly (with the existing console.error) rather than silently using a blocked key.
+Lines 121-129 will be replaced with the new field definitions verbatim as provided.
 
-**2. `src/lib/google-maps.ts` (line 4)**
-Same fix — remove the hardcoded fallback:
-```
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
-```
+### 2. Bump prompt_version (line 231)
 
-Both files currently fall back to `AIzaSyALI_GnekVryYGyUeXV8BvaGV74MIvk3SI` which is a blocked/old key. Removing it forces the build to use the real `VITE_GOOGLE_MAPS_KEY` env var or fail explicitly.
+Change `prompt_version: "2.0"` → `prompt_version: "3.0"` so all existing pages are flagged as outdated and queued for regeneration on the next Regen Outdated run.
+
+### Files changed
+- `supabase/functions/generate-city-page/index.ts` (2 edits, same file)
+
+No other files affected. The edge function will be auto-deployed.
 
