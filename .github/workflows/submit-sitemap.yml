@@ -1,0 +1,21 @@
+name: Submit Sitemap
+
+on:
+  schedule:
+    # Run every 36 hours ≈ twice daily at 6 AM and 6 PM UTC
+    - cron: '0 6,18 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit sitemap to search engines
+        run: |
+          echo "Submitting sitemap..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjbGJleGh5dG1wZnh6Y3p0enZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0ODMxMzMsImV4cCI6MjA5MDA1OTEzM30.w8uMZgeAmAOCe2kQ7u-lM4KVWjkzRgVp5qmKBTJrGQg" \
+            https://lclbexhytmpfxzcztzva.supabase.co/functions/v1/submit-sitemap)
+          echo "$RESPONSE"
