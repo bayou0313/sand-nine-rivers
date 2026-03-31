@@ -126,16 +126,21 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
       let custLng = customerCoords?.lng;
 
       if (custLat == null || custLng == null) {
+        console.log("[calculateDistance] no coords, trying geocoder");
         if (!window.google?.maps?.Geocoder) {
+          console.log("[calculateDistance] geocoder not available");
           setError("Maps not loaded yet. Please wait a moment and try again.");
           setLoading(false); return;
         }
         const geocoder = new window.google.maps.Geocoder();
         const geocodeResult = await geocoder.geocode({ address: currentAddress });
+        console.log("[calculateDistance] geocode result:", geocodeResult);
         if (geocodeResult.results?.[0]?.geometry?.location) {
           custLat = geocodeResult.results[0].geometry.location.lat();
           custLng = geocodeResult.results[0].geometry.location.lng();
+          console.log("[calculateDistance] geocoded coords:", custLat, custLng);
         } else {
+          console.log("[calculateDistance] geocode failed, no results");
           setError("Could not locate that address. Please try again.");
           setLoading(false); return;
         }
