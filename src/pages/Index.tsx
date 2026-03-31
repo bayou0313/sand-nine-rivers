@@ -141,6 +141,7 @@ const Index = () => {
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
       <Hero h1Override={seo.seo_h1 || DEFAULT_H1} prefillAddress={returnAddress} />
       <SocialProofStrip />
+      <About />
       <Features />
       <Testimonials />
       <CTA />
