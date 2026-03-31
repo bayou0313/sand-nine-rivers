@@ -523,6 +523,10 @@ const Order = () => {
     same_day_requested: selectedDeliveryDate!.isSameDay,
     tax_rate: taxInfo.rate,
     tax_amount: taxAmount,
+    delivery_terms_accepted: deliveryTermsAccepted,
+    delivery_terms_timestamp: new Date().toISOString(),
+    card_authorization_accepted: cardAuthAccepted,
+    card_authorization_timestamp: cardAuthAccepted ? new Date().toISOString() : null,
     ...(leadReference ? { lead_reference: leadReference } : {}),
   });
 
