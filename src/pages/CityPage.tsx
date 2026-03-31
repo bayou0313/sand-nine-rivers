@@ -70,6 +70,17 @@ const CityPage = () => {
     fetchPage();
   }, [citySlug, navigate]);
 
+  // Apply per-city palette and clean up on unmount
+  useEffect(() => {
+    if (!citySlug) return;
+    const palette = getPaletteForSlug(citySlug);
+    const vars = deriveCssVars(palette);
+    const root = document.documentElement;
+    const keys = Object.keys(vars);
+    keys.forEach(prop => root.style.setProperty(prop, vars[prop]));
+    return () => { keys.forEach(prop => root.style.removeProperty(prop)); };
+  }, [citySlug]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
