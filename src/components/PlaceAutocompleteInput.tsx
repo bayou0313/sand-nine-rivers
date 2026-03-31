@@ -49,7 +49,10 @@ export default function PlaceAutocompleteInput({
       if (elementRef.current) return true;
       if (!window.google?.maps?.places?.PlaceAutocompleteElement) return false;
 
-      const el = new window.google.maps.places.PlaceAutocompleteElement();
+      try {
+        const el = new window.google.maps.places.PlaceAutocompleteElement({
+          componentRestrictions: { country: "us" },
+        });
 
       el.style.width = "100%";
       el.style.display = "block";
