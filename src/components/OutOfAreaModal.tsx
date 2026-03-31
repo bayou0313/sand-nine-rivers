@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { MapPin, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
@@ -90,9 +90,11 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <MapPin className="w-5 h-5 text-primary" />
-            We're not in your area yet — but we're expanding
+          <DialogTitle
+            className="text-lg font-semibold"
+            style={{ color: "#0D2137", letterSpacing: "0.02em", textTransform: "none" }}
+          >
+            We're Not in Your Area Yet — But We're Expanding
           </DialogTitle>
           <DialogDescription>
             Leave your info and you'll be first to know when we reach your area. No spam, just one email when we go live near you.
@@ -114,7 +116,12 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
           </div>
           <p className="text-xs text-muted-foreground">* At least one of email or phone is required.</p>
 
-          <Button onClick={handleSubmit} disabled={!canSubmit || submitting} className="w-full">
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit || submitting}
+            className="w-full font-semibold text-white rounded-lg"
+            style={{ backgroundColor: "#C07A00", borderRadius: 8 }}
+          >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Notify Me
           </Button>
