@@ -20,6 +20,13 @@ import ScrollToTop from "@/components/ScrollToTop";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { MapPin, Loader2 } from "lucide-react";
 
+const slugToTitle = (slug: string): string => {
+  return slug
+    .split("-")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const CityPage = () => {
   const { citySlug } = useParams<{ citySlug: string }>();
   const navigate = useNavigate();
