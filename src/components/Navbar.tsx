@@ -6,7 +6,17 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = ["Pricing", "How It Works", "Why Us", "About", "FAQ", "Learn More", "Contact"];
 
-const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?: string }) => {
+const sectionIdMap: Record<string, string> = {
+  "Pricing": "pricing",
+  "How It Works": "how-it-works",
+  "Why Us": "why-us",
+  "About": "about",
+  "FAQ": "faq",
+  "Learn More": "learn-more",
+  "Contact": "contact",
+};
+
+const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boolean; logoHref?: string; activeSections?: string[] }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(solid);
 
