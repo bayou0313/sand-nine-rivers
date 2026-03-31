@@ -44,14 +44,17 @@ const App = () => (
               backgroundColor: '#EA580C',
               color: '#FFFFFF',
               textAlign: 'center' as const,
-              padding: '10px 16px',
-              fontSize: '14px',
+              padding: '8px 16px',
+              fontSize: '13px',
               fontWeight: 'bold',
               letterSpacing: '0.5px',
               zIndex: 9999,
-              position: 'relative' as const,
+              position: 'fixed' as const,
+              top: 0,
+              left: 0,
+              right: 0,
             }}>
-              🔧 TEST MODE ACTIVE — For orders please call
+              🔧 TEST MODE — For orders call
               <a href="tel:18554689297"
                 style={{ color: '#FFF', marginLeft: '6px', textDecoration: 'underline' }}>
                 1-855-468-9297
