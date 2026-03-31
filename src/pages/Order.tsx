@@ -1269,21 +1269,26 @@ const Order = () => {
                 </label>
 
                 {/* Action buttons */}
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setStep("details"); }} className="h-12 font-display tracking-wider rounded-xl text-sm">
-                    <ArrowLeft className="w-4 h-4 mr-1" /> BACK
-                  </Button>
-                  <Button
-                    onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                    disabled={submitting || !disclaimerAccepted}
-                    className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
-                  >
-                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                      paymentMethod === "stripe-link"
-                        ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
-                        : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER</>
-                    )}
-                  </Button>
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
+                      <ArrowLeft className="w-4 h-4 mr-1" /> BACK
+                    </Button>
+                    <Button
+                      onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
+                      disabled={submitting || !disclaimerAccepted}
+                      className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
+                    >
+                      {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                        paymentMethod === "stripe-link"
+                          ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
+                          : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> 256-bit SSL encryption • Your data is protected
+                  </p>
                 </div>
               </motion.div>
             )}
