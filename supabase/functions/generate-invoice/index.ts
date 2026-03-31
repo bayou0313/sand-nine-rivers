@@ -70,322 +70,280 @@ serve(async (req) => {
       });
     }
 
-    // Text-only rendering — no image fetching to keep PDF small
-
-    // Build PDF
+    // Build compact single-page PDF (letter: 215.9 × 279.4 mm)
     const doc = new jsPDF({ unit: "mm", format: "letter" });
     const pw = 215.9;
     const ph = 279.4;
-    const mx = 18;
+    const mx = 14;
     const cw = pw - 2 * mx;
     let y = 0;
 
-    // ─── HEADER BAR ───
+    const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
+    const isPaid = order.payment_status === "paid";
+    const isCard = order.payment_method === "stripe-link" || order.payment_method === "card";
+    const basePrice = 195;
+    const baseMiles = 15;
+    const perMileExtra = 5.5;
+
+    // ─── HEADER (24mm) ───
     doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pw, 32, "F");
-
-    // Header text — RIVER SAND logo
+    doc.rect(0, 0, pw, 22, "F");
     doc.setTextColor(...WHITE);
-    doc.setFontSize(18);
+    doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text("RIVER SAND", mx, 18);
-    doc.setFontSize(9);
-    doc.text("by WAYS", mx, 24);
-
-    // WAYS on right
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("WAYS", pw - mx, 18, { align: "right" });
-
-    // Powered by line
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255, 128);
-    doc.text("Powered by WAYS — We Are Your Supply", pw / 2, 29, { align: "center" });
+    doc.text("RIVER SAND", mx, 10);
+    doc.setFontSize(8);
+    doc.text("by WAYS", mx, 15);
+    doc.setFontSize(12);
+    doc.text("WAYS", pw - mx, 10, { align: "right" });
+    doc.setFontSize(6);
+    doc.setTextColor(200, 200, 200);
+    doc.text("Powered by WAYS — We Are Your Supply", pw / 2, 20, { align: "center" });
 
     // Gold divider
     doc.setFillColor(...GOLD);
-    doc.rect(0, 32, pw, 2, "F");
-    y = 40;
+    doc.rect(0, 22, pw, 1.5, "F");
+    y = 27;
 
-    // ─── DOCUMENT TITLE ───
-    doc.setFontSize(22);
+    // ─── TITLE ───
+    doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...NAVY);
     doc.text("DELIVERY CONFIRMATION", mx, y);
-    y += 7;
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...DARK);
-    doc.text("Ways Materials LLC operating as River Sand", mx, y);
-    y += 5;
-    doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
-    doc.text("riversand.net  |  1-855-GOT-WAYS", mx, y);
-    y += 10;
+    doc.text("riversand.net  |  1-855-GOT-WAYS", pw - mx, y, { align: "right" });
+    y += 6;
 
     // ─── TWO COLUMN: ORDER INFO + CUSTOMER ───
-    const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
     const colLeft = mx;
-    const colRight = pw / 2 + 8;
+    const colRight = pw / 2 + 5;
 
-    // Left: ORDER INFORMATION
-    doc.setFontSize(8);
+    // Left: ORDER INFO
+    doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("ORDER INFORMATION", colLeft, y);
-    y += 5;
-    doc.setTextColor(...DARK);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    const orderInfoRows = [
-      ["Order Number", invoiceNum],
-      ["Order Date", fmtShortDate(order.created_at)],
-      ["Delivery Date", fmtDate(order.delivery_date)],
-      ["Delivery Window", "8:00 AM – 5:00 PM"],
-    ];
+    y += 4;
     const yOrderStart = y;
-    orderInfoRows.forEach(([label, val], i) => {
+    doc.setFontSize(8);
+    const orderRows = [
+      ["Order #:", invoiceNum],
+      ["Date:", fmtShortDate(order.created_at)],
+      ["Delivery:", fmtDate(order.delivery_date)],
+      ["Window:", "8:00 AM – 5:00 PM"],
+    ];
+    orderRows.forEach(([label, val]) => {
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...NAVY);
-      doc.text(label + ":", colLeft, y);
+      doc.text(label, colLeft, y);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...DARK);
-      doc.text(val, colLeft + 35, y);
-      y += 5;
+      doc.text(val, colLeft + 22, y);
+      y += 4;
     });
 
     // Right: CUSTOMER
-    let yRight = yOrderStart - 5;
-    doc.setFontSize(8);
+    let yR = yOrderStart - 4;
+    doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
-    doc.text("CUSTOMER", colRight, yRight);
-    yRight += 5;
-    doc.setTextColor(...DARK);
-    doc.setFontSize(9);
+    doc.text("CUSTOMER", colRight, yR);
+    yR += 4;
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text(order.customer_name, colRight, yRight);
-    yRight += 5;
+    doc.setTextColor(...DARK);
+    doc.text(order.customer_name, colRight, yR); yR += 4;
     doc.setFont("helvetica", "normal");
-    if (order.customer_phone) { doc.text(order.customer_phone, colRight, yRight); yRight += 5; }
-    if (order.customer_email) { doc.text(order.customer_email, colRight, yRight); yRight += 5; }
+    if (order.customer_phone) { doc.text(order.customer_phone, colRight, yR); yR += 4; }
+    if (order.customer_email) { doc.text(order.customer_email, colRight, yR); yR += 4; }
 
-    y = Math.max(y, yRight) + 4;
+    y = Math.max(y, yR) + 2;
 
     // Separator
     doc.setDrawColor(...BORDER);
     doc.line(mx, y, pw - mx, y);
-    y += 6;
+    y += 4;
 
-    // ─── DELIVERY ADDRESS ───
-    doc.setFontSize(8);
+    // ─── DELIVERY ADDRESS (single line) ───
+    doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("DELIVERY ADDRESS", mx, y);
-    y += 6;
-    doc.setFontSize(12);
+    y += 4;
+    doc.setFontSize(10);
     doc.setTextColor(...NAVY);
     doc.setFont("helvetica", "bold");
-    const addrLines = doc.splitTextToSize(order.delivery_address, cw - 35);
-    addrLines.forEach((line: string) => {
-      doc.text(line, mx, y);
-      y += 5.5;
-    });
+    const addrLines = doc.splitTextToSize(order.delivery_address, cw);
+    addrLines.forEach((line: string) => { doc.text(line, mx, y); y += 4.5; });
+    y += 2;
 
-    // QR code removed to reduce PDF size
-
-    y += 4;
+    // Separator
     doc.setDrawColor(...BORDER);
     doc.line(mx, y, pw - mx, y);
-    y += 6;
+    y += 4;
 
-    // ─── ORDER DETAILS ───
-    doc.setFontSize(8);
+    // ─── ORDER + PRODUCT (inline) ───
+    doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("ORDER DETAILS", mx, y);
-    y += 5;
-    doc.setTextColor(...DARK);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text("Product: River Sand — 9 Cubic Yard Load", mx, y); y += 5;
-    doc.text(`Quantity: ${order.quantity} load${order.quantity > 1 ? "s" : ""}`, mx, y); y += 5;
-    if (order.notes) {
-      const noteLines = doc.splitTextToSize(`Notes: ${order.notes}`, cw);
-      noteLines.forEach((line: string) => { doc.text(line, mx, y); y += 4.5; });
-    }
     y += 4;
+    doc.setFontSize(8);
+    doc.setTextColor(...DARK);
+    doc.setFont("helvetica", "normal");
+    doc.text(`River Sand — 9 cu/yd  ×  ${order.quantity} load${order.quantity > 1 ? "s" : ""}`, mx, y);
+    y += 4;
+    if (order.notes) {
+      doc.setFontSize(7);
+      const noteLines = doc.splitTextToSize(`Notes: ${order.notes}`, cw);
+      noteLines.slice(0, 2).forEach((line: string) => { doc.text(line, mx, y); y += 3.5; });
+    }
+    y += 2;
 
-    // ─── PRICING TABLE ───
-    doc.setFillColor(...NAVY);
+    // ─── PRICING TABLE (compact 7mm rows) ───
     const tableX = mx;
     const labelW = cw * 0.7;
-    const amtW = cw * 0.3;
-    doc.rect(tableX, y, cw, 8, "F");
-    doc.setTextColor(...WHITE);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text("DESCRIPTION", tableX + 3, y + 5.5);
-    doc.text("AMOUNT", tableX + labelW + 3, y + 5.5);
-    y += 8;
+    const rowH = 6;
 
-    const basePrice = 195;
-    const baseMiles = 15;
-    const perMileExtra = 5.5;
-    const isPaid = order.payment_status === "paid";
-    const isCard = order.payment_method === "stripe-link" || order.payment_method === "card";
+    // Header
+    doc.setFillColor(...NAVY);
+    doc.rect(tableX, y, cw, rowH, "F");
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.text("DESCRIPTION", tableX + 2, y + 4);
+    doc.text("AMOUNT", tableX + labelW + 2, y + 4);
+    y += rowH;
 
     interface PriceLine { desc: string; amt: string }
-    const lines: PriceLine[] = [];
-
-    lines.push({ desc: `River Sand — 9 cu/yd load (×${order.quantity})`, amt: fmt(basePrice * order.quantity) });
-
+    const priceLines: PriceLine[] = [];
+    priceLines.push({ desc: `River Sand — 9 cu/yd (×${order.quantity})`, amt: fmt(basePrice * order.quantity) });
     if (order.saturday_surcharge && order.saturday_surcharge_amount > 0) {
-      lines.push({ desc: "Saturday delivery surcharge", amt: fmt(order.saturday_surcharge_amount) });
+      priceLines.push({ desc: "Saturday surcharge", amt: fmt(order.saturday_surcharge_amount) });
     }
-
     if (order.tax_amount > 0) {
-      lines.push({ desc: `Tax — ${order.tax_parish || ''} (${(order.tax_rate * 100).toFixed(2)}%)`, amt: fmt(order.tax_amount) });
+      priceLines.push({ desc: `Tax (${(order.tax_rate * 100).toFixed(2)}%)`, amt: fmt(order.tax_amount) });
     }
-
     if (isCard) {
-      const subtotalBeforeFee = basePrice * order.quantity + (order.saturday_surcharge_amount || 0) + (order.tax_amount || 0);
-      const distanceMiles = Number(order.distance_miles || 0);
-      const distFee = distanceMiles > baseMiles ? (distanceMiles - baseMiles) * perMileExtra * order.quantity : 0;
-      const processingFee = order.price - subtotalBeforeFee - distFee;
-      if (processingFee > 0.01) {
-        lines.push({ desc: "Processing Fee (3.5%)", amt: fmt(processingFee) });
-      }
+      const sub = basePrice * order.quantity + (order.saturday_surcharge_amount || 0) + (order.tax_amount || 0);
+      const dist = Number(order.distance_miles || 0);
+      const distFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * order.quantity : 0;
+      const fee = order.price - sub - distFee;
+      if (fee > 0.01) priceLines.push({ desc: "Processing Fee (3.5%)", amt: fmt(fee) });
     }
 
-    // Draw rows
-    doc.setTextColor(...DARK);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    lines.forEach((line, i) => {
-      const rowY = y + i * 8;
+    // Rows
+    doc.setFontSize(8);
+    priceLines.forEach((line, i) => {
       doc.setFillColor(i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248);
-      doc.rect(tableX, rowY, cw, 8, "F");
+      doc.rect(tableX, y, cw, rowH, "F");
       doc.setDrawColor(...BORDER);
-      doc.line(tableX, rowY + 8, tableX + cw, rowY + 8);
+      doc.line(tableX, y + rowH, tableX + cw, y + rowH);
       doc.setTextColor(...DARK);
-      doc.text(line.desc, tableX + 3, rowY + 5.5);
-      doc.setFont("helvetica", "bold");
-      doc.text(line.amt, tableX + labelW + 3, rowY + 5.5);
       doc.setFont("helvetica", "normal");
+      doc.text(line.desc, tableX + 2, y + 4);
+      doc.setFont("helvetica", "bold");
+      doc.text(line.amt, tableX + labelW + 2, y + 4);
+      y += rowH;
     });
-    y += lines.length * 8;
 
-    // Separator line
+    // Gold separator
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.5);
     doc.line(tableX, y, tableX + cw, y);
     doc.setLineWidth(0.2);
-    y += 1;
 
-    // TOTAL row
+    // TOTAL
     doc.setFillColor(...GOLD);
-    doc.rect(tableX, y, cw, 10, "F");
+    doc.rect(tableX, y, cw, 8, "F");
     doc.setTextColor(...NAVY);
-    doc.setFontSize(12);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text(isPaid ? "TOTAL CHARGED" : "TOTAL DUE AT DELIVERY", tableX + 3, y + 7);
-    doc.text(fmt(order.price), tableX + labelW + 3, y + 7);
-    y += 14;
+    doc.text(isPaid ? "TOTAL CHARGED" : "TOTAL DUE AT DELIVERY", tableX + 2, y + 5.5);
+    doc.text(fmt(order.price), tableX + labelW + 2, y + 5.5);
+    y += 10;
 
-    // ─── PAYMENT STATUS BOX ───
+    // ─── PAYMENT STATUS (compact) ───
     if (isPaid) {
-      doc.setFillColor(240, 253, 244); // light green
-      doc.rect(mx, y, cw, 20, "F");
+      doc.setFillColor(240, 253, 244);
+      doc.rect(mx, y, cw, 14, "F");
       doc.setDrawColor(187, 247, 208);
-      doc.rect(mx, y, cw, 20, "S");
-      doc.setFontSize(14);
+      doc.rect(mx, y, cw, 14, "S");
+      doc.setFontSize(11);
       doc.setTextColor(...GREEN);
       doc.setFont("helvetica", "bold");
-      doc.text("PAID IN FULL ✓", mx + cw / 2, y + 7, { align: "center" });
-      doc.setFontSize(9);
+      doc.text("PAID IN FULL", mx + cw / 2, y + 5, { align: "center" });
+      doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
-      doc.text(`Payment method: Credit Card`, mx + 3, y + 13);
+      doc.text("Credit Card  |  Nothing due at delivery", mx + cw / 2, y + 10, { align: "center" });
       if (order.stripe_payment_id) {
-        doc.text(`Reference: ${order.stripe_payment_id}`, mx + 3, y + 17);
+        doc.setFontSize(6);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
       }
-      doc.text("Nothing due at delivery", pw - mx - 3, y + 13, { align: "right" });
     } else {
-      doc.setFillColor(255, 251, 235); // light amber
-      doc.rect(mx, y, cw, 22, "F");
+      doc.setFillColor(255, 251, 235);
+      doc.rect(mx, y, cw, 14, "F");
       doc.setDrawColor(253, 230, 138);
-      doc.rect(mx, y, cw, 22, "S");
-      doc.setFontSize(12);
+      doc.rect(mx, y, cw, 14, "S");
+      doc.setFontSize(10);
       doc.setTextColor(...AMBER);
       doc.setFont("helvetica", "bold");
-      doc.text("AMOUNT DUE AT DELIVERY", mx + cw / 2, y + 7, { align: "center" });
-      doc.setFontSize(16);
-      doc.setTextColor(194, 31, 50); // red
-      doc.text(fmt(order.price), mx + cw / 2, y + 14, { align: "center" });
-      doc.setFontSize(8);
+      doc.text("DUE AT DELIVERY", mx + cw / 2, y + 5, { align: "center" });
+      doc.setFontSize(12);
+      doc.setTextColor(194, 31, 50);
+      doc.text(fmt(order.price), mx + cw / 2, y + 10.5, { align: "center" });
+      doc.setFontSize(6);
       doc.setTextColor(...AMBER);
       doc.setFont("helvetica", "normal");
-      doc.text("Please have exact amount ready. Driver carries no change.", mx + cw / 2, y + 19, { align: "center" });
+      doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
     }
-    y += (isPaid ? 24 : 26);
+    y += 16;
 
-    // ─── DELIVERY TERMS ───
-    doc.setFontSize(8);
+    // ─── DELIVERY TERMS (bullet points only) ───
+    doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("DELIVERY TERMS", mx, y);
-    y += 5;
+    y += 4;
 
-    const terms = [
-      ["1. CURBSIDE DELIVERY ONLY", "All deliveries are curbside — between the curb and nearest sidewalk or driveway edge. Drivers will not enter private property."],
-      ["2. ACCESSIBLE DELIVERY AREA", "Customer is responsible for ensuring clear and accessible delivery area prior to driver arrival."],
-      ["3. LIABILITY", "Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, irrigation systems, or any private property."],
-      ["4. CUSTOMER PRESENCE", "Customer or designated representative must be present at time of delivery."],
-      ["5. SAME-DAY ORDERS", "Subject to dispatch confirmation. Our team will call to confirm within 30 minutes of order placement."],
+    const bullets = [
+      "Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.",
+      "Customer must ensure clear, accessible delivery area before arrival.",
+      "Ways Materials LLC not liable for damage to driveways, landscaping, or property.",
+      "Customer or representative must be present at delivery.",
+      "Same-day orders subject to dispatch confirmation within 30 minutes.",
     ];
 
-    doc.setFontSize(8);
-    terms.forEach(([title, desc]) => {
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...NAVY);
-      doc.text(title, mx, y);
-      y += 3.5;
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(100, 100, 100);
-      const descLines = doc.splitTextToSize(desc, cw);
-      descLines.forEach((line: string) => {
-        doc.text(line, mx, y);
-        y += 3.2;
-      });
-      y += 1.5;
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    bullets.forEach((b) => {
+      const bLines = doc.splitTextToSize(`• ${b}`, cw);
+      bLines.forEach((line: string) => { doc.text(line, mx, y); y += 3; });
+      y += 0.5;
     });
 
     y += 2;
 
-    // ─── GOLD LINE ABOVE FOOTER ───
+    // ─── GOLD LINE + FOOTER ───
     doc.setFillColor(...GOLD);
-    doc.rect(0, y, pw, 1.5, "F");
-    y += 1.5;
+    doc.rect(0, y, pw, 1, "F");
+    y += 1;
 
-    // ─── FOOTER ───
-    const footerH = ph - y;
+    const footerH = Math.max(ph - y, 16);
     doc.setFillColor(...NAVY);
-    doc.rect(0, y, pw, Math.max(footerH, 28), "F");
+    doc.rect(0, y, pw, footerH, "F");
 
-    // Text-only footer icon
-    doc.setTextColor(...GOLD);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("RS", pw / 2, y + 14, { align: "center" });
-
-    doc.setTextColor(200, 200, 200);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("Ways Materials LLC  |  Bridge City, Louisiana", pw / 2, y + 22, { align: "center" });
-    doc.text("1-855-GOT-WAYS  |  orders@riversand.net", pw / 2, y + 26, { align: "center" });
+    doc.setTextColor(180, 180, 180);
     doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
-    doc.text("This document serves as your official delivery confirmation and receipt.", pw / 2, y + 30, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.text("Ways Materials LLC  |  Bridge City, LA  |  1-855-GOT-WAYS  |  orders@riversand.net", pw / 2, y + 6, { align: "center" });
+    doc.setFontSize(6);
+    doc.setTextColor(130, 130, 130);
+    doc.text("This document serves as your official delivery confirmation and receipt.", pw / 2, y + 10, { align: "center" });
 
     // Generate PDF buffer
     const pdfOutput = doc.output("arraybuffer");
