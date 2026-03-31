@@ -612,7 +612,7 @@ INSERT INTO public.global_settings (key, value, description) VALUES
   ('seo_meta_title',           'Same-Day River Sand Delivery | New Orleans, LA | River Sand',                                                              'Homepage meta title tag'),
   ('seo_og_description',       'Get your exact delivery price instantly. River sand dispatched same day in Greater New Orleans. Order online in under 2 minutes.', 'Open Graph description'),
   ('seo_og_image',             '',                                                                                                                        'Open Graph image URL'),
-  ('seo_og_image_url',         '',                                                                                                                        'OG image URL'),
+  
   ('seo_og_title',             'Same-Day River Sand Delivery — New Orleans, LA',                                                                           'Open Graph title'),
   ('seo_robots',               'index, follow',                                                                                                            'Robots meta tag content'),
   ('seo_schema_faq',           'true',                                                                                                                     'Enable FAQPage schema markup'),
