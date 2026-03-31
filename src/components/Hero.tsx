@@ -30,7 +30,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
       <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/95 via-sand-dark/85 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-sand-dark/60 via-transparent to-transparent" />
 
-      <div className="relative z-10 container mx-auto px-6 py-12">
+      <div className="relative z-10 container mx-auto px-6 pt-[35px] my-px py-[37px] pb-[34px] mt-[3px]">
         <div className="max-w-2xl space-y-5">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
