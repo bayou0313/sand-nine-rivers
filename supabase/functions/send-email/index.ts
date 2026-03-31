@@ -210,7 +210,7 @@ function orderCustomerEmail(order: any): string {
                   <tr>
                     <td style="background-color:#F8F7F2;padding:12px 16px;border-bottom:1px solid #E8E5DD;">
                       <p style="margin:0;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">
-                        🚚 DELIVERY INFORMATION
+                        DELIVERY
                       </p>
                     </td>
                   </tr>
