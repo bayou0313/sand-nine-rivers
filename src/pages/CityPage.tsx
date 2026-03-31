@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
+import { getPaletteForSlug, deriveCssVars } from "@/lib/palettes";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -68,6 +69,17 @@ const CityPage = () => {
 
     fetchPage();
   }, [citySlug, navigate]);
+
+  // Apply per-city palette and clean up on unmount
+  useEffect(() => {
+    if (!citySlug) return;
+    const palette = getPaletteForSlug(citySlug);
+    const vars = deriveCssVars(palette);
+    const root = document.documentElement;
+    const keys = Object.keys(vars);
+    keys.forEach(prop => root.style.setProperty(prop, vars[prop]));
+    return () => { keys.forEach(prop => root.style.removeProperty(prop)); };
+  }, [citySlug]);
 
   if (loading) {
     return (
