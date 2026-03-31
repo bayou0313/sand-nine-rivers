@@ -1,21 +1,72 @@
 
 
-# Apply Color Palettes to City Pages (Random per City)
+# Revised Plan: Static HTML City Pages for Google Crawlability (GitHub Pages)
 
 ## Problem
-CityPage.tsx doesn't import or use `useBrandPalette`, so city pages stay on default colors. The user wants each city page to display a **random palette** from the 10 presets (seeded by city slug so it's consistent per city, not truly random on each visit).
 
-## Plan
+City pages are client-side React (SPA). GitHub Pages serves only static files — no server-side rewrites or edge function routing like Vercel. Googlebot gets an empty HTML shell.
 
-### 1. Create a deterministic palette picker utility
-In `src/lib/palettes.ts`, add a function `getPaletteForSlug(slug: string): Palette` that hashes the city slug to consistently pick one of the 10 palettes. This way "metairie" always gets the same palette, but different cities get different ones.
+## Solution: Pre-render static HTML at build time
 
-### 2. Apply palette in CityPage.tsx
-- After `cityPage` data loads, call `getPaletteForSlug(citySlug)` to get the palette
-- Use `deriveCssVars()` to compute CSS variables and apply them to `document.documentElement`
-- Clean up on unmount by removing the inline styles (so navigating back to homepage restores global palette)
+Generate a static `.html` file for each active city page during the GitHub Actions build step. These files live at `dist/{citySlug}/river-sand-delivery/index.html` and are served directly by GitHub Pages as fully crawlable HTML.
 
-### Files Changed
-- **`src/lib/palettes.ts`** — add `getPaletteForSlug()` using a simple string hash
-- **`src/pages/CityPage.tsx`** — import and apply per-city palette on mount, clean up on unmount
+### How it works
+
+```text
+┌──────────────────────────────────┐
+│  GitHub Actions build step       │
+│                                  │
+│  1. npm run build (Vite)         │
+│  2. node scripts/prerender.mjs   │
+│     → fetch city_pages from DB   │
+│     → generate HTML per city     │
+│     → write to dist/             │
+│  3. Deploy dist/ to GH Pages    │
+└──────────────────────────────────┘
+```
+
+### Files to create/change
+
+| File | Change |
+|------|--------|
+| `scripts/prerender-cities.mjs` | **New.** Node script that queries `city_pages` table, generates a full HTML file per city with all SEO content (meta tags, JSON-LD, semantic HTML), and writes to `dist/{slug}/river-sand-delivery/index.html`. Includes a `<script>` redirect to load the SPA for interactive features. |
+| `.github/workflows/deploy.yml` | Add `node scripts/prerender-cities.mjs` step **after** `npm run build` and **before** the deploy step. Pass `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as env vars from GitHub Secrets. |
+
+### What each static HTML file contains
+
+- Full `<head>`: title, meta description, canonical URL, Open Graph tags
+- JSON-LD: `LocalBusiness`, `BreadcrumbList`, `FAQPage` schemas
+- Semantic HTML body: h1, hero intro, pricing, why-choose, delivery details, local uses, local expertise, FAQ sections, other-cities links
+- Inline minimal CSS for readability without JS
+- A `<script>` tag that bootstraps the React SPA for interactive components (estimator, contact form)
+
+### Pre-render script logic (`scripts/prerender-cities.mjs`)
+
+1. Fetch all rows from `city_pages` where `status = 'active'`
+2. For each city page, build a complete HTML document using the stored structured fields (`h1_text`, `hero_intro`, `meta_title`, `meta_description`, `faq_items`, `local_uses`, `local_expertise`, `delivery_details`, `why_choose_intro`, `content`)
+3. Write to `dist/{city_slug}/river-sand-delivery/index.html`
+4. Also fetch other active cities for internal linking in each page
+
+### GitHub Actions changes
+
+```yaml
+- run: npm run build
+- run: node scripts/prerender-cities.mjs
+  env:
+    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+- uses: peaceiris/actions-gh-pages@v3
+```
+
+### User action required
+
+You will need to add two GitHub Secrets to your repository:
+- `SUPABASE_URL` — your backend URL
+- `SUPABASE_SERVICE_ROLE_KEY` — your service role key (for server-side DB access during build)
+
+### What stays the same
+
+- `CityPage.tsx` remains unchanged — handles client-side navigation and interactive components
+- `vercel.json` can be removed (not used with GitHub Pages)
+- The React SPA still works for all routes via the existing 404.html fallback
 
