@@ -304,7 +304,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   }
 
   return (
-    <section id="estimator" className="py-24 bg-background overflow-x-hidden">
+    <section id="estimator" className="py-24 bg-background overflow-x-hidden scroll-mt-24">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">INSTANT ESTIMATE</motion.p>

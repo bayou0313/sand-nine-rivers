@@ -123,7 +123,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
               <motion.a
                 key={item}
                 href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
-                className="block font-body text-sm text-muted-foreground hover:text-accent transition-colors"
+                className="block font-body text-sm text-white/70 hover:text-accent transition-colors"
                 onClick={() => setMenuOpen(false)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
