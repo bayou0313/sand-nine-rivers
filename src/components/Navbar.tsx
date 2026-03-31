@@ -24,7 +24,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
           ? "bg-background/95 backdrop-blur-md shadow-lg shadow-foreground/5"
-          : "bg-gradient-to-b from-foreground/40 to-transparent"
+          : "bg-background/60 backdrop-blur-sm shadow-sm"
       }`}
     >
       <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4 md:px-0 md:bg-primary-foreground md:text-primary-foreground">
