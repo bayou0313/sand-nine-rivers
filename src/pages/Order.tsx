@@ -699,10 +699,10 @@ const Order = () => {
   );
 
   // --- Receipt row helper ---
-  const ReceiptRow = ({ label, value, accent, destructive }: { label: string; value: string; accent?: boolean; destructive?: boolean }) => (
+  const ReceiptRow = ({ label, value, accent, destructive, bold, small }: { label: string; value: string; accent?: boolean; destructive?: boolean; bold?: boolean; small?: boolean }) => (
     <div className="flex justify-between items-center py-2.5">
-      <span className={`font-body text-sm ${destructive ? "text-destructive" : "text-muted-foreground"}`}>{label}</span>
-      <span className={`font-display text-sm ${destructive ? "text-destructive" : accent ? "text-primary" : "text-foreground"}`}>{value}</span>
+      <span className={`font-body ${small ? "text-xs" : "text-sm"} ${destructive ? "text-destructive" : small ? "text-muted-foreground/70" : "text-muted-foreground"}`}>{label}</span>
+      <span className={`${bold ? "font-display text-base" : small ? "font-body text-xs text-muted-foreground/70" : "font-display text-sm"} ${destructive ? "text-destructive" : accent ? "text-primary" : bold ? "text-primary" : "text-foreground"}`}>{value}</span>
     </div>
   );
 
