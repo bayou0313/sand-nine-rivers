@@ -745,39 +745,52 @@ const Order = () => {
           </motion.div>
         )}
         {/* Sticky countdown + progress */}
-        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-accent/10 -mx-4 px-4 mb-4">
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-border/30 -mx-4 px-4 mb-6 shadow-sm">
           <CountdownBar />
           {/* Progress steps */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="flex items-center justify-center gap-2 mb-2"
+            className="flex items-center justify-center gap-1 sm:gap-3 mb-2"
           >
             {stepLabels.map((label, i) => {
               const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
               const isActive = i <= stepIndex;
               const isCurrent = i === stepIndex;
+              const isCompleted = i < stepIndex;
               return (
-                <div key={label} className="flex items-center gap-2">
-                  <motion.div
-                    animate={{
-                      scale: isCurrent ? 1.1 : 1,
-                      boxShadow: isCurrent ? "0 4px 14px hsl(var(--accent) / 0.3)" : "0 1px 3px hsl(var(--border) / 0.5)",
-                    }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-display text-xs transition-colors duration-300 ${
-                      isCurrent ? "bg-accent text-accent-foreground" 
-                      : isActive ? "bg-accent/60 text-accent-foreground" 
-                      : "bg-muted text-muted-foreground/50"
-                    }`}
-                  >
-                    {isActive && i < stepIndex ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
-                  </motion.div>
-                  <span className={`font-body text-xs hidden sm:inline transition-colors duration-300 ${
-                    isCurrent ? "text-foreground font-medium" : isActive ? "text-foreground/70" : "text-muted-foreground/50"
-                  }`}>{label}</span>
-                  {i < 2 && <div className={`w-8 h-px transition-colors duration-300 ${isActive ? "bg-accent/60" : "bg-border"}`} />}
+                <div key={label} className="flex items-center gap-1 sm:gap-2">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <motion.div
+                      animate={{
+                        scale: isCurrent ? 1.15 : 1,
+                        boxShadow: isCurrent ? "0 4px 14px hsl(var(--accent) / 0.35)" : "none",
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-xs transition-all duration-300 ${
+                        isCompleted ? "bg-primary text-primary-foreground"
+                        : isCurrent ? "bg-accent text-accent-foreground ring-2 ring-accent/30 ring-offset-2 ring-offset-background" 
+                        : "bg-muted text-muted-foreground/40 border border-border"
+                      }`}
+                    >
+                      {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                    </motion.div>
+                    <span className={`font-body text-[10px] sm:text-xs transition-colors duration-300 whitespace-nowrap ${
+                      isCurrent ? "text-foreground font-semibold" : isActive ? "text-foreground/60" : "text-muted-foreground/40"
+                    }`}>{label}</span>
+                  </div>
+                  {i < 2 && (
+                    <div className="relative w-8 sm:w-12 h-0.5 mt-[-12px] sm:mt-[-14px]">
+                      <div className="absolute inset-0 bg-border rounded-full" />
+                      <motion.div
+                        className="absolute inset-y-0 left-0 bg-accent rounded-full"
+                        initial={{ width: "0%" }}
+                        animate={{ width: isActive && i < stepIndex ? "100%" : "0%" }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -835,25 +848,40 @@ const Order = () => {
 
                 <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                   {[
-                    { top: "LOCAL AREA", bot: "Included delivery" },
-                    { top: "EXTENDED", bot: "Surcharge applies" },
-                    { top: "9 YDS", bot: "Per load" },
+                    { icon: "🚚", top: "LOCAL AREA", bot: "Delivery included" },
+                    { icon: "📍", top: "EXTENDED", bot: "Surcharge applies" },
+                    { icon: "📦", top: "9 CU YDS", bot: "Per load" },
                   ].map((item, i) => (
                     <motion.div
                       key={item.top}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
-                      className="p-3 bg-muted/50 border border-border/50 rounded-xl hover:shadow-md transition-shadow"
+                      className="p-3 bg-muted/50 border border-border/50 rounded-xl"
                     >
-                      <p className="font-display text-lg text-primary">{item.top}</p>
-                      <p className="font-body text-xs text-muted-foreground">{item.bot}</p>
+                      <span className="text-lg">{item.icon}</span>
+                      <p className="font-display text-sm text-primary mt-1">{item.top}</p>
+                      <p className="font-body text-[10px] text-muted-foreground">{item.bot}</p>
                     </motion.div>
                   ))}
                 </div>
 
+                {/* Trust strip */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="mt-4 flex items-center justify-center gap-4 text-muted-foreground"
+                >
+                  <span className="flex items-center gap-1 text-[10px] font-body"><Lock className="w-3 h-3" /> Secure</span>
+                  <span className="w-px h-3 bg-border" />
+                  <span className="flex items-center gap-1 text-[10px] font-body"><ShieldCheck className="w-3 h-3" /> No Account Needed</span>
+                  <span className="w-px h-3 bg-border" />
+                  <span className="flex items-center gap-1 text-[10px] font-body"><CheckCircle2 className="w-3 h-3" /> Instant Pricing</span>
+                </motion.div>
+
                 <Link to="/" className="block mt-4">
-                  <Button variant="outline" className="w-full font-display tracking-wider">
+                  <Button variant="ghost" className="w-full font-display tracking-wider text-muted-foreground hover:text-foreground">
                     <ArrowLeft className="w-4 h-4 mr-2" /> BACK TO HOME
                   </Button>
                 </Link>
@@ -864,17 +892,25 @@ const Order = () => {
             {step === "details" && result && (
               <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
                 {/* Compact delivery confirmation banner */}
-                <motion.div
+                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
-                  className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 shadow-sm"
+                  className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-5 py-4 shadow-sm"
                 >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary" />
-                    <span className="font-display text-sm tracking-wider text-primary">DELIVERY AVAILABLE</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <span className="font-display text-sm tracking-wider text-primary block">DELIVERY CONFIRMED</span>
+                      <span className="font-body text-xs text-muted-foreground">{address.length > 45 ? address.slice(0, 42) + "…" : address}</span>
+                    </div>
                   </div>
-                  <span className="font-display text-xl text-primary">{formatCurrency(result.price)}<span className="text-xs font-body text-muted-foreground">/load</span></span>
+                  <div className="text-right">
+                    <span className="font-display text-2xl text-primary">{formatCurrency(result.price)}</span>
+                    <span className="text-[10px] font-body text-muted-foreground block">/load</span>
+                  </div>
                 </motion.div>
 
                 {/* Combined: Delivery Date + Customer Info */}
@@ -1018,35 +1054,41 @@ const Order = () => {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("stripe-link")}
-                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
                           paymentMethod === "stripe-link"
-                            ? "border-accent bg-accent/5 shadow-md shadow-accent/10"
-                            : "border-border bg-card hover:border-accent/40"
+                            ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
+                            : "border-border bg-card hover:border-accent/40 hover:shadow-md"
                         }`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <CreditCard className={`w-4 h-4 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-xs text-foreground tracking-wider">PAY NOW</p>
-                        </div>
-                        <p className="font-body text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Lock className="w-2.5 h-2.5" /> Secure Checkout
+                        {paymentMethod === "stripe-link" && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
+                          </motion.div>
+                        )}
+                        <CreditCard className={`w-6 h-6 mb-2 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY NOW</p>
+                        <p className="font-body text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" /> Secure Stripe Checkout
                         </p>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("cash")}
-                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
                           paymentMethod === "cash" || paymentMethod === "check"
-                            ? "border-accent bg-accent/5 shadow-md shadow-accent/10"
-                            : "border-border bg-card hover:border-accent/40"
+                            ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
+                            : "border-border bg-card hover:border-accent/40 hover:shadow-md"
                         }`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Banknote className={`w-4 h-4 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-xs text-foreground tracking-wider">AT DELIVERY</p>
-                        </div>
-                        <p className="font-body text-[10px] text-muted-foreground">Cash or Check</p>
+                        {(paymentMethod === "cash" || paymentMethod === "check") && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
+                          </motion.div>
+                        )}
+                        <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
+                        <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
+                        <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
                       </button>
                     </div>
 
@@ -1100,7 +1142,7 @@ const Order = () => {
 
                   {/* Review Order Button */}
                   {paymentMethod && (
-                    <div className="px-6 pb-6 space-y-2">
+                    <div className="px-6 pb-6 space-y-3">
                       <Button
                         onClick={goToStep2}
                         disabled={!isFormValid}
@@ -1110,16 +1152,19 @@ const Order = () => {
                       </Button>
                       {!isFormValid && (
                         <p className="font-body text-xs text-destructive text-center">
-                          {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in your name and phone number above."}
+                          {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in all required fields above."}
                         </p>
                       )}
+                      <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
+                        <Lock className="w-2.5 h-2.5" /> Your information is secure and never shared
+                      </p>
                     </div>
                   )}
                 </motion.div>
 
-                <Button variant="outline" onClick={() => setStep("address")} className="h-11 font-display tracking-wider rounded-xl border-accent/50 text-accent hover:text-accent hover:bg-accent/10 text-sm">
-                  <ArrowLeft className="w-4 h-4 mr-1" /> CHANGE ADDRESS
-                </Button>
+                <button onClick={() => setStep("address")} className="flex items-center gap-1 mx-auto text-xs font-body text-muted-foreground hover:text-foreground transition-colors py-2">
+                  <ArrowLeft className="w-3 h-3" /> Change delivery address
+                </button>
               </motion.div>
             )}
 
@@ -1140,9 +1185,13 @@ const Order = () => {
                 )}
                 {/* Receipt-style confirmation */}
                 <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
+                  {/* Secure header */}
+                  <div className="bg-primary px-6 py-3 flex items-center justify-between">
+                    <h2 className="font-display text-sm text-primary-foreground tracking-wider">ORDER REVIEW</h2>
+                    <span className="flex items-center gap-1 text-primary-foreground/70 text-[10px] font-body"><Lock className="w-2.5 h-2.5" /> Secure Checkout</span>
+                  </div>
 
                   <div className="p-6 space-y-4">
-                    <h2 className="text-2xl font-display text-foreground text-center tracking-wider">CONFIRM YOUR ORDER</h2>
 
                     {/* Product */}
                     <div>
@@ -1220,21 +1269,26 @@ const Order = () => {
                 </label>
 
                 {/* Action buttons */}
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setStep("details"); }} className="h-12 font-display tracking-wider rounded-xl text-sm">
-                    <ArrowLeft className="w-4 h-4 mr-1" /> BACK
-                  </Button>
-                  <Button
-                    onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                    disabled={submitting || !disclaimerAccepted}
-                    className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
-                  >
-                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                      paymentMethod === "stripe-link"
-                        ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
-                        : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER</>
-                    )}
-                  </Button>
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
+                      <ArrowLeft className="w-4 h-4 mr-1" /> BACK
+                    </Button>
+                    <Button
+                      onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
+                      disabled={submitting || !disclaimerAccepted}
+                      className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
+                    >
+                      {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                        paymentMethod === "stripe-link"
+                          ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
+                          : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> 256-bit SSL encryption • Your data is protected
+                  </p>
                 </div>
               </motion.div>
             )}
