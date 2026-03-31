@@ -28,6 +28,9 @@ const PageViewTracker = () => {
   return null;
 };
 
+const STRIPE_PK = "pk_test_51TH4PcPuKuZka3yZ4JaHNa9CME7k3KQKF0IMSsXDZ2SbGXL1oMGBqKYLJDVPLQhICFFs197Tb3GAFsWED68uB0eB00YUry3q85";
+const IS_TEST_MODE = STRIPE_PK.startsWith("pk_test_");
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -35,6 +38,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          {IS_TEST_MODE && (
+            <div style={{
+              width: '100%',
+              backgroundColor: '#EA580C',
+              color: '#FFFFFF',
+              textAlign: 'center' as const,
+              padding: '10px 16px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              letterSpacing: '0.5px',
+              zIndex: 9999,
+              position: 'relative' as const,
+            }}>
+              🔧 TEST MODE ACTIVE — For orders please call
+              <a href="tel:18554689297"
+                style={{ color: '#FFF', marginLeft: '6px', textDecoration: 'underline' }}>
+                1-855-468-9297
+              </a>
+            </div>
+          )}
           <PageViewTracker />
           <Routes>
             <Route path="/" element={<Index />} />
