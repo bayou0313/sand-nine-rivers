@@ -11,26 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "postbuild": "react-snap"
-  },
-  "reactSnap": {
-    "source": "dist",
-    "puppeteerArgs": [
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ],
-    "crawl": false,
-    "include": [
-      "/"
-    ],
-    "skipThirdPartyRequests": false,
-    "waitFor": 2500,
-    "headless": true,
-    "minifyHtml": {
-      "collapseWhitespace": false,
-      "removeComments": false
-    },
-    "inlineCss": false
+    "postbuild": "node scripts/prerender-cities.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
