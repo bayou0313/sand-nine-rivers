@@ -52,17 +52,22 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
         </motion.a>
 
         <div className="hidden lg:flex items-center gap-8">
-          {navLinks.map((item) => (
-            <a
-              key={item}
-              href={`#${item === "Why Us" ? "why-us" : item === "How It Works" ? "how-it-works" : item === "Learn More" ? "learn-more" : item.toLowerCase()}`}
-              className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
-                scrolled ? "text-primary-foreground/90" : "text-primary-foreground/70"
-              }`}
-            >
-              {item}
-            </a>
-          ))}
+          {navLinks.map((item) => {
+            const sectionId = sectionIdMap[item];
+            const isLocal = !activeSections || activeSections.includes(sectionId);
+            const href = isLocal ? `#${sectionId}` : `/#${sectionId}`;
+            return (
+              <a
+                key={item}
+                href={href}
+                className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
+                  scrolled ? "text-primary-foreground/90" : "text-primary-foreground/70"
+                }`}
+              >
+                {item}
+              </a>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-3">
