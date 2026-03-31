@@ -220,8 +220,7 @@ serve(async (req) => {
       for (const [key, value] of Object.entries(settings)) {
         const { error } = await supabase
           .from("global_settings")
-          .update({ value: String(value) })
-          .eq("key", key);
+          .upsert({ key, value: String(value), updated_at: new Date().toISOString() }, { onConflict: "key" });
         if (error) throw error;
       }
       const { data, error } = await supabase
