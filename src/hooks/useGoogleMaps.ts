@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
+const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyALI_GnekVryYGyUeXV8BvaGV74MIvk3SI";
 
 /**
  * Shared Google Maps loader for UI features (autocomplete, geocoding).
  * Distance calculations are handled server-side — no Distance Matrix needed here.
- * Fetches the API key at runtime from the backend.
  * Returns { loaded: boolean }.
  */
 export function useGoogleMaps(): { loaded: boolean } {
@@ -28,47 +28,28 @@ export function useGoogleMaps(): { loaded: boolean } {
       return () => existing.removeEventListener("load", onLoad);
     }
 
-    // Fetch the key from the backend and inject the script
-    async function loadMaps() {
-      // First try the build-time env var
-      let key = import.meta.env.VITE_GOOGLE_MAPS_KEY || "AIzaSyALI_GnekVryYGyUeXV8BvaGV74MIvk3SI";
-
-      // If not available at build time, fetch from backend
-      if (!key) {
-        try {
-          const { data, error } = await supabase.functions.invoke("get-maps-key");
-          if (error) throw error;
-          key = data?.key || "";
-        } catch (e) {
-          console.error("[useGoogleMaps] Failed to fetch Maps API key:", e);
-          return;
-        }
-      }
-
-      if (!key) {
-        console.error(
-          "[useGoogleMaps] Google Maps API key is not configured. " +
-          "Address autocomplete will not work."
-        );
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src =
-        `https://maps.googleapis.com/maps/api/js` +
-        `?key=${key}&libraries=places&loading=async&v=weekly`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => setLoaded(true);
-      script.onerror = () =>
-        console.error(
-          "[useGoogleMaps] Failed to load Google Maps. " +
-          "Check API key and restrictions."
-        );
-      document.head.appendChild(script);
+    // First load — inject the script
+    if (!MAPS_KEY) {
+      console.error(
+        "[useGoogleMaps] VITE_GOOGLE_MAPS_KEY is not set. " +
+        "Address autocomplete will not work."
+      );
+      return;
     }
 
-    loadMaps();
+    const script = document.createElement("script");
+    script.src =
+      `https://maps.googleapis.com/maps/api/js` +
+      `?key=${MAPS_KEY}&libraries=places&loading=async&v=weekly`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setLoaded(true);
+    script.onerror = () =>
+      console.error(
+        "[useGoogleMaps] Failed to load Google Maps. " +
+        "Check MAPS_KEY and API restrictions."
+      );
+    document.head.appendChild(script);
   }, []);
 
   return { loaded };
