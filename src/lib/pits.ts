@@ -2,13 +2,11 @@
  * Shared PIT (Point of Interest / Distribution) utilities.
  * Pricing logic, effective pricing, and best-PIT selection.
  *
- * Distance calculations call the Google Distance Matrix API
- * directly from the browser using the public Maps API key.
+ * Distance calculations are proxied through the leads-auth edge function
+ * which calls Google Distance Matrix API server-side (avoids CORS).
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { GOOGLE_MAPS_API_KEY } from "@/lib/google-maps";
 
 export interface PitData {
   id: string;
