@@ -312,7 +312,7 @@ serve(async (req) => {
     const bullets = [
       "Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.",
       "Customer must ensure clear, accessible delivery area before arrival.",
-      "Ways Materials LLC not liable for damage to driveways, landscaping, or property.",
+      "WAYS® Materials LLC not liable for damage to driveways, landscaping, or property.",
       "Customer or representative must be present at delivery.",
       "Same-day orders subject to dispatch confirmation within 30 minutes.",
     ];
