@@ -955,7 +955,7 @@ const Order = () => {
                       transition={{ delay: 0.3 + i * 0.1 }}
                       className="p-3 bg-muted/50 border border-border/50 rounded-xl"
                     >
-                      <span className="text-lg">{item.icon}</span>
+                      <item.icon className="w-5 h-5 text-primary" />
                       <p className="font-display text-sm text-primary mt-1">{item.top}</p>
                       <p className="font-body text-[10px] text-muted-foreground">{item.bot}</p>
                     </motion.div>
