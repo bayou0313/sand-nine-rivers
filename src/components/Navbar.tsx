@@ -37,9 +37,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           <img
             src="/lovable-uploads/5d9662aa-a34b-4de1-a986-bca21e076819.png"
             alt="RiverSand logo"
-            className={`h-[67px] lg:h-[80px] w-auto max-w-none object-contain transition-all duration-500 ${
-              scrolled ? "grayscale" : "brightness-0 invert"
-            }`}
+            className="h-[67px] lg:h-[80px] w-auto max-w-none object-contain transition-all duration-500"
           />
         </motion.a>
 
