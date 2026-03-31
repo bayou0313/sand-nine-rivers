@@ -223,7 +223,8 @@ function AppContent() {
     return () => { document.documentElement.style.setProperty("--banner-offset", "0px"); };
   }, [stripeMode, isAdminRoute]);
 
-  if (siteMode === "maintenance" && !isAdminRoute) {
+  const maintenanceBypassed = typeof window !== "undefined" && sessionStorage.getItem("maintenance_bypass") === "true";
+  if (siteMode === "maintenance" && !isAdminRoute && !maintenanceBypassed) {
     return <MaintenancePage />;
   }
 
