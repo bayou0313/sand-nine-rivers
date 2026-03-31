@@ -114,7 +114,7 @@ function orderCustomerEmail(order: any): string {
                     </tr>`
     : `<tr>
                       <td colspan="2" style="padding:10px 16px;font-size:14px;color:#D97706;font-weight:600;">
-                        ⚠ Please have exact $${totalPrice} ready
+                        Please have exact $${totalPrice} ready
                         — driver carries no change
                       </td>
                     </tr>`;
@@ -154,7 +154,7 @@ function orderCustomerEmail(order: any): string {
             <tr>
               <td style="background-color:${isStripePaid ? '#F0FDF4' : '#FFFBEB'};padding:20px 32px;text-align:center;border-bottom:1px solid ${isStripePaid ? '#BBF7D0' : '#FDE68A'};">
                 <p style="margin:0 0 4px;font-size:18px;font-weight:700;color:${isStripePaid ? '#166534' : '#92400E'};">
-                  ${isStripePaid ? '✅ PAYMENT CONFIRMED' : '💵 PAYMENT DUE AT DELIVERY'}
+                  ${isStripePaid ? 'PAYMENT CONFIRMED' : 'PAYMENT DUE AT DELIVERY'}
                 </p>
                 <p style="margin:0;font-size:14px;color:${isStripePaid ? '#15803D' : '#B45309'};">
                   ${isStripePaid
@@ -170,7 +170,7 @@ function orderCustomerEmail(order: any): string {
 
                 <!-- Greeting -->
                 <p style="margin:0 0 4px;font-size:20px;font-weight:700;color:${BRAND_COLOR};">
-                  Hi ${customerName}! 👋
+                  Hi ${customerName}!
                 </p>
                 <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.6;">
                   Your river sand delivery is confirmed. Here's everything you need to know.
@@ -299,7 +299,7 @@ function orderCustomerEmail(order: any): string {
                         <tr>
                           <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Status</td>
                           <td style="padding:10px 16px;font-size:14px;text-align:right;font-weight:700;border-bottom:1px solid #E8E5DD;color:${isStripePaid ? '#22C55E' : '#D97706'};">
-                            ${isStripePaid ? '✅ PAID IN FULL' : '⏳ DUE AT DELIVERY'}
+                            ${isStripePaid ? 'PAID IN FULL' : 'DUE AT DELIVERY'}
                           </td>
                         </tr>
                         ${refRow}
@@ -349,7 +349,7 @@ function orderCustomerEmail(order: any): string {
                 </p>
                 <p style="margin:0 0 4px;text-align:center;">
                   <a href="tel:+18554689297" style="color:${BRAND_COLOR};font-size:15px;font-weight:700;text-decoration:none;">
-                    📞 ${PHONE}
+                    ${PHONE}
                   </a>
                 </p>
                 <p style="margin:0;text-align:center;">
@@ -652,7 +652,7 @@ function orderInternalEmail(order: any) {
   const tableRows = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 
   return emailWrapper(`
-    <h2>📦 New Order Received</h2>
+    <h2>New Order Received</h2>
     <table class="info-table">${tableRows}</table>
     ${order.notes ? `<p><strong>Customer Notes:</strong> ${order.notes}</p>` : ""}
   `);
@@ -676,7 +676,7 @@ function contactInternalEmail(contact: any) {
   const tableRows = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 
   return emailWrapper(`
-    <h2>📬 New Contact Form Submission</h2>
+    <h2>New Contact Form Submission</h2>
     <table class="info-table">${tableRows}</table>
     <p><strong>Message:</strong></p>
     <p style="background:#f9f9f9;padding:16px;border-radius:6px;border-left:4px solid ${BRAND_GOLD}">${(contact.message || "").replace(/\n/g, "<br>")}</p>
@@ -790,8 +790,8 @@ serve(async (req) => {
       const customerEmail = data.customer_email;
       const orderNumber = data.order_number || "";
       const subject = orderNumber
-        ? `Order ${orderNumber} Confirmed — WAYS River Sand`
-        : "Order Confirmed — WAYS River Sand";
+        ? `Order ${orderNumber} Confirmed — River Sand Delivery`
+        : "Order Confirmed — River Sand Delivery";
 
       // Try to generate PDF invoice for attachment
       let attachments: Array<{ filename: string; content: string }> | undefined;
@@ -814,7 +814,7 @@ serve(async (req) => {
       const dispatchSubject = `[${isPaidForSubject ? 'PAID' : 'COD'}] ${orderNumber} — ${data.customer_name || "Customer"} — ${dispatchDeliveryDate}`;
 
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
+        sendMail(resend, ownerEmail, `New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
         // Dispatch notification
         sendMail(
           resend,
@@ -852,7 +852,7 @@ serve(async (req) => {
     } else if (type === "contact") {
       const customerEmail = data.email;
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data), undefined, FROM, REPLY_TO),
+        sendMail(resend, ownerEmail, `New Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data), undefined, FROM, REPLY_TO),
       ];
       if (customerEmail) {
         promises.push(sendMail(resend, customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data), undefined, FROM, REPLY_TO));
@@ -888,7 +888,7 @@ serve(async (req) => {
   .footer a{color:${BRAND_COLOR};text-decoration:none}
 </style></head><body>
 <div class="container">
-  <div class="header"><h1>🔴 CALLBACK REQUEST</h1></div>
+  <div class="header"><h1>CALLBACK REQUEST</h1></div>
   <div class="body">
     <h2>Customer wants a callback!</h2>
     <table class="info-table">${tableRows}</table>
@@ -899,7 +899,7 @@ serve(async (req) => {
   </div>
 </div></body></html>`;
 
-      await sendMail(resend, ownerEmail, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml, undefined, FROM, REPLY_TO);
+      await sendMail(resend, ownerEmail, `URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Callback email sent to:", ownerEmail);
 
     } else if (type === "out_of_area_lead") {
