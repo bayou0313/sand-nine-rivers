@@ -156,19 +156,18 @@ const CityPage = () => {
 
       {/* Conditional price display for multi-PIT vs single-PIT cities */}
       {cityPage.multi_pit_coverage ? (
-        <div className="text-center py-4 bg-accent/10">
-          <p className="text-base text-muted-foreground max-w-lg mx-auto px-4">
-            Pricing varies by location within {cityPage.city_name}.
-            Enter your address above for your exact delivery price.
+        <div className="text-center py-5 bg-primary/5 border-b border-border/50">
+          <p className="text-sm font-body text-muted-foreground max-w-lg mx-auto px-4">
+            Pricing varies by location within {cityPage.city_name}. Enter your address above for your exact delivery price.
           </p>
         </div>
       ) : cityPage.base_price ? (
-        <div className="text-center py-4 bg-accent/10">
-          <p className="text-2xl font-semibold text-foreground">
-            Delivery from ${Number(cityPage.base_price).toFixed(0)}
+        <div className="text-center py-5 bg-primary/5 border-b border-border/50">
+          <p className="font-display text-2xl text-foreground tracking-wide">
+            Starting at <span className="text-accent">${Number(cityPage.base_price).toFixed(0)}</span>
           </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Enter your address above for your exact price
+          <p className="text-xs font-body text-muted-foreground mt-1">
+            per 9 cu yd load · Enter your address above for your exact price
           </p>
         </div>
       ) : null}
