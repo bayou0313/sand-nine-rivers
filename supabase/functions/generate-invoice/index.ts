@@ -70,17 +70,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch logos
-    const [logoWhiteB64, waysWhiteB64, iconB64] = await Promise.all([
-      fetchImageAsBase64("https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png"),
-      fetchImageAsBase64("https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png"),
-      fetchImageAsBase64("https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/RIVERSAND_-_ICON_-_512.png.png"),
-    ]);
-
-    // Fetch QR code
-    const encodedAddr = encodeURIComponent(order.delivery_address || "");
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://www.google.com/maps/search/?api=1%26query=${encodedAddr}`;
-    const qrB64 = await fetchImageAsBase64(qrUrl);
+    // Text-only rendering — no image fetching to keep PDF small
 
     // Build PDF
     const doc = new jsPDF({ unit: "mm", format: "letter" });
