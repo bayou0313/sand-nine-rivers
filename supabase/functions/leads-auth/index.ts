@@ -1231,6 +1231,76 @@ serve(async (req) => {
       );
     }
 
+    // ── AUDIT SEO ──
+    if (action === "audit_seo") {
+      const targetUrl = url || "https://riversand.net/";
+      try {
+        const res = await fetch(targetUrl, {
+          headers: { "User-Agent": "riversand-seo-audit/1.0" }
+        });
+        const html = await res.text();
+
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch?.[1]?.trim() || "";
+        const titleLen = title.length;
+        let titleScore = titleLen >= 50 && titleLen <= 60 ? 100 : titleLen >= 45 && titleLen <= 65 ? 80 : 50;
+        if (!title) titleScore = 0;
+        if (title.toLowerCase().includes("river sand")) titleScore = Math.min(100, titleScore + 10);
+        if (title.toLowerCase().includes("new orleans") || title.toLowerCase().includes("louisiana")) titleScore = Math.min(100, titleScore + 10);
+
+        const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
+          || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
+        const metaDesc = descMatch?.[1]?.trim() || "";
+        const descLen = metaDesc.length;
+        let descScore = descLen >= 150 && descLen <= 160 ? 100 : descLen >= 130 && descLen <= 170 ? 80 : descLen > 0 ? 50 : 0;
+
+        const h1Matches = html.match(/<h1[^>]*>/gi) || [];
+        const h2Matches = html.match(/<h2[^>]*>/gi) || [];
+        let headingScore = 0;
+        if (h1Matches.length === 1) headingScore += 40;
+        else if (h1Matches.length > 1) headingScore += 20;
+        if (h2Matches.length > 0) headingScore += 30;
+        headingScore += 30;
+
+        const hasCanonical = /<link[^>]+rel=["']canonical["']/i.test(html);
+        const hasRobots = /<meta[^>]+name=["']robots["']/i.test(html);
+        const hasViewport = /<meta[^>]+name=["']viewport["']/i.test(html);
+        let techScore = 25;
+        if (hasCanonical) techScore += 25;
+        if (hasRobots) techScore += 25;
+        if (hasViewport) techScore += 25;
+
+        const schemaMatches = html.match(/"@type"\s*:\s*"([^"]+)"/g) || [];
+        const schemaTypes = [...new Set(schemaMatches.map((m: string) => m.match(/"([^"]+)"$/)?.[1] || ""))].filter(Boolean);
+        const schemaScore = Math.min(100, schemaTypes.length * 33);
+
+        const overall = Math.round((titleScore + descScore + headingScore + techScore + schemaScore) / 5);
+        const grade = overall >= 90 ? "A" : overall >= 80 ? "B" : overall >= 70 ? "C" : overall >= 60 ? "D" : "F";
+
+        const results = {
+          scannedAt: new Date().toISOString(),
+          overall, grade,
+          categories: [
+            { name: "Title Tag", score: titleScore, found: title || "Not found", issues: titleScore < 80 ? [`Title is ${titleLen} chars (ideal: 50-60)`] : [] },
+            { name: "Meta Description", score: descScore, found: metaDesc || "Not found", issues: descScore < 80 ? [`Description is ${descLen} chars (ideal: 150-160)`] : [] },
+            { name: "Heading Structure", score: headingScore, found: `${h1Matches.length} H1, ${h2Matches.length} H2`, issues: h1Matches.length !== 1 ? ["Should have exactly 1 H1"] : [] },
+            { name: "Technical SEO", score: techScore, found: `Canonical: ${hasCanonical}, Robots: ${hasRobots}, Viewport: ${hasViewport}`, issues: [] },
+            { name: "Structured Data", score: schemaScore, found: schemaTypes.join(", ") || "None found", issues: schemaTypes.length === 0 ? ["No JSON-LD schemas found"] : [] },
+          ],
+        };
+
+        return new Response(
+          JSON.stringify({ results }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (err: any) {
+        return new Response(
+          JSON.stringify({ error: `Audit failed: ${err.message}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
