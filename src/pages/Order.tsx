@@ -54,6 +54,7 @@ const CountdownBar = () => {
 };
 
 const Order = () => {
+  useBrandPalette();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState<"address" | "details" | "confirm" | "success">("address");
