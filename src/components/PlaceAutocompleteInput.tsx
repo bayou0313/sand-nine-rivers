@@ -37,6 +37,9 @@ export default function PlaceAutocompleteInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
+  const [hasValue, setHasValue] = useState(
+    !!(initialValue && initialValue.length > 0)
+  );
 
   const onPlaceSelectRef = useRef(onPlaceSelect);
   const onInputChangeRef = useRef(onInputChange);
@@ -101,7 +104,17 @@ export default function PlaceAutocompleteInput({
   }, []);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setHasValue(e.target.value.length > 0);
     onInputChangeRef.current?.(e.target.value);
+  }, []);
+
+  const handleClear = useCallback(() => {
+    if (inputRef.current) {
+      inputRef.current.value = "";
+      inputRef.current.focus();
+    }
+    setHasValue(false);
+    onInputChangeRef.current?.("");
   }, []);
 
   return (
@@ -111,11 +124,26 @@ export default function PlaceAutocompleteInput({
         type="text"
         id={id}
         placeholder={placeholder}
-        className={`place-autocomplete-input w-full ${className}`}
+        className={`place-autocomplete-input w-full ${hasValue ? "pr-8" : ""} ${className}`}
         onKeyDown={handleKeyDown}
         onChange={handleChange}
         autoComplete="off"
       />
+      {hasValue && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted"
+          aria-label="Clear address"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" 
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
