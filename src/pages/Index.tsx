@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import SocialProofStrip from "@/components/SocialProofStrip";
+import About from "@/components/About";
 import Features from "@/components/Features";
 import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
@@ -141,6 +142,7 @@ const Index = () => {
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
       <Hero h1Override={seo.seo_h1 || DEFAULT_H1} prefillAddress={returnAddress} />
       <SocialProofStrip />
+      <About />
       <Features />
       <Testimonials />
       <CTA />
