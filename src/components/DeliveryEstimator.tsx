@@ -205,8 +205,8 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
 
   const estimatorContent = (
     <>
-      <div id="estimator" ref={containerRef} className={embedded
-        ? "bg-foreground/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl"
+      <div id={embedded ? undefined : "estimator"} ref={containerRef} className={embedded
+        ? "bg-foreground/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl scroll-mt-24"
         : "bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
       }>
         <div className="space-y-4">
