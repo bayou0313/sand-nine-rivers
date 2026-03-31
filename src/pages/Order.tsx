@@ -1322,7 +1322,7 @@ const Order = () => {
 
                       {selectedDeliveryDate.isSameDay && (
                         <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-lg my-2">
-                          ⚡ Same-day request — we'll call to confirm availability.
+                          Same-day request — we'll call to confirm availability.
                         </p>
                       )}
 
