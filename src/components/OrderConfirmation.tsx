@@ -252,8 +252,8 @@ export default function OrderConfirmation({
             }
           >
             {isStripePaid
-              ? `✅ Paid in Full — ${formatCurrency(displayTotalWithFee)}`
-              : `💵 ${formatCurrency(displayTotal)} Due at Delivery`}
+              ? `Paid in Full — ${formatCurrency(displayTotalWithFee)}`
+              : `${formatCurrency(displayTotal)} Due at Delivery`}
           </div>
 
           {customerEmail && (
