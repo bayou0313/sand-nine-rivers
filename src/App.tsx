@@ -276,7 +276,7 @@ function AppContent() {
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {stripeMode === "test" && showTestModal && !isAdminRoute && (
+      {typeof window !== "undefined" && stripeMode === "test" && showTestModal && !isAdminRoute && (
         <div style={{
           position: "fixed",
           inset: 0,
