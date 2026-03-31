@@ -1269,28 +1269,76 @@ const Order = () => {
                   </div>
                 </div>
 
-                {/* Curbside disclaimer checkbox */}
-                <label htmlFor="disclaimer" className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3 cursor-pointer hover:bg-amber-100/60 transition-colors">
-                  <Checkbox
-                    id="disclaimer"
-                    checked={disclaimerAccepted}
-                    onCheckedChange={(checked) => setDisclaimerAccepted(!!checked)}
-                    className="mt-0.5 border-amber-400 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
-                  />
-                  <span className="text-amber-800 text-xs font-body leading-relaxed">
-                    <strong>Curbside Delivery Only:</strong> I understand that all deliveries are curbside only. Due to liability, deliveries cannot be made inside backyards or enclosed areas.
-                  </span>
-                </label>
+                {/* Delivery Terms — required for ALL orders */}
+                <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
+                  <p className="font-display text-xs tracking-wider text-foreground">DELIVERY TERMS</p>
+                  <div className="space-y-1.5">
+                    <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
+                    <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
+                    <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
+                    <p className="font-body text-xs text-muted-foreground">• Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
+                    <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
+                    <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
+                  </div>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deliveryTermsAccepted}
+                      onChange={(e) => setDeliveryTermsAccepted(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded accent-primary"
+                    />
+                    <span className="font-body text-xs text-foreground leading-relaxed">
+                      I have read and agree to the delivery terms above. I understand
+                      delivery is curbside only and Ways Materials LLC is not responsible
+                      for property damage. I will ensure a clear accessible delivery area
+                      and be present or designate a representative at time of delivery.
+                    </span>
+                  </label>
+                </div>
+
+                {/* Card Authorization — only for COD orders */}
+                {(paymentMethod === "cash" || paymentMethod === "check" ||
+                  codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
+                  <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
+                    <p className="font-display text-xs tracking-wider text-foreground">
+                      CARD AUTHORIZATION FOR UNPAID DELIVERIES
+                    </p>
+                    <p className="font-body text-xs text-muted-foreground leading-relaxed">
+                      In the event that cash or check payment is not collected at the
+                      time of delivery, you authorize Ways Materials LLC to charge the
+                      payment card associated with this order.
+                    </p>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cardAuthAccepted}
+                        onChange={(e) => setCardAuthAccepted(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded accent-primary"
+                      />
+                      <span className="font-body text-xs text-foreground leading-relaxed">
+                        I authorize Ways Materials LLC to charge the payment card
+                        associated with this order in the amount of{" "}
+                        <strong>${totalPrice.toFixed(2)}</strong> if cash or check
+                        payment is not collected at the time of delivery. I understand
+                        this charge will appear as 'RIVERSAND.NET' on my statement.
+                        This authorization is valid for this order only.
+                      </span>
+                    </label>
+                  </div>
+                )}
 
                 {/* Action buttons */}
                 <div className="space-y-3">
                   <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
+                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setDeliveryTermsAccepted(false); setCardAuthAccepted(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
                       <ArrowLeft className="w-4 h-4 mr-1" /> BACK
                     </Button>
                     <Button
                       onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                      disabled={submitting || !disclaimerAccepted}
+                      disabled={
+                        submitting || !deliveryTermsAccepted ||
+                        (paymentMethod !== "stripe-link" && (codSubOption === "cash" || codSubOption === "check") && !cardAuthAccepted)
+                      }
                       className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
                     >
                       {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
