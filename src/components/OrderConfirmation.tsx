@@ -443,10 +443,10 @@ export default function OrderConfirmation({
                 What to expect
               </p>
               <ul className="space-y-2 text-sm" style={{ color: "#374151" }}>
-                <li>✓ Driver calls 30 minutes before arrival</li>
-                <li>✓ Ensure clear access to delivery area</li>
-                <li>✓ Be present or designate a representative</li>
-                <li>✓ Curbside delivery — curb to sidewalk</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Driver calls 30 minutes before arrival</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Ensure clear access to delivery area</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Be present or designate a representative</li>
+                <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Curbside delivery — curb to sidewalk</li>
               </ul>
             </div>
             <div>
