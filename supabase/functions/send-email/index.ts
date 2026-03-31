@@ -632,6 +632,27 @@ serve(async (req) => {
   }
 
   try {
+    // Fetch email settings from global_settings
+    const sbUrl = Deno.env.get("SUPABASE_URL") || "";
+    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const sb = createClient(sbUrl, sbKey);
+    const { data: settingsData } = await sb
+      .from("global_settings")
+      .select("key, value")
+      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to"]);
+
+    const emailCfg: Record<string, string> = {};
+    for (const row of settingsData || []) {
+      emailCfg[row.key] = row.value;
+    }
+    const DISPATCH_EMAIL = emailCfg.email_dispatch || DEFAULT_DISPATCH_EMAIL;
+    const FROM_EMAIL = emailCfg.email_from || DEFAULT_FROM_EMAIL;
+    const FROM_NAME = emailCfg.email_from_name || DEFAULT_FROM_NAME;
+    const REPLY_TO = emailCfg.email_reply_to || DEFAULT_REPLY_TO;
+    const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
+
+    console.log("[send-email] Email config — dispatch:", DISPATCH_EMAIL, "from:", FROM);
+
     const resendKey = Deno.env.get("RESEND_API_KEY");
     console.log("[send-email] RESEND_API_KEY set:", !!resendKey);
     if (!resendKey) {
@@ -642,7 +663,7 @@ serve(async (req) => {
     const { type, data } = await req.json();
     console.log("[send-email] Email type:", type);
 
-    const ownerEmail = Deno.env.get("GMAIL_USER") || INTERNAL_EMAIL;
+    const ownerEmail = Deno.env.get("GMAIL_USER") || DEFAULT_INTERNAL_EMAIL;
 
     if (type === "order" || type === "order_confirmation") {
       const customerEmail = data.customer_email;
