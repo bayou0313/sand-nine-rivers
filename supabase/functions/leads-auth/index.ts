@@ -87,6 +87,49 @@ serve(async (req) => {
     const body = await req.json();
     const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile, url } = body;
 
+    // ── SESSION INIT (no password required — called from frontend) ──
+    if (action === "session_init") {
+      const { session_token } = body;
+      if (!session_token) {
+        return new Response(JSON.stringify({ error: "Missing session_token" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+      await sb.from("visitor_sessions").upsert(
+        { session_token, last_seen_at: new Date().toISOString() },
+        { onConflict: "session_token", ignoreDuplicates: false }
+      );
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── SESSION UPDATE (no password required — called from frontend) ──
+    if (action === "session_update") {
+      const { session_token, updates } = body;
+      if (!session_token || !updates) {
+        return new Response(JSON.stringify({ error: "Missing session_token or updates" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+      // Whitelist allowed fields
+      const allowed = ["stage","delivery_address","address_lat","address_lng",
+        "calculated_price","serviceable","nearest_pit_id","nearest_pit_name",
+        "customer_name","customer_email","customer_phone","order_id","order_number"];
+      const safe: Record<string, any> = {};
+      for (const k of allowed) {
+        if (updates[k] !== undefined) safe[k] = updates[k];
+      }
+      safe.updated_at = new Date().toISOString();
+      safe.last_seen_at = new Date().toISOString();
+      await sb.from("visitor_sessions").update(safe).eq("session_token", session_token);
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── CALCULATE DISTANCES (no password required — called from frontend) ──
     if (action === "calculate_distances") {
       const { origins, destination } = body;

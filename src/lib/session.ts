@@ -1,6 +1,7 @@
 /**
  * Visitor session management for abandonment tracking.
- * Stores a session token in localStorage and syncs with visitor_sessions table.
+ * All writes go through the leads-auth edge function (service role)
+ * to comply with RLS — anon users cannot UPDATE visitor_sessions directly.
  */
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,39 +16,29 @@ export function getSessionToken(): string {
   return token;
 }
 
+async function callSessionAction(action: string, payload: Record<string, any>) {
+  try {
+    await supabase.functions.invoke("leads-auth", {
+      body: { action, ...payload },
+    });
+  } catch (err) {
+    console.warn(`[session] ${action} error:`, err);
+  }
+}
+
 export async function initSession(): Promise<void> {
   const token = getSessionToken();
-  try {
-    await (supabase as any)
-      .from("visitor_sessions")
-      .upsert(
-        {
-          session_token: token,
-          last_seen_at: new Date().toISOString(),
-        },
-        { onConflict: "session_token", ignoreDuplicates: false }
-      );
-  } catch (err) {
-    console.warn("[session] initSession error:", err);
-  }
+  await callSessionAction("session_init", { session_token: token });
 }
 
 export async function updateSession(
   updates: Record<string, any>
 ): Promise<void> {
   const token = getSessionToken();
-  try {
-    await (supabase as any)
-      .from("visitor_sessions")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
-      })
-      .eq("session_token", token);
-  } catch (err) {
-    console.warn("[session] updateSession error:", err);
-  }
+  await callSessionAction("session_update", {
+    session_token: token,
+    updates,
+  });
 }
 
 export async function getSession(): Promise<any | null> {
