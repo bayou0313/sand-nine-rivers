@@ -86,7 +86,7 @@ export default function PlaceAutocompleteInput({
 
     const interval = setInterval(() => {
       if (init()) clearInterval(interval);
-    }, 200);
+    }, 300);
 
     return () => {
       clearInterval(interval);
