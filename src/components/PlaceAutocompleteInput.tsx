@@ -1,3 +1,4 @@
+// Stable Autocomplete — redeployed 2026-03-31
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useCallback, useState } from "react";
 
@@ -29,8 +30,8 @@ export default function PlaceAutocompleteInput({
   id,
   containerClassName = "",
 }: PlaceAutocompleteInputProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const elementRef = useRef<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
   const [hasValue, setHasValue] = useState(
     !!(initialValue && initialValue.length > 0)
   );
@@ -43,65 +44,37 @@ export default function PlaceAutocompleteInput({
   useEffect(() => { onEnterKeyRef.current = onEnterKey; }, [onEnterKey]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!inputRef.current) return;
 
     const init = () => {
-      if (elementRef.current) return true;
-      if (!window.google?.maps?.places?.PlaceAutocompleteElement) return false;
+      if (autocompleteRef.current) return true;
+      if (!window.google?.maps?.places?.Autocomplete) return false;
 
       try {
-        const el = new window.google.maps.places.PlaceAutocompleteElement({
+        const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current!, {
           componentRestrictions: { country: "us" },
+          fields: ["formatted_address", "geometry", "address_components"],
         });
 
-        el.style.width = "100%";
-        el.style.display = "block";
-        if (id) el.id = id;
-
-        el.addEventListener("gmp-placeselect", async (event: any) => {
-          console.log("[PlaceAutocompleteInput] gmp-placeselect fired", event);
-          const place = event.place;
-          try {
-            await place.fetchFields({
-              fields: ["formattedAddress", "location", "addressComponents"],
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          console.log("[PlaceAutocompleteInput] place_changed fired", place);
+          const lat = place.geometry?.location?.lat();
+          const lng = place.geometry?.location?.lng();
+          if (lat != null && lng != null) {
+            setHasValue(true);
+            onInputChangeRef.current?.(place.formatted_address || "");
+            onPlaceSelectRef.current({
+              formattedAddress: place.formatted_address || "",
+              lat,
+              lng,
+              addressComponents: place.address_components || [],
             });
-            const lat = place.location?.lat();
-            const lng = place.location?.lng();
-            if (lat != null && lng != null) {
-              setHasValue(true);
-              onInputChangeRef.current?.(place.formattedAddress || "");
-              onPlaceSelectRef.current({
-                formattedAddress: place.formattedAddress || "",
-                lat,
-                lng,
-                addressComponents: place.addressComponents || [],
-              });
-            }
-          } catch (err) {
-            console.error("[PlaceAutocompleteInput] fetchFields failed:", err);
           }
         });
 
-        el.addEventListener("input", (event: any) => {
-          const val = event.target?.value || "";
-          setHasValue(val.length > 0);
-          onInputChangeRef.current?.(val);
-        });
-
-        el.addEventListener("keydown", (event: any) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            onEnterKeyRef.current?.();
-          }
-        });
-
-        if (initialValue) {
-          el.value = initialValue;
-          setHasValue(true);
-        }
-
-        containerRef.current!.appendChild(el);
-        elementRef.current = el;
+        autocompleteRef.current = autocomplete;
+        console.log("[PlaceAutocompleteInput] Autocomplete initialized");
         return true;
       } catch (err) {
         console.error("[PlaceAutocompleteInput] init failed:", err);
@@ -117,23 +90,47 @@ export default function PlaceAutocompleteInput({
 
     return () => {
       clearInterval(interval);
-      if (elementRef.current && containerRef.current) {
-        try { containerRef.current.removeChild(elementRef.current); } catch {}
-        elementRef.current = null;
+      if (autocompleteRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
       }
     };
   }, []);
 
+  const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setHasValue(val.length > 0);
+    onInputChangeRef.current?.(val);
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onEnterKeyRef.current?.();
+    }
+  }, []);
+
   const handleClear = useCallback(() => {
-    if (elementRef.current) {
-      elementRef.current.value = "";
+    if (inputRef.current) {
+      inputRef.current.value = "";
     }
     setHasValue(false);
     onInputChangeRef.current?.("");
   }, []);
 
   return (
-    <div ref={containerRef} className={`place-autocomplete-container relative ${containerClassName}`}>
+    <div className={`place-autocomplete-container relative ${containerClassName}`}>
+      <input
+        ref={inputRef}
+        type="text"
+        id={id}
+        placeholder={placeholder}
+        defaultValue={initialValue || ""}
+        onChange={handleInput}
+        onKeyDown={handleKeyDown}
+        className={`w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${className}`}
+        autoComplete="off"
+      />
       {hasValue && (
         <button
           type="button"
@@ -155,6 +152,6 @@ export default function PlaceAutocompleteInput({
 
 export function getPlaceInputValue(containerEl: HTMLElement | null): string {
   if (!containerEl) return "";
-  const el = containerEl.querySelector("gmp-placeautocomplete") as any;
-  return el?.value || "";
+  const input = containerEl.querySelector("input") as HTMLInputElement | null;
+  return input?.value || "";
 }
