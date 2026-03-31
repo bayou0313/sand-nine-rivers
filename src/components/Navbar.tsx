@@ -47,7 +47,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
               key={item}
               href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
               className={`font-body text-sm transition-colors duration-300 hover:text-accent relative ${
-                scrolled ? "text-muted-foreground" : "text-primary-foreground/70"
+                scrolled ? "text-muted-foreground" : "text-foreground/70"
               }`}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
