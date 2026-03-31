@@ -304,19 +304,24 @@ const Order = () => {
         setSubmitting(false);
 
         if (signal.status === "success") {
+          const snap = pricingSnapshotRef.current;
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
-          if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
+          if (snap.pendingOrderId) setConfirmedOrderId(snap.pendingOrderId);
           setPendingOrderId(null);
+          setAddress(snap.address);
+          setSelectedDeliveryDate(snap.selectedDeliveryDate);
+          setPaymentMethod(snap.paymentMethod);
+          setForm(snap.form);
           setConfirmedTotals({
-            totalPrice,
-            totalWithProcessingFee,
-            processingFee,
-            taxAmount,
-            subtotal,
-            saturdaySurchargeTotal,
-            distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
-            taxInfo,
+            totalPrice: snap.totalPrice,
+            totalWithProcessingFee: snap.totalWithProcessingFee,
+            processingFee: snap.processingFee,
+            taxAmount: snap.taxAmount,
+            subtotal: snap.subtotal,
+            saturdaySurchargeTotal: snap.saturdaySurchargeTotal,
+            distanceFee: snap.result ? Math.max(0, (snap.result.distance - snap.effectivePricing.free_miles) * snap.effectivePricing.extra_per_mile * snap.quantity) : 0,
+            taxInfo: snap.taxInfo,
           });
           setStep("success");
           updateSession({
