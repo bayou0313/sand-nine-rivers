@@ -267,11 +267,11 @@ function orderCustomerEmail(order: any): string {
                         <tr>
                           <td colspan="2" style="padding:0;"><hr style="border:none;border-top:2px solid ${BRAND_GOLD};margin:0;"></td>
                         </tr>
-                        <tr style="background-color:#F8F7F2;">
-                          <td style="padding:14px 16px;font-size:16px;font-weight:700;color:${BRAND_COLOR};">
+                        <tr style="background-color:${BRAND_COLOR};">
+                          <td style="padding:14px 16px;font-size:16px;font-weight:700;color:#FFFFFF;">
                             ${isStripePaid ? 'TOTAL CHARGED' : 'TOTAL DUE AT DELIVERY'}
                           </td>
-                          <td style="padding:14px 16px;font-size:18px;font-weight:700;color:${BRAND_GOLD};text-align:right;">
+                          <td style="padding:14px 16px;font-size:20px;font-weight:700;color:${BRAND_GOLD};text-align:right;">
                             $${totalPrice}
                           </td>
                         </tr>
