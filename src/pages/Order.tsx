@@ -1431,7 +1431,7 @@ const Order = () => {
                       <h3 className="font-display text-sm text-background tracking-wider">PRICING SUMMARY</h3>
                     </div>
                     <div className="p-6 space-y-2">
-                      <ReceiptRow label={`River Sand (×${quantity})`} value={formatCurrency(dt?.subtotal != null ? (dt.subtotal - displaySaturdaySurcharge + (dt.distanceFee > 0 ? 0 : 0)) : effectivePricing.base_price * quantity)} />
+                      <ReceiptRow label={`River Sand (×${quantity})`} value={formatCurrency(effectivePricing.base_price * quantity)} />
                       {displayDistanceFee > 0 && <ReceiptRow label="Distance fee" value={formatCurrency(displayDistanceFee)} />}
                       {displaySaturdaySurcharge > 0 && <ReceiptRow label="Saturday surcharge" value={formatCurrency(displaySaturdaySurcharge)} />}
                       {displayTaxAmount > 0 && <ReceiptRow label={`Sales tax — ${displayTaxInfo.parish} (${(displayTaxInfo.rate * 100).toFixed(2)}%)`} value={formatCurrency(displayTaxAmount)} />}
