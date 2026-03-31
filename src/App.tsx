@@ -198,6 +198,13 @@ function AppContent() {
     };
   }, []);
 
+  // Set CSS variable for banner offset so Navbar shifts down
+  useEffect(() => {
+    const showBanner = stripeMode === "test" && !isAdminRoute;
+    document.documentElement.style.setProperty("--banner-offset", showBanner ? "36px" : "0px");
+    return () => { document.documentElement.style.setProperty("--banner-offset", "0px"); };
+  }, [stripeMode, isAdminRoute]);
+
   if (siteMode === "maintenance" && !isAdminRoute) {
     return <MaintenancePage />;
   }
