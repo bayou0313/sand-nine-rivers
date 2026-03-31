@@ -665,14 +665,14 @@ function Row({
   value,
   valuePill,
 }: {
-  icon: string;
+  icon?: string;
   label: string;
   value: string;
   valuePill?: { bg: string; color: string };
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-sm shrink-0">{icon}</span>
+      {icon && <span className="text-sm shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1">
         <p className="text-xs" style={{ color: "#9CA3AF" }}>
           {label}
