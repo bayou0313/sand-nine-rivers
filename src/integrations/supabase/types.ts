@@ -210,6 +210,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          card_authorization_accepted: boolean | null
+          card_authorization_timestamp: string | null
           cash_collected: boolean | null
           cash_collected_at: string | null
           cash_collected_by: string | null
@@ -221,6 +223,8 @@ export type Database = {
           delivery_address: string
           delivery_date: string | null
           delivery_day_of_week: string | null
+          delivery_terms_accepted: boolean | null
+          delivery_terms_timestamp: string | null
           delivery_window: string
           discount_amount: number | null
           distance_miles: number
@@ -245,6 +249,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          card_authorization_accepted?: boolean | null
+          card_authorization_timestamp?: string | null
           cash_collected?: boolean | null
           cash_collected_at?: string | null
           cash_collected_by?: string | null
@@ -256,6 +262,8 @@ export type Database = {
           delivery_address: string
           delivery_date?: string | null
           delivery_day_of_week?: string | null
+          delivery_terms_accepted?: boolean | null
+          delivery_terms_timestamp?: string | null
           delivery_window?: string
           discount_amount?: number | null
           distance_miles: number
@@ -280,6 +288,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          card_authorization_accepted?: boolean | null
+          card_authorization_timestamp?: string | null
           cash_collected?: boolean | null
           cash_collected_at?: string | null
           cash_collected_by?: string | null
@@ -291,6 +301,8 @@ export type Database = {
           delivery_address?: string
           delivery_date?: string | null
           delivery_day_of_week?: string | null
+          delivery_terms_accepted?: boolean | null
+          delivery_terms_timestamp?: string | null
           delivery_window?: string
           discount_amount?: number | null
           distance_miles?: number
