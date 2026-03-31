@@ -84,7 +84,47 @@ serve(async (req) => {
   }
 
   try {
-    const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile, url } = await req.json();
+    const body = await req.json();
+    const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile, url } = body;
+
+    // ── CALCULATE DISTANCES (no password required — called from frontend) ──
+    if (action === "calculate_distances") {
+      const { origins, destination } = body;
+      if (!origins?.length || !destination) {
+        return new Response(
+          JSON.stringify({ error: "Missing origins or destination" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_MAPS_SERVER_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const originsStr = origins.map((o: any) => `${o.lat},${o.lng}`).join("|");
+      const destStr = `${destination.lat},${destination.lng}`;
+      const resp = await fetch(
+        `https://maps.googleapis.com/maps/api/distancematrix/json` +
+        `?origins=${encodeURIComponent(originsStr)}` +
+        `&destinations=${encodeURIComponent(destStr)}` +
+        `&units=imperial&mode=driving&avoid=ferries` +
+        `&key=${apiKey}`
+      );
+      const data = await resp.json();
+      const distances = (data.rows || []).map((row: any) => {
+        const el = row.elements?.[0];
+        if (el?.status === "OK" && el.distance?.value) {
+          return el.distance.value / 1609.344;
+        }
+        return null;
+      });
+      return new Response(
+        JSON.stringify({ distances }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {

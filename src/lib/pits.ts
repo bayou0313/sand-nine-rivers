@@ -2,13 +2,11 @@
  * Shared PIT (Point of Interest / Distribution) utilities.
  * Pricing logic, effective pricing, and best-PIT selection.
  *
- * Distance calculations call the Google Distance Matrix API
- * directly from the browser using the public Maps API key.
+ * Distance calculations are proxied through the leads-auth edge function
+ * which calls Google Distance Matrix API server-side (avoids CORS).
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { GOOGLE_MAPS_API_KEY } from "@/lib/google-maps";
 
 export interface PitData {
   id: string;
@@ -113,107 +111,68 @@ export function calcFinalPrice(effective: EffectivePricing, distance: number, qt
 }
 
 /**
- * CANONICAL distance function — calls Google Distance Matrix API directly.
- * Single origin → multiple destinations. Returns miles[] (null if no route).
- */
-export async function getDrivingDistanceBatch(
-  originLat: number,
-  originLon: number,
-  destinations: { lat: number; lng: number }[]
-): Promise<(number | null)[]> {
-  if (destinations.length === 0) return [];
-
-  const originStr = `${originLat},${originLon}`;
-  const destsStr = destinations.map(d => `${d.lat},${d.lng}`).join("|");
-
-  const resp = await fetch(
-    `https://maps.googleapis.com/maps/api/distancematrix/json` +
-    `?origins=${encodeURIComponent(originStr)}` +
-    `&destinations=${encodeURIComponent(destsStr)}` +
-    `&units=imperial&mode=driving&avoid=ferries` +
-    `&key=${GOOGLE_MAPS_API_KEY}`
-  );
-  const data = await resp.json();
-  console.log("[findBestPitDriving] raw API response:", 
-    JSON.stringify(data).slice(0, 500));
-
-  if (data.status !== "OK") {
-    console.error("[getDrivingDistanceBatch] API error:", data.status, data.error_message);
-    return new Array(destinations.length).fill(null);
-  }
-
-  const elements = data.rows?.[0]?.elements || [];
-  return elements.map((el: any) => {
-    if (el?.status === "OK" && el.distance?.value) {
-      return el.distance.value / 1609.344;
-    }
-    return null;
-  });
-}
-
-/**
  * Find the best PIT for a customer location using driving distance.
- * Calls Google Distance Matrix API directly.
+ * Calls the leads-auth edge function which proxies the Google Distance Matrix API.
  */
 export async function findBestPitDriving(
   pits: PitData[],
   customerLat: number,
   customerLng: number,
-  globalPricing: GlobalPricing
+  globalPricing: GlobalPricing,
+  supabaseClient?: any
 ): Promise<FindBestPitResult | null> {
   const activePits = pits.filter(p => p.status === "active");
   if (activePits.length === 0) return null;
 
-  const origins = activePits.map(p => `${p.lat},${p.lon}`).join("|");
-  const destination = `${customerLat},${customerLng}`;
-
-  const resp = await fetch(
-    `https://maps.googleapis.com/maps/api/distancematrix/json` +
-    `?origins=${encodeURIComponent(origins)}` +
-    `&destinations=${encodeURIComponent(destination)}` +
-    `&units=imperial&mode=driving&avoid=ferries` +
-    `&key=${GOOGLE_MAPS_API_KEY}`
-  );
-  const data = await resp.json();
-
-  const drivingDistances: (number | null)[] = (data.rows || []).map((row: any) => {
-    const el = row.elements?.[0];
-    if (el?.status === "OK" && el.distance?.value) {
-      return el.distance.value / 1609.344;
-    }
+  if (!supabaseClient) {
+    console.error("[findBestPitDriving] No supabase client provided");
     return null;
-  });
-
-  console.log("[findBestPitDriving] pits:", activePits.length);
-  console.log("[findBestPitDriving] driving distances:", drivingDistances);
-
-  const results = activePits
-    .map((pit, i) => {
-      const distance = drivingDistances[i];
-      if (distance === null || distance === undefined) return null;
-      const effective = getEffectivePrice(pit, globalPricing);
-      const price = calcPitPrice(effective, distance, 1);
-      const serviceable = distance <= effective.max_distance;
-      return { pit, distance, price, serviceable };
-    })
-    .filter((r): r is NonNullable<typeof r> => r !== null);
-
-  console.log("[findBestPitDriving] results:", results);
-
-  if (results.length === 0) return null;
-
-  const serviceable = results.filter(r => r.serviceable);
-  console.log("[findBestPitDriving] serviceable:", serviceable);
-
-  if (serviceable.length === 0) {
-    results.sort((a, b) => a.distance - b.distance);
-    return { ...results[0], serviceable: false };
   }
 
-  serviceable.sort((a, b) =>
-    Math.abs(a.distance - b.distance) < 0.5
-      ? a.price - b.price
-      : a.distance - b.distance
-  );
-  return { ...serviceable[0], serviceable: true };
+  try {
+    const { data, error } = await supabaseClient.functions.invoke("leads-auth", {
+      body: {
+        action: "calculate_distances",
+        origins: activePits.map(p => ({ lat: p.lat, lng: p.lon })),
+        destination: { lat: customerLat, lng: customerLng },
+      },
+    });
+
+    if (error) throw error;
+
+    const drivingDistances: (number | null)[] = data.distances || [];
+    console.log("[findBestPitDriving] driving distances:", drivingDistances);
+
+    const results = activePits
+      .map((pit, i) => {
+        const distance = drivingDistances[i];
+        if (distance === null || distance === undefined) return null;
+        const effective = getEffectivePrice(pit, globalPricing);
+        const price = calcPitPrice(effective, distance, 1);
+        const serviceable = distance <= effective.max_distance;
+        return { pit, distance, price, serviceable };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+
+    console.log("[findBestPitDriving] results:", results);
+
+    if (results.length === 0) return null;
+
+    const serviceable = results.filter(r => r.serviceable);
+
+    if (serviceable.length === 0) {
+      results.sort((a, b) => a.distance - b.distance);
+      return { ...results[0], serviceable: false };
+    }
+
+    serviceable.sort((a, b) =>
+      Math.abs(a.distance - b.distance) < 0.5
+        ? a.price - b.price
+        : a.distance - b.distance
+    );
+    return { ...serviceable[0], serviceable: true };
+  } catch (err: any) {
+    console.error("[findBestPitDriving] failed:", err.message);
+    return null;
+  }
 }
