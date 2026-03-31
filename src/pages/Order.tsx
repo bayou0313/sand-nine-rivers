@@ -31,6 +31,7 @@ declare global {
 }
 
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { useBrandPalette } from "@/hooks/useBrandPalette";
 
 type EstimateResult = {
   distance: number;
@@ -53,6 +54,7 @@ const CountdownBar = () => {
 };
 
 const Order = () => {
+  useBrandPalette();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState<"address" | "details" | "confirm" | "success">("address");

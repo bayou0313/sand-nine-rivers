@@ -18,6 +18,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
+import { useBrandPalette } from "@/hooks/useBrandPalette";
 
 const localBusinessJsonLd = {
   "@context": "https://schema.org",
@@ -67,6 +68,7 @@ const DEFAULT_DESCRIPTION = "Get same-day bulk river sand delivered anywhere in 
 const DEFAULT_H1 = "Same-Day River Sand Delivery";
 
 const Index = () => {
+  useBrandPalette();
   const [session, setSession] = useState<any>(null);
   const [returnAddress, setReturnAddress] = useState<string | null>(null);
   const [seo, setSeo] = useState<Record<string, string>>({});

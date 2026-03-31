@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2 } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette } from "lucide-react";
+import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -3306,6 +3307,76 @@ const Leads = () => {
               <p className="text-xs text-gray-400 mt-3">Business address is used for internal dispatch only. Display city appears in customer emails and invoices.</p>
             </div>
 
+            {/* Color Palette Picker */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1 flex items-center gap-2" style={{ color: BRAND_NAVY }}><Palette className="w-4 h-4" /> Color Palette</h3>
+              <p className="text-xs text-gray-400 mb-4">Select a preset palette. Colors apply site-wide to all customer-facing pages.</p>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
+                {PALETTES.map(p => {
+                  const isActive = (profileSettings.brand_palette || "original_navy") === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setProfileSettings(prev => ({
+                        ...prev,
+                        brand_palette: p.id,
+                        brand_primary: p.primary,
+                        brand_accent: p.accent,
+                        brand_background: p.background,
+                        primary_color: p.primary,
+                        accent_color: p.accent,
+                      }))}
+                      className="relative rounded-lg border-2 p-3 transition-all hover:shadow-md text-left"
+                      style={{
+                        borderColor: isActive ? p.accent : CARD_BORDER,
+                        backgroundColor: isActive ? `${p.background}` : "white",
+                      }}
+                    >
+                      {isActive && (
+                        <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: p.accent }}>
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                      <div className="flex gap-1 mb-2">
+                        <div className="w-6 h-6 rounded" style={{ backgroundColor: p.primary }} title="Primary" />
+                        <div className="w-6 h-6 rounded" style={{ backgroundColor: p.accent }} title="Accent" />
+                        <div className="w-6 h-6 rounded border" style={{ backgroundColor: p.background, borderColor: CARD_BORDER }} title="Background" />
+                      </div>
+                      <p className="text-xs font-medium truncate" style={{ color: p.primary }}>{p.name}</p>
+                      <p className="text-[10px] text-gray-400 truncate">{p.vibe}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Manual overrides */}
+              <p className="text-xs font-medium text-gray-500 mb-3">Manual overrides (hex)</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Primary color</label>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.brand_primary || profileSettings.primary_color || BRAND_NAVY, borderColor: CARD_BORDER }} />
+                    <Input className="h-9 flex-1" value={profileSettings.brand_primary || profileSettings.primary_color || BRAND_NAVY} onChange={e => setProfileSettings({ ...profileSettings, brand_primary: e.target.value, primary_color: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Accent color</label>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.brand_accent || profileSettings.accent_color || BRAND_GOLD, borderColor: CARD_BORDER }} />
+                    <Input className="h-9 flex-1" value={profileSettings.brand_accent || profileSettings.accent_color || BRAND_GOLD} onChange={e => setProfileSettings({ ...profileSettings, brand_accent: e.target.value, accent_color: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Background color</label>
+                  <div className="flex gap-2 items-center">
+                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.brand_background || "#F2EDE4", borderColor: CARD_BORDER }} />
+                    <Input className="h-9 flex-1" value={profileSettings.brand_background || "#F2EDE4"} onChange={e => setProfileSettings({ ...profileSettings, brand_background: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Branding Assets */}
             <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
               <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Branding Assets</h3>
@@ -3325,20 +3396,6 @@ const Leads = () => {
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Upload</label>
                   <Button variant="outline" size="sm" disabled className="h-9 w-full opacity-50">Coming soon</Button>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Primary color</label>
-                  <div className="flex gap-2 items-center">
-                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.primary_color || BRAND_NAVY, borderColor: CARD_BORDER }} />
-                    <Input className="h-9 flex-1" value={profileSettings.primary_color || BRAND_NAVY} onChange={e => setProfileSettings({ ...profileSettings, primary_color: e.target.value })} />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1">Accent color</label>
-                  <div className="flex gap-2 items-center">
-                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.accent_color || BRAND_GOLD, borderColor: CARD_BORDER }} />
-                    <Input className="h-9 flex-1" value={profileSettings.accent_color || BRAND_GOLD} onChange={e => setProfileSettings({ ...profileSettings, accent_color: e.target.value })} />
-                  </div>
                 </div>
               </div>
             </div>
