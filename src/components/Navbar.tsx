@@ -47,7 +47,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
               key={item}
               href={`#${item === "Why Us" ? "why-us" : item === "How It Works" ? "how-it-works" : item.toLowerCase()}`}
               className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
-                scrolled ? "text-white/90" : "text-white/70"
+                scrolled ? "text-primary-foreground/90" : "text-primary-foreground/70"
               }`}
             >
               {item}
