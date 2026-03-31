@@ -20,6 +20,13 @@ import ScrollToTop from "@/components/ScrollToTop";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { MapPin, Loader2 } from "lucide-react";
 
+const slugToTitle = (slug: string): string => {
+  return slug
+    .split("-")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const CityPage = () => {
   const { citySlug } = useParams<{ citySlug: string }>();
   const navigate = useNavigate();
@@ -82,10 +89,24 @@ const CityPage = () => {
   }, [citySlug]);
 
   if (loading) {
+    const cityName = slugToTitle(citySlug || "");
+    const defaultTitle = `River Sand Delivery in ${cityName}, LA | Same-Day | River Sand`;
+    const defaultDesc = `Same-day bulk river sand delivery to ${cityName}, Louisiana. Instant online pricing, cash or card, order before noon for same-day service.`;
+    const defaultCanonical = `https://riversand.net/${citySlug}/river-sand-delivery`;
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
+      <>
+        <Helmet>
+          <title>{defaultTitle}</title>
+          <meta name="description" content={defaultDesc} />
+          <link rel="canonical" href={defaultCanonical} />
+          <meta property="og:title" content={defaultTitle} />
+          <meta property="og:description" content={defaultDesc} />
+          <meta property="og:url" content={defaultCanonical} />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </>
     );
   }
 
@@ -145,10 +166,12 @@ const CityPage = () => {
       <Helmet>
         {cityPage.meta_title && <title>{cityPage.meta_title}</title>}
         {cityPage.meta_description && <meta name="description" content={cityPage.meta_description} />}
+        <meta name="robots" content="index, follow" />
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:title" content={cityPage.meta_title || `River Sand Delivery in ${cityPage.city_name}`} />
         <meta property="og:description" content={cityPage.meta_description || ""} />
         <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbSchema }} />
