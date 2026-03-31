@@ -42,7 +42,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
         </motion.a>
 
         <div className="hidden lg:flex items-center gap-8">
-          {navLinks.map((item, i) => (
+          {navLinks.map((item) => (
             <a
               key={item}
               href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
