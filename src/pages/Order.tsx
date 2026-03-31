@@ -192,6 +192,16 @@ const Order = () => {
     if (paymentStatus === "success") {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
       if (returnedSessionId) setStripePaymentId(returnedSessionId);
+      setConfirmedTotals({
+        totalPrice,
+        totalWithProcessingFee,
+        processingFee,
+        taxAmount,
+        subtotal,
+        saturdaySurchargeTotal,
+        distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
+        taxInfo,
+      });
       setStep("success");
       // Email is sent by the Stripe webhook for same-tab returns
       toast({
