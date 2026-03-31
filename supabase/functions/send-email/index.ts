@@ -814,13 +814,20 @@ serve(async (req) => {
         }
       }
 
+      // Build dispatch subject with payment status
+      const isPaidForSubject = data.payment_status === "paid" || data.payment_method === "stripe-link" || data.payment_method === "stripe";
+      const dispatchDeliveryDate = data.delivery_date
+        ? new Date(data.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+        : "—";
+      const dispatchSubject = `[${isPaidForSubject ? 'PAID' : 'COD'}] ${orderNumber} — ${data.customer_name || "Customer"} — ${dispatchDeliveryDate}`;
+
       const promises: Promise<void>[] = [
         sendMail(resend, ownerEmail, `🔔 New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
         // Dispatch notification
         sendMail(
           resend,
           DISPATCH_EMAIL,
-          `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
+          dispatchSubject,
           orderDispatchEmail(data),
           undefined, FROM, REPLY_TO
         ),
