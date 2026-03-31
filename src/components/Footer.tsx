@@ -99,7 +99,7 @@ const Footer = () => {
 
       {/* Cities section */}
       {cityLinks.length > 0 && (
-        <div className="container mx-auto px-6 py-6">
+        <div className="container mx-auto px-6 py-6 border-0 border-primary">
           <motion.div
             initial="hidden"
             whileInView="visible"
