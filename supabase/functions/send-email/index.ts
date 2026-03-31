@@ -888,7 +888,7 @@ serve(async (req) => {
   .footer a{color:${BRAND_COLOR};text-decoration:none}
 </style></head><body>
 <div class="container">
-  <div class="header"><h1>🔴 CALLBACK REQUEST</h1></div>
+  <div class="header"><h1>CALLBACK REQUEST</h1></div>
   <div class="body">
     <h2>Customer wants a callback!</h2>
     <table class="info-table">${tableRows}</table>
