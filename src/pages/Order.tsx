@@ -1362,210 +1362,140 @@ const Order = () => {
               const displayTotalWithFee = dt?.totalWithProcessingFee ?? totalWithProcessingFee;
               const displayProcessingFee = dt?.processingFee ?? processingFee;
               const displayTaxAmount = dt?.taxAmount ?? taxAmount;
-              const displaySubtotal = dt?.subtotal ?? subtotal;
               const displaySaturdaySurcharge = dt?.saturdaySurchargeTotal ?? saturdaySurchargeTotal;
               const displayDistanceFee = dt?.distanceFee ?? (result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0);
               const displayTaxInfo = dt?.taxInfo ?? taxInfo;
+              const isStripe = paymentMethod === "stripe-link";
+              const isCod = !isStripe;
               return (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }} className="space-y-5 print-confirmation">
-                {/* Header */}
-                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                  <div className="bg-primary py-4 flex justify-center border-b border-border/50 rounded-t-2xl">
-                    <img src={logoImg} alt="RIVERSAND" className="h-[67px] lg:h-[80px] w-auto object-contain" />
-                  </div>
-                  <div className="p-8 text-center space-y-4">
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 }} className="w-16 h-16 bg-[#22C55E]/10 rounded-full flex items-center justify-center mx-auto">
-                      <CheckCircle2 className="w-8 h-8 text-[#22C55E]" />
-                    </motion.div>
-                    <h2 className="text-3xl font-display text-foreground">ORDER CONFIRMED</h2>
-                    {form.email && (
-                      <p className="font-body text-sm text-muted-foreground">A copy of this confirmation has been sent to <strong className="text-foreground">{form.email}</strong></p>
-                    )}
-                  </div>
-                </div>
+                {/* Print styles */}
+                <style>{`
+                  @media print {
+                    body * { visibility: hidden; }
+                    #order-confirmation, #order-confirmation * { visibility: visible; }
+                    #order-confirmation { position: absolute; left: 0; top: 0; width: 100%; }
+                    .print-hide { display: none !important; }
+                  }
+                `}</style>
 
-                {/* Stripe Payment Block (card only) */}
-                {(paymentMethod === "stripe-link") && (
+                <div id="order-confirmation">
+                  {/* Header */}
                   <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                    <div className="bg-foreground px-6 py-3">
-                      <h3 className="font-display text-sm text-background tracking-wider">PAYMENT CONFIRMED</h3>
+                    <div className="bg-primary py-4 flex justify-center border-b border-border/50 rounded-t-2xl">
+                      <img src={logoImg} alt="RIVERSAND" className="h-[67px] lg:h-[80px] w-auto object-contain" />
                     </div>
-                    <div className="p-6 space-y-2">
-                      {stripePaymentId && (
-                        <div className="flex justify-between py-1.5">
-                          <span className="font-body text-sm text-muted-foreground">Payment ID</span>
-                          <span className="font-mono text-xs text-foreground">{stripePaymentId}</span>
-                        </div>
+                    <div className="p-8 text-center space-y-4">
+                      {isStripe ? (
+                        <>
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 }} className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                            <CheckCircle2 className="w-8 h-8 text-primary" />
+                          </motion.div>
+                          <h2 className="text-3xl font-display text-foreground">PAYMENT CONFIRMED</h2>
+                          <p className="font-body text-sm text-muted-foreground">Your card has been charged. Nothing due at delivery.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-5xl">💵</p>
+                          <h2 className="text-3xl font-display text-foreground">PAYMENT DUE AT DELIVERY</h2>
+                          <p className="font-display text-2xl text-primary">{formatCurrency(displayTotal)}</p>
+                          <p className="font-body text-sm text-muted-foreground">Please have exact amount ready. Driver carries no change.</p>
+                        </>
                       )}
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Amount Charged</span>
-                        <span className="font-display text-sm text-foreground">{formatCurrency(displayTotalWithFee)}</span>
-                      </div>
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Currency</span>
-                        <span className="font-display text-sm text-foreground">USD</span>
-                      </div>
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Status</span>
-                        <span className="font-display text-sm text-[#22C55E]">Succeeded ✓</span>
-                      </div>
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Payment Method</span>
-                        <span className="font-display text-sm text-foreground">Credit Card</span>
-                      </div>
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Payment Date</span>
-                        <span className="font-body text-sm text-foreground">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
-                      </div>
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Processing Fee (3.5%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(displayProcessingFee)}</span>
-                      </div>
+                      {form.email && (
+                        <p className="font-body text-sm text-muted-foreground">A copy of this confirmation has been sent to <strong className="text-foreground">{form.email}</strong></p>
+                      )}
                     </div>
                   </div>
-                )}
 
-                {/* Cash / Check Block */}
-                {(paymentMethod === "cash" || paymentMethod === "check" || codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
-                  <div className="bg-background rounded-2xl border border-[#F59E0B]/30 shadow-lg shadow-foreground/5 overflow-hidden">
-                    <div className="bg-[#F59E0B]/10 px-6 py-3 border-b border-[#F59E0B]/20">
-                      <h3 className="font-display text-sm text-[#F59E0B] tracking-wider">PAYMENT DUE AT DELIVERY</h3>
+                  {/* Order Details */}
+                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden mt-5">
+                    <div className="bg-foreground px-6 py-3">
+                      <h3 className="font-display text-sm text-background tracking-wider">ORDER DETAILS</h3>
                     </div>
                     <div className="p-6 space-y-2">
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Method</span>
-                        <span className="font-display text-sm text-foreground capitalize">{codSubOption}</span>
-                      </div>
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Amount Due</span>
-                        <span className="font-display text-sm text-foreground">{formatCurrency(displayTotal)}</span>
-                      </div>
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Due</span>
-                        <span className="font-display text-sm text-foreground">At time of delivery</span>
-                      </div>
-                      <p className="font-body text-xs text-muted-foreground mt-3 bg-muted/50 rounded-lg p-3">Please have exact payment ready at delivery. Our driver will provide a receipt.</p>
+                      {orderNumber && <ReceiptRow label="Order Number" value={orderNumber} accent />}
+                      <ReceiptRow label="Order Date" value={new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} />
+                      <ReceiptRow label="Product" value="River Sand — 9 Cubic Yard Load" />
+                      <ReceiptRow label="Quantity" value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
+                      <Separator className="my-2" />
+                      <ReceiptRow label="Delivery Address" value="" />
+                      <p className="font-body text-sm text-foreground -mt-1 mb-2 text-right">{address}</p>
+                      {selectedDeliveryDate && <ReceiptRow label="Delivery Date" value={selectedDeliveryDate.fullLabel} />}
+                      <ReceiptRow label="Delivery Window" value="8:00 AM – 5:00 PM" />
                     </div>
                   </div>
-                )}
 
-                {/* Order Details */}
-                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                  <div className="bg-foreground px-6 py-3">
-                    <h3 className="font-display text-sm text-background tracking-wider">ORDER DETAILS</h3>
+                  {/* Pricing Summary */}
+                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden mt-5">
+                    <div className="bg-foreground px-6 py-3">
+                      <h3 className="font-display text-sm text-background tracking-wider">PRICING SUMMARY</h3>
+                    </div>
+                    <div className="p-6 space-y-2">
+                      <ReceiptRow label={`River Sand (×${quantity})`} value={formatCurrency(effectivePricing.base_price * quantity)} />
+                      {displayDistanceFee > 0 && <ReceiptRow label="Distance fee" value={formatCurrency(displayDistanceFee)} />}
+                      {displaySaturdaySurcharge > 0 && <ReceiptRow label="Saturday surcharge" value={formatCurrency(displaySaturdaySurcharge)} />}
+                      {displayTaxAmount > 0 && <ReceiptRow label={`Sales tax — ${displayTaxInfo.parish} (${(displayTaxInfo.rate * 100).toFixed(2)}%)`} value={formatCurrency(displayTaxAmount)} />}
+                      {isStripe && <ReceiptRow label="Processing fee (3.5%)" value={formatCurrency(displayProcessingFee)} />}
+                      <Separator className="my-2" />
+                      <ReceiptRow label="Total" value={formatCurrency(isStripe ? displayTotalWithFee : displayTotal)} bold />
+                    </div>
                   </div>
-                  <div className="p-6 space-y-2">
-                    {orderNumber && (
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Order Number</span>
-                        <span className="font-display text-sm text-primary">{orderNumber}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between py-1.5">
-                      <span className="font-body text-sm text-muted-foreground">Order Date</span>
-                      <span className="font-body text-sm text-foreground">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex justify-between py-1.5">
-                      <span className="font-body text-sm text-muted-foreground">Product</span>
-                      <span className="font-body text-sm text-foreground">River Sand — 9 Cubic Yard Load</span>
-                    </div>
-                    <div className="flex justify-between py-1.5">
-                      <span className="font-body text-sm text-muted-foreground">Quantity</span>
-                      <span className="font-body text-sm text-foreground">{quantity} load{quantity > 1 ? "s" : ""}</span>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex justify-between py-1.5">
-                      <span className="font-body text-sm text-muted-foreground">Delivery Address</span>
-                      <span className="font-body text-sm text-foreground text-right max-w-[60%]">{address}</span>
-                    </div>
-                    {selectedDeliveryDate && (
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Delivery Date</span>
-                        <span className="font-display text-sm text-foreground">{selectedDeliveryDate.fullLabel}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between py-1.5">
-                      <span className="font-body text-sm text-muted-foreground">Delivery Window</span>
-                      <span className="font-body text-sm text-foreground">8:00 AM – 5:00 PM</span>
-                    </div>
 
-                    {selectedDeliveryDate?.isSameDay && (
-                      <div className="mt-3 bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-lg p-3">
-                        <p className="font-body text-xs text-[#F59E0B]">⚡ Same-day delivery requested. Our team will call {form.phone} to confirm before dispatching.</p>
-                      </div>
-                    )}
-                    {selectedDeliveryDate?.isSaturday && (
-                      <div className="mt-3 bg-muted/50 border border-border rounded-lg p-3">
-                        <p className="font-body text-xs text-muted-foreground">📅 Saturday delivery — $35 surcharge applied.</p>
-                      </div>
-                    )}
+                  {/* Payment Info */}
+                  <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden mt-5">
+                    <div className="bg-foreground px-6 py-3">
+                      <h3 className="font-display text-sm text-background tracking-wider">
+                        {isStripe ? "PAYMENT" : "PAYMENT DUE AT DELIVERY"}
+                      </h3>
+                    </div>
+                    <div className="p-6 space-y-2">
+                      {isStripe ? (
+                        <>
+                          <ReceiptRow label="Method" value="Credit Card (Stripe)" />
+                          <ReceiptRow label="Amount Charged" value={formatCurrency(displayTotalWithFee)} bold />
+                          {stripePaymentId && <ReceiptRow label="Payment ID" value={stripePaymentId} small />}
+                          <ReceiptRow label="Status" value="Paid ✓" accent />
+                        </>
+                      ) : (
+                        <>
+                          <ReceiptRow label="Method" value={codSubOption === "check" ? "Check" : "Cash"} />
+                          <ReceiptRow label="Amount Due" value={formatCurrency(displayTotal)} bold />
+                          <ReceiptRow label="Due" value="At time of delivery" />
+                          <div className="mt-3 bg-accent/10 border border-accent/20 rounded-lg p-3">
+                            <p className="font-body text-xs text-accent-foreground">⚠ Please have exact amount ready. Our drivers do not carry change.</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Pricing Summary */}
-                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                  <div className="bg-foreground px-6 py-3">
-                    <h3 className="font-display text-sm text-background tracking-wider">PRICING SUMMARY</h3>
-                  </div>
-                  <div className="p-6 space-y-2">
-                    <div className="flex justify-between py-1.5">
-                      <span className="font-body text-sm text-muted-foreground">River Sand (×{quantity})</span>
-                      <span className="font-body text-sm text-foreground">{formatCurrency(effectivePricing.base_price * quantity)}</span>
-                    </div>
-                    {displayDistanceFee > 0 && (
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Distance fee</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(displayDistanceFee)}</span>
-                      </div>
-                    )}
-                    {selectedDeliveryDate?.isSaturday && (
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Saturday surcharge</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(displaySaturdaySurcharge)}</span>
-                      </div>
-                    )}
-                    {displayTaxAmount > 0 && (
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Sales tax — {displayTaxInfo.parish} ({(displayTaxInfo.rate * 100).toFixed(2)}%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(displayTaxAmount)}</span>
-                      </div>
-                    )}
-                    {paymentMethod === "stripe-link" && (
-                      <div className="flex justify-between py-1.5">
-                        <span className="font-body text-sm text-muted-foreground">Processing fee (3.5%)</span>
-                        <span className="font-body text-sm text-foreground">{formatCurrency(displayProcessingFee)}</span>
-                      </div>
-                    )}
-                    <Separator className="my-2" />
-                    <div className="flex justify-between py-2">
-                      <span className="font-display text-base text-foreground">Total</span>
-                      <span className="font-display text-base text-primary">{formatCurrency(paymentMethod === "stripe-link" ? displayTotalWithFee : displayTotal)}</span>
-                    </div>
-                    <div className="flex justify-between py-1.5">
-                      <span className="font-body text-sm text-muted-foreground">
-                        {paymentMethod === "stripe-link" ? "Card charged" : "Due at delivery"}
-                      </span>
-                      <span className="font-display text-sm text-foreground">
-                        {formatCurrency(paymentMethod === "stripe-link" ? displayTotalWithFee : displayTotal)}
-                      </span>
+                  {/* Delivery Terms */}
+                  <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-2 mt-5">
+                    <p className="font-display text-xs tracking-wider text-muted-foreground">DELIVERY TERMS</p>
+                    <div className="space-y-1">
+                      <p className="font-body text-[11px] text-muted-foreground">• Delivery is curbside only — curb to nearest sidewalk or driveway edge</p>
+                      <p className="font-body text-[11px] text-muted-foreground">• Driver will not enter private property</p>
+                      <p className="font-body text-[11px] text-muted-foreground">• Ways Materials LLC is not responsible for property damage</p>
+                      <p className="font-body text-[11px] text-muted-foreground">• Customer or representative must be present at delivery</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Bottom Actions */}
+                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center print-hide">
-                  <Button onClick={handleDownloadInvoice} disabled={downloadingInvoice || !confirmedOrderId} variant="outline" className="font-display tracking-wider rounded-xl h-12">
+                  <Button onClick={() => window.print()} variant="outline" className="flex-1 h-11 font-display tracking-wider rounded-xl">
+                    <Printer className="w-4 h-4 mr-2" /> Print Confirmation
+                  </Button>
+                  <Button onClick={handleDownloadInvoice} disabled={downloadingInvoice || !confirmedOrderId} variant="outline" className="flex-1 h-11 font-display tracking-wider rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground">
                     {downloadingInvoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                    DOWNLOAD INVOICE
-                  </Button>
-                  <Button onClick={() => window.print()} variant="outline" className="font-display tracking-wider rounded-xl h-12">
-                    <Printer className="w-4 h-4 mr-2" /> PRINT CONFIRMATION
-                  </Button>
-                  <Button asChild className="font-display tracking-wider rounded-xl h-12">
-                    <Link to="/">BACK TO HOME</Link>
+                    Download Invoice
                   </Button>
                 </div>
+
+                <Button onClick={() => window.location.href = "/"} variant="outline" className="w-full h-11 font-display tracking-wider rounded-xl print-hide">
+                  BACK TO HOME
+                </Button>
               </motion.div>
               );
             })()}
