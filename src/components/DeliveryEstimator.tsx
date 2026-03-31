@@ -133,7 +133,15 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
           setLoading(false); return;
         }
         const geocoder = new window.google.maps.Geocoder();
-        const geocodeResult = await geocoder.geocode({ address: currentAddress });
+        console.log("[calculateDistance] geocoder created, calling geocode for:", currentAddress);
+        let geocodeResult: any;
+        try {
+          geocodeResult = await geocoder.geocode({ address: currentAddress });
+        } catch (geocodeErr: any) {
+          console.error("[calculateDistance] geocoder.geocode threw:", geocodeErr?.message || geocodeErr);
+          setError("Could not locate that address. Please try again.");
+          setLoading(false); return;
+        }
         console.log("[calculateDistance] geocode result:", geocodeResult);
         if (geocodeResult.results?.[0]?.geometry?.location) {
           custLat = geocodeResult.results[0].geometry.location.lat();
