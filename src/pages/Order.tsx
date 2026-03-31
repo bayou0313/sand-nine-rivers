@@ -944,9 +944,9 @@ const Order = () => {
 
                 <div className="mt-6 grid grid-cols-3 gap-2 text-center">
                   {[
-                    { icon: "🚚", top: "LOCAL AREA", bot: "Delivery included" },
-                    { icon: "📍", top: "EXTENDED", bot: "Surcharge applies" },
-                    { icon: "📦", top: "9 CU YDS", bot: "Per load" },
+                    { icon: Truck, top: "LOCAL AREA", bot: "Delivery included" },
+                    { icon: MapPin, top: "EXTENDED", bot: "Surcharge applies" },
+                    { icon: Package, top: "9 CU YDS", bot: "Per load" },
                   ].map((item, i) => (
                     <motion.div
                       key={item.top}
