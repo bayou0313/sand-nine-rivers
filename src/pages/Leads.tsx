@@ -2896,6 +2896,48 @@ const Leads = () => {
 
         return (
           <>
+            {/* SITE MODE TOGGLE */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Site Mode</h3>
+              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                Control whether the public site is live or showing maintenance page. Admin dashboard always accessible.
+              </p>
+              <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
+                backgroundColor: globalSettings.site_mode === 'maintenance' ? '#FEF3C7' : '#DCFCE7',
+                border: `1px solid ${globalSettings.site_mode === 'maintenance' ? '#F59E0B' : '#16A34A'}`,
+              }}>
+                <div>
+                  <p className="font-medium text-sm" style={{ color: globalSettings.site_mode === 'maintenance' ? '#92400E' : '#166534' }}>
+                    {globalSettings.site_mode === 'maintenance' ? '🔴 MAINTENANCE MODE — Site is offline to public' : '🟢 LIVE MODE — Site is fully operational'}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: globalSettings.site_mode === 'maintenance' ? '#B45309' : '#15803D' }}>
+                    {globalSettings.site_mode === 'maintenance' ? 'Customers see maintenance page. Admin dashboard unaffected.' : 'Customers can browse and place orders normally.'}
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const newMode = globalSettings.site_mode === 'maintenance' ? 'live' : 'maintenance';
+                    try {
+                      await supabase.functions.invoke("leads-auth", {
+                        body: { password: storedPassword(), action: "save_settings", settings: { site_mode: newMode } },
+                      });
+                      setGlobalSettings({ ...globalSettings, site_mode: newMode });
+                      toast({
+                        title: newMode === 'maintenance' ? '🔴 Site set to MAINTENANCE MODE' : '🟢 Site set to LIVE MODE',
+                        description: newMode === 'maintenance' ? 'Public site now shows maintenance page.' : 'Public site is now fully operational.',
+                      });
+                    } catch (err: any) {
+                      toast({ title: "Error", description: err.message, variant: "destructive" });
+                    }
+                  }}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors"
+                  style={{ backgroundColor: globalSettings.site_mode === 'maintenance' ? '#16A34A' : '#DC2626', minWidth: '120px' }}
+                >
+                  {globalSettings.site_mode === 'maintenance' ? '→ Go Live' : '→ Maintenance'}
+                </button>
+              </div>
+            </div>
+
             {/* Tabs */}
             <div className="flex gap-1 mb-6" style={{ borderBottom: `2px solid ${CARD_BORDER}` }}>
               {([["pricing", "Pricing"], ["profile", "Business Profile"], ["seo", "SEO"]] as const).map(([id, label]) => (
@@ -3710,6 +3752,11 @@ const Leads = () => {
         <div className="px-4 py-4">
           <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>DELIVERY LEADS</h2>
           <p className="text-xs mt-0.5" style={{ color: SECTION_LABEL }}>Live: {livePricing}</p>
+          {globalSettings.site_mode === 'maintenance' && (
+            <div className="text-xs font-bold px-2 py-1 rounded mt-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B' }}>
+              🔴 MAINTENANCE
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2">
