@@ -31,6 +31,7 @@ declare global {
 }
 
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { useBrandPalette } from "@/hooks/useBrandPalette";
 
 type EstimateResult = {
   distance: number;
