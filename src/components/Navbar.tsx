@@ -21,6 +21,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+      style={{ top: document.getElementById('stripe-test-banner') ? '36px' : '0px' }}
       className={`fixed left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
           ? "bg-primary/90 backdrop-blur-md shadow-lg"
