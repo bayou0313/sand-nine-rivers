@@ -3212,11 +3212,8 @@ const Leads = () => {
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">GTM Container ID</label>
-                      <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
-                        <span className="text-sm font-mono" style={{ color: BRAND_NAVY }}>GTM-KPKFPCXM</span>
-                        <span className="text-xs font-medium text-green-600">— Active ✓</span>
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">GTM detected on your site. Configure tags at tagmanager.google.com</p>
+                      <Input className="h-9 font-mono" value={seoSettings.seo_gtm_id || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_gtm_id: e.target.value })} placeholder="GTM-XXXXXXX" />
+                      <p className="text-[10px] text-gray-400 mt-0.5">Format: GTM-XXXXXXX — changes apply to live site on save</p>
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">GA4 Property ID (for reference)</label>
