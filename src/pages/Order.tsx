@@ -226,10 +226,15 @@ const Order = () => {
               setQuantity(order.quantity || 1);
               if (order.delivery_date) {
                 const d = new Date(order.delivery_date + "T00:00:00");
+                const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+                const shortDays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
                 setSelectedDeliveryDate({
-                  iso: order.delivery_date,
+                  date: d,
+                  label: shortDays[d.getDay()],
+                  dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
                   fullLabel: d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
-                  dayOfWeek: order.delivery_day_of_week || d.toLocaleDateString("en-US", { weekday: "long" }),
+                  iso: order.delivery_date,
+                  dayOfWeek: order.delivery_day_of_week || dayNames[d.getDay()],
                   isSaturday: order.saturday_surcharge || false,
                   isSameDay: order.same_day_requested || false,
                 });
