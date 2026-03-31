@@ -15,30 +15,41 @@ serve(async (req) => {
 
   const results: Record<string, string> = {};
 
-  // 1. Google — ping via Search Console sitemap API
+  // 1. Google — Search Console ping (legacy but still functional for some)
   try {
     const googleUrl = `https://www.google.com/ping?sitemap=${encodeURIComponent(SITEMAP_URL)}`;
     const res = await fetch(googleUrl);
-    results.google = `${res.status} ${res.statusText}`;
-  } catch (e) {
-    results.google = `error: ${e.message}`;
+    results.google_ping = `${res.status}`;
+  } catch (e: any) {
+    results.google_ping = `error: ${e.message}`;
   }
 
-  // 2. Bing — IndexNow / ping
+  // 2. Bing — Webmaster ping
   try {
-    const bingUrl = `https://www.bing.com/ping?sitemap=${encodeURIComponent(SITEMAP_URL)}`;
+    const bingUrl = `https://www.bing.com/webmaster/ping.aspx?siteMap=${encodeURIComponent(SITEMAP_URL)}`;
     const res = await fetch(bingUrl);
-    results.bing = `${res.status} ${res.statusText}`;
-  } catch (e) {
+    results.bing = `${res.status}`;
+  } catch (e: any) {
     results.bing = `error: ${e.message}`;
   }
 
-  // 3. IndexNow (covers Bing, Yandex, Seznam, Naver)
+  // 3. IndexNow (Bing, Yandex, Seznam, Naver, Yep)
   try {
-    const indexNowUrl = `https://api.indexnow.org/indexnow?url=${encodeURIComponent(SITE_URL)}&urlList=${encodeURIComponent(SITEMAP_URL)}`;
-    const res = await fetch(indexNowUrl);
-    results.indexnow = `${res.status} ${res.statusText}`;
-  } catch (e) {
+    const res = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        host: "riversand.net",
+        key: "riversand-indexnow-key",
+        urlList: [
+          `${SITE_URL}/`,
+          `${SITE_URL}/order`,
+          `${SITE_URL}/sitemap.xml`,
+        ],
+      }),
+    });
+    results.indexnow = `${res.status}`;
+  } catch (e: any) {
     results.indexnow = `error: ${e.message}`;
   }
 
@@ -46,22 +57,19 @@ serve(async (req) => {
   try {
     const yandexUrl = `https://webmaster.yandex.com/ping?sitemap=${encodeURIComponent(SITEMAP_URL)}`;
     const res = await fetch(yandexUrl);
-    results.yandex = `${res.status} ${res.statusText}`;
-  } catch (e) {
+    results.yandex = `${res.status}`;
+  } catch (e: any) {
     results.yandex = `error: ${e.message}`;
   }
 
-  // 5. AI platforms — ping common AI crawl endpoints
-  // ChatGPT/OpenAI checks robots.txt and sitemap automatically
-  // Perplexity, You.com, and other AI search engines use standard sitemap discovery
-  // We ping our own sitemap to warm the cache
+  // 5. Warm the sitemap cache and count URLs
   try {
     const res = await fetch(SITEMAP_URL);
     const xml = await res.text();
     const urlCount = (xml.match(/<url>/g) || []).length;
-    results.sitemap_warm = `OK - ${urlCount} URLs cached`;
-  } catch (e) {
-    results.sitemap_warm = `error: ${e.message}`;
+    results.sitemap_urls = `${urlCount}`;
+  } catch (e: any) {
+    results.sitemap_urls = `error: ${e.message}`;
   }
 
   const timestamp = new Date().toISOString();
