@@ -386,6 +386,8 @@ const Order = () => {
   }, []);
 
   const calculateDistance = useCallback(async () => {
+    console.log("[calculateDistance] starting, address:", address);
+    console.log("[calculateDistance] customerCoords:", customerCoords);
     const currentAddress = address.trim() || getPlaceInputValue(addressContainerRef.current);
     if (!currentAddress) { setError("Please enter a delivery address."); return; }
     setLoading(true);
@@ -413,12 +415,16 @@ const Order = () => {
         }
       }
 
+      console.log("[calculateDistance] coords:", custLat, custLng);
+
       if (allPits.length === 0) {
         setError("No delivery locations configured. Please call us for pricing.");
         setLoading(false); return;
       }
 
+      console.log("[calculateDistance] calling findBestPitDriving, pits:", allPits.length);
       const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing, supabase);
+      console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");

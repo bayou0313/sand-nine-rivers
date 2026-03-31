@@ -113,6 +113,8 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   }, []);
 
   const calculateDistance = useCallback(async () => {
+    console.log("[calculateDistance] starting, address:", address);
+    console.log("[calculateDistance] customerCoords:", customerCoords);
     // Read address from the autocomplete input if state is empty
     const currentAddress = address.trim() || getPlaceInputValue(containerRef.current);
     if (!currentAddress) { setError("Please enter a delivery address."); return; }
@@ -138,6 +140,8 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         }
       }
 
+      console.log("[calculateDistance] coords:", custLat, custLng);
+
       if (pits.length === 0) {
         setError("No delivery locations configured. Please call us for pricing.");
         setLoading(false); return;
@@ -148,7 +152,9 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         setLoading(false); return;
       }
 
+      console.log("[calculateDistance] calling findBestPitDriving, pits:", pits.length);
       const bestResult = await findBestPitDriving(pits, custLat!, custLng!, globalPricing, supabase);
+      console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");
