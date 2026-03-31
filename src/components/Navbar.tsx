@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const navLinks = ["Pricing", "How It Works", "Why Us", "About", "FAQ", "Contact", "Learn More"];
+const navLinks = ["Pricing", "How It Works", "Why Us", "About", "FAQ", "Learn More", "Contact"];
 
 const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?: string }) => {
   const [menuOpen, setMenuOpen] = useState(false);
