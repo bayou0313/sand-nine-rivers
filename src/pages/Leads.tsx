@@ -1094,7 +1094,26 @@ const Leads = () => {
           const gc = geocodeCache[l.address];
           return { lat: gc.lat, lng: gc.lon };
         });
-        const distances = await getDrivingDistanceBatch(pit.lat, pit.lon, dests);
+        // Call edge function for driving distances (batch: one origin, many destinations)
+        const { data: distData } = await supabase.functions.invoke("leads-auth", {
+          body: {
+            action: "calculate_distances",
+            origins: [{ lat: pit.lat, lng: pit.lon }],
+            destination: dests[0], // single destination per call
+          },
+        });
+        // For batch: call per destination
+        const distances: (number | null)[] = [];
+        for (const dest of dests) {
+          const { data: dd } = await supabase.functions.invoke("leads-auth", {
+            body: {
+              action: "calculate_distances",
+              origins: [{ lat: pit.lat, lng: pit.lon }],
+              destination: dest,
+            },
+          });
+          distances.push(dd?.distances?.[0] ?? null);
+        }
         for (let i = 0; i < needsDriving.length; i++) {
           if (distances[i] != null) {
             const gc = geocodeCache[needsDriving[i].address];
