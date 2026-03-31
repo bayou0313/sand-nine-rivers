@@ -17,6 +17,11 @@ jobs:
           node-version: 20
       - run: npm install
       - run: npm run build
+      - name: Pre-render city pages
+        run: node scripts/prerender-cities.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
