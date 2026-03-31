@@ -461,7 +461,7 @@ export default function OrderConfirmation({
                 <li>✗ Driver will not enter private property</li>
                 <li>✗ No delivery into backyards or gated areas</li>
                 <li>
-                  ✗ Ways Materials LLC not responsible for property damage
+                  ✗ WAYS® Materials LLC not responsible for property damage
                 </li>
               </ul>
             </div>

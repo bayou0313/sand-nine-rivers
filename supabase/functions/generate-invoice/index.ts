@@ -340,7 +340,7 @@ serve(async (req) => {
     doc.setTextColor(180, 180, 180);
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text("Ways Materials LLC  |  Bridge City, LA  |  1-855-GOT-WAYS  |  orders@riversand.net", pw / 2, y + 6, { align: "center" });
+    doc.text("WAYS\u00AE Materials LLC  |  Bridge City, LA  |  1-855-GOT-WAYS  |  orders@riversand.net", pw / 2, y + 6, { align: "center" });
     doc.setFontSize(6);
     doc.setTextColor(130, 130, 130);
     doc.text("This document serves as your official delivery confirmation and receipt.", pw / 2, y + 10, { align: "center" });

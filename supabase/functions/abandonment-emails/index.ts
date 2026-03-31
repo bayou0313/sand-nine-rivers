@@ -35,7 +35,7 @@ function emailWrapper(body: string) {
   <div class="footer">
     <p>River Sand &bull; Greater New Orleans, LA</p>
     <p><a href="tel:+18554689297">${PHONE}</a></p>
-    <p style="margin-top:8px;font-size:11px;color:#bbb">River Sand is a brand of Ways Materials, LLC</p>
+    <p style="margin-top:8px;font-size:11px;color:#bbb">© 2026 WAYS® Materials LLC</p>
   </div>
 </div></body></html>`;
 }

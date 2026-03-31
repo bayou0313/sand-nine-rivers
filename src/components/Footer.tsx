@@ -87,7 +87,7 @@ const Footer = () => {
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
             />
             <p className="font-body text-background/40 text-xs mt-2">
-              River Sand is a brand of Ways Materials, LLC
+              River Sand is a brand of WAYS® Materials LLC
             </p>
           </motion.div>
 
