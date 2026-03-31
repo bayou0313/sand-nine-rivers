@@ -711,7 +711,8 @@ serve(async (req) => {
         resend,
         DISPATCH_EMAIL,
         `🚚 NEW ORDER ${orderNumber} — ${formatDate(data.delivery_date)}`,
-        orderDispatchEmail(data)
+        orderDispatchEmail(data),
+        undefined, FROM, REPLY_TO
       );
       console.log("[email] Dispatch notification sent to:", DISPATCH_EMAIL);
 
