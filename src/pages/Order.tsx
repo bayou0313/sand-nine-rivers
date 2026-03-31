@@ -418,7 +418,7 @@ const Order = () => {
         setLoading(false); return;
       }
 
-      const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing);
+      const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing, supabase);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");

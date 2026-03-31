@@ -143,7 +143,12 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         setLoading(false); return;
       }
 
-      const bestResult = await findBestPitDriving(pits, custLat!, custLng!, globalPricing);
+      if (Math.abs(custLat! - 30) > 15 || Math.abs(custLng! - (-90)) > 15) {
+        setError("Address not found in our service area. Please enter a Louisiana address.");
+        setLoading(false); return;
+      }
+
+      const bestResult = await findBestPitDriving(pits, custLat!, custLng!, globalPricing, supabase);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");
