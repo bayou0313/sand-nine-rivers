@@ -363,15 +363,12 @@ function orderCustomerEmail(order: any): string {
 
             <!-- FOOTER -->
             <tr>
-              <td style="background-color:${BRAND_COLOR};padding:24px 32px;text-align:center;">
-                <img src="${RIVERSAND_ICON}" alt="River Sand" width="40" style="display:block;margin:0 auto 12px;width:40px;height:40px;">
-                <p style="margin:0 0 4px;color:rgba(255,255,255,0.8);font-size:13px;">
-                  River Sand by Ways Materials LLC
+              <td style="background-color:#060F1A;padding:24px 32px;text-align:center;">
+                <img src="${WAYS_WHITE_LOGO}" alt="WAYS" width="64" style="display:block;margin:0 auto 10px;width:64px;height:auto;opacity:0.45;">
+                <p style="margin:0 0 4px;color:rgba(255,255,255,0.25);font-size:9px;letter-spacing:1px;">
+                  © 2026 WAYS® Materials LLC
                 </p>
-                <p style="margin:0 0 4px;color:rgba(255,255,255,0.5);font-size:12px;">
-                  Greater New Orleans, Louisiana
-                </p>
-                <p style="margin:0;color:rgba(255,255,255,0.4);font-size:11px;">
+                <p style="margin:0;color:rgba(255,255,255,0.3);font-size:10px;">
                   This email was sent to ${customerEmail} because you placed an order at riversand.net
                 </p>
               </td>
