@@ -166,10 +166,12 @@ const CityPage = () => {
       <Helmet>
         {cityPage.meta_title && <title>{cityPage.meta_title}</title>}
         {cityPage.meta_description && <meta name="description" content={cityPage.meta_description} />}
+        <meta name="robots" content="index, follow" />
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:title" content={cityPage.meta_title || `River Sand Delivery in ${cityPage.city_name}`} />
         <meta property="og:description" content={cityPage.meta_description || ""} />
         <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbSchema }} />
