@@ -899,7 +899,7 @@ serve(async (req) => {
   </div>
 </div></body></html>`;
 
-      await sendMail(resend, ownerEmail, `🔴 URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml, undefined, FROM, REPLY_TO);
+      await sendMail(resend, ownerEmail, `URGENT: Callback Request — ${data.name || "Customer"}`, callbackHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Callback email sent to:", ownerEmail);
 
     } else if (type === "out_of_area_lead") {
