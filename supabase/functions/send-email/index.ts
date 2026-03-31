@@ -154,7 +154,7 @@ function orderCustomerEmail(order: any): string {
             <tr>
               <td style="background-color:${isStripePaid ? '#F0FDF4' : '#FFFBEB'};padding:20px 32px;text-align:center;border-bottom:1px solid ${isStripePaid ? '#BBF7D0' : '#FDE68A'};">
                 <p style="margin:0 0 4px;font-size:18px;font-weight:700;color:${isStripePaid ? '#166534' : '#92400E'};">
-                  ${isStripePaid ? '✅ PAYMENT CONFIRMED' : '💵 PAYMENT DUE AT DELIVERY'}
+                  ${isStripePaid ? 'PAYMENT CONFIRMED' : 'PAYMENT DUE AT DELIVERY'}
                 </p>
                 <p style="margin:0;font-size:14px;color:${isStripePaid ? '#15803D' : '#B45309'};">
                   ${isStripePaid
