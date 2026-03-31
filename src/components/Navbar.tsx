@@ -6,7 +6,17 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = ["Pricing", "How It Works", "Why Us", "About", "FAQ", "Learn More", "Contact"];
 
-const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?: string }) => {
+const sectionIdMap: Record<string, string> = {
+  "Pricing": "pricing",
+  "How It Works": "how-it-works",
+  "Why Us": "why-us",
+  "About": "about",
+  "FAQ": "faq",
+  "Learn More": "learn-more",
+  "Contact": "contact",
+};
+
+const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boolean; logoHref?: string; activeSections?: string[] }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(solid);
 
@@ -42,17 +52,22 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
         </motion.a>
 
         <div className="hidden lg:flex items-center gap-8">
-          {navLinks.map((item) => (
-            <a
-              key={item}
-              href={`#${item === "Why Us" ? "why-us" : item === "How It Works" ? "how-it-works" : item === "Learn More" ? "learn-more" : item.toLowerCase()}`}
-              className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
-                scrolled ? "text-primary-foreground/90" : "text-primary-foreground/70"
-              }`}
-            >
-              {item}
-            </a>
-          ))}
+          {navLinks.map((item) => {
+            const sectionId = sectionIdMap[item];
+            const isLocal = !activeSections || activeSections.includes(sectionId);
+            const href = isLocal ? `#${sectionId}` : `/#${sectionId}`;
+            return (
+              <a
+                key={item}
+                href={href}
+                className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
+                  scrolled ? "text-primary-foreground/90" : "text-primary-foreground/70"
+                }`}
+              >
+                {item}
+              </a>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-3">
@@ -93,20 +108,25 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="lg:hidden bg-primary/95 backdrop-blur-md border-t border-primary-foreground/10 px-6 py-4 space-y-3 shadow-xl overflow-hidden"
           >
-            {navLinks.map((item, i) => (
-              <motion.a
-                key={item}
-                href={`#${item === "Why Us" ? "why-us" : item === "How It Works" ? "how-it-works" : item === "Learn More" ? "learn-more" : item.toLowerCase()}`}
-                className="block font-body text-sm text-primary-foreground/70 hover:text-accent transition-colors"
-                onClick={() => setMenuOpen(false)}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.3 }}
-                whileHover={{ x: 6 }}
-              >
-                {item}
-              </motion.a>
-            ))}
+            {navLinks.map((item, i) => {
+              const sectionId = sectionIdMap[item];
+              const isLocal = !activeSections || activeSections.includes(sectionId);
+              const href = isLocal ? `#${sectionId}` : `/#${sectionId}`;
+              return (
+                <motion.a
+                  key={item}
+                  href={href}
+                  className="block font-body text-sm text-primary-foreground/70 hover:text-accent transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.06, duration: 0.3 }}
+                  whileHover={{ x: 6 }}
+                >
+                  {item}
+                </motion.a>
+              );
+            })}
             <div className="flex flex-col gap-2 pt-2">
               <Button size="sm" className="font-display tracking-wider w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg" asChild>
                 <Link to="/order" onClick={() => setMenuOpen(false)}>

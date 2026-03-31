@@ -206,7 +206,7 @@ const CityPage = () => {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbSchema }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: localBusinessSchema }} />
 
-      <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} />
+      <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} activeSections={["why-us", "about", "faq", "learn-more", "contact"]} />
       <Hero
         h1Override={cityPage.h1_text || `River Sand Delivery in ${cityPage.city_name}, ${cityPage.state} — Same-Day Service`}
         subtitleOverride={
