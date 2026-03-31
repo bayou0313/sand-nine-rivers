@@ -24,10 +24,10 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
           ? "bg-background/95 backdrop-blur-md shadow-lg shadow-foreground/5"
-          : "bg-gradient-to-b from-foreground/40 to-transparent"
+          : "bg-background/60 backdrop-blur-sm shadow-sm"
       }`}
     >
-      <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4 md:px-0 md:bg-primary-foreground md:text-primary-foreground">
+      <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4 md:px-0">
         <motion.a
           href={logoHref}
           className="flex items-center shrink-0"
@@ -37,9 +37,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           <img
             src="/lovable-uploads/5d9662aa-a34b-4de1-a986-bca21e076819.png"
             alt="RiverSand logo"
-            className={`h-[67px] lg:h-[80px] w-auto max-w-none object-contain transition-all duration-500 ${
-              scrolled ? "grayscale" : "brightness-0 invert"
-            }`}
+            className="h-[67px] lg:h-[80px] w-auto max-w-none object-contain transition-all duration-500"
           />
         </motion.a>
 
@@ -49,7 +47,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
               key={item}
               href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
               className={`font-body text-sm transition-colors duration-300 hover:text-accent relative ${
-                scrolled ? "text-muted-foreground" : "text-primary-foreground/70"
+                scrolled ? "text-muted-foreground" : "text-foreground/70"
               }`}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -92,7 +90,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             whileTap={{ scale: 0.95 }}
             className="hidden lg:block"
           >
-            <Button size="sm" variant="outline" className={`font-display tracking-wider rounded-lg ${scrolled ? "border-border text-foreground hover:bg-muted" : "border-primary-foreground/60 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20"}`} asChild>
+            <Button size="sm" variant="outline" className={`font-display tracking-wider rounded-lg ${scrolled ? "border-border text-foreground hover:bg-muted" : "border-border text-foreground hover:bg-muted"}`} asChild>
               <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" />
                 1-855-GOT-WAYS
@@ -101,7 +99,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           </motion.div>
 
           <motion.button
-            className={`lg:hidden transition-colors ${scrolled ? "text-foreground" : "text-primary-foreground"}`}
+            className="lg:hidden transition-colors text-foreground"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
             whileTap={{ scale: 0.9, rotate: 90 }}
