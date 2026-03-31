@@ -243,13 +243,19 @@ const Order = () => {
               const orderTaxRate = order.tax_rate || 0;
               const orderTaxAmount = order.tax_amount || 0;
               const orderSatSurcharge = order.saturday_surcharge_amount || 0;
-              const orderSubtotal = order.price - orderTaxAmount;
-              const orderProcessingFee = order.payment_method === "stripe-link"
-                ? parseFloat(((order.price - orderTaxAmount - orderSatSurcharge) * 0.035).toFixed(2))
+              const isStripe = order.payment_method === "stripe-link";
+              // For Stripe orders, order.price includes the processing fee
+              const orderProcessingFee = isStripe
+                ? parseFloat((order.price / 1.035 * 0.035).toFixed(2))
                 : 0;
+              const orderTotalWithFee = order.price;
+              const orderTotalWithoutFee = isStripe
+                ? parseFloat((order.price - orderProcessingFee).toFixed(2))
+                : order.price;
+              const orderSubtotal = orderTotalWithoutFee - orderTaxAmount;
               setConfirmedTotals({
-                totalPrice: order.price,
-                totalWithProcessingFee: order.price,
+                totalPrice: orderTotalWithoutFee,
+                totalWithProcessingFee: orderTotalWithFee,
                 processingFee: orderProcessingFee,
                 taxAmount: orderTaxAmount,
                 subtotal: orderSubtotal,
@@ -260,16 +266,17 @@ const Order = () => {
               if (order.distance_miles) {
                 setResult({
                   distance: order.distance_miles,
-                  price: order.price / (order.quantity || 1),
+                  price: orderTotalWithoutFee / (order.quantity || 1),
                   address: `${order.distance_miles.toFixed(1)} miles away`,
                   duration: "",
                 });
               }
+              setStep("success");
             }
           } catch (err) {
             console.error("[Order] Failed to fetch order for confirmation:", err);
+            setStep("success"); // Still show success — payment went through
           }
-          setStep("success");
         })();
       } else {
         setStep("success");
@@ -304,19 +311,24 @@ const Order = () => {
         setSubmitting(false);
 
         if (signal.status === "success") {
+          const snap = pricingSnapshotRef.current;
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
-          if (pendingOrderId) setConfirmedOrderId(pendingOrderId);
+          if (snap.pendingOrderId) setConfirmedOrderId(snap.pendingOrderId);
           setPendingOrderId(null);
+          setAddress(snap.address);
+          setSelectedDeliveryDate(snap.selectedDeliveryDate);
+          setPaymentMethod(snap.paymentMethod);
+          setForm(snap.form);
           setConfirmedTotals({
-            totalPrice,
-            totalWithProcessingFee,
-            processingFee,
-            taxAmount,
-            subtotal,
-            saturdaySurchargeTotal,
-            distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
-            taxInfo,
+            totalPrice: snap.totalPrice,
+            totalWithProcessingFee: snap.totalWithProcessingFee,
+            processingFee: snap.processingFee,
+            taxAmount: snap.taxAmount,
+            subtotal: snap.subtotal,
+            saturdaySurchargeTotal: snap.saturdaySurchargeTotal,
+            distanceFee: snap.result ? Math.max(0, (snap.result.distance - snap.effectivePricing.free_miles) * snap.effectivePricing.extra_per_mile * snap.quantity) : 0,
+            taxInfo: snap.taxInfo,
           });
           setStep("success");
           updateSession({
@@ -412,9 +424,23 @@ const Order = () => {
     }).catch((err) => console.error("[Order] Email send exception:", err));
   }, [result, confirmedTotals, form, address, selectedDeliveryDate, quantity, totalPrice, totalWithProcessingFee, saturdaySurchargeTotal, taxInfo, taxAmount]);
 
-  // Keep a ref to avoid stale closure in Stripe signal listener
+  // Keep refs to avoid stale closures in Stripe signal listener
   const sendOrderEmailRef = useRef(sendOrderEmail);
   useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
+
+  // Snapshot of current pricing state for cross-tab handler
+  const pricingSnapshotRef = useRef({
+    totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
+    saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
+    address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+  });
+  useEffect(() => {
+    pricingSnapshotRef.current = {
+      totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
+      saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
+      address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+    };
+  });
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
