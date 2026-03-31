@@ -616,7 +616,7 @@ INSERT INTO public.global_settings (key, value, description) VALUES
   ('seo_og_title',             'Same-Day River Sand Delivery — New Orleans, LA',                                                                           'Open Graph title'),
   ('seo_robots',               'index, follow',                                                                                                            'Robots meta tag content'),
   ('seo_schema_faq',           'true',                                                                                                                     'Enable FAQPage schema markup'),
-  ('seo_schema_local_business','true',                                                                                                                     'LocalBusiness schema toggle'),
+  
   ('seo_schema_localbusiness', 'true',                                                                                                                     'Enable LocalBusiness schema markup'),
   ('seo_schema_product',       'true',                                                                                                                     'Enable Product schema markup'),
   ('seo_show_google_reviews',  'false',                                                                                                                    'Show Google Reviews'),
