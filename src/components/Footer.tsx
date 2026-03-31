@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
-const WAYS_LOGO_DARK =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
+const WAYS_LOGO_DARK = "/ways-logo.png";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
