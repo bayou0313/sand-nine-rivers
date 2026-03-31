@@ -719,10 +719,10 @@ serve(async (req) => {
     } else if (type === "contact") {
       const customerEmail = data.email;
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data)),
+        sendMail(resend, ownerEmail, `📬 Contact Form: ${data.name || "Website Visitor"}`, contactInternalEmail(data), undefined, FROM, REPLY_TO),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data)));
+        promises.push(sendMail(resend, customerEmail, "We received your message — WAYS River Sand", contactCustomerEmail(data), undefined, FROM, REPLY_TO));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);
