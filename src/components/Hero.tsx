@@ -46,14 +46,14 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.05] text-primary-foreground tracking-wide">
               {h1Override || "Same-Day River Sand Delivery"}
             </h1>
-            <div className="w-32 h-1 bg-accent mt-3 rounded-full" />
+            <div className="w-20 h-0.5 bg-accent mt-4" />
           </motion.div>
 
           {subtitleOverride && (

@@ -43,25 +43,15 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
 
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((item, i) => (
-            <motion.a
+            <a
               key={item}
               href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
-              className={`font-body text-sm transition-colors duration-300 hover:text-accent relative ${
+              className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
                 scrolled ? "text-white/90" : "text-white/70"
               }`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + i * 0.07, duration: 0.4 }}
-              whileHover={{ y: -2 }}
             >
               {item}
-              <motion.span
-                className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent rounded-full origin-left"
-                initial={{ scaleX: 0 }}
-                whileHover={{ scaleX: 1 }}
-                transition={{ duration: 0.25 }}
-              />
-            </motion.a>
+            </a>
           ))}
         </div>
 
