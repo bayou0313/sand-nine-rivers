@@ -5,6 +5,7 @@ import Hero from "@/components/Hero";
 import SocialProofStrip from "@/components/SocialProofStrip";
 import About from "@/components/About";
 import Features from "@/components/Features";
+import HowItWorks from "@/components/HowItWorks";
 import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
 import Pricing from "@/components/Pricing";
@@ -144,6 +145,7 @@ const Index = () => {
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
       <Hero h1Override={seo.seo_h1 || DEFAULT_H1} prefillAddress={returnAddress} />
       <SocialProofStrip />
+      <HowItWorks />
       <About />
       <Features />
       <Testimonials />
