@@ -18,6 +18,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
+import { useBrandPalette } from "@/hooks/useBrandPalette";
 
 const localBusinessJsonLd = {
   "@context": "https://schema.org",
