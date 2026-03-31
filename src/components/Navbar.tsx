@@ -27,7 +27,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           : "bg-background/60 backdrop-blur-sm shadow-sm"
       }`}
     >
-      <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4 md:px-0 md:bg-primary-foreground md:text-primary-foreground">
+      <div className="container mx-auto flex items-center justify-between h-16 md:h-20 px-4 md:px-0">
         <motion.a
           href={logoHref}
           className="flex items-center shrink-0"
