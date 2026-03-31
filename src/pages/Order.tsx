@@ -892,17 +892,25 @@ const Order = () => {
             {step === "details" && result && (
               <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
                 {/* Compact delivery confirmation banner */}
-                <motion.div
+                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
-                  className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 shadow-sm"
+                  className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-5 py-4 shadow-sm"
                 >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary" />
-                    <span className="font-display text-sm tracking-wider text-primary">DELIVERY AVAILABLE</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <span className="font-display text-sm tracking-wider text-primary block">DELIVERY CONFIRMED</span>
+                      <span className="font-body text-xs text-muted-foreground">{address.length > 45 ? address.slice(0, 42) + "…" : address}</span>
+                    </div>
                   </div>
-                  <span className="font-display text-xl text-primary">{formatCurrency(result.price)}<span className="text-xs font-body text-muted-foreground">/load</span></span>
+                  <div className="text-right">
+                    <span className="font-display text-2xl text-primary">{formatCurrency(result.price)}</span>
+                    <span className="text-[10px] font-body text-muted-foreground block">/load</span>
+                  </div>
                 </motion.div>
 
                 {/* Combined: Delivery Date + Customer Info */}
