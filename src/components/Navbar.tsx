@@ -99,7 +99,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           </motion.div>
 
           <motion.button
-            className="lg:hidden transition-colors text-foreground"
+            className="lg:hidden transition-colors text-white"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
             whileTap={{ scale: 0.9, rotate: 90 }}
