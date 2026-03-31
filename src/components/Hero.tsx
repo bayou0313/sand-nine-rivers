@@ -18,7 +18,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-[90vh] flex items-center overflow-hidden pt-16">
+    <section ref={sectionRef} className="relative min-h-[90vh] flex items-center overflow-hidden pt-24 md:pt-28">
       <motion.img
         src={heroImage}
         alt="River sand delivery truck unloading clean screened river sand at a New Orleans job site"
