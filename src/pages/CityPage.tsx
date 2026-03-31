@@ -89,10 +89,24 @@ const CityPage = () => {
   }, [citySlug]);
 
   if (loading) {
+    const cityName = slugToTitle(citySlug || "");
+    const defaultTitle = `River Sand Delivery in ${cityName}, LA | Same-Day | River Sand`;
+    const defaultDesc = `Same-day bulk river sand delivery to ${cityName}, Louisiana. Instant online pricing, cash or card, order before noon for same-day service.`;
+    const defaultCanonical = `https://riversand.net/${citySlug}/river-sand-delivery`;
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
+      <>
+        <Helmet>
+          <title>{defaultTitle}</title>
+          <meta name="description" content={defaultDesc} />
+          <link rel="canonical" href={defaultCanonical} />
+          <meta property="og:title" content={defaultTitle} />
+          <meta property="og:description" content={defaultDesc} />
+          <meta property="og:url" content={defaultCanonical} />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </>
     );
   }
 
