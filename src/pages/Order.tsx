@@ -276,6 +276,7 @@ const Order = () => {
           } catch (err) {
             console.error("[Order] Failed to fetch order for confirmation:", err);
             setStep("success"); // Still show success — payment went through
+          }
         })();
       } else {
         setStep("success");
