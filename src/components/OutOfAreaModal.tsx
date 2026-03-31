@@ -116,7 +116,12 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
           </div>
           <p className="text-xs text-muted-foreground">* At least one of email or phone is required.</p>
 
-          <Button onClick={handleSubmit} disabled={!canSubmit || submitting} className="w-full">
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit || submitting}
+            className="w-full font-semibold text-white rounded-lg"
+            style={{ backgroundColor: "#C07A00", borderRadius: 8 }}
+          >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Notify Me
           </Button>
