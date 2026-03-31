@@ -551,7 +551,7 @@ export default function OrderConfirmation({
               className="font-display text-lg tracking-wider"
               style={{ color: "#C07A00" }}
             >
-              📞 1-855-GOT-WAYS
+              1-855-GOT-WAYS
             </a>
             <p className="text-xs" style={{ color: "#9CA3AF" }}>
               orders@riversand.net
