@@ -1097,7 +1097,7 @@ const Order = () => {
 
                       {selectedDeliveryDate.isSameDay && (
                         <p className="font-body text-xs text-destructive bg-destructive/5 p-2 rounded-lg my-2">
-                          ⚡ Same-day request — our team will call to confirm availability.
+                          Same-day request — our team will call to confirm availability.
                         </p>
                       )}
 
