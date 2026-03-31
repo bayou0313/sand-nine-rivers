@@ -36,21 +36,7 @@ function fmtShortDate(dateStr: string): string {
   } catch { return dateStr; }
 }
 
-async function fetchImageAsBase64(url: string): Promise<string | null> {
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) return null;
-    const buf = await resp.arrayBuffer();
-    const uint8 = new Uint8Array(buf);
-    let binary = "";
-    for (let i = 0; i < uint8.length; i++) {
-      binary += String.fromCharCode(uint8[i]);
-    }
-    return btoa(binary);
-  } catch {
-    return null;
-  }
-}
+// Removed fetchImageAsBase64 — using text-only rendering to keep PDF under 300KB
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
