@@ -318,7 +318,7 @@ export default function OrderConfirmation({
                         {formatCurrency(displayTotalWithFee)}
                       </span>
                     </div>
-                    <Row icon="💳" label="Method" value="Credit Card" />
+                    <Row label="Method" value="Credit Card" />
                     {stripePaymentId && (
                       <div>
                         <span className="text-xs" style={{ color: "#6B7280" }}>
