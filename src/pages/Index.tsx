@@ -68,6 +68,7 @@ const DEFAULT_DESCRIPTION = "Get same-day bulk river sand delivered anywhere in 
 const DEFAULT_H1 = "Same-Day River Sand Delivery";
 
 const Index = () => {
+  useBrandPalette();
   const [session, setSession] = useState<any>(null);
   const [returnAddress, setReturnAddress] = useState<string | null>(null);
   const [seo, setSeo] = useState<Record<string, string>>({});
