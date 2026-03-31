@@ -45,7 +45,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           {navLinks.map((item) => (
             <a
               key={item}
-              href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
+              href={`#${item === "Why Us" ? "why-us" : item.toLowerCase()}`}
               className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
                 scrolled ? "text-white/90" : "text-white/70"
               }`}
