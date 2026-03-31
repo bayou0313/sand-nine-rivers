@@ -349,7 +349,7 @@ function orderCustomerEmail(order: any): string {
                 </p>
                 <p style="margin:0 0 4px;text-align:center;">
                   <a href="tel:+18554689297" style="color:${BRAND_COLOR};font-size:15px;font-weight:700;text-decoration:none;">
-                    📞 ${PHONE}
+                    ${PHONE}
                   </a>
                 </p>
                 <p style="margin:0;text-align:center;">
