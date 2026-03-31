@@ -117,7 +117,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="lg:hidden bg-background/95 backdrop-blur-md border-t border-border px-6 py-4 space-y-3 shadow-xl overflow-hidden"
+            className="lg:hidden bg-black/90 backdrop-blur-md border-t border-white/10 px-6 py-4 space-y-3 shadow-xl overflow-hidden"
           >
             {navLinks.map((item, i) => (
               <motion.a
