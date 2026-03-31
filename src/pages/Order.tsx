@@ -123,6 +123,8 @@ const Order = () => {
   } | null>(null);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [deliveryTermsAccepted, setDeliveryTermsAccepted] = useState(false);
+  const [cardAuthAccepted, setCardAuthAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
