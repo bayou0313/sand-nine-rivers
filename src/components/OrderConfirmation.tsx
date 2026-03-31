@@ -280,15 +280,14 @@ export default function OrderConfirmation({
                 DELIVERY
               </p>
               <div className="space-y-3">
-                <Row icon="📍" label="Address" value={address} />
-                <Row icon="📅" label="Date" value={deliveryDateLabel} />
-                <Row icon="⏰" label="Window" value="8:00 AM – 5:00 PM" />
+                <Row label="Address" value={address} />
+                <Row label="Date" value={deliveryDateLabel} />
+                <Row label="Window" value="8:00 AM – 5:00 PM" />
                 <Row
-                  icon="📦"
                   label="Product"
                   value={`River Sand — 9 Cubic Yard Load`}
                 />
-                <Row icon="🔢" label="Quantity" value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
+                <Row label="Quantity" value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
               </div>
             </div>
 
