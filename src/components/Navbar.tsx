@@ -96,7 +96,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             {navLinks.map((item, i) => (
               <motion.a
                 key={item}
-                href={`#${item === "Why Us" ? "why-us" : item.toLowerCase()}`}
+                href={`#${item === "Why Us" ? "why-us" : item === "How It Works" ? "how-it-works" : item.toLowerCase()}`}
                 className="block font-body text-sm text-white/70 hover:text-accent transition-colors"
                 onClick={() => setMenuOpen(false)}
                 initial={{ opacity: 0, x: -20 }}
