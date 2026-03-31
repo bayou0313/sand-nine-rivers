@@ -355,7 +355,6 @@ export default function OrderConfirmation({
                       </span>
                     </div>
                     <Row
-                      icon="💵"
                       label="Method"
                       value={codSubOption === "check" ? "Check" : "Cash"}
                     />
