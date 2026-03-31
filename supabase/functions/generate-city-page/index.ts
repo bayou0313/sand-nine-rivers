@@ -118,15 +118,17 @@ CONTENT REQUIREMENTS:
 - meta_title: Max 60 chars. Must include city name and 'river sand delivery'. Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day | River Sand"
 - meta_description: Max 160 chars. Must include city name, same-day delivery${isMultiPit ? ", instant pricing" : `, price ($${price})`}, and payment options (cash or card). Written to maximize click-through from search results.
 - h1_text: Max 70 chars. MUST start with "River Sand Delivery in". Format: "River Sand Delivery in ${city_name}, ${state} — Same-Day Service". NO pipe characters (|) — pipes are for meta_title only. Must read as a natural headline, not an SEO tag.
-- hero_intro: ONE sentence only. Maximum 120 characters. Lead with the city name and one specific local detail (a road, landmark, or common project type). Do not restate the H1. No generic phrases. No period at the end. Example format: "Serving Chalmette homeowners and contractors along St. Bernard Highway — bulk river sand delivered the same day"
-- why_choose_intro: 1-2 sentences. Establishes LOCAL AUTHORITY for this specific parish/area. Reference the parish name, local terrain challenge, or why a local supplier matters here. Demonstrates E-E-A-T.
-- delivery_details: ${isMultiPit ? "1-2 sentences. Do NOT mention a specific price or distance — this city is covered by multiple dispatch locations. Emphasize that pricing depends on exact address and direct them to the estimator." : `1-2 sentences. Specific logistics: pit name, exact distance (${distance} miles), the actual road(s) used to reach this city (reference real LA highways like LA-18, US-90, I-10, etc.), delivery price ($${price}). Shows we know the route.`}
-- local_uses: Exactly 4 items. Each is 1 sentence describing a SPECIFIC common use case for river sand in THIS city's context. Consider: river proximity (levee work), industrial (fill), residential (drainage, landscaping), agricultural (arena/garden). Make each feel local.
-- local_expertise: 2-3 sentences. Demonstrates deep local knowledge: geography (river proximity, elevation, flood zone characteristics), soil conditions (silty, clay-heavy, etc.), specific challenges projects face in this area.
-- faq_items: Exactly 3 FAQ items. Each with "question" and "answer" fields:
-  1. City-specific question about delivery schedule or availability — answer mentions city name
-  2. ${isMultiPit ? "City-specific question about pricing — answer says pricing varies by location and directs to the estimator, do NOT mention a specific dollar amount" : `City-specific question about price or distance — answer mentions exact price ($${price}), exact distance (${distance} miles)`}
-  3. Local use-case question specific to this city's geography — confident, specific answer
+- hero_intro: ONE sentence. Maximum 120 characters. Must contain "${city_name} river sand delivery" naturally. Lead with a specific local detail — a road, landmark, or project type. Never restate the H1. No period at the end. Example: "Serving Chalmette homeowners along St. Bernard Highway — same-day bulk river sand delivery"
+- why_choose_intro: ONE sentence. Maximum 200 characters. Must include the city name, the parish name, and the phrase "river sand" or "river sand delivery". Establishes local authority — reference a specific terrain challenge, drainage issue, or soil condition unique to this parish. No generic claims.
+- delivery_details: ${isMultiPit ? "ONE sentence. Maximum 220 characters. Must include the city name. Do NOT mention a specific price or distance. Direct the customer to enter their address for an exact quote." : `ONE sentence. Maximum 220 characters. Must include: city name, the phrase "river sand delivery", pit name, exact distance (${distance} miles), at least one real Louisiana highway (LA-18, US-90, I-10, LA-308, etc.), and delivery price ($${price}). Pack in the specifics — this is conversion copy.`}
+- local_uses: Exactly 4 items. Each item is ONE sentence, maximum 100 characters. Each must mention the city name OR a specific local landmark/geography. Cover 4 different use cases from: levee repair, drainage fill, landscaping base, pool fill, foundation backfill, driveway base, arena footing, garden beds. Vary the use cases — no repeats. Must include "river sand" in at least 2 of the 4 items.
+- local_expertise: Exactly 2 sentences. Maximum 320 characters total. Must include: city name, parish name, and "river sand" or "bulk sand". First sentence: specific geography (river proximity, elevation, flood zone, levee system). Second sentence: specific soil challenge and why river sand is the solution. No generic Louisiana filler.
+- faq_items: Exactly 3 FAQ items. Each with "question" and "answer" fields.
+  QUESTION rules: maximum 80 characters, phrased as a natural search query, must include city name and "river sand" in at least 2 of 3 questions.
+  ANSWER rules: maximum 160 characters, must be a direct confident answer, must include city name in each answer, include specific data (price, distance, time, or day) wherever possible.
+  Question 1: Delivery schedule or same-day availability for ${city_name} — answer must mention same-day cutoff time and days available.
+  Question 2: ${isMultiPit ? `Pricing for ${city_name} — answer says pricing varies by exact address and directs to the estimator. Do NOT mention a dollar amount.` : `Price or distance for ${city_name} — answer must include exact price ($${price}) and exact distance (${distance} miles).`}
+  Question 3: A local use case specific to ${city_name} geography — answer demonstrates local expertise with a specific detail.
 - schema_service_area: City name formatted for schema: "${city_name}, ${state}"`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -228,7 +230,7 @@ CONTENT REQUIREMENTS:
         meta_description: generated.meta_description,
         h1_text: generated.h1_text,
         content: fullContent,
-        prompt_version: "2.0",
+        prompt_version: "3.0",
         pit_reassigned: false,
         price_changed: false,
         regen_reason: null,
