@@ -28,6 +28,22 @@ const localBusinessJsonLd = {
   "url": "https://riversand.net",
   "telephone": "+18554689297",
   "description": "Same-day bulk river sand delivery serving the Gulf South region. Instant price quotes, cash or card payment.",
+  "image": "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
+  "priceRange": "$$",
+  "paymentAccepted": "Cash, Credit Card",
+  "currenciesAccepted": "USD",
+  "openingHours": "Mo-Sa 07:00-17:00",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Bridge City",
+    "addressRegion": "LA",
+    "addressCountry": "US",
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 29.95,
+    "longitude": -90.07,
+  },
   "areaServed": {
     "@type": "GeoCircle",
     "geoMidpoint": {
@@ -37,9 +53,41 @@ const localBusinessJsonLd = {
     },
     "geoRadius": "80000",
   },
-  "priceRange": "$$",
-  "paymentAccepted": "Cash, Credit Card",
-  "openingHours": "Mo-Sa 07:00-17:00",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "River Sand Delivery Services",
+    "itemListElement": [
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "Bulk River Sand Delivery",
+          "description": "Same-day delivery of 9 cubic yards of river sand. Ideal for drainage, landscaping, fill, and construction projects.",
+        },
+        "price": "195.00",
+        "priceCurrency": "USD",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "price": "195.00",
+          "priceCurrency": "USD",
+          "description": "Starting price — varies by distance",
+        },
+        "availability": "https://schema.org/InStock",
+        "areaServed": {
+          "@type": "GeoCircle",
+          "geoMidpoint": {
+            "@type": "GeoCoordinates",
+            "latitude": 29.95,
+            "longitude": -90.07,
+          },
+          "geoRadius": "80000",
+        },
+      },
+    ],
+  },
+  "sameAs": [
+    "https://riversand.net",
+  ],
 };
 
 const faqSchema = {
