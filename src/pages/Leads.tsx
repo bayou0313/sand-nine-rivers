@@ -2938,6 +2938,59 @@ const Leads = () => {
               </div>
             </div>
 
+            {/* STRIPE MODE TOGGLE */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Stripe Payment Mode</h3>
+              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                Switch between test and live Stripe keys. Test mode shows a modal and banner to visitors. No code changes or key swapping required.
+              </p>
+              <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
+                backgroundColor: globalSettings.stripe_mode === 'test' ? '#FEF3C7' : '#DCFCE7',
+                border: `1px solid ${globalSettings.stripe_mode === 'test' ? '#F59E0B' : '#16A34A'}`,
+              }}>
+                <div>
+                  <p className="font-medium text-sm" style={{ color: globalSettings.stripe_mode === 'test' ? '#92400E' : '#166534' }}>
+                    {globalSettings.stripe_mode === 'test' ? '🔧 TEST MODE — Using Stripe test keys' : '✅ LIVE MODE — Processing real payments'}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: globalSettings.stripe_mode === 'test' ? '#B45309' : '#15803D' }}>
+                    {globalSettings.stripe_mode === 'test' ? 'Test card: 4242 4242 4242 4242 · Exp: 12/29 · CVC: 123' : 'Real cards charged. Payouts to Chase ---5952.'}
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const newMode = globalSettings.stripe_mode === 'test' ? 'live' : 'test';
+                    try {
+                      await supabase.functions.invoke("leads-auth", {
+                        body: { password: storedPassword(), action: "save_settings", settings: { stripe_mode: newMode } },
+                      });
+                      setGlobalSettings({ ...globalSettings, stripe_mode: newMode });
+                      toast({
+                        title: newMode === 'test' ? '🔧 Switched to TEST MODE' : '✅ Switched to LIVE MODE',
+                        description: newMode === 'test' ? 'Site shows test modal. Use card 4242 4242 4242 4242.' : 'Real payments are now being processed.',
+                      });
+                    } catch (err: any) {
+                      toast({ title: "Error", description: err.message, variant: "destructive" });
+                    }
+                  }}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors"
+                  style={{ backgroundColor: globalSettings.stripe_mode === 'test' ? '#16A34A' : '#DC2626', minWidth: '120px' }}
+                >
+                  {globalSettings.stripe_mode === 'test' ? '→ Go Live' : '→ Test Mode'}
+                </button>
+              </div>
+              {globalSettings.stripe_mode === 'test' && (
+                <div className="mt-3 p-3 rounded-lg text-xs font-mono" style={{
+                  backgroundColor: '#F8F7F2',
+                  border: `1px solid ${CARD_BORDER}`,
+                  color: '#0D2137',
+                }}>
+                  <p className="font-bold mb-1">Test card details:</p>
+                  <p>Card: 4242 4242 4242 4242</p>
+                  <p>Expiry: 12/29 · CVC: 123 · ZIP: 70094</p>
+                </div>
+              )}
+            </div>
+
             {/* Tabs */}
             <div className="flex gap-1 mb-6" style={{ borderBottom: `2px solid ${CARD_BORDER}` }}>
               {([["pricing", "Pricing"], ["profile", "Business Profile"], ["seo", "SEO"]] as const).map(([id, label]) => (
