@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,11 +11,14 @@ const corsHeaders = {
 const BRAND_COLOR = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
-const FROM = "River Sand <no_reply@riversand.net>";
-const REPLY_TO = "no_reply@riversand.net";
-const INTERNAL_EMAIL = "cmo@haulogix.com";
-const DISPATCH_EMAIL = "cmo@halogix.com";
 const PHONE = "1-855-GOT-WAYS";
+
+// Defaults — overridden by global_settings at runtime
+const DEFAULT_FROM_NAME = "River Sand";
+const DEFAULT_FROM_EMAIL = "no_reply@riversand.net";
+const DEFAULT_REPLY_TO = "orders@riversand.net";
+const DEFAULT_INTERNAL_EMAIL = "cmo@haulogix.com";
+const DEFAULT_DISPATCH_EMAIL = "cmo@halogix.com";
 
 const RIVERSAND_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
 const WAYS_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
