@@ -622,7 +622,7 @@ function emailWrapper(body: string) {
   <div class="header"><h1>WAYS River Sand</h1></div>
   <div class="body">${body}</div>
   <div class="footer">
-    <p>WAYS River Sand &bull; Greater New Orleans, LA</p>
+    <p>© 2026 WAYS® Materials LLC</p>
     <p><a href="tel:+18554689297">${PHONE}</a> &bull; <a href="mailto:no_reply@riversand.net">no_reply@riversand.net</a></p>
     <p><a href="https://riversand.net">riversand.net</a></p>
   </div>
