@@ -90,9 +90,11 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit }: O
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <MapPin className="w-5 h-5 text-primary" />
-            We're not in your area yet — but we're expanding
+          <DialogTitle
+            className="text-lg font-semibold"
+            style={{ color: "#0D2137", letterSpacing: "0.02em", textTransform: "none" }}
+          >
+            We're Not in Your Area Yet — But We're Expanding
           </DialogTitle>
           <DialogDescription>
             Leave your info and you'll be first to know when we reach your area. No spam, just one email when we go live near you.
