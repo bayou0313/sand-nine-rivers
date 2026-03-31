@@ -529,7 +529,7 @@ export default function OrderConfirmation({
               variant="outline"
               className="h-12 rounded-xl font-display tracking-wider"
             >
-              <Printer className="w-4 h-4 mr-2" /> Print Confirmation
+              <Download className="w-4 h-4 mr-2" /> Download PDF
             </Button>
             <Button
               onClick={onDownloadInvoice}
