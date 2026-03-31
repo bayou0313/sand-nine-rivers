@@ -789,7 +789,8 @@ riversand.net | ${PHONE} | Haulogix, LLC`.trim();
         resend,
         ownerEmail,
         `New Out-of-Area Lead — ${data.address || "Unknown"}`,
-        `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap">${leadHtml}</pre>`
+        `<pre style="font-family:monospace;font-size:14px;line-height:1.6;white-space:pre-wrap">${leadHtml}</pre>`,
+        undefined, FROM, REPLY_TO
       );
       console.log("[email] Out-of-area lead notification sent to:", ownerEmail);
 
