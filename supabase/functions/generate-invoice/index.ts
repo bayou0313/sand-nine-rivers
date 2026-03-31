@@ -372,10 +372,11 @@ serve(async (req) => {
     doc.setFillColor(...NAVY);
     doc.rect(0, y, pw, Math.max(footerH, 28), "F");
 
-    // Icon
-    if (iconB64) {
-      try { doc.addImage(`data:image/png;base64,${iconB64}`, "PNG", pw / 2 - 8, y + 3, 16, 16); } catch {}
-    }
+    // Text-only footer icon
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("RS", pw / 2, y + 14, { align: "center" });
 
     doc.setTextColor(200, 200, 200);
     doc.setFontSize(8);
