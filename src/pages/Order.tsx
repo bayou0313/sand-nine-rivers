@@ -1054,35 +1054,41 @@ const Order = () => {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("stripe-link")}
-                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
                           paymentMethod === "stripe-link"
-                            ? "border-accent bg-accent/5 shadow-md shadow-accent/10"
-                            : "border-border bg-card hover:border-accent/40"
+                            ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
+                            : "border-border bg-card hover:border-accent/40 hover:shadow-md"
                         }`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <CreditCard className={`w-4 h-4 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-xs text-foreground tracking-wider">PAY NOW</p>
-                        </div>
-                        <p className="font-body text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Lock className="w-2.5 h-2.5" /> Secure Checkout
+                        {paymentMethod === "stripe-link" && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
+                          </motion.div>
+                        )}
+                        <CreditCard className={`w-6 h-6 mb-2 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
+                        <p className="font-display text-sm text-foreground tracking-wider">PAY NOW</p>
+                        <p className="font-body text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" /> Secure Stripe Checkout
                         </p>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("cash")}
-                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
                           paymentMethod === "cash" || paymentMethod === "check"
-                            ? "border-accent bg-accent/5 shadow-md shadow-accent/10"
-                            : "border-border bg-card hover:border-accent/40"
+                            ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
+                            : "border-border bg-card hover:border-accent/40 hover:shadow-md"
                         }`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Banknote className={`w-4 h-4 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-xs text-foreground tracking-wider">AT DELIVERY</p>
-                        </div>
-                        <p className="font-body text-[10px] text-muted-foreground">Cash or Check</p>
+                        {(paymentMethod === "cash" || paymentMethod === "check") && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
+                          </motion.div>
+                        )}
+                        <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
+                        <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
+                        <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
                       </button>
                     </div>
 
