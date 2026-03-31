@@ -412,9 +412,23 @@ const Order = () => {
     }).catch((err) => console.error("[Order] Email send exception:", err));
   }, [result, confirmedTotals, form, address, selectedDeliveryDate, quantity, totalPrice, totalWithProcessingFee, saturdaySurchargeTotal, taxInfo, taxAmount]);
 
-  // Keep a ref to avoid stale closure in Stripe signal listener
+  // Keep refs to avoid stale closures in Stripe signal listener
   const sendOrderEmailRef = useRef(sendOrderEmail);
   useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
+
+  // Snapshot of current pricing state for cross-tab handler
+  const pricingSnapshotRef = useRef({
+    totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
+    saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
+    address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+  });
+  useEffect(() => {
+    pricingSnapshotRef.current = {
+      totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
+      saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
+      address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+    };
+  });
 
   useEffect(() => {
     const paramAddress = searchParams.get("address");
