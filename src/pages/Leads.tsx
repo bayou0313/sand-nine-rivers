@@ -3810,6 +3810,11 @@ const Leads = () => {
               🔴 MAINTENANCE
             </div>
           )}
+          {globalSettings.stripe_mode === 'test' && (
+            <div className="text-xs font-bold px-2 py-1 rounded mt-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B' }}>
+              🔧 STRIPE TEST
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2">

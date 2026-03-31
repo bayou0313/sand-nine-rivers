@@ -161,6 +161,8 @@ const MaintenancePage = () => (
 function AppContent() {
   const location = useLocation();
   const [siteMode, setSiteMode] = useState("live");
+  const [stripeMode, setStripeMode] = useState("live");
+  const [showTestModal, setShowTestModal] = useState(false);
 
   const isAdminRoute =
     location.pathname.startsWith("/leads") ||
@@ -174,13 +176,20 @@ function AppContent() {
 
     supabase
       .from("global_settings")
-      .select("value")
-      .eq("key", "site_mode")
-      .maybeSingle()
+      .select("key, value")
+      .in("key", ["site_mode", "stripe_mode"])
       .then(({ data, error }) => {
         if (cancelled) return;
         clearTimeout(timeout);
-        setSiteMode(error || !data ? "live" : data.value || "live");
+        const settings: Record<string, string> = {};
+        data?.forEach((r) => { settings[r.key] = r.value; });
+        setSiteMode(error ? "live" : settings.site_mode || "live");
+        const sm = settings.stripe_mode || "live";
+        setStripeMode(sm);
+        if (sm === "test") {
+          const dismissed = sessionStorage.getItem("test_modal_dismissed");
+          if (!dismissed) setShowTestModal(true);
+        }
       });
 
     return () => {
@@ -195,6 +204,33 @@ function AppContent() {
 
   return (
     <>
+      {stripeMode === "test" && !isAdminRoute && (
+        <div style={{
+          width: "100%",
+          backgroundColor: "#EA580C",
+          color: "#FFFFFF",
+          textAlign: "center",
+          padding: "8px 16px",
+          fontSize: "13px",
+          fontWeight: "bold",
+          letterSpacing: "0.5px",
+          position: "relative",
+          zIndex: 1000,
+        }}>
+          🔧 PAYMENT TEST MODE — Orders placed will not be charged &nbsp;|&nbsp;
+          <a
+            href="tel:18554689297"
+            style={{
+              color: "#FFFFFF",
+              textDecoration: "underline",
+              marginLeft: "4px",
+            }}
+          >
+            1-855-468-9297
+          </a>
+          &nbsp;for instant order assistance
+        </div>
+      )}
       <PageViewTracker />
       <Routes>
         <Route path="/" element={<Index />} />
@@ -207,6 +243,136 @@ function AppContent() {
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {stripeMode === "test" && showTestModal && !isAdminRoute && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0.7)",
+          zIndex: 99999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+          backdropFilter: "blur(4px)",
+        }}>
+          <div style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: "20px",
+            padding: "40px 32px",
+            maxWidth: "420px",
+            width: "100%",
+            textAlign: "center",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.4)",
+          }}>
+            <img
+              src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png"
+              alt="River Sand"
+              style={{ width: "160px", marginBottom: "24px" }}
+            />
+            <div style={{
+              width: "40px",
+              height: "2px",
+              backgroundColor: "#C07A00",
+              margin: "0 auto 24px auto",
+            }} />
+            <div style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              backgroundColor: "#FEF3C7",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px auto",
+              fontSize: "28px",
+            }}>
+              🔧
+            </div>
+            <h2 style={{
+              color: "#0D2137",
+              fontSize: "22px",
+              fontWeight: "bold",
+              margin: "0 0 12px 0",
+              letterSpacing: "0.5px",
+            }}>
+              We're Improving Your Experience
+            </h2>
+            <p style={{
+              color: "#666",
+              fontSize: "14px",
+              lineHeight: "1.7",
+              margin: "0 0 8px 0",
+            }}>
+              Our team is currently making improvements to our ordering system. The site is fully functional but <strong>payments are in test mode</strong> — no real charges will be made.
+            </p>
+            <p style={{
+              color: "#666",
+              fontSize: "14px",
+              lineHeight: "1.7",
+              margin: "0 0 28px 0",
+            }}>
+              We appreciate your patience and will be fully live shortly.
+            </p>
+            <button
+              onClick={() => {
+                sessionStorage.setItem("test_modal_dismissed", "true");
+                setShowTestModal(false);
+              }}
+              style={{
+                display: "block",
+                width: "100%",
+                backgroundColor: "#0D2137",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: "10px",
+                padding: "14px 24px",
+                fontSize: "15px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                marginBottom: "16px",
+                letterSpacing: "0.5px",
+              }}
+            >
+              Continue to Site →
+            </button>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              margin: "0 0 16px 0",
+            }}>
+              <div style={{ flex: 1, height: "1px", backgroundColor: "#E8E5DC" }} />
+              <span style={{ color: "#999", fontSize: "12px" }}>or</span>
+              <div style={{ flex: 1, height: "1px", backgroundColor: "#E8E5DC" }} />
+            </div>
+            <a
+              href="tel:18554689297"
+              style={{
+                display: "block",
+                width: "100%",
+                backgroundColor: "#C07A00",
+                color: "#FFFFFF",
+                borderRadius: "10px",
+                padding: "14px 24px",
+                fontSize: "15px",
+                fontWeight: "bold",
+                textDecoration: "none",
+                letterSpacing: "0.5px",
+                boxSizing: "border-box",
+              }}
+            >
+              📞 Call 1-855-GOT-WAYS
+            </a>
+            <p style={{
+              color: "#999",
+              fontSize: "11px",
+              margin: "12px 0 0 0",
+            }}>
+              For instant order assistance
+            </p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
