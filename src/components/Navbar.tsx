@@ -47,7 +47,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
               key={item}
               href={`#${item === "Why Us" ? "why-us" : item === "How It Works" ? "how-it-works" : item.toLowerCase()}`}
               className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
-                scrolled ? "text-white/90" : "text-white/70"
+                scrolled ? "text-primary-foreground/90" : "text-primary-foreground/70"
               }`}
             >
               {item}
@@ -75,7 +75,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           </div>
 
           <button
-            className="lg:hidden transition-colors text-white hover:text-accent"
+            className="lg:hidden transition-colors text-primary-foreground hover:text-accent"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
@@ -97,7 +97,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
               <motion.a
                 key={item}
                 href={`#${item === "Why Us" ? "why-us" : item === "How It Works" ? "how-it-works" : item.toLowerCase()}`}
-                className="block font-body text-sm text-white/70 hover:text-accent transition-colors"
+                className="block font-body text-sm text-primary-foreground/70 hover:text-accent transition-colors"
                 onClick={() => setMenuOpen(false)}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}

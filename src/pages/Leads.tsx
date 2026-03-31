@@ -3351,26 +3351,26 @@ const Leads = () => {
               </div>
 
               {/* Manual overrides */}
-              <p className="text-xs font-medium text-gray-500 mb-3">Manual overrides (hex)</p>
+              <p className="text-xs font-medium text-gray-500 mb-3">Manual overrides</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Primary color</label>
                   <div className="flex gap-2 items-center">
-                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.brand_primary || profileSettings.primary_color || BRAND_NAVY, borderColor: CARD_BORDER }} />
+                    <input type="color" className="w-9 h-9 rounded border cursor-pointer p-0.5" style={{ borderColor: CARD_BORDER }} value={profileSettings.brand_primary || profileSettings.primary_color || BRAND_NAVY} onChange={e => setProfileSettings({ ...profileSettings, brand_primary: e.target.value, primary_color: e.target.value })} />
                     <Input className="h-9 flex-1" value={profileSettings.brand_primary || profileSettings.primary_color || BRAND_NAVY} onChange={e => setProfileSettings({ ...profileSettings, brand_primary: e.target.value, primary_color: e.target.value })} />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Accent color</label>
                   <div className="flex gap-2 items-center">
-                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.brand_accent || profileSettings.accent_color || BRAND_GOLD, borderColor: CARD_BORDER }} />
+                    <input type="color" className="w-9 h-9 rounded border cursor-pointer p-0.5" style={{ borderColor: CARD_BORDER }} value={profileSettings.brand_accent || profileSettings.accent_color || BRAND_GOLD} onChange={e => setProfileSettings({ ...profileSettings, brand_accent: e.target.value, accent_color: e.target.value })} />
                     <Input className="h-9 flex-1" value={profileSettings.brand_accent || profileSettings.accent_color || BRAND_GOLD} onChange={e => setProfileSettings({ ...profileSettings, brand_accent: e.target.value, accent_color: e.target.value })} />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Background color</label>
                   <div className="flex gap-2 items-center">
-                    <div className="w-9 h-9 rounded border" style={{ backgroundColor: profileSettings.brand_background || "#F2EDE4", borderColor: CARD_BORDER }} />
+                    <input type="color" className="w-9 h-9 rounded border cursor-pointer p-0.5" style={{ borderColor: CARD_BORDER }} value={profileSettings.brand_background || "#F2EDE4"} onChange={e => setProfileSettings({ ...profileSettings, brand_background: e.target.value })} />
                     <Input className="h-9 flex-1" value={profileSettings.brand_background || "#F2EDE4"} onChange={e => setProfileSettings({ ...profileSettings, brand_background: e.target.value })} />
                   </div>
                 </div>
