@@ -155,19 +155,24 @@ const MaintenancePage = () => (
     }}>
     River Sand — Real Sand. Real People.
     </p>
-    <a
-      href="/leads"
+    <button
+      onClick={() => {
+        sessionStorage.setItem("maintenance_bypass", "true");
+        window.location.reload();
+      }}
       style={{
         color: 'rgba(255,255,255,0.15)',
         fontSize: '10px',
-        textDecoration: 'none',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
         marginTop: '24px',
         display: 'block',
         letterSpacing: '1px',
       }}
     >
       admin
-    </a>
+    </button>
   </div>
 );
 
