@@ -65,30 +65,22 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             </Button>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6, duration: 0.4 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden lg:block"
-          >
-            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white bg-orange-500" asChild>
+          <div className="hidden lg:block">
+            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white bg-orange-500 hover:bg-orange-600" asChild>
               <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" />
                 1-855-GOT-WAYS
               </a>
             </Button>
-          </motion.div>
+          </div>
 
-          <motion.button
-            className="lg:hidden transition-colors text-white"
+          <button
+            className="lg:hidden transition-colors text-white hover:text-accent"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
-            whileTap={{ scale: 0.9, rotate: 90 }}
-            transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
           </motion.button>
         </div>
       </div>
