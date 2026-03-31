@@ -172,9 +172,6 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
 
   return (
     <div className="space-y-4">
-      <label className="font-display text-lg text-foreground tracking-wider flex items-center gap-2">
-        <CalendarDays className="w-5 h-5 text-primary" /> SELECT DELIVERY DATE
-      </label>
 
       {allBlocked ? (
         <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl text-center">
