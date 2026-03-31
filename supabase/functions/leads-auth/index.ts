@@ -765,11 +765,7 @@ serve(async (req) => {
       const pitBasePrice = pitForGen?.base_price ?? parseFloat(gsMap.default_base_price || "195");
       const pitExtraPerMile = pitForGen?.price_per_extra_mile ?? parseFloat(gsMap.default_extra_per_mile || "5");
       const satAvailable = pitForGen?.operating_days ? pitForGen.operating_days.includes(6) : true;
-      const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
-
       const created: string[] = [];
-      let generated = 0;
-      let failed = 0;
       let skipped = 0;
       const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
 
@@ -861,44 +857,14 @@ serve(async (req) => {
 
         if (insertErr) {
           console.error("Insert city page error:", insertErr);
-          failed++;
           continue;
-        }
-
-        try {
-          const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-city-page`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({
-              password: leadsPasswordForGen,
-              city_page_id: inserted.id,
-              city_name: city.city_name,
-              state: city.state || "LA",
-              pit_name: pitForGen?.name || "Dispatch",
-              distance: city.distance,
-              price: city.price,
-              free_miles: pitFreeMiles,
-              saturday_available: satAvailable,
-              multi_pit_coverage: isMultiPit,
-            }),
-          });
-          if (genResp.ok) {
-            await supabase.from("city_pages").update({ status: "active" }).eq("id", inserted.id);
-            generated++;
-          } else {
-            console.error("AI generation failed for", city.city_name, await genResp.text());
-            failed++;
-          }
-        } catch (genErr) {
-          console.error("AI generation error for", city.city_name, genErr);
-          failed++;
         }
 
         created.push(inserted.id);
       }
 
       return new Response(
-        JSON.stringify({ success: true, created_ids: created, count: created.length, generated, failed, skipped }),
+        JSON.stringify({ success: true, created: created.length, skipped, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -1096,50 +1062,26 @@ serve(async (req) => {
       const toCreate = [...bestBySlug.values()].filter(c => !existingSlugs.has(c.city_slug));
       console.log(`[bulk] ${allCandidates.length} total candidates, ${bestBySlug.size} unique, ${toCreate.length} new to create`);
 
-      const leadsPasswordForGen = Deno.env.get("LEADS_PASSWORD")!;
       let created = 0;
-      let generated = 0;
-      let failed = 0;
 
       for (const city of toCreate) {
         const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
         const isMultiPit = forceSuppressPrice; // multi-PIT detection not done in bulk yet
-        const { data: inserted, error: insertErr } = await supabase
+        const { error: insertErr } = await supabase
           .from("city_pages")
           .insert({
             pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
             state: city.state, lat: city.lat, lng: city.lng,
             distance_from_pit: city.distance_from_pit, base_price: city.base_price,
             multi_pit_coverage: isMultiPit, status: "draft",
-          })
-          .select().single();
-        if (insertErr) { console.error("Insert error:", insertErr); failed++; continue; }
-        created++;
-
-        try {
-          const pitData = allPits.find(p => p.id === city.pit_id);
-          const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-city-page`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({
-              password: leadsPasswordForGen, city_page_id: inserted.id,
-              city_name: city.city_name, state: city.state,
-              pit_name: city.pit_name, distance: city.distance_from_pit,
-              price: city.base_price,
-              free_miles: pitData?.free_miles ?? parseFloat(gs.default_free_miles || "15"),
-              saturday_available: pitData?.operating_days ? pitData.operating_days.includes(6) : true,
-              multi_pit_coverage: isMultiPit,
-            }),
+            prompt_version: null, regen_reason: 'missing_content',
           });
-          if (genResp.ok) {
-            await supabase.from("city_pages").update({ status: "active" }).eq("id", inserted.id);
-            generated++;
-          } else { console.error("AI gen failed for", city.city_name); failed++; }
-        } catch (genErr) { console.error("AI gen error:", genErr); failed++; }
+        if (insertErr) { console.error("Insert error:", insertErr); continue; }
+        created++;
       }
 
       return new Response(
-        JSON.stringify({ success: true, created, generated, failed, skipped: existingSlugs.size, total_candidates: allCandidates.length, unique_cities: bestBySlug.size }),
+        JSON.stringify({ success: true, created, skipped: existingSlugs.size, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
