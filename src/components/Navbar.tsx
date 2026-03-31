@@ -66,7 +66,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           </div>
 
           <div className="hidden lg:block">
-            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-white/30 text-white bg-orange-500 hover:bg-orange-600" asChild>
+            <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-accent/30 text-accent-foreground bg-accent hover:bg-accent/80" asChild>
               <a href="tel:+18554689297">
                 <Phone className="w-4 h-4 mr-1" />
                 1-855-GOT-WAYS
