@@ -1142,7 +1142,7 @@ const Order = () => {
 
                   {/* Review Order Button */}
                   {paymentMethod && (
-                    <div className="px-6 pb-6 space-y-2">
+                    <div className="px-6 pb-6 space-y-3">
                       <Button
                         onClick={goToStep2}
                         disabled={!isFormValid}
@@ -1152,16 +1152,19 @@ const Order = () => {
                       </Button>
                       {!isFormValid && (
                         <p className="font-body text-xs text-destructive text-center">
-                          {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in your name and phone number above."}
+                          {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in all required fields above."}
                         </p>
                       )}
+                      <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
+                        <Lock className="w-2.5 h-2.5" /> Your information is secure and never shared
+                      </p>
                     </div>
                   )}
                 </motion.div>
 
-                <Button variant="outline" onClick={() => setStep("address")} className="h-11 font-display tracking-wider rounded-xl border-accent/50 text-accent hover:text-accent hover:bg-accent/10 text-sm">
-                  <ArrowLeft className="w-4 h-4 mr-1" /> CHANGE ADDRESS
-                </Button>
+                <button onClick={() => setStep("address")} className="flex items-center gap-1 mx-auto text-xs font-body text-muted-foreground hover:text-foreground transition-colors py-2">
+                  <ArrowLeft className="w-3 h-3" /> Change delivery address
+                </button>
               </motion.div>
             )}
 
