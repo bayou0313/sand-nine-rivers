@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const navLinks = ["Pricing", "Get Estimate", "About", "FAQ", "Contact"];
+const navLinks = ["Pricing", "Why Us", "About", "FAQ", "Contact"];
 
 const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?: string }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,7 +45,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
           {navLinks.map((item) => (
             <a
               key={item}
-              href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
+              href={`#${item === "Why Us" ? "why-us" : item.toLowerCase()}`}
               className={`font-body text-sm transition-colors duration-300 hover:text-accent ${
                 scrolled ? "text-white/90" : "text-white/70"
               }`}
@@ -96,7 +96,7 @@ const Navbar = ({ solid = false, logoHref = "/" }: { solid?: boolean; logoHref?:
             {navLinks.map((item, i) => (
               <motion.a
                 key={item}
-                href={`#${item === "Get Estimate" ? "estimator" : item.toLowerCase()}`}
+                href={`#${item === "Why Us" ? "why-us" : item.toLowerCase()}`}
                 className="block font-body text-sm text-white/70 hover:text-accent transition-colors"
                 onClick={() => setMenuOpen(false)}
                 initial={{ opacity: 0, x: -20 }}
