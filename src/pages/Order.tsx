@@ -188,12 +188,93 @@ const Order = () => {
       return;
     }
 
-    // Normal same-tab return
+    // Normal same-tab return — state may be lost due to page reload
     if (paymentStatus === "success") {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
       if (returnedSessionId) setStripePaymentId(returnedSessionId);
-      setStep("success");
-      // Email is sent by the Stripe webhook for same-tab returns
+
+      // If we have in-memory state, use it
+      if (totalPrice > 0 && address) {
+        setConfirmedTotals({
+          totalPrice,
+          totalWithProcessingFee,
+          processingFee,
+          taxAmount,
+          subtotal,
+          saturdaySurchargeTotal,
+          distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
+          taxInfo,
+        });
+        setStep("success");
+      } else if (returnedOrderNumber) {
+        // Page reloaded from Stripe redirect — fetch order from DB
+        (async () => {
+          try {
+            const { data: order } = await supabase
+              .from("orders")
+              .select("*")
+              .eq("order_number", returnedOrderNumber)
+              .single();
+            if (order) {
+              setAddress(order.delivery_address || "");
+              setForm(prev => ({
+                ...prev,
+                name: order.customer_name || prev.name,
+                phone: order.customer_phone || prev.phone,
+                email: order.customer_email || prev.email,
+              }));
+              setQuantity(order.quantity || 1);
+              if (order.delivery_date) {
+                const d = new Date(order.delivery_date + "T00:00:00");
+                const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+                const shortDays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+                setSelectedDeliveryDate({
+                  date: d,
+                  label: shortDays[d.getDay()],
+                  dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                  fullLabel: d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
+                  iso: order.delivery_date,
+                  dayOfWeek: order.delivery_day_of_week || dayNames[d.getDay()],
+                  isSaturday: order.saturday_surcharge || false,
+                  isSameDay: order.same_day_requested || false,
+                });
+              }
+              setPaymentMethod((order.payment_method as PaymentMethodType) || "stripe-link");
+              const orderTaxRate = order.tax_rate || 0;
+              const orderTaxAmount = order.tax_amount || 0;
+              const orderSatSurcharge = order.saturday_surcharge_amount || 0;
+              const orderSubtotal = order.price - orderTaxAmount;
+              const orderProcessingFee = order.payment_method === "stripe-link"
+                ? parseFloat(((order.price - orderTaxAmount - orderSatSurcharge) * 0.035).toFixed(2))
+                : 0;
+              setConfirmedTotals({
+                totalPrice: order.price,
+                totalWithProcessingFee: order.price,
+                processingFee: orderProcessingFee,
+                taxAmount: orderTaxAmount,
+                subtotal: orderSubtotal,
+                saturdaySurchargeTotal: orderSatSurcharge,
+                distanceFee: 0,
+                taxInfo: { rate: orderTaxRate, parish: "" },
+              });
+              if (order.distance_miles) {
+                setResult({
+                  distance: order.distance_miles,
+                  price: order.price / (order.quantity || 1),
+                  address: `${order.distance_miles.toFixed(1)} miles away`,
+                  duration: "",
+                });
+              }
+            }
+          } catch (err) {
+            console.error("[Order] Failed to fetch order for confirmation:", err);
+          }
+          setStep("success");
+        })();
+      } else {
+        setStep("success");
+      }
+
       toast({
         title: "Payment successful",
         description: returnedOrderNumber
