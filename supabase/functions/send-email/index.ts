@@ -299,7 +299,7 @@ function orderCustomerEmail(order: any): string {
                         <tr>
                           <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Status</td>
                           <td style="padding:10px 16px;font-size:14px;text-align:right;font-weight:700;border-bottom:1px solid #E8E5DD;color:${isStripePaid ? '#22C55E' : '#D97706'};">
-                            ${isStripePaid ? '✅ PAID IN FULL' : '⏳ DUE AT DELIVERY'}
+                            ${isStripePaid ? 'PAID IN FULL' : 'DUE AT DELIVERY'}
                           </td>
                         </tr>
                         ${refRow}
