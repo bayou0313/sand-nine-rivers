@@ -83,6 +83,17 @@ function orderCustomerEmail(order: any): string {
                       </td>
                     </tr>` : "";
 
+  // Distance fee row
+  const distRow = distanceFee > 0 ? `
+                    <tr>
+                      <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
+                        Extended area surcharge
+                      </td>
+                      <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
+                        $${fmt(distanceFee)}
+                      </td>
+                    </tr>` : "";
+
   // Processing fee row (stripe only)
   const feeRow = isStripePaid && processingFeeAmt > 0.01 ? `
                     <tr>
