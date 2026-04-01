@@ -1509,6 +1509,7 @@ const Leads = () => {
     live: { title: "LIVE VISITORS", subtitle: `${liveVisitors.length} active now` },
     cash_orders: { title: "ORDERS", subtitle: `${cashOrders.length} orders` },
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
+    waitlist: { title: "WAITLIST", subtitle: "Coming soon areas" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
