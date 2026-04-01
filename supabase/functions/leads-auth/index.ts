@@ -1200,9 +1200,10 @@ serve(async (req) => {
                 updated_at: new Date().toISOString(),
               }).eq("id", existing.id);
             }
-            console.log(`Skipped ${city.city_slug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
+            console.log(`Skipped ${normalizedSlug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
           }
-          skipped++;
+          skippedList.push({ city: city.city_name, reason: `Already exists as /${existing.city_slug}/river-sand-delivery` });
+          skippedCount++;
           continue;
         }
 
