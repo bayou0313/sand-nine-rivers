@@ -334,14 +334,20 @@ serve(async (req) => {
       doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
       y += 16;
 
-      // COD card payment note
+      // COD payment policy note
+      const cashTotal = Number(order.price).toFixed(2);
       const cardTotal = (Number(order.price) * 1.035).toFixed(2);
       doc.setFontSize(7);
       doc.setTextColor(146, 64, 14); // #92400E
-      doc.setFont("helvetica", "normal");
-      doc.text(`Card payment available: $${cardTotal} (includes 3.5% processing fee)`, mx, y);
+      doc.setFont("helvetica", "bold");
+      doc.text("PAYMENT DUE AT DELIVERY", mx, y);
       y += 3.5;
-      doc.text("Call 1-855-GOT-WAYS to arrange.", mx, y);
+      doc.setFont("helvetica", "normal");
+      doc.text("Cash or check payment is due at the time of delivery.", mx, y);
+      y += 3.5;
+      doc.text("If payment cannot be collected, we will contact you to arrange card payment.", mx, y);
+      y += 3.5;
+      doc.text(`Cash/Check total: $${cashTotal} · Card total if needed: $${cardTotal} (includes 3.5% fee)`, mx, y);
       y += 5;
     }
 
