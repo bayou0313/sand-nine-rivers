@@ -1239,7 +1239,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, created: created.length, skipped, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
+        JSON.stringify({ success: true, created: created.length, skipped: skippedCount, skipped_details: skippedList, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
