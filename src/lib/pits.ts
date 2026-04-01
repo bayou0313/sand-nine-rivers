@@ -4,8 +4,8 @@
  *
  * IMPORTANT: This system does NOT use haversine (straight-line) distances anywhere.
  * All distance calculations use the Google Distance Matrix API with
- * mode=driving and avoid=ferries|tolls, proxied through the leads-auth edge
- * function (server-side, avoids CORS). This ensures accurate road-based
+ * mode=driving and avoid=ferries. Toll roads (I-10 etc.) are used for
+ * deliveries, so tolls are NOT avoided. This ensures accurate road-based
  * mileage for pricing. Never add haversine as a fallback or pre-filter.
  */
 
