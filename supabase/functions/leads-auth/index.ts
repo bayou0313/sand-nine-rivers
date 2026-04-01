@@ -857,7 +857,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned }),
+        JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned, pages_created: pages_created_count }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
