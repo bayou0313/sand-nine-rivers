@@ -158,16 +158,19 @@ serve(async (req) => {
       const destStr = `${destination.lat},${destination.lng}`;
       console.log("[calculate_distances] origins:", JSON.stringify(origins));
       console.log("[calculate_distances] destination:", JSON.stringify(destination));
-      const resp = await fetch(
+      const url =
         `https://maps.googleapis.com/maps/api/distancematrix/json` +
-        `?origins=${encodeURIComponent(originsStr)}` +
-        `&destinations=${encodeURIComponent(destStr)}` +
-        `&units=imperial` +
-        `&mode=driving` +
-        `&avoid=ferries%7Ctolls` +
-        `&key=${apiKey}`
-      );
+        `?origins=${originsStr}` +
+        `&destinations=${destStr}` +
+        `&units=imperial&mode=driving&avoid=ferries%7Ctolls` +
+        `&key=${apiKey}`;
+      console.log("[calculate_distances] calling URL:", url.replace(apiKey, "KEY_HIDDEN"));
+      const resp = await fetch(url);
       const data = await resp.json();
+      console.log("[calculate_distances] API status:", data.status);
+      console.log("[calculate_distances] origin_addresses:", data.origin_addresses);
+      console.log("[calculate_distances] destination_addresses:", data.destination_addresses);
+      console.log("[calculate_distances] rows:", JSON.stringify(data.rows));
       const distances = (data.rows || []).map((row: any) => {
         const el = row.elements?.[0];
         if (el?.status === "OK" && el.distance?.value) {
