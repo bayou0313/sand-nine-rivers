@@ -1616,6 +1616,44 @@ serve(async (req) => {
         }
       }
 
+      // Post-dedup: recalculate each unique city from ALL pits to ensure correct closest-pit assignment
+      const uniqueCities = [...bestBySlug.values()];
+      const allPitDistances: Record<string, (number | null)[]> = {};
+      for (const pit of allPits) {
+        const dists = await getDrivingDistances(
+          Number(pit.lat), Number(pit.lon),
+          uniqueCities.map(c => ({ lat: c.lat, lng: c.lng })),
+          apiKey
+        );
+        allPitDistances[pit.id] = dists;
+      }
+
+      // Reassign each city to its actual closest pit
+      for (let i = 0; i < uniqueCities.length; i++) {
+        const city = uniqueCities[i];
+        let closestPit: any = null;
+        let closestDistance = Infinity;
+        for (const pit of allPits) {
+          const dist = allPitDistances[pit.id][i];
+          if (dist != null && dist < closestDistance) {
+            closestDistance = dist;
+            closestPit = pit;
+          }
+        }
+        if (closestPit && closestDistance < Infinity) {
+          const effBP = closestPit.base_price ?? parseFloat(gs.default_base_price || "195");
+          const effFM = closestPit.free_miles ?? parseFloat(gs.default_free_miles || "15");
+          const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+          const extraMiles = Math.max(0, closestDistance - effFM);
+          const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+          city.pit_id = closestPit.id;
+          city.pit_name = closestPit.name;
+          city.distance_from_pit = Math.round(closestDistance * 10) / 10;
+          city.base_price = price;
+          console.log(`[bulk] Verified ${city.city_name} → ${closestPit.name} (${closestDistance.toFixed(1)}mi, $${price})`);
+        }
+      }
+
       // Fetch existing pages for duplicate detection (by slug AND city_name)
       const { data: existingPages } = await supabase
         .from("city_pages")
@@ -1635,17 +1673,29 @@ serve(async (req) => {
       let skippedCount = 0;
 
       for (const city of bestBySlug.values()) {
-        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
-        const isMultiPit = forceSuppressPrice;
+        const closestMaxDist = allPits.find((p: any) => p.id === city.pit_id)?.max_distance || 30;
+        if (city.distance_from_pit > closestMaxDist) {
+          skippedCount++;
+          continue;
+        }
 
-        // Check for existing page by slug
+        // Multi-PIT coverage detection
+        const cityIdx = uniqueCities.indexOf(city);
+        const competingPits = allPits.filter((p: any) => {
+          if (p.id === city.pit_id) return false;
+          const dist = allPitDistances[p.id][cityIdx];
+          return dist != null && dist <= (p.max_distance || 30);
+        });
+        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
+        const isMultiPit = competingPits.length > 0 || forceSuppressPrice;
+        const competingIds = competingPits.length > 0 ? competingPits.map((p: any) => p.id) : null;
+
+        // Check for existing page by slug or name
         const existingBySlug = existingBySlugMap.get(city.city_slug);
-        // Check for existing page by city name (case insensitive)
         const existingByName = existingByNameMap.get(city.city_name.toLowerCase());
         const existing = existingBySlug || existingByName;
 
         if (existing) {
-          // City exists — only update if new distance is shorter
           if (city.distance_from_pit < (existing.distance_from_pit ?? 999)) {
             await supabase.from("city_pages").update({
               pit_id: city.pit_id,
@@ -1653,15 +1703,20 @@ serve(async (req) => {
               base_price: city.base_price,
               city_slug: city.city_slug,
               multi_pit_coverage: isMultiPit,
-              pit_reassigned: true,
-              price_changed: false,
-              prompt_version: null,
-              regen_reason: 'pit_reassigned',
+              competing_pit_ids: competingIds,
+              pit_reassigned: true, price_changed: false,
+              prompt_version: null, regen_reason: 'pit_reassigned',
               updated_at: new Date().toISOString(),
             }).eq("id", existing.id);
-            console.log(`[bulk] Updated ${city.city_name} to closer PIT (${city.distance_from_pit} mi)`);
+            console.log(`[bulk] Updated ${city.city_name} → ${city.pit_name} (${city.distance_from_pit} mi)`);
             updatedCount++;
           } else {
+            if (isMultiPit) {
+              await supabase.from("city_pages").update({
+                multi_pit_coverage: true, competing_pit_ids: competingIds,
+                updated_at: new Date().toISOString(),
+              }).eq("id", existing.id);
+            }
             skippedCount++;
           }
           continue;
@@ -1674,8 +1729,8 @@ serve(async (req) => {
             pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
             state: city.state, lat: city.lat, lng: city.lng,
             distance_from_pit: city.distance_from_pit, base_price: city.base_price,
-            multi_pit_coverage: isMultiPit, status: "draft",
-            prompt_version: null, regen_reason: 'missing_content',
+            multi_pit_coverage: isMultiPit, competing_pit_ids: competingIds,
+            status: "draft", prompt_version: null, regen_reason: 'missing_content',
           });
         if (insertErr) { console.error("Insert error:", insertErr); continue; }
         created++;
@@ -1684,7 +1739,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true, created, updated: updatedCount, skipped: skippedCount,
-          message: `${created} created, ${updatedCount} updated with closer pit, ${skippedCount} skipped (already optimal). Run Regen Outdated to generate content.`,
+          message: `${created} created, ${updatedCount} updated with closer pit, ${skippedCount} skipped (already optimal).`,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
