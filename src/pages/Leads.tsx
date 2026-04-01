@@ -3883,7 +3883,7 @@ const Leads = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ backgroundColor: BRAND_NAVY }}>
-                      {["Date", "Address", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
+                      {["Date", "Address", "Location", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
