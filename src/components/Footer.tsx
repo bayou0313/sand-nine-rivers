@@ -75,7 +75,7 @@ const Footer = () => {
           borderBottom: cityLinks.length > 0 ? "1px solid #E8E5DC" : undefined,
         }}
       >
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 text-base">
           <a href="https://ways.us" target="_blank" rel="noopener noreferrer">
             <img
               src={WAYS_LOGO_DARK}

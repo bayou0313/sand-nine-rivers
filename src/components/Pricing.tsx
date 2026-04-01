@@ -52,11 +52,12 @@ const Pricing = () => {
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-accent font-display text-lg tracking-widest mb-3">
             HOW IT WORKS
           </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl text-foreground font-display">
+          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl text-foreground font-display text-center">
             From Our Pit to Your Property
           </motion.h2>
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.15 }} className="font-body text-muted-foreground mt-4 text-lg max-w-2xl mx-auto">
-            9 cubic yards of clean river sand, delivered curbside. Price based on distance — enter your address to see yours.
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.15 }} className="font-body text-muted-foreground mt-4 text-lg max-w-2xl mx-auto text-center">
+            Price based on distance enter your address to see yours. <br />
+            9 cubic yards of clean river sand, delivered curbside.
           </motion.p>
         </div>
 

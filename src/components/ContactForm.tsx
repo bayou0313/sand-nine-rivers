@@ -48,7 +48,7 @@ const ContactForm = () => {
                   <p className="font-body text-muted-foreground">1-855-GOT-WAYS</p>
                 </div>
               </a>
-              <a href="mailto:support@ways.us" className="flex items-center gap-4 text-foreground hover:text-accent transition-colors group">
+              <a href="mailto:orders@riversand.net" className="flex items-center gap-4 text-foreground hover:text-accent transition-colors group">
                 <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                   <Mail className="w-6 h-6 text-primary group-hover:text-accent" />
                 </div>

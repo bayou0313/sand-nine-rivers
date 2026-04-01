@@ -238,7 +238,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         : "bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
       }>
         <div className="space-y-4">
-          <label htmlFor="delivery-address" className={`font-display text-lg tracking-wider flex items-center gap-2 ${embedded ? "text-primary-foreground" : "text-foreground"}`}>
+          <label htmlFor="delivery-address" className={`font-display tracking-wider flex items-center gap-2 ${embedded ? "text-primary-foreground" : "text-foreground"} text-2xl py-[5px]`}>
             <MapPin className="w-5 h-5 text-accent" /> DELIVERY ADDRESS
           </label>
           <p className={`text-sm font-body ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
