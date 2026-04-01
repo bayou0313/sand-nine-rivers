@@ -1409,7 +1409,7 @@ serve(async (req) => {
           const distance = drivingDists[idx];
           if (distance === null) continue; // No road route found — skip this city
           if (distance > maxDist) continue;
-          const slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+          const slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
           const extraMiles = Math.max(0, distance - freeMiles);
           const price = Math.max(bPrice, Math.round(bPrice + extraMiles * extraPerMile));
 
