@@ -3644,7 +3644,13 @@ const Leads = () => {
           <>
             {/* Expected today */}
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+                <Button size="sm" variant="outline" onClick={fetchCashOrders} disabled={cashLoading} className="h-7 text-xs px-2">
+                  {cashLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  <span className="ml-1">Refresh</span>
+                </Button>
+              </div>
               <div className="text-right">
                 <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${expectedToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-xs text-gray-500">Expected today across {pendingToday.length} orders</p>
