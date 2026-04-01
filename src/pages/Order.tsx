@@ -72,6 +72,7 @@ const Order = () => {
   const [allPits, setAllPits] = useState<PitData[]>([]);
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
 
   // Derived pricing from matched PIT (or global fallback)
   const effectivePricing = useMemo(() => {
@@ -504,12 +505,22 @@ const Order = () => {
       const paramOpDays = searchParams.get("operating_days");
       const paramSatSurcharge = searchParams.get("sat_surcharge");
       const paramSameDayCutoff = searchParams.get("same_day_cutoff");
+      const paramPitId = searchParams.get("pit_id");
+      const paramPitName = searchParams.get("pit_name");
       if (paramOpDays || paramSatSurcharge || paramSameDayCutoff) {
         setMatchedPitSchedule({
           operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null,
           saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null,
           same_day_cutoff: paramSameDayCutoff || null,
         });
+      }
+      // Restore matched pit from URL params so date-based recalc works
+      if (paramPitId && allPits.length > 0) {
+        const pit = allPits.find(p => p.id === paramPitId);
+        if (pit) setMatchedPit(pit);
+      } else if (paramPitId && paramPitName) {
+        // Pits not loaded yet — set a stub that will be replaced when allPits loads
+        setMatchedPit({ id: paramPitId, name: decodeURIComponent(paramPitName), lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null, saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null, same_day_cutoff: paramSameDayCutoff || null } as PitData);
       }
 
       setStep(prev => prev === "address" ? "details" : prev);
@@ -1113,13 +1124,41 @@ const Order = () => {
                     <SectionHeading icon={CalendarDays} title="DELIVERY DATE" />
                     <DeliveryDatePicker
                       selectedDate={selectedDeliveryDate}
-                      onSelect={(d) => {
+                      onSelect={async (d) => {
                         setSelectedDeliveryDate(d);
                         setDateError("");
+
+                        // Check if current pit is open on the selected day
+                        if (matchedPit && d && customerCoords && allPits.length > 1) {
+                          const dayOfWeek = d.date.getDay();
+                          const currentPitOpen = !matchedPit.operating_days || matchedPit.operating_days.length === 0 || matchedPit.operating_days.includes(dayOfWeek);
+                          if (!currentPitOpen) {
+                            setRecalculating(true);
+                            try {
+                              const newResult = await findBestPitDriving(allPits, customerCoords.lat, customerCoords.lng, globalPricing, supabase, dayOfWeek);
+                              if (newResult && newResult.serviceable) {
+                                setMatchedPit(newResult.pit);
+                                setMatchedPitSchedule({ operating_days: newResult.pit.operating_days, saturday_surcharge_override: newResult.pit.saturday_surcharge_override != null ? Number(newResult.pit.saturday_surcharge_override) : null, same_day_cutoff: newResult.pit.same_day_cutoff });
+                                setResult(prev => prev ? { ...prev, distance: parseFloat(newResult.distance.toFixed(1)), price: newResult.price, address: `${newResult.distance.toFixed(1)} miles away` } : prev);
+                                toast({ title: "Price updated", description: `Delivery on ${d.fullLabel} will be from a different location. Price updated to ${formatCurrency(newResult.price)}.` });
+                              } else {
+                                toast({ title: "No delivery available", description: `We don't have delivery available on ${d.fullLabel}. Please select another date.`, variant: "destructive" });
+                                setSelectedDeliveryDate(null);
+                              }
+                            } catch { /* keep current selection */ }
+                            finally { setRecalculating(false); }
+                          }
+                        }
                       }}
                       pitSchedule={matchedPitSchedule}
                       globalSaturdaySurcharge={globalSaturdaySurcharge}
                     />
+                    {recalculating && (
+                      <div className="mt-3 flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <p className="font-body text-sm">Recalculating price for this date…</p>
+                      </div>
+                    )}
                     {dateError && (
                       <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 text-destructive shrink-0" />

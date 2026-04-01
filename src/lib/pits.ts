@@ -122,9 +122,19 @@ export async function findBestPitDriving(
   customerLat: number,
   customerLng: number,
   globalPricing: GlobalPricing,
-  supabaseClient?: any
+  supabaseClient?: any,
+  deliveryDayOfWeek?: number // 0=Sun..6=Sat — filter pits by operating_days
 ): Promise<FindBestPitResult | null> {
-  const activePits = pits.filter(p => p.status === "active");
+  let activePits = pits.filter(p => p.status === "active");
+
+  // Filter by operating days if a specific delivery day is requested
+  if (deliveryDayOfWeek !== undefined) {
+    const pitsOpenOnDay = activePits.filter(p =>
+      !p.operating_days || p.operating_days.length === 0 || p.operating_days.includes(deliveryDayOfWeek)
+    );
+    if (pitsOpenOnDay.length > 0) activePits = pitsOpenOnDay;
+  }
+
   if (activePits.length === 0) return null;
 
   if (!supabaseClient) {
