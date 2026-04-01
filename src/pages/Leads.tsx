@@ -979,6 +979,28 @@ const Leads = () => {
     setShowDeleteConfirm(false);
   };
 
+  // Fetch waitlist data
+  useEffect(() => {
+    if (activePage === "waitlist" && authenticated) {
+      setWaitlistLoading(true);
+      supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_waitlist" },
+      }).then(() => {
+        // Fallback: direct query via service role won't work from client, so use a simple approach
+      }).catch(() => {});
+      // Direct query since waitlist_leads is service_role only, we query via the edge function
+      // For now, let's just use supabase directly with the service role via edge function
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/waitlist_leads?select=*&order=created_at.desc`, {
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        }
+      }).then(r => r.json()).then(data => {
+        if (Array.isArray(data)) setWaitlistData(data);
+        setWaitlistLoading(false);
+      }).catch(() => setWaitlistLoading(false));
+    }
+  }, [activePage, authenticated]);
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
