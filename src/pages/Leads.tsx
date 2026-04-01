@@ -175,7 +175,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
       { id: "pipeline", label: "Pipeline", icon: List },
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
-      { id: "cash_orders", label: "Cash Orders", icon: DollarSign },
+      { id: "cash_orders", label: "Orders", icon: DollarSign },
       { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
     ],
   },
@@ -362,6 +362,8 @@ const Leads = () => {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: { password: storedPassword(), action: "list_cash_orders" },
       });
+      console.log("[fetchCashOrders] response:", JSON.stringify(data));
+      console.log("[fetchCashOrders] error:", fnError);
       if (!fnError && data?.orders) setCashOrders(data.orders);
     } catch (err) { console.warn("Failed to fetch cash orders:", err); }
     finally { setCashLoading(false); }
@@ -1449,7 +1451,7 @@ const Leads = () => {
     pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
     revenue: { title: "REVENUE FORECAST" },
     abandoned: { title: "ABANDONED SESSIONS", subtitle: "Checkout drop-offs" },
-    cash_orders: { title: "CASH ORDERS", subtitle: `${cashOrders.length} orders` },
+    cash_orders: { title: "ORDERS", subtitle: `${cashOrders.length} orders` },
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
@@ -3645,7 +3647,7 @@ const Leads = () => {
             {/* Expected today */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+                <p className="text-sm text-gray-500">{cashOrders.length} total orders</p>
                 <Button size="sm" variant="outline" onClick={fetchCashOrders} disabled={cashLoading} className="h-7 text-xs px-2">
                   {cashLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                   <span className="ml-1">Refresh</span>
@@ -3728,9 +3730,16 @@ const Leads = () => {
                             {isToday ? "Today" : o.delivery_date ? new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD"}
                           </td>
                           <td className="px-3 py-2">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F3F3F3", color: BRAND_NAVY }}>
-                              {o.payment_method === "check" ? "Check" : "Cash"}
-                            </span>
+                            {(() => {
+                              const pm = (o.payment_method || "").toLowerCase();
+                              if (pm === "stripe" || pm === "stripe-link" || pm === "card") {
+                                return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: "#3B82F6" }}>CARD</span>;
+                              }
+                              if (pm === "check") {
+                                return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#E5E7EB", color: "#374151" }}>CHECK</span>;
+                              }
+                              return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: "#F59E0B" }}>CASH</span>;
+                            })()}
                           </td>
                           <td className="px-3 py-2">
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: statusColor }}>
@@ -3756,7 +3765,7 @@ const Leads = () => {
                       );
                     })}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No cash/check orders found</td></tr>
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No orders found</td></tr>
                     )}
                   </tbody>
                 </table>
