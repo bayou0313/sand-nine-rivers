@@ -83,6 +83,17 @@ function orderCustomerEmail(order: any): string {
                       </td>
                     </tr>` : "";
 
+  // Distance fee row
+  const distRow = distanceFee > 0 ? `
+                    <tr>
+                      <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
+                        Extended area surcharge
+                      </td>
+                      <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
+                        $${fmt(distanceFee)}
+                      </td>
+                    </tr>` : "";
+
   // Processing fee row (stripe only)
   const feeRow = isStripePaid && processingFeeAmt > 0.01 ? `
                     <tr>
@@ -109,7 +120,7 @@ function orderCustomerEmail(order: any): string {
   const paymentStatusRow = isStripePaid
     ? `<tr>
                       <td colspan="2" style="padding:10px 16px;font-size:14px;color:#22C55E;font-weight:600;">
-                        Nothing due at delivery ✓
+                        Nothing due at delivery
                       </td>
                     </tr>`
     : `<tr>
@@ -255,6 +266,7 @@ function orderCustomerEmail(order: any): string {
                           </td>
                         </tr>
                         ${satRow}
+                        ${distRow}
                         <tr>
                           <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;${satSurcharge > 0 ? '' : 'background-color:#F8F7F2;'}">
                             Tax (${taxParish} ${taxRate}%)
@@ -321,12 +333,12 @@ function orderCustomerEmail(order: any): string {
                   <tr>
                     <td style="padding:16px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Our driver will call 30 minutes before arrival</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Please ensure clear access to delivery area</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Someone must be present to receive delivery</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Delivery is curbside — curb to sidewalk/driveway</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">✗ Driver will not enter backyard or gated areas</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">✗ WAYS® Materials LLC not responsible for property damage</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Our driver will call 30 minutes before arrival</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Please ensure clear access to delivery area</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Someone must be present to receive delivery</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Delivery is curbside — curb to sidewalk/driveway</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">Driver will not enter backyard or gated areas</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">WAYS® Materials LLC not responsible for property damage</td></tr>
                       </table>
                     </td>
                   </tr>
