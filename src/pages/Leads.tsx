@@ -362,6 +362,8 @@ const Leads = () => {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: { password: storedPassword(), action: "list_cash_orders" },
       });
+      console.log("[fetchCashOrders] response:", JSON.stringify(data));
+      console.log("[fetchCashOrders] error:", fnError);
       if (!fnError && data?.orders) setCashOrders(data.orders);
     } catch (err) { console.warn("Failed to fetch cash orders:", err); }
     finally { setCashLoading(false); }
