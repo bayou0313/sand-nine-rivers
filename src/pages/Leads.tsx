@@ -3893,6 +3893,7 @@ const Leads = () => {
                       <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
                         <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
                         <td className="px-3 py-2">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{
                             backgroundColor: s.stage === "reached_payment" ? "#EA580C" : "#F59E0B"
