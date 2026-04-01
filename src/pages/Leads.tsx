@@ -3922,6 +3922,86 @@ const Leads = () => {
           </>
         );
 
+      case "live": {
+        const LIVE_STAGE_CONFIG: Record<string, { label: string; color: string }> = {
+          visited: { label: "Browsing", color: "#9CA3AF" },
+          entered_address: { label: "Entered Address", color: "#3B82F6" },
+          got_price: { label: "Got Price", color: "#F59E0B" },
+          started_checkout: { label: "At Checkout", color: "#EA580C" },
+          reached_payment: { label: "At Payment", color: "#DC2626" },
+          completed_order: { label: "Converted", color: "#22C55E" },
+        };
+        const timeAgo = (iso: string) => {
+          const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+          if (diff < 60) return `${diff}s ago`;
+          if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+          return `${Math.floor(diff / 3600)}h ago`;
+        };
+        return (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <p className="text-sm text-gray-500">{liveVisitors.length} active visitor{liveVisitors.length !== 1 ? "s" : ""} (last 30 min)</p>
+              </div>
+              <Button onClick={fetchLiveVisitors} disabled={liveLoading} size="sm" variant="outline">
+                {liveLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+            {liveLoading && liveVisitors.length === 0 ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : liveVisitors.length === 0 ? (
+              <div className="text-center py-16 text-gray-400">
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">No active visitors right now</p>
+                <p className="text-xs mt-1">Auto-refreshes every 30 seconds</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {liveVisitors.map(s => {
+                  const stageInfo = LIVE_STAGE_CONFIG[s.stage] || { label: s.stage || "Unknown", color: "#9CA3AF" };
+                  return (
+                    <div key={s.id} className="bg-white rounded-xl border shadow-sm p-4" style={{ borderColor: CARD_BORDER, borderLeftWidth: 4, borderLeftColor: stageInfo.color }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: stageInfo.color }}>
+                          {stageInfo.label}
+                        </span>
+                        <span className="text-[11px] text-gray-400">{s.last_seen_at ? timeAgo(s.last_seen_at) : "—"}</span>
+                      </div>
+                      {s.delivery_address && (
+                        <div className="flex items-start gap-1.5 mb-1.5">
+                          <MapPin className="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" />
+                          <span className="text-xs text-gray-700 line-clamp-2">{s.delivery_address}</span>
+                        </div>
+                      )}
+                      {s.calculated_price && (
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <DollarSign className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-sm font-semibold" style={{ color: BRAND_NAVY }}>${Number(s.calculated_price).toFixed(0)}</span>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-gray-500">
+                        {s.customer_name && <span>👤 {s.customer_name}</span>}
+                        {s.customer_email && <span>✉ {s.customer_email}</span>}
+                        {s.visit_count > 1 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                            {s.visit_count}× visits
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        );
+      }
+
       default:
         return null;
     }
