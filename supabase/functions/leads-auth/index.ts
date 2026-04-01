@@ -1434,17 +1434,58 @@ serve(async (req) => {
         }
       }
 
-      const { data: existingPages } = await supabase.from("city_pages").select("city_slug");
-      const existingSlugs = new Set(existingPages?.map(p => p.city_slug) ?? []);
+      // Fetch existing pages for duplicate detection (by slug AND city_name)
+      const { data: existingPages } = await supabase
+        .from("city_pages")
+        .select("id, city_slug, city_name, distance_from_pit, status");
 
-      const toCreate = [...bestBySlug.values()].filter(c => !existingSlugs.has(c.city_slug));
-      console.log(`[bulk] ${allCandidates.length} total candidates, ${bestBySlug.size} unique, ${toCreate.length} new to create`);
+      const existingBySlugMap = new Map<string, typeof existingPages extends (infer T)[] | null ? T : never>();
+      const existingByNameMap = new Map<string, typeof existingPages extends (infer T)[] | null ? T : never>();
+      for (const p of existingPages || []) {
+        existingBySlugMap.set(p.city_slug, p);
+        existingByNameMap.set(p.city_name.toLowerCase(), p);
+      }
+
+      console.log(`[bulk] ${allCandidates.length} total candidates, ${bestBySlug.size} unique, ${existingBySlugMap.size} existing`);
 
       let created = 0;
+      let updatedCount = 0;
+      let skippedCount = 0;
 
-      for (const city of toCreate) {
+      for (const city of bestBySlug.values()) {
         const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
-        const isMultiPit = forceSuppressPrice; // multi-PIT detection not done in bulk yet
+        const isMultiPit = forceSuppressPrice;
+
+        // Check for existing page by slug
+        const existingBySlug = existingBySlugMap.get(city.city_slug);
+        // Check for existing page by city name (case insensitive)
+        const existingByName = existingByNameMap.get(city.city_name.toLowerCase());
+        const existing = existingBySlug || existingByName;
+
+        if (existing) {
+          // City exists — only update if new distance is shorter
+          if (city.distance_from_pit < (existing.distance_from_pit ?? 999)) {
+            await supabase.from("city_pages").update({
+              pit_id: city.pit_id,
+              distance_from_pit: city.distance_from_pit,
+              base_price: city.base_price,
+              city_slug: city.city_slug,
+              multi_pit_coverage: isMultiPit,
+              pit_reassigned: true,
+              price_changed: false,
+              prompt_version: null,
+              regen_reason: 'pit_reassigned',
+              updated_at: new Date().toISOString(),
+            }).eq("id", existing.id);
+            console.log(`[bulk] Updated ${city.city_name} to closer PIT (${city.distance_from_pit} mi)`);
+            updatedCount++;
+          } else {
+            skippedCount++;
+          }
+          continue;
+        }
+
+        // Insert new page
         const { error: insertErr } = await supabase
           .from("city_pages")
           .insert({
@@ -1459,7 +1500,10 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, created, skipped: existingSlugs.size, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
+        JSON.stringify({
+          success: true, created, updated: updatedCount, skipped: skippedCount,
+          message: `${created} created, ${updatedCount} updated with closer pit, ${skippedCount} skipped (already optimal). Run Regen Outdated to generate content.`,
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
