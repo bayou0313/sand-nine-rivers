@@ -276,6 +276,10 @@ const Leads = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const { loaded: googleLoaded } = useGoogleMaps();
 
+  // Waitlist state
+  const [waitlistData, setWaitlistData] = useState<any[]>([]);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+
   // Abandoned sessions state
   const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
   const [abandonedLoading, setAbandonedLoading] = useState(false);
