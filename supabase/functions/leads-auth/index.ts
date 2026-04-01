@@ -279,7 +279,39 @@ serve(async (req) => {
       );
     }
 
-    const leadsPassword = Deno.env.get("LEADS_PASSWORD");
+    // ── JOIN WAITLIST (no password required — public) ──
+    if (action === "join_waitlist") {
+      const { city_slug, city_name, customer_name, customer_email, customer_phone } = body;
+      if (!customer_email || !city_slug) {
+        return new Response(JSON.stringify({ error: "Email and city required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+
+      // Check if already on waitlist
+      const { data: existingWl } = await sb.from("waitlist_leads")
+        .select("id").eq("customer_email", customer_email).eq("city_slug", city_slug).maybeSingle();
+      if (existingWl) {
+        return new Response(JSON.stringify({ success: true, message: "Already on waitlist" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      await sb.from("waitlist_leads").insert({ city_slug, city_name: city_name || city_slug, customer_name, customer_email, customer_phone });
+
+      // Send waitlist confirmation email
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+          body: JSON.stringify({ type: "waitlist", data: { city_name: city_name || city_slug, customer_name, customer_email } }),
+        });
+      } catch (emailErr: any) { console.error("[join_waitlist] Email error:", emailErr.message); }
+
+      return new Response(JSON.stringify({ success: true, message: "Added to waitlist" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     if (!leadsPassword || password !== leadsPassword) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
