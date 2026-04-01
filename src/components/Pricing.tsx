@@ -192,9 +192,9 @@ const Pricing = () => {
         </motion.p>
 
         <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
-          <a href="#estimator" onClick={scrollToEstimator} className="inline-flex items-center gap-2 bg-accent text-accent-foreground font-display tracking-wider text-sm px-6 py-3 rounded-full hover:bg-accent/90 transition-colors">
+          <button type="button" onClick={scrollToEstimator} className="inline-flex items-center gap-2 bg-accent text-accent-foreground font-display tracking-wider text-sm px-6 py-3 rounded-full hover:bg-accent/90 transition-colors cursor-pointer border-none">
             Check my exact price <ArrowRight className="w-4 h-4" />
-          </a>
+          </button>
         </motion.div>
       </div>
     </section>
