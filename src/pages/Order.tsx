@@ -294,83 +294,34 @@ const Order = () => {
     }
 
     if (paymentStatus === "canceled") {
-      const returnedOrderId = searchParams.get("order_id");
-      const returnedOrderNumber = searchParams.get("order_number");
-
       // If we still have in-memory state, just go back to confirm step
       if (totalPrice > 0 && address) {
         setStep("confirm");
-      } else if (returnedOrderId || returnedOrderNumber) {
-        // Page reloaded — restore order from DB
-        (async () => {
-          try {
-            let query = supabase.from("orders").select("*");
-            if (returnedOrderId) query = query.eq("id", returnedOrderId);
-            else if (returnedOrderNumber) query = query.eq("order_number", returnedOrderNumber);
-            const { data: order } = await query.maybeSingle();
-
-            if (order) {
-              setAddress(order.delivery_address || "");
-              setForm({
-                name: order.customer_name || "",
-                phone: order.customer_phone || "",
-                email: order.customer_email || "",
-                notes: order.notes || "",
-              });
-              setQuantity(order.quantity || 1);
-              setPendingOrderId(order.id);
-              setOrderNumber(order.order_number || null);
-              setPaymentMethod((order.payment_method as PaymentMethodType) || "stripe-link");
-
-              if (order.delivery_date) {
-                const d = new Date(order.delivery_date + "T00:00:00");
-                const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-                const shortDays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-                setSelectedDeliveryDate({
-                  date: d,
-                  label: shortDays[d.getDay()],
-                  dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-                  fullLabel: d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
-                  iso: order.delivery_date,
-                  dayOfWeek: order.delivery_day_of_week || dayNames[d.getDay()],
-                  isSaturday: order.saturday_surcharge || false,
-                  isSameDay: order.same_day_requested || false,
-                });
-              }
-
-              // Restore pricing
-              const orderTaxAmount = order.tax_amount || 0;
-              const orderSatSurcharge = order.saturday_surcharge_amount || 0;
-              const isStripe = order.payment_method === "stripe-link";
-              const orderProcessingFee = isStripe
-                ? parseFloat((order.price / 1.035 * 0.035).toFixed(2))
-                : 0;
-              const orderTotalWithFee = order.price;
-              const orderTotalWithoutFee = isStripe
-                ? parseFloat((order.price - orderProcessingFee).toFixed(2))
-                : order.price;
-              const orderSubtotal = orderTotalWithoutFee - orderTaxAmount;
-
-              if (order.distance_miles) {
-                setResult({
-                  distance: order.distance_miles,
-                  price: orderSubtotal / (order.quantity || 1),
-                  address: order.delivery_address || "",
-                  duration: "",
-                });
-              }
-
-              setStep("confirm");
-            } else {
-              setStep("address");
+      } else {
+        // Page reloaded from Stripe redirect — restore from sessionStorage snapshot
+        try {
+          const raw = sessionStorage.getItem("pending_order_snapshot");
+          if (raw) {
+            const snap = JSON.parse(raw);
+            setAddress(snap.address || "");
+            setForm(snap.form || { name: "", phone: "", email: "", notes: "" });
+            setQuantity(snap.quantity || 1);
+            setPendingOrderId(snap.pendingOrderId || null);
+            setOrderNumber(snap.orderNumber || null);
+            setPaymentMethod(snap.paymentMethod || "stripe-link");
+            if (snap.selectedDeliveryDate) {
+              setSelectedDeliveryDate(snap.selectedDeliveryDate);
             }
-          } catch (err) {
-            console.error("[Order] Failed to restore order after cancel:", err);
+            if (snap.result) {
+              setResult(snap.result);
+            }
+            setStep("confirm");
+          } else {
             setStep("address");
           }
-        })();
-      } else {
-        setStep("address");
+        } catch {
+          setStep("address");
+        }
       }
 
       toast({
