@@ -200,8 +200,12 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
                 className={`flex-shrink-0 w-[88px] rounded-xl p-3 text-center border-2 transition-all duration-200 ${
                   isBlocked
                     ? "border-border bg-muted/50 opacity-50 cursor-not-allowed"
+                    : isSelected && d.isSaturday
+                    ? "border-amber-500 bg-amber-50 shadow-lg shadow-amber-500/20 scale-105"
                     : isSelected
                     ? "border-accent bg-accent/10 shadow-lg shadow-accent/20 scale-105"
+                    : d.isSaturday
+                    ? "border-amber-300 bg-amber-50/60 hover:border-amber-400 hover:shadow-md"
                     : "border-border bg-card hover:border-primary/40 hover:shadow-md"
                 }`}
               >
