@@ -1212,7 +1212,7 @@ serve(async (req) => {
           .insert({
             pit_id,
             city_name: city.city_name,
-            city_slug: city.city_slug,
+            city_slug: normalizedSlug,
             state: city.state || "LA",
             lat: city.lat,
             lng: city.lng,
