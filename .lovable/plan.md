@@ -1,72 +1,20 @@
 
 
-# Revised Plan: Static HTML City Pages for Google Crawlability (GitHub Pages)
+## Add "No Haversine" Documentation Notes
 
-## Problem
+The system exclusively uses **Google Distance Matrix API driving distances** for all distance calculations. Haversine (straight-line/as-the-crow-flies) is never used. We need to add clear notes in the key files so every developer knows this.
 
-City pages are client-side React (SPA). GitHub Pages serves only static files — no server-side rewrites or edge function routing like Vercel. Googlebot gets an empty HTML shell.
+### Files to Update
 
-## Solution: Pre-render static HTML at build time
+1. **`src/lib/pits.ts`** — Add a prominent note to the module docstring (lines 1-7) stating that all distances are real driving distances via the Google Distance Matrix API, and haversine is intentionally never used.
 
-Generate a static `.html` file for each active city page during the GitHub Actions build step. These files live at `dist/{citySlug}/river-sand-delivery/index.html` and are served directly by GitHub Pages as fully crawlable HTML.
+2. **`supabase/functions/leads-auth/index.ts`** — The `getDrivingDistances` function already has a comment "No haversine fallback" (line 13). Add a top-level module comment reinforcing that the entire system uses driving distances only — no haversine anywhere.
 
-### How it works
+3. **`src/components/DeliveryEstimator.tsx`** — Add a brief comment near the `findBestPitDriving` call noting that distances are real driving miles from Google Distance Matrix, not haversine.
 
-```text
-┌──────────────────────────────────┐
-│  GitHub Actions build step       │
-│                                  │
-│  1. npm run build (Vite)         │
-│  2. node scripts/prerender.mjs   │
-│     → fetch city_pages from DB   │
-│     → generate HTML per city     │
-│     → write to dist/             │
-│  3. Deploy dist/ to GH Pages    │
-└──────────────────────────────────┘
-```
+### What the Notes Will Say
 
-### Files to create/change
-
-| File | Change |
-|------|--------|
-| `scripts/prerender-cities.mjs` | **New.** Node script that queries `city_pages` table, generates a full HTML file per city with all SEO content (meta tags, JSON-LD, semantic HTML), and writes to `dist/{slug}/river-sand-delivery/index.html`. Includes a `<script>` redirect to load the SPA for interactive features. |
-| `.github/workflows/deploy.yml` | Add `node scripts/prerender-cities.mjs` step **after** `npm run build` and **before** the deploy step. Pass `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as env vars from GitHub Secrets. |
-
-### What each static HTML file contains
-
-- Full `<head>`: title, meta description, canonical URL, Open Graph tags
-- JSON-LD: `LocalBusiness`, `BreadcrumbList`, `FAQPage` schemas
-- Semantic HTML body: h1, hero intro, pricing, why-choose, delivery details, local uses, local expertise, FAQ sections, other-cities links
-- Inline minimal CSS for readability without JS
-- A `<script>` tag that bootstraps the React SPA for interactive components (estimator, contact form)
-
-### Pre-render script logic (`scripts/prerender-cities.mjs`)
-
-1. Fetch all rows from `city_pages` where `status = 'active'`
-2. For each city page, build a complete HTML document using the stored structured fields (`h1_text`, `hero_intro`, `meta_title`, `meta_description`, `faq_items`, `local_uses`, `local_expertise`, `delivery_details`, `why_choose_intro`, `content`)
-3. Write to `dist/{city_slug}/river-sand-delivery/index.html`
-4. Also fetch other active cities for internal linking in each page
-
-### GitHub Actions changes
-
-```yaml
-- run: npm run build
-- run: node scripts/prerender-cities.mjs
-  env:
-    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-    SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-- uses: peaceiris/actions-gh-pages@v3
-```
-
-### User action required
-
-You will need to add two GitHub Secrets to your repository:
-- `SUPABASE_URL` — your backend URL
-- `SUPABASE_SERVICE_ROLE_KEY` — your service role key (for server-side DB access during build)
-
-### What stays the same
-
-- `CityPage.tsx` remains unchanged — handles client-side navigation and interactive components
-- `vercel.json` can be removed (not used with GitHub Pages)
-- The React SPA still works for all routes via the existing 404.html fallback
+> **IMPORTANT: This system does NOT use haversine (straight-line) distances anywhere.**
+> All distance calculations use the Google Distance Matrix API with `mode=driving` and `avoid=ferries|tolls`.
+> This ensures accurate road-based mileage for pricing. Never add haversine as a fallback or pre-filter.
 
