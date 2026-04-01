@@ -392,7 +392,7 @@ const Leads = () => {
     } finally { setSyncingPayment(null); }
   }, [toast, fetchCashOrders]);
 
-
+  const markCashPaid = useCallback(async () => {
     if (!cashOrderToMark) return;
     setMarkingPaid(true);
     try {
