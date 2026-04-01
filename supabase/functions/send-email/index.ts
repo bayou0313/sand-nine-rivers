@@ -332,6 +332,20 @@ function orderCustomerEmail(order: any): string {
                   </tr>
                 </table>
 
+                <!-- CANCELLATION POLICY -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
+                  <tr>
+                    <td style="padding:16px 24px;border-top:1px solid #E8E5DC;">
+                      <p style="font-size:11px;font-weight:bold;color:#0D2137;letter-spacing:1px;margin:0 0 6px 0;text-transform:uppercase;">
+                        Cancellation Policy
+                      </p>
+                      <p style="font-size:12px;color:#666666;margin:0;line-height:1.6;">
+                        Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
                 <!-- CTA -->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                   <tr>
