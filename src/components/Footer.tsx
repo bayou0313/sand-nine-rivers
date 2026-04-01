@@ -75,7 +75,7 @@ const Footer = () => {
           borderBottom: cityLinks.length > 0 ? "1px solid #E8E5DC" : undefined,
         }}
       >
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 text-base">
           <a href="https://ways.us" target="_blank" rel="noopener noreferrer">
             <img
               src={WAYS_LOGO_DARK}
@@ -86,7 +86,7 @@ const Footer = () => {
             />
           </a>
           <p style={{ color: "#888888", fontSize: 11 }}>
-            © 2026 WAYS® Materials LLC
+            © 2015-2026 WAYS® Materials LLC
           </p>
           <p style={{ color: "#AAAAAA", fontSize: 11 }}>
             orders@riversand.net · 1-855-GOT-WAYS
