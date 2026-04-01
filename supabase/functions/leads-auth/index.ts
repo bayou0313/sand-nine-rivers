@@ -533,8 +533,12 @@ serve(async (req) => {
         started_checkout: 0, reached_payment: 0, completed_order: 0,
       };
 
-      for (const row of data || []) {
+      const entryPages: Record<string, number> = {};
+      for (const row of (data as any[]) || []) {
         const stage = row.stage || "visited";
+        if (row.entry_city_name) {
+          entryPages[row.entry_city_name] = (entryPages[row.entry_city_name] || 0) + 1;
+        }
         if (stage === "got_out_of_area") {
           counts.got_out_of_area++;
           counts.visited++;
@@ -543,14 +547,18 @@ serve(async (req) => {
         }
         const idx = ORDERED_STAGES.indexOf(stage);
         if (idx === -1) { counts.visited++; continue; }
-        // Cumulative: count in this stage and all prior stages
         for (let i = 0; i <= idx; i++) {
           counts[ORDERED_STAGES[i]]++;
         }
       }
 
+      const top_entry_cities = Object.entries(entryPages)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([city, count]) => ({ city, count }));
+
       return new Response(
-        JSON.stringify({ funnel: counts }),
+        JSON.stringify({ funnel: counts, top_entry_cities }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
