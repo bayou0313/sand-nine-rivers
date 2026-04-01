@@ -3730,9 +3730,16 @@ const Leads = () => {
                             {isToday ? "Today" : o.delivery_date ? new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD"}
                           </td>
                           <td className="px-3 py-2">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F3F3F3", color: BRAND_NAVY }}>
-                              {o.payment_method === "check" ? "Check" : "Cash"}
-                            </span>
+                            {(() => {
+                              const pm = (o.payment_method || "").toLowerCase();
+                              if (pm === "stripe" || pm === "stripe-link" || pm === "card") {
+                                return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: "#3B82F6" }}>CARD</span>;
+                              }
+                              if (pm === "check") {
+                                return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#E5E7EB", color: "#374151" }}>CHECK</span>;
+                              }
+                              return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: "#F59E0B" }}>CASH</span>;
+                            })()}
                           </td>
                           <td className="px-3 py-2">
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: statusColor }}>
