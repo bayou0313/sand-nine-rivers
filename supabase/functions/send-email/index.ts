@@ -293,13 +293,13 @@ function orderCustomerEmail(order: any): string {
                 </table>
 
                 ${!isStripePaid ? `
-                <!-- COD CARD PAYMENT DISCLAIMER -->
+                <!-- COD PAYMENT POLICY -->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                   <tr>
-                    <td style="background-color:#FFFBEB;border:1px solid #FDE68A;padding:12px 16px;border-radius:8px;">
-                      <p style="margin:0;font-size:12px;color:#92400E;line-height:1.6;">
-                        Prefer to pay by card? If you choose to pay with a credit card at delivery, your total will be $${fmt(Number(order.price) * 1.035)} (includes 3.5% processing fee). Contact us at ${PHONE} to arrange card payment.
-                      </p>
+                    <td style="background-color:#FEF9C3;border:1px solid #FDE68A;padding:12px 16px;border-radius:8px;">
+                      <p style="margin:0 0 6px 0;font-size:11px;font-weight:bold;color:#92400E;text-transform:uppercase;letter-spacing:1px;">Payment Due at Delivery</p>
+                      <p style="margin:0 0 8px 0;font-size:13px;color:#78350F;line-height:1.6;">Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.</p>
+                      <p style="margin:0;font-size:12px;color:#92400E;">Note: Card payments include a 3.5% processing fee.<br/>Cash/Check total: <strong>$${fmt(Number(order.price))}</strong> · Card total if needed: <strong>$${fmt(Number(order.price) * 1.035)}</strong></p>
                     </td>
                   </tr>
                 </table>

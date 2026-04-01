@@ -436,6 +436,27 @@ export default function OrderConfirmation({
         </div>
       </FadeIn>
 
+      {/* ── COD PAYMENT POLICY ── */}
+      {!isStripePaid && (
+        <FadeIn delay={0.45}>
+          <div className="px-6 pb-6 max-w-[680px] mx-auto">
+            <div style={{ background: "#FEF9C3", border: "1px solid #FDE68A", borderRadius: "8px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "bold", color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
+                Payment Due at Delivery
+              </p>
+              <p style={{ fontSize: "13px", color: "#78350F", lineHeight: "1.6", margin: 0 }}>
+                Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.
+              </p>
+              <p style={{ fontSize: "12px", color: "#92400E", marginTop: "8px", marginBottom: 0 }}>
+                Note: Card payments include a 3.5% processing fee.
+                <br />
+                Cash/Check total: <strong>{formatCurrency(displayTotal)}</strong> · Card total if needed: <strong>{formatCurrency(displayTotal * 1.035)}</strong>
+              </p>
+            </div>
+          </div>
+        </FadeIn>
+      )}
+
       {/* ── DELIVERY INSTRUCTIONS ── */}
       <FadeIn delay={0.5}>
         <div className="px-6 pb-6 max-w-[680px] mx-auto">
