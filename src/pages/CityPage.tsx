@@ -19,7 +19,10 @@ import Footer from "@/components/Footer";
 import MobilePhoneBar from "@/components/MobilePhoneBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, Mail, Phone, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 const slugToTitle = (slug: string): string => {
   return slug
@@ -28,23 +31,156 @@ const slugToTitle = (slug: string): string => {
     .join(" ");
 };
 
+const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: {
+          action: "join_waitlist",
+          city_slug: cityPage.city_slug,
+          city_name: cityPage.city_name,
+          customer_name: name || null,
+          customer_email: email,
+          customer_phone: phone || null,
+        },
+      });
+      if (error) throw error;
+      setSubmitted(true);
+      toast({ title: "You're on the list!", description: `We'll notify you when delivery to ${cityPage.city_name} becomes available.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canonicalUrl = `https://riversand.net/${cityPage.city_slug}/river-sand-delivery`;
+
+  return (
+    <div className="min-h-screen pb-14 lg:pb-0">
+      <Helmet>
+        <title>{`River Sand Delivery Coming to ${cityPage.city_name}, ${cityPage.state} | River Sand`}</title>
+        <meta name="description" content={`River sand delivery is coming to ${cityPage.city_name}, ${cityPage.state}. Join the waitlist and be the first to know when same-day delivery is available.`} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={canonicalUrl} />
+      </Helmet>
+
+      <Navbar solid />
+
+      {/* Hero Section */}
+      <section className="relative py-20 md:py-28" style={{ background: "linear-gradient(135deg, #0D2137 0%, #142845 100%)" }}>
+        <div className="container mx-auto px-6 max-w-2xl text-center">
+          <img
+            src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png"
+            alt="River Sand"
+            className="h-10 mx-auto mb-8 opacity-80"
+          />
+          <h1 className="text-2xl md:text-4xl font-display text-white tracking-wide mb-6">
+            River Sand Delivery Coming to{" "}
+            <span style={{ color: "#C07A00" }}>{cityPage.city_name}</span>
+          </h1>
+          <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-10 max-w-lg mx-auto">
+            We're expanding our delivery area. Join the waitlist and be the first to know when same-day river sand delivery is available in {cityPage.city_name}.
+          </p>
+
+          {submitted ? (
+            <div className="bg-green-900/30 border border-green-500/40 rounded-xl p-6">
+              <p className="text-green-300 font-display text-lg">You're on the list!</p>
+              <p className="text-green-400/80 text-sm mt-2">We'll email you as soon as delivery to {cityPage.city_name} becomes available.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-3 max-w-sm mx-auto">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Name (optional)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                />
+              </div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="email"
+                  placeholder="Email (required)"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                />
+              </div>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="tel"
+                  placeholder="Phone (optional)"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={submitting || !email}
+                className="w-full font-display tracking-wider text-sm"
+                style={{ backgroundColor: "#C07A00", color: "#fff" }}
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                JOIN WAITLIST
+              </Button>
+            </form>
+          )}
+
+          <div className="mt-10 pt-8 border-t border-white/10">
+            <p className="text-gray-400 text-sm mb-3">Already serving nearby areas — check if we deliver to you:</p>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 font-display text-sm tracking-wider"
+              style={{ color: "#C07A00" }}
+            >
+              GET MY PRICE →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+      <MobilePhoneBar />
+    </div>
+  );
+};
+
 const CityPage = () => {
   const { citySlug } = useParams<{ citySlug: string }>();
   const navigate = useNavigate();
   const [cityPage, setCityPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [otherCities, setOtherCities] = useState<any[]>([]);
+  const [isWaitlist, setIsWaitlist] = useState(false);
 
   useEffect(() => {
     if (!citySlug) { navigate("/"); return; }
 
     const fetchPage = async () => {
       setLoading(true);
+      // Try active first, then waitlist
       const { data, error } = await supabase
         .from("city_pages")
         .select("*")
         .eq("city_slug", citySlug)
-        .eq("status", "active")
+        .in("status", ["active", "waitlist"])
         .maybeSingle();
 
       if (error || !data) {
@@ -53,11 +189,13 @@ const CityPage = () => {
       }
 
       setCityPage(data);
+      setIsWaitlist(data.status === "waitlist");
 
       trackEvent("city_page_view", {
         city_name: data.city_name,
         state: data.state,
         page_price: data.base_price,
+        is_waitlist: data.status === "waitlist",
       });
 
       // Track session entry from city page
@@ -69,9 +207,11 @@ const CityPage = () => {
         entry_city_name: data.city_name,
       });
 
-      try {
-        await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });
-      } catch { /* ignore */ }
+      if (data.status === "active") {
+        try {
+          await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });
+        } catch { /* ignore */ }
+      }
 
       const { data: others } = await supabase
         .from("city_pages")
@@ -121,6 +261,11 @@ const CityPage = () => {
   }
 
   if (!cityPage) return null;
+
+  // Show waitlist page if status is waitlist
+  if (isWaitlist) {
+    return <WaitlistPage cityPage={cityPage} />;
+  }
 
   const canonicalUrl = `https://riversand.net/${cityPage.city_slug}/river-sand-delivery`;
 

@@ -162,7 +162,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "profile" | "settings";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -185,6 +185,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
     items: [
       { id: "pit", label: "PIT", icon: Zap },
       { id: "city_pages", label: "City Pages", icon: MapIcon },
+      { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
       { id: "all", label: "All Leads", icon: Users },
     ],
   },
@@ -274,6 +275,10 @@ const Leads = () => {
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
   const [savingProfile, setSavingProfile] = useState(false);
   const { loaded: googleLoaded } = useGoogleMaps();
+
+  // Waitlist state
+  const [waitlistData, setWaitlistData] = useState<any[]>([]);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
 
   // Abandoned sessions state
   const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
@@ -974,6 +979,18 @@ const Leads = () => {
     setShowDeleteConfirm(false);
   };
 
+  // Fetch waitlist data
+  useEffect(() => {
+    if (activePage === "waitlist" && authenticated) {
+      setWaitlistLoading(true);
+      supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_waitlist" },
+      }).then(({ data }) => {
+        if (data?.waitlist) setWaitlistData(data.waitlist);
+        setWaitlistLoading(false);
+      }).catch(() => setWaitlistLoading(false));
+    }
+  }, [activePage, authenticated]);
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
@@ -1509,6 +1526,7 @@ const Leads = () => {
     live: { title: "LIVE VISITORS", subtitle: `${liveVisitors.length} active now` },
     cash_orders: { title: "ORDERS", subtitle: `${cashOrders.length} orders` },
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
+    waitlist: { title: "WAITLIST", subtitle: "Coming soon areas" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
@@ -2771,6 +2789,65 @@ const Leads = () => {
             </div>
           </>
         );
+
+      case "waitlist": {
+        const cityGroups = waitlistData.reduce((acc: Record<string, any[]>, lead: any) => {
+          const key = lead.city_name || lead.city_slug;
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(lead);
+          return acc;
+        }, {} as Record<string, any[]>);
+
+        return (
+          <>
+            {waitlistLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : waitlistData.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">No waitlist signups yet.</div>
+            ) : (
+              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      {["City", "Signups", "Latest Signup", "Action"].map(h => (
+                        <th key={h} className="px-4 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(cityGroups).sort((a, b) => (b[1] as any[]).length - (a[1] as any[]).length).map(([city, leads], i) => {
+                      const leadsArr = leads as any[];
+                      return (
+                        <tr key={city} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                          <td className="px-4 py-3 font-medium" style={{ color: BRAND_NAVY }}>{city}</td>
+                          <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>{leadsArr.length}</td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">{new Date(leadsArr[0].created_at).toLocaleDateString()}</td>
+                          <td className="px-4 py-3">
+                            <Button
+                              size="sm" variant="outline" className="text-xs"
+                              style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+                              onClick={() => {
+                                const csv = "Name,Email,Phone,Signed Up\n" + leadsArr.map((l: any) =>
+                                  `"${l.customer_name || ""}","${l.customer_email}","${l.customer_phone || ""}","${new Date(l.created_at).toLocaleDateString()}"`
+                                ).join("\n");
+                                const blob = new Blob([csv], { type: "text/csv" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a"); a.href = url; a.download = `waitlist-${city.toLowerCase().replace(/\s+/g, "-")}.csv`; a.click();
+                              }}
+                            >
+                              <Download className="w-3 h-3 mr-1" /> Export
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        );
+      }
 
       case "settings": {
         const SEO_CHECKLIST_ITEMS = [
