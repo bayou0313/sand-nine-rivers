@@ -54,6 +54,7 @@ export default function PlaceAutocompleteInput({
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current!, {
           componentRestrictions: { country: "us" },
           fields: ["formatted_address", "geometry", "address_components"],
+          language: "en",
         });
 
         autocomplete.addListener("place_changed", () => {

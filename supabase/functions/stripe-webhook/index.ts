@@ -96,6 +96,24 @@ serve(async (req) => {
       stripePaymentId = (session.payment_intent as string) || null;
       paymentStatus = session.payment_status === "paid" ? "paid" : "pending";
 
+      console.log("[stripe-webhook] checkout.session.completed — order_id from metadata:", orderId);
+      console.log("[stripe-webhook] payment_intent:", stripePaymentId);
+      console.log("[stripe-webhook] payment_status:", paymentStatus);
+
+      // If no order_id in metadata, try matching by order_number
+      if (!orderId && session.metadata?.order_number) {
+        console.log("[stripe-webhook] No order_id, trying order_number:", session.metadata.order_number);
+        const { data: matchByNumber } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("order_number", session.metadata.order_number)
+          .maybeSingle();
+        if (matchByNumber) {
+          orderId = matchByNumber.id;
+          console.log("[stripe-webhook] Matched order by order_number:", orderId);
+        }
+      }
+
       const stripeCustomerId = (session.customer as string) || null;
       if (orderId && stripeCustomerId) {
         await supabase
@@ -111,6 +129,8 @@ serve(async (req) => {
           .eq("stripe_payment_id", stripePaymentId)
           .maybeSingle();
         if (matchedOrder) {
+          orderId = matchedOrder.id;
+          console.log("[stripe-webhook] Matched order by stripe_payment_id:", orderId);
           await supabase
             .from("orders")
             .update({ stripe_customer_id: stripeCustomerId })
