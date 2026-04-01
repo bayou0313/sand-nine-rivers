@@ -499,6 +499,19 @@ const Order = () => {
         address: `${dist.toFixed(1)} miles away`,
         duration: paramDuration || "~30 min",
       });
+
+      // Read pit schedule params from URL (passed by estimator)
+      const paramOpDays = searchParams.get("operating_days");
+      const paramSatSurcharge = searchParams.get("sat_surcharge");
+      const paramSameDayCutoff = searchParams.get("same_day_cutoff");
+      if (paramOpDays || paramSatSurcharge || paramSameDayCutoff) {
+        setMatchedPitSchedule({
+          operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null,
+          saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null,
+          same_day_cutoff: paramSameDayCutoff || null,
+        });
+      }
+
       setStep(prev => prev === "address" ? "details" : prev);
     } else if (paramAddress && paramDistance && paramDuration) {
       setAddress(paramAddress);
