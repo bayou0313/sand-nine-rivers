@@ -45,7 +45,7 @@ async function getDrivingDistances(
         `&destinations=${destsStr}` +
         `&units=imperial` +
         `&mode=driving` +
-        `&avoid=ferries%7Ctolls` +
+        `&avoid=ferries` +
         `&key=${apiKey}`;
       const resp = await fetch(url);
       const data = await resp.json();
