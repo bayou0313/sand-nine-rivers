@@ -32,6 +32,18 @@ const Pricing = () => {
   const driveEnd = DRIVE_DURATION / LOOP_TOTAL;
   const holdEnd = (DRIVE_DURATION + DEST_HOLD) / LOOP_TOTAL;
 
+  const scrollToEstimator = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+
+    const estimator = document.getElementById("estimator");
+    estimator?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    window.setTimeout(() => {
+      const addressInput = document.getElementById("delivery-address") as HTMLInputElement | null;
+      addressInput?.focus({ preventScroll: true });
+    }, 450);
+  };
+
   return (
     <section id="pricing" className="relative py-20 md:py-28 bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-6 relative z-10">
@@ -157,7 +169,7 @@ const Pricing = () => {
 
             <div className="px-6 py-4 text-center border-t border-border">
               <p className="text-sm text-muted-foreground font-body">
-                Price calculated by distance — <a href="#estimator" className="text-accent font-medium hover:text-accent/80 transition-colors">enter your address to see yours</a>
+                Price calculated by distance — <a href="#estimator" onClick={scrollToEstimator} className="text-accent font-medium hover:text-accent/80 transition-colors">enter your address to see yours</a>
               </p>
             </div>
           </div>
@@ -181,7 +193,7 @@ const Pricing = () => {
         </motion.p>
 
         <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
-          <a href="#estimator" className="inline-flex items-center gap-2 bg-accent text-accent-foreground font-display tracking-wider text-sm px-6 py-3 rounded-full hover:bg-accent/90 transition-colors">
+          <a href="#estimator" onClick={scrollToEstimator} className="inline-flex items-center gap-2 bg-accent text-accent-foreground font-display tracking-wider text-sm px-6 py-3 rounded-full hover:bg-accent/90 transition-colors">
             Check my exact price <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>
