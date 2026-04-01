@@ -1968,7 +1968,7 @@ const Leads = () => {
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
         const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
-        const CURRENT_PROMPT_VERSION = "2.0";
+        const CURRENT_PROMPT_VERSION = "3.0";
         const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed).length;
         const pitChangedCount = cityPages.filter((cp: any) => cp.pit_reassigned).length;
         const priceChangedCount = cityPages.filter((cp: any) => cp.price_changed && !cp.pit_reassigned).length;
