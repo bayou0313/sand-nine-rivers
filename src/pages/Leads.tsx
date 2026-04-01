@@ -2141,31 +2141,6 @@ const Leads = () => {
                 <option value="all">All PITs</option>
                 {pits.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <button
-                onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
-                className="h-9 px-3 rounded-md border text-xs font-bold transition-colors"
-                style={{
-                  borderColor: showDuplicatesOnly ? "#F59E0B" : BRAND_NAVY + "30",
-                  backgroundColor: showDuplicatesOnly ? "#FEF3C7" : "white",
-                  color: showDuplicatesOnly ? "#92400E" : BRAND_NAVY,
-                }}
-              >
-                <AlertTriangle className="w-3 h-3 inline mr-1" />
-                Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
-              </button>
-              {duplicateCount > 0 && (
-  
-              <Button
-                  onClick={() => setShowDeduplicateConfirm(true)}
-                  disabled={deduplicating}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs"
-                >
-                  {deduplicating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
-                  Remove Duplicates ({duplicateCount})
-                </Button>
-               )}
               {cityPageSortKey !== "city_name" && (
                 <button
                   onClick={() => { setCityPageSortKey("city_name"); setCityPageSortDir("asc"); }}
@@ -2175,39 +2150,6 @@ const Leads = () => {
                   Reset Sort
                 </button>
               )}
-              <Button
-                onClick={async () => {
-                  try {
-                    toast({ title: "Recalculating all distances…", description: "This may take a moment." });
-                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
-                      body: { password: storedPassword(), action: "recalculate_all_distances" },
-                    });
-                    if (fnError) throw fnError;
-                    toast({ title: "Distances recalculated", description: `${data?.updated || 0} of ${data?.total || 0} pages updated. ${data?.errors || 0} errors.` });
-                    fetchCityPages();
-                  } catch (err: any) {
-                    toast({ title: "Error", description: err.message, variant: "destructive" });
-                  }
-                }}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                style={{ borderColor: BRAND_NAVY + "40", color: BRAND_NAVY }}
-              >
-                <MapIcon className="w-3 h-3 mr-1" />
-                Recalculate Distances
-              </Button>
-              <Button
-                onClick={() => setShowRegenOutdatedConfirm(true)}
-                disabled={needsRegenCount === 0 || regenQueue?.status === "running"}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                style={{ borderColor: needsRegenCount > 0 ? BRAND_GOLD + "40" : undefined, color: needsRegenCount > 0 ? BRAND_GOLD : undefined }}
-              >
-                {regenQueue?.status === "running" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-3 h-3 mr-1" />}
-                Regen Outdated ({needsRegenCount})
-              </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
