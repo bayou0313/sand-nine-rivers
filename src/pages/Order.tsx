@@ -72,6 +72,7 @@ const Order = () => {
   const [allPits, setAllPits] = useState<PitData[]>([]);
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
 
   // Derived pricing from matched PIT (or global fallback)
   const effectivePricing = useMemo(() => {
