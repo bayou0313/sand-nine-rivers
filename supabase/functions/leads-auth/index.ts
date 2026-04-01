@@ -434,14 +434,78 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "settings must be an array of { key, value }" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      const savedKeys: string[] = [];
       for (const setting of bulkSettings) {
         await supabase.from("global_settings").upsert(
           { key: setting.key, value: setting.value, updated_at: new Date().toISOString() },
           { onConflict: "key" }
         );
+        savedKeys.push(setting.key);
       }
+
+      // ── PART 2: Auto-regen when pricing-related global settings change ──
+      const pricingKeys = ["default_base_price", "default_free_miles", "default_extra_per_mile", "default_max_distance", "saturday_surcharge"];
+      const pricingChanged = savedKeys.some(k => pricingKeys.includes(k));
+      let pages_regenerated = 0;
+
+      if (pricingChanged) {
+        // Re-fetch updated global settings
+        const { data: gs } = await supabase.from("global_settings").select("key, value");
+        const gMap: Record<string, string> = {};
+        for (const r of gs || []) gMap[r.key] = r.value;
+
+        // Get all pits for effective pricing
+        const { data: allPits } = await supabase.from("pits").select("*").eq("status", "active");
+        const pitMap: Record<string, any> = {};
+        for (const p of allPits || []) pitMap[p.id] = p;
+
+        const { data: allPages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, distance_from_pit, pit_id")
+          .in("status", ["active", "draft"]);
+
+        console.log(`[save_settings] Pricing changed — queuing regen for ${allPages?.length || 0} pages`);
+
+        const regenUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-city-page`;
+        const regenHeaders = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        };
+
+        for (const page of allPages || []) {
+          try {
+            // Recalculate price using pit overrides + new global defaults
+            const pit = pitMap[page.pit_id];
+            const effBP = pit?.base_price ?? parseFloat(gMap.default_base_price || "195");
+            const effFM = pit?.free_miles ?? parseFloat(gMap.default_free_miles || "15");
+            const effEPM = pit?.price_per_extra_mile ?? parseFloat(gMap.default_extra_per_mile || "5");
+            const dist = page.distance_from_pit || 0;
+            const extraMiles = Math.max(0, dist - effFM);
+            const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+            await supabase.from("city_pages").update({
+              base_price: newPrice,
+              price_changed: true,
+              regen_reason: 'price_changed',
+              updated_at: new Date().toISOString(),
+            }).eq("id", page.id);
+
+            await fetch(regenUrl, {
+              method: "POST",
+              headers: regenHeaders,
+              body: JSON.stringify({ city_page_id: page.id, force: true }),
+            });
+            console.log(`[save_settings] Regenerated: ${page.city_name} ($${newPrice})`);
+            pages_regenerated++;
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } catch (err: any) {
+            console.error(`[save_settings] Failed: ${page.city_name}`, err.message);
+          }
+        }
+      }
+
       return new Response(
-        JSON.stringify({ success: true, saved: bulkSettings.length }),
+        JSON.stringify({ success: true, saved: bulkSettings.length, pages_regenerated }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
