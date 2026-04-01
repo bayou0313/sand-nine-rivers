@@ -60,6 +60,15 @@ const CityPage = () => {
         page_price: data.base_price,
       });
 
+      // Track session entry from city page
+      await initSession();
+      await updateSession({
+        stage: "visited",
+        entry_page: `/${data.city_slug}/river-sand-delivery`,
+        entry_city_page: data.city_slug,
+        entry_city_name: data.city_name,
+      });
+
       try {
         await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });
       } catch { /* ignore */ }
