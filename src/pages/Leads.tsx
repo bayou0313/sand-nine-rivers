@@ -1088,9 +1088,9 @@ const Leads = () => {
     setProfileSettings(prev => ({ ...prev, business_address: result.formattedAddress }));
   }, []);
 
-  // Fetch abandoned sessions when navigating to that page
+  // Fetch abandoned sessions when navigating to that page (only if empty)
   useEffect(() => {
-    if (activePage === "abandoned" && authenticated) {
+    if (activePage === "abandoned" && authenticated && abandonedSessions.length === 0) {
       fetchAbandonedSessions();
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
@@ -3871,12 +3871,18 @@ const Leads = () => {
           <>
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-500">{abandonedSessions.length} abandoned sessions with email</p>
-              <Button onClick={runEmailCheck} disabled={runningEmailCheck} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                {runningEmailCheck ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-                Run Email Check
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={fetchAbandonedSessions} disabled={abandonedLoading} size="sm" variant="outline">
+                  {abandonedLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                  Refresh
+                </Button>
+                <Button onClick={runEmailCheck} disabled={runningEmailCheck} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  {runningEmailCheck ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                  Run Email Check
+                </Button>
+              </div>
             </div>
-            {abandonedLoading ? (
+            {abandonedLoading && abandonedSessions.length === 0 ? (
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
             ) : (
               <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
