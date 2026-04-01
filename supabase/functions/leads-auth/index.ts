@@ -168,10 +168,52 @@ serve(async (req) => {
       if (visitorIp) safe.ip_address = visitorIp;
       console.log("[session_update] token:", session_token?.slice(0, 8));
       console.log("[session_update] updates:", JSON.stringify(updates));
+
+      // Check previous stage before upserting (for out-of-area notification)
+      let previousStage: string | null = null;
+      if (updates.stage === "got_out_of_area") {
+        const { data: existing } = await sb.from("visitor_sessions")
+          .select("stage").eq("session_token", session_token).single();
+        previousStage = existing?.stage || null;
+      }
+
       await sb.from("visitor_sessions").upsert(
         { session_token, ...safe },
         { onConflict: "session_token", ignoreDuplicates: false }
       );
+
+      // Send internal out-of-area notification (once per session)
+      if (updates.stage === "got_out_of_area" && previousStage !== "got_out_of_area") {
+        try {
+          const resendKey = Deno.env.get("RESEND_API_KEY");
+          const ownerEmail = Deno.env.get("GMAIL_USER") || "cmo@haulogix.com";
+          if (resendKey) {
+            const { Resend } = await import("npm:resend@2.0.0");
+            const resend = new Resend(resendKey);
+            const addr = updates.delivery_address || "Unknown";
+            const pitName = updates.nearest_pit_name || "Unknown";
+            const city = addr.split(",")[1]?.trim() || addr.split(",")[0]?.trim() || "Unknown";
+            await resend.emails.send({
+              from: "River Sand <no_reply@riversand.net>",
+              to: [ownerEmail],
+              subject: `Out-of-Area Lead — ${city}`,
+              html: `<div style="font-family:Arial,sans-serif;max-width:500px">
+                <h2 style="color:#0D2137;margin-bottom:16px">Out-of-Area Lead</h2>
+                <table style="width:100%;border-collapse:collapse">
+                  <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600">Address</td><td style="padding:8px 0;border-bottom:1px solid #eee">${addr}</td></tr>
+                  <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600">Nearest Pit</td><td style="padding:8px 0;border-bottom:1px solid #eee">${pitName}</td></tr>
+                  <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600">IP</td><td style="padding:8px 0;border-bottom:1px solid #eee">${visitorIp || "Unknown"}</td></tr>
+                </table>
+                <p style="color:#666;margin-top:16px;font-size:14px">This visitor is outside our service area. Consider if this area warrants expansion.</p>
+              </div>`,
+            });
+            console.log("[session_update] Out-of-area notification sent for:", addr);
+          }
+        } catch (notifyErr) {
+          console.error("[session_update] Out-of-area notification failed:", notifyErr);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
