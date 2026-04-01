@@ -166,6 +166,8 @@ serve(async (req) => {
       orderId = order?.id || null;
     }
 
+    console.log("[stripe-webhook] Looking for order:", orderId, "paymentStatus:", paymentStatus);
+
     if (orderId && paymentStatus) {
       const updateData: Record<string, string> = {
         payment_status: paymentStatus,
