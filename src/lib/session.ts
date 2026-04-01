@@ -28,7 +28,11 @@ async function callSessionAction(action: string, payload: Record<string, any>) {
 
 export async function initSession(): Promise<void> {
   const token = getSessionToken();
-  await callSessionAction("session_init", { session_token: token });
+  await callSessionAction("session_init", {
+    session_token: token,
+    entry_page: window.location.pathname,
+    referrer: document.referrer || null,
+  });
 }
 
 export async function updateSession(

@@ -97,7 +97,7 @@ serve(async (req) => {
 
     // ── SESSION INIT (no password required — called from frontend) ──
     if (action === "session_init") {
-      const { session_token } = body;
+      const { session_token, entry_page, referrer } = body;
       if (!session_token) {
         return new Response(JSON.stringify({ error: "Missing session_token" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -105,8 +105,35 @@ serve(async (req) => {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const sb = createClient(supabaseUrl, serviceRoleKey);
+
+      // Capture visitor IP
+      const visitorIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || "unknown";
+
+      // Geolocate IP (free tier, best-effort)
+      let geo: Record<string, any> = {};
+      if (visitorIp && visitorIp !== "unknown") {
+        try {
+          const geoRes = await fetch(`https://ipapi.co/${visitorIp}/json/`);
+          if (geoRes.ok) geo = await geoRes.json();
+        } catch { /* silent */ }
+      }
+
+      const upsertData: Record<string, any> = {
+        session_token,
+        last_seen_at: new Date().toISOString(),
+        ip_address: visitorIp !== "unknown" ? visitorIp : null,
+      };
+      if (geo.city) upsertData.geo_city = geo.city;
+      if (geo.region) upsertData.geo_region = geo.region;
+      if (geo.country_name) upsertData.geo_country = geo.country_name;
+      if (geo.postal) upsertData.geo_zip = geo.postal;
+      if (entry_page) upsertData.entry_page = entry_page;
+      if (referrer) upsertData.referrer = referrer;
+
       await sb.from("visitor_sessions").upsert(
-        { session_token, last_seen_at: new Date().toISOString() },
+        upsertData,
         { onConflict: "session_token", ignoreDuplicates: false }
       );
       return new Response(JSON.stringify({ success: true }),
@@ -126,7 +153,8 @@ serve(async (req) => {
       // Whitelist allowed fields
       const allowed = ["stage","delivery_address","address_lat","address_lng",
         "calculated_price","serviceable","nearest_pit_id","nearest_pit_name",
-        "customer_name","customer_email","customer_phone","order_id","order_number"];
+        "customer_name","customer_email","customer_phone","order_id","order_number",
+        "entry_page","entry_city_page","entry_city_name"];
       const safe: Record<string, any> = {};
       for (const k of allowed) {
         if (updates[k] !== undefined) safe[k] = updates[k];
@@ -490,7 +518,7 @@ serve(async (req) => {
       const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from("visitor_sessions")
-        .select("stage")
+        .select("stage, entry_city_name")
         .gte("created_at", since);
       if (error) throw error;
 
@@ -505,8 +533,12 @@ serve(async (req) => {
         started_checkout: 0, reached_payment: 0, completed_order: 0,
       };
 
-      for (const row of data || []) {
+      const entryPages: Record<string, number> = {};
+      for (const row of (data as any[]) || []) {
         const stage = row.stage || "visited";
+        if (row.entry_city_name) {
+          entryPages[row.entry_city_name] = (entryPages[row.entry_city_name] || 0) + 1;
+        }
         if (stage === "got_out_of_area") {
           counts.got_out_of_area++;
           counts.visited++;
@@ -515,14 +547,18 @@ serve(async (req) => {
         }
         const idx = ORDERED_STAGES.indexOf(stage);
         if (idx === -1) { counts.visited++; continue; }
-        // Cumulative: count in this stage and all prior stages
         for (let i = 0; i <= idx; i++) {
           counts[ORDERED_STAGES[i]]++;
         }
       }
 
+      const top_entry_cities = Object.entries(entryPages)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([city, count]) => ({ city, count }));
+
       return new Response(
-        JSON.stringify({ funnel: counts }),
+        JSON.stringify({ funnel: counts, top_entry_cities }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -539,6 +575,23 @@ serve(async (req) => {
       console.log("[list_live_visitors] found:", data?.length, "active sessions");
       return new Response(
         JSON.stringify({ sessions: data }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── GET ACTIVITY MAP (address dots for last 30 days) ──
+    if (action === "get_activity_map") {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("address_lat, address_lng, stage, calculated_price, delivery_address, geo_city, entry_city_name, created_at")
+        .not("address_lat", "is", null)
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ points: data }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

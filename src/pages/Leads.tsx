@@ -3883,7 +3883,7 @@ const Leads = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ backgroundColor: BRAND_NAVY }}>
-                      {["Date", "Address", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
+                      {["Date", "Address", "Location", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -3893,6 +3893,7 @@ const Leads = () => {
                       <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
                         <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
                         <td className="px-3 py-2">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{
                             backgroundColor: s.stage === "reached_payment" ? "#EA580C" : "#F59E0B"
@@ -3920,7 +3921,7 @@ const Leads = () => {
                       </tr>
                     ))}
                     {abandonedSessions.length === 0 && (
-                      <tr><td colSpan={8} className="px-3 py-8 text-center text-gray-400">No abandoned sessions found</td></tr>
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No abandoned sessions found</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -4074,6 +4075,13 @@ const Leads = () => {
                         </span>
                         <span className="text-[11px] text-gray-400">{s.last_seen_at ? timeAgo(s.last_seen_at) : "—"}</span>
                       </div>
+                      {s.geo_city && (
+                        <p className="text-[11px] text-gray-500 mb-1">📍 {s.geo_city}{s.geo_region ? `, ${s.geo_region}` : ""}{s.ip_address ? ` · ${s.ip_address}` : ""}</p>
+                      )}
+                      {s.entry_city_name && (
+                        <p className="text-[11px] text-blue-500 mb-1">🏙️ Via: {s.entry_city_name} page</p>
+                      )}
+                      {s.referrer && !s.entry_city_name && (() => { try { return <p className="text-[11px] text-gray-400 mb-1">↗ From: {new URL(s.referrer).hostname}</p>; } catch { return null; } })()}
                       {s.delivery_address && (
                         <div className="flex items-start gap-1.5 mb-1.5">
                           <MapPin className="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" />

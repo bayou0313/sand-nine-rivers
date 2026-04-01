@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
+import { updateSession, initSession } from "@/lib/session";
 import { getPaletteForSlug, deriveCssVars } from "@/lib/palettes";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -57,6 +58,15 @@ const CityPage = () => {
         city_name: data.city_name,
         state: data.state,
         page_price: data.base_price,
+      });
+
+      // Track session entry from city page
+      await initSession();
+      await updateSession({
+        stage: "visited",
+        entry_page: `/${data.city_slug}/river-sand-delivery`,
+        entry_city_page: data.city_slug,
+        entry_city_name: data.city_name,
       });
 
       try {
