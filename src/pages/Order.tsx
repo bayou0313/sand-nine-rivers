@@ -782,9 +782,9 @@ const Order = () => {
       setPendingOrderId(insertedOrder?.id || null);
       setLookupToken(insertedOrder?.lookup_token || null);
 
-      // Save order state to sessionStorage so it can be restored if Stripe is canceled
+      // Save order state to localStorage so it survives Stripe redirect (cross-origin clears sessionStorage)
       try {
-        sessionStorage.setItem("pending_order_snapshot", JSON.stringify({
+        localStorage.setItem("pending_order_snapshot", JSON.stringify({
           address,
           form,
           quantity,
@@ -801,6 +801,7 @@ const Order = () => {
           saturdaySurchargeTotal,
           taxInfo,
         }));
+        console.log("[checkout] saved snapshot to localStorage before redirect");
       } catch {}
 
       if (isEmbedded) {
