@@ -1,47 +1,49 @@
 
 
-## Fix: Remove `encodeURIComponent` from Distance Matrix API call
+## Fix: Abandoned Sessions Not Populating
 
-### Problem Found
-
-In `supabase/functions/leads-auth/index.ts` lines 163-164, the `calculate_distances` action wraps origins and destinations in `encodeURIComponent()`:
-
-```typescript
-`?origins=${encodeURIComponent(originsStr)}`
-`&destinations=${encodeURIComponent(destStr)}`
-```
-
-This encodes the pipe `|` separators between pit coordinates (turning `|` into `%7C` and `,` into `%2C`), which can cause Google to misparse the coordinates and return incorrect routes.
-
-Meanwhile, the `getDrivingDistances` helper function (line 42-49) does NOT use `encodeURIComponent` — so the two code paths behave differently.
-
-### No Haversine Found
-
-Confirmed: zero haversine math anywhere in the codebase. All mentions of "haversine" are documentation comments saying "we don't use it." The `findBestPitDriving` function returns `null` on failure with no fallback calculation.
+### Root Cause
+`Order.tsx` never calls `initSession()`. If a visitor arrives directly at `/order` (or the session row doesn't exist yet), all `updateSession()` calls silently update zero rows. The `list_abandoned` query then finds nothing.
 
 ### Changes
 
-**File: `supabase/functions/leads-auth/index.ts`** (lines 161-178)
+#### 1. `src/pages/Order.tsx` — Add `initSession` on mount
+- Change import on line 3: `import { updateSession, initSession } from "@/lib/session";`
+- Add `useEffect(() => { initSession(); }, []);` near the top of the component body
 
-1. Remove `encodeURIComponent` from origins and destinations
-2. Add detailed logging: full URL (key hidden), API status, origin/destination addresses as resolved by Google, and raw row data
-3. Keep `mode=driving`, `units=imperial`, `avoid=ferries|tolls`
-
+#### 2. `supabase/functions/leads-auth/index.ts` — Make `session_update` upsert-safe (line 136)
+Change:
 ```typescript
-const url =
-  `https://maps.googleapis.com/maps/api/distancematrix/json` +
-  `?origins=${originsStr}` +
-  `&destinations=${destStr}` +
-  `&units=imperial&mode=driving&avoid=ferries%7Ctolls` +
-  `&key=${apiKey}`;
-console.log("[calculate_distances] calling URL:", url.replace(apiKey, "KEY_HIDDEN"));
-const resp = await fetch(url);
-const data = await resp.json();
-console.log("[calculate_distances] API status:", data.status);
-console.log("[calculate_distances] origin_addresses:", data.origin_addresses);
-console.log("[calculate_distances] destination_addresses:", data.destination_addresses);
-console.log("[calculate_distances] rows:", JSON.stringify(data.rows));
+await sb.from("visitor_sessions").update(safe).eq("session_token", session_token);
+```
+To:
+```typescript
+console.log("[session_update] token:", session_token?.slice(0, 8));
+console.log("[session_update] updates:", JSON.stringify(updates));
+await sb.from("visitor_sessions").upsert(
+  { session_token, ...safe },
+  { onConflict: "session_token", ignoreDuplicates: false }
+);
 ```
 
-After deploying, test with **4354 Trieste St, New Orleans, LA 70129** and check edge function logs to verify all three pit distances match expected values.
+#### 3. `supabase/functions/leads-auth/index.ts` — Add logging to `list_abandoned` (after line 491)
+Add after the query:
+```typescript
+console.log("[list_abandoned] found:", data?.length, "sessions");
+```
+
+#### 4. Verify existing `updateSession` calls in Order.tsx ✅
+Already confirmed present and correct:
+- **Line 573**: `stage: "started_checkout"` with address, price, name, phone
+- **Line 609**: `stage: "reached_payment"` with email, name, phone  
+- **Line 682/334**: `stage: "completed_order"` with order_id
+
+#### 5. Redeploy `leads-auth` edge function
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/pages/Order.tsx` | Import + call `initSession()` on mount |
+| `supabase/functions/leads-auth/index.ts` | `session_update`: change `.update()` → `.upsert()`, add logging; `list_abandoned`: add logging |
 
