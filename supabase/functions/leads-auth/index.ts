@@ -495,6 +495,7 @@ serve(async (req) => {
         .order("updated_at", { ascending: false })
         .limit(200);
       if (error) throw error;
+      console.log("[list_abandoned] found:", data?.length, "sessions");
       return new Response(
         JSON.stringify({ sessions: data }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

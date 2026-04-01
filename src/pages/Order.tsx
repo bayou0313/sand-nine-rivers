@@ -79,6 +79,8 @@ const Order = () => {
     return { base_price: globalPricing.base_price, free_miles: globalPricing.free_miles, extra_per_mile: globalPricing.extra_per_mile, max_distance: globalPricing.max_distance, saturday_surcharge: globalPricing.saturday_surcharge };
   }, [matchedPit, globalPricing]);
 
+  useEffect(() => { initSession(); }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       const [settingsRes, pitsRes] = await Promise.all([
