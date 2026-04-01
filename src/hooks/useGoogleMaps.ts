@@ -1,7 +1,7 @@
 // Updated 2026-03-31 to force fresh frontend build
 import { useState, useEffect } from "react";
 
-const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY || "";
+const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
 
 const SCRIPT_ID = "google-maps-script";
 
