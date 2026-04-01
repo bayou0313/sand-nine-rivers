@@ -168,7 +168,7 @@ const Pricing = () => {
 
             <div className="px-6 py-4 text-center border-t border-border">
               <p className="text-sm text-muted-foreground font-body">
-                Price calculated by distance — <a href="#estimator" onClick={scrollToEstimator} className="text-accent font-medium hover:text-accent/80 transition-colors">enter your address to see yours</a>
+                Price calculated by distance — <button type="button" onClick={scrollToEstimator} className="text-accent font-medium hover:text-accent/80 transition-colors cursor-pointer bg-transparent border-none p-0 inline">enter your address to see yours</button>
               </p>
             </div>
           </div>
