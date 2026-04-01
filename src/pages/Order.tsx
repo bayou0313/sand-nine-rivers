@@ -831,6 +831,27 @@ const Order = () => {
       setPendingOrderId(insertedOrder?.id || null);
       setLookupToken(insertedOrder?.lookup_token || null);
 
+      // Save order state to sessionStorage so it can be restored if Stripe is canceled
+      try {
+        sessionStorage.setItem("pending_order_snapshot", JSON.stringify({
+          address,
+          form,
+          quantity,
+          selectedDeliveryDate,
+          paymentMethod: "stripe-link",
+          pendingOrderId: insertedOrder?.id || null,
+          orderNumber: insertedOrder?.order_number || null,
+          result,
+          totalPrice,
+          totalWithProcessingFee,
+          processingFee,
+          taxAmount,
+          subtotal,
+          saturdaySurchargeTotal,
+          taxInfo,
+        }));
+      } catch {}
+
       if (isEmbedded) {
         const newTab = window.open(data.url, "_blank");
         if (!newTab) {
