@@ -1075,12 +1075,13 @@ serve(async (req) => {
         if (distance === null) continue; // No road route found — skip this city
         if (distance > maxDist) continue;
 
-        let slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        let slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
 
         if (seenSlugs.has(slug) || (existingSlugs.has(slug) && existingSlugs.get(slug).pit_id !== pit_id)) {
-          slug = `${slug}-${(city.state || "us").toLowerCase()}`;
+          // Don't append state suffix — skip instead to prevent duplicates
+          console.log(`Skipped ${slug}: already exists`);
+          continue;
         }
-        if (seenSlugs.has(slug)) continue;
         seenSlugs.add(slug);
 
         const extra = distance > freeMiles ? (distance - freeMiles) * extraPerMile : 0;
