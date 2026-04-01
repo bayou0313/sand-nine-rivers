@@ -1124,9 +1124,31 @@ const Order = () => {
                     <SectionHeading icon={CalendarDays} title="DELIVERY DATE" />
                     <DeliveryDatePicker
                       selectedDate={selectedDeliveryDate}
-                      onSelect={(d) => {
+                      onSelect={async (d) => {
                         setSelectedDeliveryDate(d);
                         setDateError("");
+
+                        // Check if current pit is open on the selected day
+                        if (matchedPit && d && customerCoords && allPits.length > 1) {
+                          const dayOfWeek = d.date.getDay();
+                          const currentPitOpen = !matchedPit.operating_days || matchedPit.operating_days.length === 0 || matchedPit.operating_days.includes(dayOfWeek);
+                          if (!currentPitOpen) {
+                            setRecalculating(true);
+                            try {
+                              const newResult = await findBestPitDriving(allPits, customerCoords.lat, customerCoords.lng, globalPricing, supabase, dayOfWeek);
+                              if (newResult && newResult.serviceable) {
+                                setMatchedPit(newResult.pit);
+                                setMatchedPitSchedule({ operating_days: newResult.pit.operating_days, saturday_surcharge_override: newResult.pit.saturday_surcharge_override != null ? Number(newResult.pit.saturday_surcharge_override) : null, same_day_cutoff: newResult.pit.same_day_cutoff });
+                                setResult(prev => prev ? { ...prev, distance: parseFloat(newResult.distance.toFixed(1)), price: newResult.price, address: `${newResult.distance.toFixed(1)} miles away` } : prev);
+                                toast({ title: "Price updated", description: `Delivery on ${d.fullLabel} will be from a different location. Price updated to ${formatCurrency(newResult.price)}.` });
+                              } else {
+                                toast({ title: "No delivery available", description: `We don't have delivery available on ${d.fullLabel}. Please select another date.`, variant: "destructive" });
+                                setSelectedDeliveryDate(null);
+                              }
+                            } catch { /* keep current selection */ }
+                            finally { setRecalculating(false); }
+                          }
+                        }
                       }}
                       pitSchedule={matchedPitSchedule}
                       globalSaturdaySurcharge={globalSaturdaySurcharge}
