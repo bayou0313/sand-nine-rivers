@@ -169,6 +169,7 @@ serve(async (req) => {
         }
         return null;
       });
+      console.log("[calculate_distances] raw distances (miles):", JSON.stringify(distances));
       return new Response(
         JSON.stringify({ distances }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
