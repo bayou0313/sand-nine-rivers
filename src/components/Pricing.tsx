@@ -32,16 +32,15 @@ const Pricing = () => {
   const driveEnd = DRIVE_DURATION / LOOP_TOTAL;
   const holdEnd = (DRIVE_DURATION + DEST_HOLD) / LOOP_TOTAL;
 
-  const scrollToEstimator = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-
-    const estimator = document.getElementById("estimator");
-    estimator?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-    window.setTimeout(() => {
-      const addressInput = document.getElementById("delivery-address") as HTMLInputElement | null;
-      addressInput?.focus({ preventScroll: true });
-    }, 450);
+  const scrollToEstimator = () => {
+    const el = document.getElementById("estimator");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => {
+        const input = el.querySelector("input") as HTMLInputElement | null;
+        if (input) input.focus();
+      }, 600);
+    }
   };
 
   return (
