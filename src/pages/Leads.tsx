@@ -3765,7 +3765,7 @@ const Leads = () => {
                       );
                     })}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No cash/check orders found</td></tr>
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No orders found</td></tr>
                     )}
                   </tbody>
                 </table>

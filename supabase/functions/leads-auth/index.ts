@@ -502,10 +502,9 @@ serve(async (req) => {
         const { data, error } = await supabase
           .from("orders")
           .select("*")
-          .in("payment_method", ["cash", "check", "cod", "COD"])
           .neq("payment_status", "cancelled")
-          .order("delivery_date", { ascending: true })
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .limit(200);
         if (error) throw error;
         return new Response(
           JSON.stringify({ orders: data }),
