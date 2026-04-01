@@ -1051,6 +1051,40 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
       await sendMail(resend, data.customer_email, `Payment Confirmed — Order #${data.order_number || "N/A"}`, cashHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Cash payment confirmation sent to:", data.customer_email);
 
+    } else if (type === "waitlist") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const waitlistHtml = emailWrapper(`
+        <h2>You're on the list!</h2>
+        <p>Hi ${firstName},</p>
+        <p>We've added you to the waitlist for river sand delivery to <strong>${data.city_name || "your area"}</strong>. We'll notify you the moment delivery becomes available in your area.</p>
+        <p>In the meantime, check if we already deliver to a nearby area:</p>
+        <div style="text-align:center;margin:24px 0">
+          <a href="https://riversand.net" class="cta">Check My Area</a>
+        </div>
+      `);
+      await sendMail(resend, data.customer_email, `You're on the list — River Sand delivery to ${data.city_name}`, waitlistHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Waitlist confirmation sent to:", data.customer_email);
+
+    } else if (type === "waitlist_available") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const orderUrl = `https://riversand.net/?address=${encodeURIComponent(data.city_name || "")}`;
+      const availableHtml = emailWrapper(`
+        <h2>Great news!</h2>
+        <p>Hi ${firstName},</p>
+        <p>River sand delivery is now available in <strong>${data.city_name}</strong>!</p>
+        <div style="border:2px solid ${BRAND_GOLD};border-radius:12px;padding:24px;margin:24px 0;text-align:center">
+          <p style="margin:0 0 8px;font-size:14px;color:#555;text-transform:uppercase;letter-spacing:1px">Your Estimated Price</p>
+          <p style="margin:0;font-size:32px;font-weight:700;color:${BRAND_GOLD}">$${Number(data.price || 195).toFixed(0)}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#999">Same-day delivery available</p>
+        </div>
+        <div style="text-align:center;margin:24px 0">
+          <a href="${orderUrl}" class="cta" style="font-size:16px;padding:16px 48px">ORDER NOW</a>
+        </div>
+        <p style="font-size:14px;color:#555">This is a one-time notification. Order anytime at <a href="https://riversand.net" style="color:${BRAND_GOLD}">riversand.net</a></p>
+      `);
+      await sendMail(resend, data.customer_email, `Great news — River Sand now delivers to ${data.city_name}!`, availableHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Waitlist available notification sent to:", data.customer_email);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),
