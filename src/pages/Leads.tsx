@@ -420,10 +420,16 @@ const Leads = () => {
   const fetchLiveVisitors = useCallback(async () => {
     setLiveLoading(true);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
-        body: { password: storedPassword(), action: "list_live_visitors" },
-      });
-      if (!fnError && data?.sessions) setLiveVisitors(data.sessions);
+      const [visitorsRes, funnelRes] = await Promise.all([
+        supabase.functions.invoke("leads-auth", {
+          body: { password: storedPassword(), action: "list_live_visitors" },
+        }),
+        supabase.functions.invoke("leads-auth", {
+          body: { password: storedPassword(), action: "get_funnel" },
+        }),
+      ]);
+      if (!visitorsRes.error && visitorsRes.data?.sessions) setLiveVisitors(visitorsRes.data.sessions);
+      if (!funnelRes.error && funnelRes.data?.funnel) setFunnelData(funnelRes.data.funnel);
     } catch (err) { console.warn("Failed to fetch live visitors:", err); }
     finally { setLiveLoading(false); }
   }, []);
