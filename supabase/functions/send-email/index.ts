@@ -292,6 +292,19 @@ function orderCustomerEmail(order: any): string {
                   </tr>
                 </table>
 
+                ${!isStripePaid ? `
+                <!-- COD CARD PAYMENT DISCLAIMER -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                  <tr>
+                    <td style="background-color:#FFFBEB;border:1px solid #FDE68A;padding:12px 16px;border-radius:8px;">
+                      <p style="margin:0;font-size:12px;color:#92400E;line-height:1.6;">
+                        Prefer to pay by card? If you choose to pay with a credit card at delivery, your total will be $${fmt(Number(order.price) * 1.035)} (includes 3.5% processing fee). Contact us at ${PHONE} to arrange card payment.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                ` : ''}
+
                 <!-- PAYMENT -->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
                   <tr>

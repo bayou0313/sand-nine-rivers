@@ -10,7 +10,6 @@ const corsHeaders = {
 
 const NAVY = [13, 33, 55] as const;
 const GOLD = [192, 122, 0] as const;
-const GRAY = [242, 242, 242] as const;
 const WHITE = [255, 255, 255] as const;
 const DARK = [51, 51, 51] as const;
 const BORDER = [221, 221, 221] as const;
@@ -36,7 +35,17 @@ function fmtShortDate(dateStr: string): string {
   } catch { return dateStr; }
 }
 
-// Removed fetchImageAsBase64 — using text-only rendering to keep PDF under 300KB
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  } catch { return null; }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -70,6 +79,14 @@ serve(async (req) => {
       });
     }
 
+    // Fetch logos in parallel
+    const RIVERSAND_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
+    const WAYS_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
+    const [rsLogoB64, waysLogoB64] = await Promise.all([
+      fetchImageAsBase64(RIVERSAND_LOGO_URL),
+      fetchImageAsBase64(WAYS_LOGO_URL),
+    ]);
+
     // Build compact single-page PDF (letter: 215.9 × 279.4 mm)
     const doc = new jsPDF({ unit: "mm", format: "letter" });
     const pw = 215.9;
@@ -88,17 +105,18 @@ serve(async (req) => {
     // ─── HEADER (24mm) ───
     doc.setFillColor(...NAVY);
     doc.rect(0, 0, pw, 22, "F");
-    doc.setTextColor(...WHITE);
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("RIVER SAND", mx, 10);
-    doc.setFontSize(8);
-    doc.text("by WAYS", mx, 15);
-    doc.setFontSize(12);
-    doc.text("WAYS", pw - mx, 10, { align: "right" });
-    doc.setFontSize(6);
-    doc.setTextColor(200, 200, 200);
-    doc.text("Powered by WAYS — We Are Your Supply", pw / 2, 20, { align: "center" });
+
+    // Add logos
+    if (rsLogoB64) {
+      try { doc.addImage(`data:image/png;base64,${rsLogoB64}`, "PNG", mx, 3, 55, 16); } catch { /* fallback text */ doc.setTextColor(...WHITE); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 13); }
+    } else {
+      doc.setTextColor(...WHITE); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 13);
+    }
+    if (waysLogoB64) {
+      try { doc.addImage(`data:image/png;base64,${waysLogoB64}`, "PNG", pw - mx - 30, 4, 30, 14); } catch { doc.setTextColor(...WHITE); doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("WAYS", pw - mx, 13, { align: "right" }); }
+    } else {
+      doc.setTextColor(...WHITE); doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("WAYS", pw - mx, 13, { align: "right" });
+    }
 
     // Gold divider
     doc.setFillColor(...GOLD);
@@ -217,21 +235,35 @@ serve(async (req) => {
     doc.text("AMOUNT", tableX + labelW + 2, y + 4);
     y += rowH;
 
+    // Calculate pricing line items
+    const qty = order.quantity || 1;
+    const baseLine = basePrice * qty;
+    const dist = Number(order.distance_miles || 0);
+    const distanceFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * qty : 0;
+    const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
+    const taxAmount = Number(order.tax_amount || 0);
+    const taxRate = (Number(order.tax_rate || 0) * 100).toFixed(2);
+    // Try to extract parish from delivery address
+    const parishMatch = order.delivery_address?.match(/,\s*([^,]+?)\s+Parish/i);
+    const parish = parishMatch ? parishMatch[1] : "";
+    const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + taxAmount;
+    const processingFee = isCard ? Math.max(0, Number(order.price) - subtotalBeforeFee) : 0;
+
     interface PriceLine { desc: string; amt: string }
     const priceLines: PriceLine[] = [];
-    priceLines.push({ desc: `River Sand — 9 cu/yd (×${order.quantity})`, amt: fmt(basePrice * order.quantity) });
-    if (order.saturday_surcharge && order.saturday_surcharge_amount > 0) {
-      priceLines.push({ desc: "Saturday surcharge", amt: fmt(order.saturday_surcharge_amount) });
+    priceLines.push({ desc: `River Sand — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
+    if (distanceFee > 0) {
+      priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
     }
-    if (order.tax_amount > 0) {
-      priceLines.push({ desc: `Tax (${(order.tax_rate * 100).toFixed(2)}%)`, amt: fmt(order.tax_amount) });
+    if (satSurcharge > 0) {
+      priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
     }
-    if (isCard) {
-      const sub = basePrice * order.quantity + (order.saturday_surcharge_amount || 0) + (order.tax_amount || 0);
-      const dist = Number(order.distance_miles || 0);
-      const distFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * order.quantity : 0;
-      const fee = order.price - sub - distFee;
-      if (fee > 0.01) priceLines.push({ desc: "Processing Fee (3.5%)", amt: fmt(fee) });
+    if (taxAmount > 0) {
+      const taxLabel = parish ? `Tax — ${parish} Parish (${taxRate}%)` : `Tax (${taxRate}%)`;
+      priceLines.push({ desc: taxLabel, amt: fmt(taxAmount) });
+    }
+    if (isCard && processingFee > 0.01) {
+      priceLines.push({ desc: "Processing Fee (3.5%)", amt: fmt(processingFee) });
     }
 
     // Rows
@@ -283,6 +315,7 @@ serve(async (req) => {
         doc.setTextColor(100, 100, 100);
         doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
       }
+      y += 16;
     } else {
       doc.setFillColor(255, 251, 235);
       doc.rect(mx, y, cw, 14, "F");
@@ -299,8 +332,18 @@ serve(async (req) => {
       doc.setTextColor(...AMBER);
       doc.setFont("helvetica", "normal");
       doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
+      y += 16;
+
+      // COD card payment note
+      const cardTotal = (Number(order.price) * 1.035).toFixed(2);
+      doc.setFontSize(7);
+      doc.setTextColor(146, 64, 14); // #92400E
+      doc.setFont("helvetica", "normal");
+      doc.text(`Card payment available: $${cardTotal} (includes 3.5% processing fee)`, mx, y);
+      y += 3.5;
+      doc.text("Call 1-855-GOT-WAYS to arrange.", mx, y);
+      y += 5;
     }
-    y += 16;
 
     // ─── DELIVERY TERMS (bullet points only) ───
     doc.setFontSize(7);
