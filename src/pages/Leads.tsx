@@ -3870,7 +3870,7 @@ const Leads = () => {
         return (
           <>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500">{abandonedSessions.length} abandoned sessions with email</p>
+              <p className="text-sm text-gray-500">{abandonedSessions.length} abandoned sessions</p>
               <div className="flex gap-2">
                 <Button onClick={fetchAbandonedSessions} disabled={abandonedLoading} size="sm" variant="outline">
                   {abandonedLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
