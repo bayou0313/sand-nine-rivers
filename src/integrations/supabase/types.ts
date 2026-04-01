@@ -463,12 +463,21 @@ export type Database = {
           email_24hr_sent_at: string | null
           email_72hr_sent: boolean | null
           email_72hr_sent_at: string | null
+          entry_city_name: string | null
+          entry_city_page: string | null
+          entry_page: string | null
+          geo_city: string | null
+          geo_country: string | null
+          geo_region: string | null
+          geo_zip: string | null
           id: string
+          ip_address: string | null
           last_seen_at: string | null
           nearest_pit_id: string | null
           nearest_pit_name: string | null
           order_id: string | null
           order_number: string | null
+          referrer: string | null
           serviceable: boolean | null
           session_token: string
           stage: string | null
@@ -490,12 +499,21 @@ export type Database = {
           email_24hr_sent_at?: string | null
           email_72hr_sent?: boolean | null
           email_72hr_sent_at?: string | null
+          entry_city_name?: string | null
+          entry_city_page?: string | null
+          entry_page?: string | null
+          geo_city?: string | null
+          geo_country?: string | null
+          geo_region?: string | null
+          geo_zip?: string | null
           id?: string
+          ip_address?: string | null
           last_seen_at?: string | null
           nearest_pit_id?: string | null
           nearest_pit_name?: string | null
           order_id?: string | null
           order_number?: string | null
+          referrer?: string | null
           serviceable?: boolean | null
           session_token: string
           stage?: string | null
@@ -517,12 +535,21 @@ export type Database = {
           email_24hr_sent_at?: string | null
           email_72hr_sent?: boolean | null
           email_72hr_sent_at?: string | null
+          entry_city_name?: string | null
+          entry_city_page?: string | null
+          entry_page?: string | null
+          geo_city?: string | null
+          geo_country?: string | null
+          geo_region?: string | null
+          geo_zip?: string | null
           id?: string
+          ip_address?: string | null
           last_seen_at?: string | null
           nearest_pit_id?: string | null
           nearest_pit_name?: string | null
           order_id?: string | null
           order_number?: string | null
+          referrer?: string | null
           serviceable?: boolean | null
           session_token?: string
           stage?: string | null
