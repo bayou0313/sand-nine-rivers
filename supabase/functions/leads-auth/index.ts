@@ -150,11 +150,15 @@ serve(async (req) => {
       }
       const originsStr = origins.map((o: any) => `${o.lat},${o.lng}`).join("|");
       const destStr = `${destination.lat},${destination.lng}`;
+      console.log("[calculate_distances] origins:", JSON.stringify(origins));
+      console.log("[calculate_distances] destination:", JSON.stringify(destination));
       const resp = await fetch(
         `https://maps.googleapis.com/maps/api/distancematrix/json` +
         `?origins=${encodeURIComponent(originsStr)}` +
         `&destinations=${encodeURIComponent(destStr)}` +
-        `&units=imperial&mode=driving&avoid=ferries` +
+        `&units=imperial` +
+        `&mode=driving` +
+        `&avoid=ferries%7Ctolls` +
         `&key=${apiKey}`
       );
       const data = await resp.json();
