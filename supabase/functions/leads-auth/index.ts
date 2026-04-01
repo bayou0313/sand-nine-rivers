@@ -849,9 +849,12 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Missing city_page_id or city_page" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Normalize slug if provided to prevent state-suffix duplicates
+      const normalizedSlug = city_page.city_slug ? normalizeSlug(city_page.city_slug) : undefined;
       const { error } = await supabase
         .from("city_pages")
         .update({
+          ...(normalizedSlug ? { city_slug: normalizedSlug } : {}),
           meta_title: city_page.meta_title,
           meta_description: city_page.meta_description,
           h1_text: city_page.h1_text,
