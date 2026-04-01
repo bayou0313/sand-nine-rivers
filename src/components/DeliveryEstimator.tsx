@@ -305,7 +305,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
-                <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}`}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
+                <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}`} onClick={() => updateSession({ stage: "clicked_order_now", calculated_price: result!.price, delivery_address: address })}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
               </Button>
               <Button variant="outline" className={`flex-1 h-12 font-display tracking-wider text-lg rounded-xl ${embedded ? "border-white/20 text-white hover:bg-white/10" : ""}`} asChild>
                 <a href="tel:+18554689297">CALL TO ORDER</a>
