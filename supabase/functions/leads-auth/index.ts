@@ -598,7 +598,7 @@ serve(async (req) => {
 
     // ── LIST ABANDONED SESSIONS ──
     if (action === "list_abandoned") {
-      const stages = ["got_price", "clicked_order_now", "entered_address", "started_checkout", "reached_payment"];
+      const stages = ["entered_address", "got_price", "got_out_of_area", "clicked_order_now", "started_checkout", "reached_payment"];
       const stalenessMs = 5 * 60 * 1000; // 5 min for testing (change back to 30 * 60 * 1000)
       const cutoffTime = new Date(Date.now() - stalenessMs).toISOString();
       const { data, error } = await supabase
