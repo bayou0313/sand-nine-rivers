@@ -1571,53 +1571,85 @@ serve(async (req) => {
 
       let updated = 0;
       let errors = 0;
+      let reassigned = 0;
+      const pits = allPits || [];
 
-      const byPit: Record<string, any[]> = {};
-      for (const page of (allPages || [])) {
-        if (!page.pit_id || page.lat == null || page.lng == null) continue;
-        if (!byPit[page.pit_id]) byPit[page.pit_id] = [];
-        byPit[page.pit_id].push(page);
+      // Filter pages with coordinates
+      const validPages = (allPages || []).filter((p: any) => p.lat != null && p.lng != null);
+      console.log(`[recalc] ${validPages.length} pages with coords, ${pits.length} active pits`);
+
+      // For each pit, batch-calculate distances to ALL valid pages
+      const pitDistances: Record<string, { pitId: string; pitName: string; distances: (number | null)[] }> = {};
+      for (const pit of pits) {
+        const dests = validPages.map((p: any) => ({ lat: Number(p.lat), lng: Number(p.lng) }));
+        const distances = await getDrivingDistances(Number(pit.lat), Number(pit.lon), dests, googleKey);
+        pitDistances[pit.id] = { pitId: pit.id, pitName: pit.name, distances };
+        console.log(`[recalc] Got distances from pit ${pit.name} for ${distances.filter((d: any) => d != null).length}/${dests.length} cities`);
       }
 
-      for (const [pitId, pages] of Object.entries(byPit)) {
-        const pit = (allPits || []).find((p: any) => p.id === pitId);
-        if (!pit) continue;
+      // For each page, find the closest pit
+      for (let i = 0; i < validPages.length; i++) {
+        const page = validPages[i];
+        let bestPitId: string | null = null;
+        let bestPitName: string | null = null;
+        let bestDistance = Infinity;
+        let bestPit: any = null;
 
-        const effectiveBase = pit.base_price ?? defaultBase;
-        const effectiveFree = pit.free_miles ?? defaultFree;
-        const effectiveExtra = pit.price_per_extra_mile ?? defaultExtra;
-
-        const dests = pages.map((p: any) => ({ lat: Number(p.lat), lng: Number(p.lng) }));
-        const distances = await getDrivingDistances(Number(pit.lat), Number(pit.lon), dests, googleKey);
-
-        for (let i = 0; i < pages.length; i++) {
-          const drivingDist = distances[i];
-          if (drivingDist == null) { errors++; continue; }
-
-          const extraMiles = Math.max(0, drivingDist - effectiveFree);
-          const newPrice = Math.max(effectiveBase, Math.round(effectiveBase + extraMiles * effectiveExtra));
-          const oldDist = pages[i].distance_from_pit ? Number(pages[i].distance_from_pit) : null;
-          const priceChanged = pages[i].base_price !== newPrice;
-          const distChanged = oldDist == null || Math.abs(oldDist - drivingDist) > 0.1;
-
-          if (distChanged || priceChanged) {
-            const { error: upErr } = await supabase
-              .from("city_pages")
-              .update({
-                distance_from_pit: Math.round(drivingDist * 10) / 10,
-                base_price: newPrice,
-                price_changed: priceChanged,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", pages[i].id);
-            if (!upErr) updated++;
-            else errors++;
+        for (const pit of pits) {
+          const dist = pitDistances[pit.id].distances[i];
+          if (dist != null && dist < bestDistance) {
+            bestDistance = dist;
+            bestPitId = pit.id;
+            bestPitName = pit.name;
+            bestPit = pit;
           }
+        }
+
+        if (!bestPit || bestDistance === Infinity) {
+          console.log(`[recalc] ${page.city_name}: no valid distance from any pit`);
+          errors++;
+          continue;
+        }
+
+        console.log(`[recalc] ${page.city_name}: best pit = ${bestPitName} at ${bestDistance.toFixed(1)} miles`);
+
+        const effectiveBase = bestPit.base_price ?? defaultBase;
+        const effectiveFree = bestPit.free_miles ?? defaultFree;
+        const effectiveExtra = bestPit.price_per_extra_mile ?? defaultExtra;
+        const extraMiles = Math.max(0, bestDistance - effectiveFree);
+        const newPrice = Math.max(effectiveBase, Math.round(effectiveBase + extraMiles * effectiveExtra));
+
+        const oldDist = page.distance_from_pit ? Number(page.distance_from_pit) : null;
+        const pitChanged = page.pit_id !== bestPitId;
+        const priceChanged = page.base_price !== newPrice;
+        const distChanged = oldDist == null || Math.abs(oldDist - bestDistance) > 0.1;
+
+        if (distChanged || priceChanged || pitChanged) {
+          const updateData: any = {
+            distance_from_pit: Math.round(bestDistance * 10) / 10,
+            base_price: newPrice,
+            pit_id: bestPitId,
+            price_changed: priceChanged,
+            updated_at: new Date().toISOString(),
+          };
+          if (pitChanged) {
+            updateData.pit_reassigned = true;
+            updateData.regen_reason = 'pit_reassigned';
+            reassigned++;
+            console.log(`[recalc] ${page.city_name}: REASSIGNED from ${page.pit_id} → ${bestPitName}`);
+          }
+
+          const { error: upErr } = await supabase
+            .from("city_pages")
+            .update(updateData)
+            .eq("id", page.id);
+          if (!upErr) updated++;
+          else errors++;
         }
       }
 
       return new Response(
-        JSON.stringify({ success: true, updated, errors, total: (allPages || []).length }),
+        JSON.stringify({ success: true, updated, reassigned, errors, total: (allPages || []).length }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
