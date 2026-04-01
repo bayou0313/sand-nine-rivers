@@ -10,7 +10,7 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const key = Deno.env.get("VITE_GOOGLE_MAPS_KEY") || "";
+  const key = Deno.env.get("GOOGLE_MAPS_BROWSER_KEY") || "";
 
   return new Response(JSON.stringify({ key }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
