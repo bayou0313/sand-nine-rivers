@@ -2182,6 +2182,111 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── PROCESS REGEN QUEUE ──
+    if (action === "process_regen_queue") {
+      const { data: pendingPages } = await supabase
+        .from("city_pages")
+        .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
+        .eq("needs_regen", true)
+        .in("status", ["active", "draft"])
+        .order("updated_at", { ascending: true })
+        .limit(5);
+
+      if (!pendingPages?.length) {
+        return new Response(
+          JSON.stringify({ success: true, processed: 0, remaining: 0, message: "No pages in regen queue" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`[regen_queue] Processing ${pendingPages.length} pages`);
+
+      // Get global settings for pricing defaults
+      const { data: gSettings } = await supabase.from("global_settings").select("key, value");
+      const gs: Record<string, string> = {};
+      (gSettings || []).forEach((s: any) => { gs[s.key] = s.value; });
+
+      // Get all pits for lookup
+      const { data: allPits } = await supabase.from("pits").select("*").eq("status", "active");
+      const pitsById: Record<string, any> = {};
+      (allPits || []).forEach((p: any) => { pitsById[p.id] = p; });
+
+      const regenUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-city-page`;
+      const leadsPass = Deno.env.get("LEADS_PASSWORD") || "";
+      let processed = 0;
+
+      for (const page of pendingPages) {
+        try {
+          const pit = pitsById[page.pit_id] || {};
+          const pitName = pit.name || "Unknown";
+          const freeMiles = pit.free_miles || parseFloat(gs.default_free_miles || "15");
+          const sameDayCutoff = pit.same_day_cutoff || gs.same_day_cutoff || "10:00 am";
+          const satAvailable = pit.operating_days ? pit.operating_days.includes(6) : true;
+
+          console.log(`[regen_queue] Generating: ${page.city_name} (pit: ${pitName})`);
+
+          const response = await fetch(regenUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({
+              password: leadsPass,
+              city_page_id: page.id,
+              city_name: page.city_name,
+              state: page.state || "LA",
+              region: page.region || page.state || "LA",
+              pit_name: pitName,
+              pit_city: pitName,
+              distance: page.distance_from_pit || 0,
+              price: page.base_price || 195,
+              free_miles: freeMiles,
+              saturday_available: satAvailable,
+              same_day_cutoff: sameDayCutoff,
+              multi_pit_coverage: page.multi_pit_coverage || false,
+            }),
+          });
+
+          if (response.ok) {
+            await supabase
+              .from("city_pages")
+              .update({
+                needs_regen: false,
+                pit_reassigned: false,
+                price_changed: false,
+                regen_reason: null,
+                status: "active",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", page.id);
+
+            processed++;
+            console.log(`[regen_queue] Done: ${page.city_name}`);
+          } else {
+            const errBody = await response.text();
+            console.error(`[regen_queue] Failed ${page.city_name}: ${response.status} ${errBody}`);
+          }
+
+          // 3 second delay between pages
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        } catch (err) {
+          console.error(`[regen_queue] Error: ${page.city_name}`, err);
+          continue;
+        }
+      }
+
+      const { count } = await supabase
+        .from("city_pages")
+        .select("id", { count: "exact", head: true })
+        .eq("needs_regen", true);
+
+      return new Response(
+        JSON.stringify({ success: true, processed, remaining: count || 0, message: `Processed ${processed} pages. ${count || 0} remaining.` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
