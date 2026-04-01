@@ -28,7 +28,7 @@ export function useGoogleMaps(): { loaded: boolean } {
 
     const script = document.createElement("script");
     script.id = SCRIPT_ID;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places&language=en`;
     script.async = true;
     script.defer = true;
     script.onload = () => setLoaded(true);

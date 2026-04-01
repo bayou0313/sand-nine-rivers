@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw } from "lucide-react";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
 
@@ -1047,10 +1047,14 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
 
-  // Fetch cash orders when navigating to that page
+  // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
       fetchCashOrders();
+      const interval = setInterval(() => {
+        fetchCashOrders();
+      }, 60000);
+      return () => clearInterval(interval);
     }
   }, [activePage, authenticated, fetchCashOrders]);
 
@@ -3640,7 +3644,13 @@ const Leads = () => {
           <>
             {/* Expected today */}
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+                <Button size="sm" variant="outline" onClick={fetchCashOrders} disabled={cashLoading} className="h-7 text-xs px-2">
+                  {cashLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  <span className="ml-1">Refresh</span>
+                </Button>
+              </div>
               <div className="text-right">
                 <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${expectedToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-xs text-gray-500">Expected today across {pendingToday.length} orders</p>
