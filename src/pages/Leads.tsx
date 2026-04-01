@@ -3899,17 +3899,30 @@ const Leads = () => {
                       <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
                         <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : s.delivery_address ? s.delivery_address.split(",")[1]?.trim() || "—" : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
                         <td className="px-3 py-2">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{
-                            backgroundColor: s.stage === "reached_payment" ? "#EA580C" : "#F59E0B"
-                          }}>
-                            {s.stage === "reached_payment" ? "At Payment" : "Started"}
-                          </span>
+                          {(() => {
+                            const stageMap: Record<string, { label: string; bg: string; bold?: boolean }> = {
+                              got_price: { label: "Got Price", bg: "#F59E0B" },
+                              clicked_order_now: { label: "Clicked Order", bg: "#EA580C" },
+                              entered_address: { label: "Entered Address", bg: "#3B82F6" },
+                              started_checkout: { label: "At Checkout", bg: "#DC2626" },
+                              reached_payment: { label: "At Payment", bg: "#DC2626", bold: true },
+                            };
+                            const cfg = stageMap[s.stage || ""] || { label: s.stage || "—", bg: "#9CA3AF" };
+                            return (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] text-white" style={{
+                                backgroundColor: cfg.bg,
+                                fontWeight: cfg.bold ? 800 : 600,
+                              }}>
+                                {cfg.label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-3 py-2 font-mono text-xs">{s.calculated_price ? `$${Number(s.calculated_price).toFixed(0)}` : "—"}</td>
                         <td className="px-3 py-2 text-xs">{s.customer_name || "—"}</td>
-                        <td className="px-3 py-2 text-xs">{s.customer_email || "—"}</td>
+                        <td className="px-3 py-2 text-xs">{s.customer_email || <span className="text-gray-400">No email</span>}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">
                           <span>{s.email_1hr_sent ? "1hr ✓" : "1hr ○"}</span>
                           <span className="mx-1">|</span>
