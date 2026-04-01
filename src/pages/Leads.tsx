@@ -327,6 +327,28 @@ const Leads = () => {
   const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
   const [deletingAll, setDeletingAll] = useState(false);
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
+  const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
+
+  const syncStripePayment = useCallback(async (order: any) => {
+    setSyncingPayment(order.id);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "sync_stripe_payment", order_id: order.id },
+      });
+      if (fnError) throw fnError;
+      if (data?.error && !data?.synced && data.synced !== false) throw new Error(data.error);
+      if (data?.synced) {
+        toast({ title: "Payment confirmed", description: "Order updated to paid" });
+        fetchCashOrders();
+      } else if (data?.synced === false && !data?.error) {
+        toast({ title: "Not paid yet", description: `Stripe status: ${data.payment_status || "unpaid"}` });
+      } else if (data?.error) {
+        toast({ title: "No session found", description: data.error });
+      }
+    } catch (err: any) {
+      toast({ title: "Sync failed", description: err.message || "Check manually in Stripe", variant: "destructive" });
+    } finally { setSyncingPayment(null); }
+  }, [toast, fetchCashOrders]);
 
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
