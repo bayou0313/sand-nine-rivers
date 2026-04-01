@@ -3909,7 +3909,7 @@ const Leads = () => {
                               started_checkout: { label: "At Checkout", bg: "#DC2626" },
                               reached_payment: { label: "At Payment", bg: "#DC2626", bold: true },
                             };
-                            const cfg = stageMap[s.stage || ""] || { label: s.stage || "—", bg: "#9CA3AF" };
+                            const cfg = stageMap[s.stage || ""] || { label: s.stage || "—", bg: "#9CA3AF", bold: false };
                             return (
                               <span className="px-2 py-0.5 rounded-full text-[10px] text-white" style={{
                                 backgroundColor: cfg.bg,
