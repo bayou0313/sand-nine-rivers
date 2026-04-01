@@ -1,20 +1,47 @@
 
 
-## Add "No Haversine" Documentation Notes
+## Fix: Remove `encodeURIComponent` from Distance Matrix API call
 
-The system exclusively uses **Google Distance Matrix API driving distances** for all distance calculations. Haversine (straight-line/as-the-crow-flies) is never used. We need to add clear notes in the key files so every developer knows this.
+### Problem Found
 
-### Files to Update
+In `supabase/functions/leads-auth/index.ts` lines 163-164, the `calculate_distances` action wraps origins and destinations in `encodeURIComponent()`:
 
-1. **`src/lib/pits.ts`** — Add a prominent note to the module docstring (lines 1-7) stating that all distances are real driving distances via the Google Distance Matrix API, and haversine is intentionally never used.
+```typescript
+`?origins=${encodeURIComponent(originsStr)}`
+`&destinations=${encodeURIComponent(destStr)}`
+```
 
-2. **`supabase/functions/leads-auth/index.ts`** — The `getDrivingDistances` function already has a comment "No haversine fallback" (line 13). Add a top-level module comment reinforcing that the entire system uses driving distances only — no haversine anywhere.
+This encodes the pipe `|` separators between pit coordinates (turning `|` into `%7C` and `,` into `%2C`), which can cause Google to misparse the coordinates and return incorrect routes.
 
-3. **`src/components/DeliveryEstimator.tsx`** — Add a brief comment near the `findBestPitDriving` call noting that distances are real driving miles from Google Distance Matrix, not haversine.
+Meanwhile, the `getDrivingDistances` helper function (line 42-49) does NOT use `encodeURIComponent` — so the two code paths behave differently.
 
-### What the Notes Will Say
+### No Haversine Found
 
-> **IMPORTANT: This system does NOT use haversine (straight-line) distances anywhere.**
-> All distance calculations use the Google Distance Matrix API with `mode=driving` and `avoid=ferries|tolls`.
-> This ensures accurate road-based mileage for pricing. Never add haversine as a fallback or pre-filter.
+Confirmed: zero haversine math anywhere in the codebase. All mentions of "haversine" are documentation comments saying "we don't use it." The `findBestPitDriving` function returns `null` on failure with no fallback calculation.
+
+### Changes
+
+**File: `supabase/functions/leads-auth/index.ts`** (lines 161-178)
+
+1. Remove `encodeURIComponent` from origins and destinations
+2. Add detailed logging: full URL (key hidden), API status, origin/destination addresses as resolved by Google, and raw row data
+3. Keep `mode=driving`, `units=imperial`, `avoid=ferries|tolls`
+
+```typescript
+const url =
+  `https://maps.googleapis.com/maps/api/distancematrix/json` +
+  `?origins=${originsStr}` +
+  `&destinations=${destStr}` +
+  `&units=imperial&mode=driving&avoid=ferries%7Ctolls` +
+  `&key=${apiKey}`;
+console.log("[calculate_distances] calling URL:", url.replace(apiKey, "KEY_HIDDEN"));
+const resp = await fetch(url);
+const data = await resp.json();
+console.log("[calculate_distances] API status:", data.status);
+console.log("[calculate_distances] origin_addresses:", data.origin_addresses);
+console.log("[calculate_distances] destination_addresses:", data.destination_addresses);
+console.log("[calculate_distances] rows:", JSON.stringify(data.rows));
+```
+
+After deploying, test with **4354 Trieste St, New Orleans, LA 70129** and check edge function logs to verify all three pit distances match expected values.
 
