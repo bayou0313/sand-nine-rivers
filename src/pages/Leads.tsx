@@ -2151,6 +2151,28 @@ const Leads = () => {
                 </button>
               )}
               <Button
+                onClick={async () => {
+                  try {
+                    toast({ title: "Fixing all pit assignments…", description: "Recalculating distances from all pits. This may take a moment." });
+                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                      body: { password: storedPassword(), action: "recalculate_all_distances" },
+                    });
+                    if (fnError) throw fnError;
+                    toast({ title: "Pit assignments fixed", description: `${data?.updated || 0} pages updated, ${data?.reassigned || 0} reassigned to closer pits. ${data?.errors || 0} errors.` });
+                    fetchCityPages();
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Fix All Pit Assignments
+              </Button>
+              <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
                 size="sm"
