@@ -3921,7 +3921,7 @@ const Leads = () => {
                       </tr>
                     ))}
                     {abandonedSessions.length === 0 && (
-                      <tr><td colSpan={8} className="px-3 py-8 text-center text-gray-400">No abandoned sessions found</td></tr>
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No abandoned sessions found</td></tr>
                     )}
                   </tbody>
                 </table>
