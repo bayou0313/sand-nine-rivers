@@ -75,6 +75,21 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     }
   }, [result]);
 
+  // Save session state on page exit (captures exit intent)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (address) {
+        updateSession({
+          stage: result ? "got_price" : "entered_address",
+          delivery_address: address,
+          calculated_price: result?.price || null,
+        });
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [address, result]);
+
   const isSameDayAvailable = (cutoff: string | null | undefined): boolean => {
     if (!cutoff) return false;
     try {
