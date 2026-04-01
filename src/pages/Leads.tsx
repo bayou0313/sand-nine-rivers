@@ -280,6 +280,9 @@ const Leads = () => {
   const [waitlistData, setWaitlistData] = useState<any[]>([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
 
+  // Regen queue state
+  const [regenQueuePending, setRegenQueuePending] = useState(0);
+
   // Abandoned sessions state
   const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
   const [abandonedLoading, setAbandonedLoading] = useState(false);
@@ -991,6 +994,30 @@ const Leads = () => {
       }).catch(() => setWaitlistLoading(false));
     }
   }, [activePage, authenticated]);
+
+  // Auto-process regen queue
+  useEffect(() => {
+    if (!authenticated) return;
+    const runRegenQueue = async () => {
+      try {
+        const { data } = await supabase.functions.invoke("leads-auth", {
+          body: { password: storedPassword(), action: "process_regen_queue" },
+        });
+        if (data?.remaining !== undefined) setRegenQueuePending(data.remaining + (data.processed || 0));
+        if (data?.processed > 0) {
+          console.log(`[regen] Processed ${data.processed} pages. ${data.remaining} remaining.`);
+          if (data.remaining === 0) setRegenQueuePending(0);
+          if (activePage === "city_pages") fetchCityPages();
+        }
+        if (data?.remaining === 0 && data?.processed === 0) setRegenQueuePending(0);
+      } catch (err) {
+        console.warn("[regen] Queue error:", err);
+      }
+    };
+    runRegenQueue();
+    const interval = setInterval(runRegenQueue, 30000);
+    return () => clearInterval(interval);
+  }, [authenticated]);
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
@@ -2148,7 +2175,13 @@ const Leads = () => {
               <MetricCard label="Total Views" value={totalViews} />
             </div>
 
-            {/* PIT Filter */}
+            {regenQueuePending > 0 && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm" style={{ background: "#FEF9C3", color: "#854D0E" }}>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                ⏳ Generating content for {regenQueuePending} pages... (auto-processing every 30s)
+              </div>
+            )}
+
             <div className="mb-4 flex flex-wrap gap-2 items-center">
               <select
                 value={cityPageFilter}
