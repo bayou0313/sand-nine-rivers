@@ -485,7 +485,48 @@ serve(async (req) => {
       );
     }
 
-    // ── LIST LIVE VISITORS (active in last 30 mins) ──
+    // ── GET FUNNEL (last 30 days cumulative) ──
+    if (action === "get_funnel") {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("stage")
+        .gte("created_at", since);
+      if (error) throw error;
+
+      const ORDERED_STAGES = [
+        "visited", "entered_address", "got_price",
+        "clicked_order_now", "started_checkout",
+        "reached_payment", "completed_order",
+      ];
+      const counts: Record<string, number> = {
+        visited: 0, entered_address: 0, got_price: 0,
+        got_out_of_area: 0, clicked_order_now: 0,
+        started_checkout: 0, reached_payment: 0, completed_order: 0,
+      };
+
+      for (const row of data || []) {
+        const stage = row.stage || "visited";
+        if (stage === "got_out_of_area") {
+          counts.got_out_of_area++;
+          counts.visited++;
+          counts.entered_address++;
+          continue;
+        }
+        const idx = ORDERED_STAGES.indexOf(stage);
+        if (idx === -1) { counts.visited++; continue; }
+        // Cumulative: count in this stage and all prior stages
+        for (let i = 0; i <= idx; i++) {
+          counts[ORDERED_STAGES[i]]++;
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ funnel: counts }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "list_live_visitors") {
       const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const { data, error } = await supabase
