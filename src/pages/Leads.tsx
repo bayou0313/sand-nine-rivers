@@ -1019,6 +1019,7 @@ const Leads = () => {
     return () => clearInterval(interval);
   }, [authenticated]);
 
+  const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
       toast({ title: "Missing info", variant: "destructive" });
       return;
