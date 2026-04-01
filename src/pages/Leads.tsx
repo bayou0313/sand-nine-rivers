@@ -283,6 +283,7 @@ const Leads = () => {
   // Live visitors state
   const [liveVisitors, setLiveVisitors] = useState<any[]>([]);
   const [liveLoading, setLiveLoading] = useState(false);
+  const [funnelData, setFunnelData] = useState<Record<string, number> | null>(null);
 
 
   const [cashOrders, setCashOrders] = useState<any[]>([]);
