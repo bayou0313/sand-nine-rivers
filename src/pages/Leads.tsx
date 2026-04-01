@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link } from "lucide-react";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
 
@@ -326,6 +326,35 @@ const Leads = () => {
   const [cityPageSortKey, setCityPageSortKey] = useState<"city_name" | "state" | "distance_from_pit" | "base_price" | "status" | "page_views">("city_name");
   const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
   const [deletingAll, setDeletingAll] = useState(false);
+  const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
+
+  const sendPaymentLink = useCallback(async (order: any) => {
+    setSendingPaymentLink(order.id);
+    try {
+      const cardTotal = Math.round(Number(order.price) * 1.035 * 100) / 100;
+      const amountCents = Math.round(cardTotal * 100);
+      const { data, error: fnError } = await supabase.functions.invoke("create-checkout-link", {
+        body: {
+          amount: amountCents,
+          description: `River Sand Delivery — ${order.order_number || "N/A"} (Card Payment)`,
+          customer_name: order.customer_name,
+          customer_email: order.customer_email || undefined,
+          order_id: order.id,
+          order_number: order.order_number,
+          origin_url: "https://riversand.net",
+          return_mode: "popup",
+        },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      const url = data?.url;
+      if (!url) throw new Error("No URL returned");
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Payment link copied", description: `$${cardTotal.toFixed(2)} — link copied to clipboard` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setSendingPaymentLink(null); }
+  }, [toast]);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
@@ -3700,9 +3729,15 @@ const Leads = () => {
                           </td>
                           <td className="px-3 py-2">
                             {!o.cash_collected ? (
-                              <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                                Mark as Paid
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                                  Mark as Paid
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}>
+                                  {sendingPaymentLink === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link className="w-3 h-3 mr-1" />}
+                                  Pay Link
+                                </Button>
+                              </div>
                             ) : (
                               <span className="text-[10px]" style={{ color: "#22C55E" }}>Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
                             )}
