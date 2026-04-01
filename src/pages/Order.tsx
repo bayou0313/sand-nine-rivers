@@ -786,9 +786,9 @@ const Order = () => {
       setPendingOrderId(insertedOrder?.id || null);
       setLookupToken(insertedOrder?.lookup_token || null);
 
-      // Save order state to localStorage so it survives Stripe redirect (cross-origin clears sessionStorage)
+      // Save order state to sessionStorage (survives same-tab cross-origin redirects, isolated per tab)
       try {
-        localStorage.setItem("pending_order_snapshot", JSON.stringify({
+        sessionStorage.setItem("pending_order_snapshot", JSON.stringify({
           address,
           form,
           quantity,
@@ -805,7 +805,7 @@ const Order = () => {
           saturdaySurchargeTotal,
           taxInfo,
         }));
-        console.log("[checkout] saved snapshot to localStorage before redirect");
+        console.log("[checkout] snapshot saved:", !!sessionStorage.getItem("pending_order_snapshot"));
       } catch {}
 
       if (isEmbedded) {
