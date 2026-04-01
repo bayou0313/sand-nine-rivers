@@ -280,7 +280,11 @@ const Leads = () => {
   const [abandonedLoading, setAbandonedLoading] = useState(false);
   const [runningEmailCheck, setRunningEmailCheck] = useState(false);
 
-  // Cash orders state
+  // Live visitors state
+  const [liveVisitors, setLiveVisitors] = useState<any[]>([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+
+
   const [cashOrders, setCashOrders] = useState<any[]>([]);
   const [cashLoading, setCashLoading] = useState(false);
   const [cashFilter, setCashFilter] = useState<"all" | "pending" | "overdue" | "collected">("all");
