@@ -208,13 +208,17 @@ serve(async (req) => {
           }
         }
       }
-      const { error: updateError } = await supabase
+      console.log("[stripe-webhook] Updating order:", orderId, "with:", updateData);
+      const { error: updateError, data: updateResult } = await supabase
         .from("orders")
         .update(updateData)
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .select("id, order_number, payment_status, status");
+
+      console.log("[stripe-webhook] Order update result:", updateResult, "error:", updateError);
 
       if (updateError) {
-        console.error("Failed to update order:", updateError);
+        console.error("[stripe-webhook] Failed to update order:", updateError);
         await supabase.from("payment_events").insert({
           order_id: orderId,
           stripe_payment_id: stripePaymentId,

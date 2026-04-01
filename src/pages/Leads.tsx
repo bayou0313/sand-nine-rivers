@@ -1047,10 +1047,14 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
 
-  // Fetch cash orders when navigating to that page
+  // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
       fetchCashOrders();
+      const interval = setInterval(() => {
+        fetchCashOrders();
+      }, 60000);
+      return () => clearInterval(interval);
     }
   }, [activePage, authenticated, fetchCashOrders]);
 
