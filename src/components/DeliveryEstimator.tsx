@@ -43,6 +43,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
   const [pits, setPits] = useState<PitData[]>([]);
   const [matchedEffective, setMatchedEffective] = useState<{ free_miles: number; extra_per_mile: number; saturday_surcharge: number } | null>(null);
+  const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
