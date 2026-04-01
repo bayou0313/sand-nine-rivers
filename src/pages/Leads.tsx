@@ -2604,6 +2604,7 @@ const Leads = () => {
                         <tr style={{ backgroundColor: "#F3F3F3" }}>
                           <th className="px-2 py-2 w-8"><input type="checkbox" checked={discoverChecked.size === discoveredCities.filter(c => !c.duplicate).length} onChange={e => { if (e.target.checked) { setDiscoverChecked(new Set(discoveredCities.map((_, i) => i).filter(i => !discoveredCities[i].duplicate))); } else { setDiscoverChecked(new Set()); } }} /></th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">City</th>
+                          <th className="px-2 py-2 text-left text-xs font-bold uppercase">Closest PIT</th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">Distance</th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">Price</th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">Status</th>
@@ -2616,6 +2617,7 @@ const Leads = () => {
                               {!c.duplicate && <input type="checkbox" checked={discoverChecked.has(i)} onChange={e => { const s = new Set(discoverChecked); e.target.checked ? s.add(i) : s.delete(i); setDiscoverChecked(s); }} />}
                             </td>
                             <td className="px-2 py-2 font-medium" style={{ color: BRAND_NAVY }}>{c.city_name}</td>
+                            <td className="px-2 py-2 text-xs" style={{ color: SECTION_LABEL }}>{c.closest_pit_name || "—"}</td>
                             <td className="px-2 py-2 text-xs">{c.distance} mi</td>
                             <td className="px-2 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${c.price}</td>
                             <td className="px-2 py-2 text-xs">
