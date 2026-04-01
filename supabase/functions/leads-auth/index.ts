@@ -162,7 +162,7 @@ serve(async (req) => {
         `https://maps.googleapis.com/maps/api/distancematrix/json` +
         `?origins=${originsStr}` +
         `&destinations=${destStr}` +
-        `&units=imperial&mode=driving&avoid=ferries%7Ctolls` +
+        `&units=imperial&mode=driving&avoid=ferries` +
         `&key=${apiKey}`;
       console.log("[calculate_distances] calling URL:", url.replace(apiKey, "KEY_HIDDEN"));
       const resp = await fetch(url);
