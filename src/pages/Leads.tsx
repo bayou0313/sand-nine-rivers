@@ -3959,6 +3959,101 @@ const Leads = () => {
                 Refresh
               </Button>
             </div>
+
+            {/* ── CONVERSION FUNNEL ── */}
+            {funnelData && (() => {
+              const FUNNEL_STAGES = [
+                { key: "visited", label: "VISITED", color: "#9CA3AF" },
+                { key: "entered_address", label: "GOT ADDRESS", color: "#3B82F6" },
+                { key: "got_price", label: "GOT PRICE", color: "#F59E0B" },
+                { key: "got_out_of_area", label: "OUT OF AREA", color: "#EF4444", isSideMetric: true },
+                { key: "clicked_order_now", label: "ORDER NOW", color: "#EA580C" },
+                { key: "started_checkout", label: "AT CHECKOUT", color: "#DC2626" },
+                { key: "reached_payment", label: "AT PAYMENT", color: "#B91C1C" },
+                { key: "completed_order", label: "COMPLETED", color: "#22C55E" },
+              ];
+              const maxCount = Math.max(funnelData.visited || 1, 1);
+              const mainStages = FUNNEL_STAGES.filter(s => !s.isSideMetric);
+              const overallRate = funnelData.visited > 0
+                ? ((funnelData.completed_order / funnelData.visited) * 100).toFixed(1)
+                : "0";
+              // Find biggest drop-off
+              let biggestDrop = { label: "", pct: 0 };
+              for (let i = 1; i < mainStages.length; i++) {
+                const prev = funnelData[mainStages[i - 1].key] || 0;
+                const curr = funnelData[mainStages[i].key] || 0;
+                if (prev > 0) {
+                  const drop = ((prev - curr) / prev) * 100;
+                  if (drop > biggestDrop.pct) {
+                    biggestDrop = { label: `${mainStages[i - 1].label} → ${mainStages[i].label}`, pct: drop };
+                  }
+                }
+              }
+
+              return (
+                <div className="bg-white rounded-xl border shadow-sm p-5 mb-6" style={{ borderColor: CARD_BORDER }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold tracking-wider" style={{ color: BRAND_NAVY }}>CONVERSION FUNNEL</h3>
+                    <span className="text-[11px] text-gray-400">Last 30 days</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {FUNNEL_STAGES.map((stage, i) => {
+                      const count = funnelData[stage.key] || 0;
+                      const barWidth = maxCount > 0 ? Math.max((count / maxCount) * 100, 2) : 2;
+                      // Conversion from previous main stage
+                      let convPct = "";
+                      if (!stage.isSideMetric && i > 0) {
+                        const prevMain = FUNNEL_STAGES.slice(0, i).filter(s => !s.isSideMetric).pop();
+                        if (prevMain) {
+                          const prevCount = funnelData[prevMain.key] || 0;
+                          convPct = prevCount > 0 ? `${((count / prevCount) * 100).toFixed(0)}%` : "—";
+                        }
+                      }
+                      if (stage.isSideMetric) {
+                        convPct = funnelData.entered_address > 0
+                          ? `${((count / funnelData.entered_address) * 100).toFixed(0)}%`
+                          : "—";
+                      }
+                      return (
+                        <div key={stage.key} className={`flex items-center gap-3 ${stage.isSideMetric ? "ml-6 opacity-80" : ""}`}>
+                          <span className="text-[11px] font-bold w-[100px] text-right shrink-0" style={{ color: stage.color }}>
+                            {stage.label}
+                          </span>
+                          <div className="flex-1 h-7 rounded-md overflow-hidden" style={{ backgroundColor: "#F3F4F6" }}>
+                            <div
+                              className="h-full rounded-md flex items-center px-2 transition-all duration-500"
+                              style={{ width: `${barWidth}%`, backgroundColor: stage.color, minWidth: 32 }}
+                            >
+                              <span className="text-[11px] font-bold text-white whitespace-nowrap">
+                                {count.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[11px] font-mono w-[40px] text-right shrink-0" style={{ color: stage.isSideMetric ? "#EF4444" : "#6B7280" }}>
+                            {convPct}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: CARD_BORDER }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Overall conversion:</span>
+                      <span className="text-sm font-bold" style={{ color: "#22C55E" }}>{overallRate}%</span>
+                    </div>
+                    {biggestDrop.pct > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Biggest drop:</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                          {biggestDrop.label} ({biggestDrop.pct.toFixed(0)}%)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {liveLoading && liveVisitors.length === 0 ? (
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
             ) : liveVisitors.length === 0 ? (
