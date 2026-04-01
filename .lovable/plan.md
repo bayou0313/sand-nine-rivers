@@ -1,49 +1,33 @@
 
 
-## Fix: Abandoned Sessions Not Populating
-
-### Root Cause
-`Order.tsx` never calls `initSession()`. If a visitor arrives directly at `/order` (or the session row doesn't exist yet), all `updateSession()` calls silently update zero rows. The `list_abandoned` query then finds nothing.
+## Fix Abandoned Sessions: Broaden Query & Enhance Table
 
 ### Changes
 
-#### 1. `src/pages/Order.tsx` — Add `initSession` on mount
-- Change import on line 3: `import { updateSession, initSession } from "@/lib/session";`
-- Add `useEffect(() => { initSession(); }, []);` near the top of the component body
+#### 1. `supabase/functions/leads-auth/index.ts` — Broaden `list_abandoned` query (lines 600-613)
 
-#### 2. `supabase/functions/leads-auth/index.ts` — Make `session_update` upsert-safe (line 136)
-Change:
-```typescript
-await sb.from("visitor_sessions").update(safe).eq("session_token", session_token);
-```
-To:
-```typescript
-console.log("[session_update] token:", session_token?.slice(0, 8));
-console.log("[session_update] updates:", JSON.stringify(updates));
-await sb.from("visitor_sessions").upsert(
-  { session_token, ...safe },
-  { onConflict: "session_token", ignoreDuplicates: false }
-);
-```
+Replace the current query to:
+- Expand stages to `["got_price", "clicked_order_now", "entered_address", "started_checkout", "reached_payment"]`
+- Remove `.not("customer_email", "is", null)` filter
+- Add 30-minute staleness filter: `.lt("updated_at", thirtyMinAgo)`
+- Add debug logging for stages found
 
-#### 3. `supabase/functions/leads-auth/index.ts` — Add logging to `list_abandoned` (after line 491)
-Add after the query:
-```typescript
-console.log("[list_abandoned] found:", data?.length, "sessions");
-```
+#### 2. `src/pages/Leads.tsx` — Update abandoned sessions table (lines 3870-3935)
 
-#### 4. Verify existing `updateSession` calls in Order.tsx ✅
-Already confirmed present and correct:
-- **Line 573**: `stage: "started_checkout"` with address, price, name, phone
-- **Line 609**: `stage: "reached_payment"` with email, name, phone  
-- **Line 682/334**: `stage: "completed_order"` with order_id
-
-#### 5. Redeploy `leads-auth` edge function
+- **Header text** (line 3873): Change "abandoned sessions with email" → "abandoned sessions"
+- **Stage column** (lines 3903-3908): Color-code by stage:
+  - `got_price` → amber
+  - `clicked_order_now` → orange  
+  - `entered_address` → blue
+  - `started_checkout` → red
+  - `reached_payment` → red bold
+- **Email column** (line 3912): Show gray "No email" when null instead of "—"
+- **Location column** (line 3902): Already shows geo_city/region — add fallback to extract from delivery_address when geo is missing
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/pages/Order.tsx` | Import + call `initSession()` on mount |
-| `supabase/functions/leads-auth/index.ts` | `session_update`: change `.update()` → `.upsert()`, add logging; `list_abandoned`: add logging |
+| `supabase/functions/leads-auth/index.ts` | Broaden stage filter, remove email requirement, add staleness filter |
+| `src/pages/Leads.tsx` | Stage color-coding, handle missing email, location fallback |
 
