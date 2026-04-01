@@ -1,0 +1,1 @@
+ALTER TABLE public.city_pages ADD COLUMN IF NOT EXISTS needs_regen boolean DEFAULT false;

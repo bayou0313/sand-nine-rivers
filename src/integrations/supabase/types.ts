@@ -37,6 +37,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           multi_pit_coverage: boolean | null
+          needs_regen: boolean | null
           page_views: number | null
           pit_id: string | null
           pit_reassigned: boolean | null
@@ -73,6 +74,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           multi_pit_coverage?: boolean | null
+          needs_regen?: boolean | null
           page_views?: number | null
           pit_id?: string | null
           pit_reassigned?: boolean | null
@@ -109,6 +111,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           multi_pit_coverage?: boolean | null
+          needs_regen?: boolean | null
           page_views?: number | null
           pit_id?: string | null
           pit_reassigned?: boolean | null
