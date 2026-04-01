@@ -516,6 +516,87 @@ serve(async (req) => {
       }
     }
 
+    // ── SYNC STRIPE PAYMENT ──
+    if (action === "sync_stripe_payment") {
+      if (!order_id) {
+        return new Response(JSON.stringify({ error: "Missing order_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { data: order } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", order_id)
+        .single();
+
+      if (!order) {
+        return new Response(
+          JSON.stringify({ error: "Order not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: modeData2 } = await supabase
+        .from("global_settings")
+        .select("value")
+        .eq("key", "stripe_mode")
+        .maybeSingle();
+
+      const stripeMode2 = modeData2?.value || "live";
+      const stripeKey2 = stripeMode2 === "test"
+        ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
+        : Deno.env.get("STRIPE_SECRET_KEY");
+
+      const Stripe = (await import("https://esm.sh/stripe@18.5.0")).default;
+      const stripe = new Stripe(stripeKey2 || "", {
+        apiVersion: "2025-08-27.basil",
+      });
+
+      console.log("[sync_stripe_payment] Searching Stripe for order:", order_id, "order_number:", order.order_number);
+
+      const sessions = await stripe.checkout.sessions.list({ limit: 20 });
+      const matchedSession = sessions.data.find((s: any) =>
+        s.metadata?.order_id === order_id ||
+        s.metadata?.order_number === order.order_number
+      );
+
+      if (!matchedSession) {
+        console.log("[sync_stripe_payment] No matching session found");
+        return new Response(
+          JSON.stringify({ error: "No Stripe session found for this order", synced: false }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("[sync_stripe_payment] Found session:", matchedSession.id, "payment_status:", matchedSession.payment_status);
+
+      if (matchedSession.payment_status === "paid") {
+        const { error: updateErr } = await supabase
+          .from("orders")
+          .update({
+            payment_status: "paid",
+            status: "confirmed",
+            stripe_payment_id: (matchedSession.payment_intent as string) || null,
+            stripe_customer_id: (matchedSession.customer as string) || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", order_id);
+
+        if (updateErr) throw updateErr;
+        console.log("[sync_stripe_payment] Order updated to paid:", order_id);
+
+        return new Response(
+          JSON.stringify({ success: true, synced: true, payment_status: "paid" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, synced: false, payment_status: matchedSession.payment_status }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── MARK CASH PAID ──
     if (action === "mark_cash_paid") {
       if (!order_id) {
