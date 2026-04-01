@@ -123,8 +123,6 @@ function orderCustomerEmail(order: any): string {
                         Nothing due at delivery
                       </td>
                     </tr>`
-                      </td>
-                    </tr>`
     : `<tr>
                       <td colspan="2" style="padding:10px 16px;font-size:14px;color:#D97706;font-weight:600;">
                         Please have exact $${totalPrice} ready
