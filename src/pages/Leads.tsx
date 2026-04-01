@@ -995,7 +995,30 @@ const Leads = () => {
     }
   }, [activePage, authenticated]);
 
-  const saveEditPit = async () => {
+  // Auto-process regen queue
+  useEffect(() => {
+    if (!authenticated) return;
+    const runRegenQueue = async () => {
+      try {
+        const { data } = await supabase.functions.invoke("leads-auth", {
+          body: { password: storedPassword(), action: "process_regen_queue" },
+        });
+        if (data?.remaining !== undefined) setRegenQueuePending(data.remaining + (data.processed || 0));
+        if (data?.processed > 0) {
+          console.log(`[regen] Processed ${data.processed} pages. ${data.remaining} remaining.`);
+          if (data.remaining === 0) setRegenQueuePending(0);
+          if (activePage === "city_pages") fetchCityPages();
+        }
+        if (data?.remaining === 0 && data?.processed === 0) setRegenQueuePending(0);
+      } catch (err) {
+        console.warn("[regen] Queue error:", err);
+      }
+    };
+    runRegenQueue();
+    const interval = setInterval(runRegenQueue, 30000);
+    return () => clearInterval(interval);
+  }, [authenticated]);
+
     if (!editPitData.name || !editPitData.address) {
       toast({ title: "Missing info", variant: "destructive" });
       return;
