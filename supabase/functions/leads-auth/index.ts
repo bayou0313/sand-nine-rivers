@@ -648,65 +648,212 @@ serve(async (req) => {
         }
       }
 
-      // ── PART 3: Auto-discover when new pit is created ──
+      // ── PART 3: Auto-discover cities when new pit is created ──
       let pages_reassigned = 0;
+      let pages_created_count = 0;
       if (isNewPit && savedPit.status === "active") {
-        console.log(`[save_pit] New pit created (${savedPit.name}) — checking for closer city pages`);
+        console.log(`[save_pit] New pit created: ${savedPit.name} — auto-discovering cities`);
 
-        const { data: allCityPages } = await supabase
+        // Get all active pits including the new one
+        const { data: allActivePitsForNew } = await supabase
+          .from("pits").select("*").eq("status", "active");
+
+        // Get existing city pages
+        const { data: existingPagesForNew } = await supabase
           .from("city_pages")
-          .select("id, city_name, lat, lng, distance_from_pit, pit_id")
-          .in("status", ["active", "draft"]);
+          .select("id, city_name, city_slug, lat, lng, distance_from_pit, pit_id, status");
+        const existingByNameForNew = new Map(
+          (existingPagesForNew || []).map((p: any) => [p.city_name.toLowerCase(), p])
+        );
 
-        const pagesWithCoords = (allCityPages || []).filter((p: any) => p.lat && p.lng);
+        // Fetch global settings
+        const { data: gsForNew } = await supabase.from("global_settings").select("key, value");
+        const gMapNew: Record<string, string> = {};
+        for (const r of gsForNew || []) gMapNew[r.key] = r.value;
 
-        if (pagesWithCoords.length > 0) {
-          const distances = await getDrivingDistances(
-            savedPit.lat, savedPit.lon,
-            pagesWithCoords.map((p: any) => ({ lat: p.lat, lng: p.lng })),
-            apiKey
-          );
+        // Discover cities near new pit via reverse geocoding
+        const newPitMaxDist = savedPit.max_distance || parseFloat(gMapNew.default_max_distance || "30");
+        const VALID_TYPES = ["sublocality_level_1", "locality", "administrative_area_level_3"];
+        const EXCLUDE_WORDS = [
+          "inc", "llc", "corp", "association", "club", "center", "centre",
+          "park", "farm", "commission", "community", "fitness", "beach",
+          "golf", "volleyball", "action", "development", "recreation",
+          "school", "church", "hospital", "museum", "library", "university",
+          "college", "foundation", "institute", "authority", "department",
+          "council", "services", "group", "company", "studio", "restaurant",
+          "hotel", "motel", "plaza", "mall", "shop", "store", "market",
+          "yacht", "marina", "gym", "theater", "theatre", "arena",
+        ];
+        const cleanCityNameNew = (name: string) => name.replace(/^City of /i, "").replace(/^Town of /i, "").replace(/^Village of /i, "").replace(/\/.+$/, "").replace(/\s+Area$/i, "").replace(/\s+District$/i, "").replace(/\s+CDP$/i, "").trim();
+        const isValidCityNameNew = (name: string) => {
+          if (!name) return false;
+          const lower = name.toLowerCase();
+          for (const word of EXCLUDE_WORDS) { if (lower.includes(word)) return false; }
+          const words = name.split(/\s+/);
+          return words.length <= 4 && !words.some(w => w.length > 20);
+        };
 
-          const { data: gs } = await supabase.from("global_settings").select("key, value");
-          const gMap: Record<string, string> = {};
-          for (const r of gs || []) gMap[r.key] = r.value;
-          const effBP = savedPit.base_price ?? parseFloat(gMap.default_base_price || "195");
-          const effFM = savedPit.free_miles ?? parseFloat(gMap.default_free_miles || "15");
-          const effEPM = savedPit.price_per_extra_mile ?? parseFloat(gMap.default_extra_per_mile || "5");
+        // Generate sample points at various distances and directions
+        const distancesArr = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= newPitMaxDist);
+        const directionsArr = [0, 45, 90, 135, 180, 225, 270, 315];
+        const samplePts: { lat: number; lng: number }[] = [{ lat: savedPit.lat, lng: savedPit.lon }];
+        for (const dist of distancesArr) {
+          for (const dir of directionsArr) {
+            const rad = dir * Math.PI / 180;
+            const dLat = (dist / 69) * Math.cos(rad);
+            const dLng = (dist / (69 * Math.cos(savedPit.lat * Math.PI / 180))) * Math.sin(rad);
+            samplePts.push({ lat: savedPit.lat + dLat, lng: savedPit.lon + dLng });
+          }
+        }
+        console.log(`[save_pit] Sampling ${samplePts.length} points for reverse geocoding`);
 
-          for (let i = 0; i < pagesWithCoords.length; i++) {
-            const page = pagesWithCoords[i];
-            const distFromNewPit = distances[i];
-            if (distFromNewPit == null) continue;
-            if (distFromNewPit < (page.distance_from_pit ?? 999)) {
-              const extraMiles = Math.max(0, distFromNewPit - effFM);
-              const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
-              await supabase.from("city_pages").update({
-                pit_id: savedPit.id,
-                distance_from_pit: distFromNewPit,
-                base_price: newPrice,
-                pit_reassigned: true,
-                regen_reason: 'pit_reassigned',
-                updated_at: new Date().toISOString(),
-              }).eq("id", page.id);
-              console.log(`[save_pit] Reassigned ${page.city_name} to new pit ${savedPit.name} (${distFromNewPit.toFixed(1)}mi)`);
-              pages_reassigned++;
-
-              // Auto-regen content
-              try {
-                await fetch(regenUrl, {
-                  method: "POST",
-                  headers: regenHeaders,
-                  body: JSON.stringify({ city_page_id: page.id, force: true }),
-                });
-                pages_regenerated++;
-                await new Promise(resolve => setTimeout(resolve, 2000));
-              } catch (err: any) {
-                console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
+        const cityMapNew = new Map<string, { name: string; state: string; lat: number; lng: number }>();
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < samplePts.length; i += BATCH_SIZE) {
+          const batch = samplePts.slice(i, i + BATCH_SIZE);
+          const promises = batch.map(async (pt) => {
+            try {
+              const resp = await fetch(
+                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${pt.lat},${pt.lng}&result_type=locality|sublocality_level_1|administrative_area_level_3&key=${apiKey}`
+              );
+              return (await resp.json()).results || [];
+            } catch { return []; }
+          });
+          const batchResults = await Promise.all(promises);
+          for (const results of batchResults) {
+            for (const result of results) {
+              const types = result.types || [];
+              if (!types.some((t: string) => VALID_TYPES.includes(t))) continue;
+              const components = result.address_components || [];
+              let cityName = "";
+              let stateCode = "";
+              for (const prio of VALID_TYPES) {
+                const comp = components.find((c: any) => c.types?.includes(prio));
+                if (comp && !cityName) cityName = comp.long_name;
+              }
+              const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
+              if (stateComp) stateCode = stateComp.short_name;
+              if (!cityName) continue;
+              cityName = cleanCityNameNew(cityName);
+              if (!isValidCityNameNew(cityName)) continue;
+              const key = cityName.toLowerCase();
+              if (!cityMapNew.has(key)) {
+                const loc = result.geometry?.location;
+                if (loc) cityMapNew.set(key, { name: cityName, state: stateCode || "LA", lat: loc.lat, lng: loc.lng });
               }
             }
           }
         }
+        console.log(`[save_pit] Discovered ${cityMapNew.size} unique cities near ${savedPit.name}`);
+
+        // Calculate distances from ALL pits to ALL discovered cities
+        const allCitiesArr = [...cityMapNew.values()];
+        const pitDistsNew: Record<string, (number | null)[]> = {};
+        for (const pit of allActivePitsForNew || []) {
+          pitDistsNew[pit.id] = await getDrivingDistances(
+            Number(pit.lat), Number(pit.lon),
+            allCitiesArr.map(c => ({ lat: c.lat, lng: c.lng })),
+            apiKey
+          );
+        }
+
+        // Process each discovered city
+        for (let idx = 0; idx < allCitiesArr.length; idx++) {
+          const city = allCitiesArr[idx];
+          try {
+            // Find closest pit from ALL active pits
+            let closestPit: any = null;
+            let closestDist = Infinity;
+            for (const pit of allActivePitsForNew || []) {
+              const d = pitDistsNew[pit.id][idx];
+              if (d != null && d < closestDist) {
+                closestDist = d;
+                closestPit = pit;
+              }
+            }
+            if (!closestPit || closestDist === Infinity) continue;
+
+            const pitMaxDist = closestPit.max_distance || parseFloat(gMapNew.default_max_distance || "30");
+            if (closestDist > pitMaxDist) continue;
+
+            // Calculate price
+            const effBP = closestPit.base_price ?? parseFloat(gMapNew.default_base_price || "195");
+            const effFM = closestPit.free_miles ?? parseFloat(gMapNew.default_free_miles || "15");
+            const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gMapNew.default_extra_per_mile || "5");
+            const extraMiles = Math.max(0, closestDist - effFM);
+            const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+            const cleanSlug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+            const existing = existingByNameForNew.get(city.name.toLowerCase());
+
+            if (existing) {
+              // Only update if new calculation finds closer pit
+              if (closestDist < (existing.distance_from_pit ?? 999)) {
+                const wasWaitlist = existing.status === "waitlist";
+                await supabase.from("city_pages").update({
+                  pit_id: closestPit.id,
+                  distance_from_pit: Math.round(closestDist * 10) / 10,
+                  base_price: price,
+                  pit_reassigned: true,
+                  regen_reason: 'pit_reassigned',
+                  updated_at: new Date().toISOString(),
+                }).eq("id", existing.id);
+                console.log(`[save_pit] Reassigned ${city.name} → ${closestPit.name} (${closestDist.toFixed(1)}mi)`);
+                pages_reassigned++;
+
+                // Auto-generate content
+                await fetch(regenUrl, { method: "POST", headers: regenHeaders, body: JSON.stringify({ city_page_id: existing.id, force: true }) });
+                pages_regenerated++;
+
+                // If page was on waitlist, notify waitlist leads
+                if (wasWaitlist) {
+                  try {
+                    const { data: waitlistLeads } = await supabase
+                      .from("waitlist_leads").select("*").eq("city_slug", existing.city_slug).is("notified_at", null);
+                    const emailUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`;
+                    for (const lead of waitlistLeads || []) {
+                      await fetch(emailUrl, {
+                        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+                        body: JSON.stringify({ type: "waitlist_available", data: { city_name: existing.city_name, city_slug: existing.city_slug, customer_name: lead.customer_name, customer_email: lead.customer_email, price } }),
+                      });
+                      await supabase.from("waitlist_leads").update({ notified_at: new Date().toISOString() }).eq("id", lead.id);
+                      await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                    console.log(`[save_pit] Notified ${waitlistLeads?.length || 0} waitlist leads for ${existing.city_name}`);
+                  } catch (wErr: any) { console.error(`[save_pit] Waitlist notification error:`, wErr.message); }
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+            } else {
+              // Create new page
+              const { data: newPage } = await supabase.from("city_pages").insert({
+                pit_id: closestPit.id,
+                city_name: city.name,
+                city_slug: cleanSlug,
+                state: city.state,
+                lat: city.lat,
+                lng: city.lng,
+                distance_from_pit: Math.round(closestDist * 10) / 10,
+                base_price: price,
+                status: "draft",
+                regen_reason: 'missing_content',
+              }).select("id").single();
+              console.log(`[save_pit] Created page for ${city.name} — ${closestPit.name} (${closestDist.toFixed(1)}mi) $${price}`);
+              pages_created_count++;
+
+              // Auto-generate content (will set status to active)
+              if (newPage?.id) {
+                await fetch(regenUrl, { method: "POST", headers: regenHeaders, body: JSON.stringify({ city_page_id: newPage.id, force: true }) });
+                pages_regenerated++;
+              }
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          } catch (err: any) {
+            console.error(`[save_pit] Error processing ${city.name}:`, err.message);
+          }
+        }
+        console.log(`[save_pit] Auto-discovery complete for ${savedPit.name}: ${pages_created_count} created, ${pages_reassigned} reassigned`);
       }
 
       return new Response(
