@@ -31,13 +31,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/bridge-city/river-sand-delivery</loc>
+    <loc>https://riversand.net/ama/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/ama/river-sand-delivery</loc>
+    <loc>https://riversand.net/bridge-city/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -55,7 +55,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/bridge-city-la/river-sand-delivery</loc>
+    <loc>https://riversand.net/chalmette-la/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -91,19 +91,19 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://riversand.net/new-orleans/river-sand-delivery</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://riversand.net/woodmere/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/chalmette-la/river-sand-delivery</loc>
-    <lastmod>2026-04-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/new-orleans/river-sand-delivery</loc>
+    <loc>https://riversand.net/bridge-city-la/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -133,25 +133,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/avondale/river-sand-delivery</loc>
-    <lastmod>2026-04-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/belle-chasse/river-sand-delivery</loc>
-    <lastmod>2026-04-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://riversand.net/luling-la/river-sand-delivery</loc>
-    <lastmod>2026-04-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/boutte/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -164,6 +146,12 @@
   </url>
   <url>
     <loc>https://riversand.net/elmwood/river-sand-delivery</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/belle-chasse/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -199,18 +187,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/barataria/river-sand-delivery</loc>
-    <lastmod>2026-04-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/bayou-gauche/river-sand-delivery</loc>
-    <lastmod>2026-04-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://riversand.net/luling/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
@@ -223,7 +199,31 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://riversand.net/bayou-gauche/river-sand-delivery</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://riversand.net/westwego/river-sand-delivery</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/avondale/river-sand-delivery</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/barataria/river-sand-delivery</loc>
+    <lastmod>2026-04-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/boutte/river-sand-delivery</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
