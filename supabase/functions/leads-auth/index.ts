@@ -77,6 +77,20 @@ async function getDrivingDistances(
  * regardless of PIT count.
  * Add any city here where a single centroid distance is misleading.
  */
+/**
+ * Normalize city slugs by removing state suffixes to prevent duplicates
+ * like "kenner" vs "kenner-la".
+ */
+function normalizeSlug(slug: string): string {
+  return slug
+    .replace(/-la$/, '')
+    .replace(/-tx$/, '')
+    .replace(/-ms$/, '')
+    .replace(/-al$/, '')
+    .toLowerCase()
+    .trim();
+}
+
 const LARGE_CITIES_NO_STATIC_PRICE = new Set([
   "new orleans",
   "new orleans east",
