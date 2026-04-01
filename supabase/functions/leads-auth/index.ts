@@ -1164,12 +1164,24 @@ serve(async (req) => {
         const isMultiPit = competingPits.length > 0 || forceSuppressPrice;
         const competingIds = competingPits.length > 0 ? competingPits.map(p => p.id) : null;
 
-        // Closest-PIT dedup
-        const { data: existing } = await supabase
+        // Normalize slug before any creation
+        const normalizedSlug = normalizeSlug(city.city_slug);
+
+        // Check for existing page by normalized slug
+        const { data: existingBySlug } = await supabase
           .from("city_pages")
-          .select("id, distance_from_pit")
-          .eq("city_slug", city.city_slug)
+          .select("id, city_slug, distance_from_pit, status")
+          .eq("city_slug", normalizedSlug)
           .maybeSingle();
+
+        // Check for existing page by city name (case insensitive)
+        const { data: existingByName } = await supabase
+          .from("city_pages")
+          .select("id, city_slug, distance_from_pit, status")
+          .ilike("city_name", city.city_name)
+          .maybeSingle();
+
+        const existing = existingBySlug || existingByName;
         if (existing) {
           if (city.distance < (existing.distance_from_pit ?? 999)) {
             const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
