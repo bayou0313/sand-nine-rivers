@@ -2603,7 +2603,7 @@ const Leads = () => {
                         </td>
                          <td className="px-3 py-2">
                           {(() => {
-                            const isCurrent = cp.prompt_version === "2.0" && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed;
+                            const isCurrent = cp.prompt_version === "3.0" && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed;
                             const isPitChanged = cp.pit_reassigned;
                             const isPriceChanged = cp.price_changed && !cp.pit_reassigned;
                             const isMissing = !cp.content_generated_at;
