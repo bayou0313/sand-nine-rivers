@@ -3770,18 +3770,26 @@ const Leads = () => {
                             </span>
                           </td>
                           <td className="px-3 py-2">
-                            {!o.cash_collected ? (
-                              <div className="flex gap-1">
+                            {o.payment_status === "paid" || o.cash_collected ? (
+                              <span className="text-[10px]" style={{ color: "#22C55E" }}>
+                                Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                              </span>
+                            ) : (
+                              <div className="flex gap-1 flex-wrap">
+                                {["stripe", "stripe-link", "card"].includes((o.payment_method || "").toLowerCase()) && o.payment_status === "pending" && (
+                                  <Button size="sm" onClick={() => syncStripePayment(o)} disabled={syncingPayment === o.id} className="h-7 text-[10px] px-2" style={{ backgroundColor: "#3B82F6", color: "white" }}>
+                                    {syncingPayment === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                                    Sync
+                                  </Button>
+                                )}
                                 <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                                  Mark as Paid
+                                  Mark Paid
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}>
                                   {sendingPaymentLink === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link className="w-3 h-3 mr-1" />}
                                   Pay Link
                                 </Button>
                               </div>
-                            ) : (
-                              <span className="text-[10px]" style={{ color: "#22C55E" }}>Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
                             )}
                           </td>
                         </tr>
