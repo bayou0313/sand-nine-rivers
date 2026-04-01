@@ -120,7 +120,9 @@ function orderCustomerEmail(order: any): string {
   const paymentStatusRow = isStripePaid
     ? `<tr>
                       <td colspan="2" style="padding:10px 16px;font-size:14px;color:#22C55E;font-weight:600;">
-                        Nothing due at delivery ✓
+                        Nothing due at delivery
+                      </td>
+                    </tr>`
                       </td>
                     </tr>`
     : `<tr>
