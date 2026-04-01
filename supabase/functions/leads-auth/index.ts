@@ -97,7 +97,7 @@ serve(async (req) => {
 
     // ── SESSION INIT (no password required — called from frontend) ──
     if (action === "session_init") {
-      const { session_token } = body;
+      const { session_token, entry_page, referrer } = body;
       if (!session_token) {
         return new Response(JSON.stringify({ error: "Missing session_token" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -105,8 +105,35 @@ serve(async (req) => {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const sb = createClient(supabaseUrl, serviceRoleKey);
+
+      // Capture visitor IP
+      const visitorIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || "unknown";
+
+      // Geolocate IP (free tier, best-effort)
+      let geo: Record<string, any> = {};
+      if (visitorIp && visitorIp !== "unknown") {
+        try {
+          const geoRes = await fetch(`https://ipapi.co/${visitorIp}/json/`);
+          if (geoRes.ok) geo = await geoRes.json();
+        } catch { /* silent */ }
+      }
+
+      const upsertData: Record<string, any> = {
+        session_token,
+        last_seen_at: new Date().toISOString(),
+        ip_address: visitorIp !== "unknown" ? visitorIp : null,
+      };
+      if (geo.city) upsertData.geo_city = geo.city;
+      if (geo.region) upsertData.geo_region = geo.region;
+      if (geo.country_name) upsertData.geo_country = geo.country_name;
+      if (geo.postal) upsertData.geo_zip = geo.postal;
+      if (entry_page) upsertData.entry_page = entry_page;
+      if (referrer) upsertData.referrer = referrer;
+
       await sb.from("visitor_sessions").upsert(
-        { session_token, last_seen_at: new Date().toISOString() },
+        upsertData,
         { onConflict: "session_token", ignoreDuplicates: false }
       );
       return new Response(JSON.stringify({ success: true }),
