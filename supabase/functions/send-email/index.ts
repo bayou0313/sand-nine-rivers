@@ -333,12 +333,12 @@ function orderCustomerEmail(order: any): string {
                   <tr>
                     <td style="padding:16px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Our driver will call 30 minutes before arrival</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Please ensure clear access to delivery area</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Someone must be present to receive delivery</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">✓ Delivery is curbside — curb to sidewalk/driveway</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">✗ Driver will not enter backyard or gated areas</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">✗ WAYS® Materials LLC not responsible for property damage</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Our driver will call 30 minutes before arrival</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Please ensure clear access to delivery area</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Someone must be present to receive delivery</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#555;">Delivery is curbside — curb to sidewalk/driveway</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">Driver will not enter backyard or gated areas</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">WAYS® Materials LLC not responsible for property damage</td></tr>
                       </table>
                     </td>
                   </tr>
