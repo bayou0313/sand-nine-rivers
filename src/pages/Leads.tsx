@@ -3647,7 +3647,7 @@ const Leads = () => {
             {/* Expected today */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-500">{cashOrders.length} total cash/check orders</p>
+                <p className="text-sm text-gray-500">{cashOrders.length} total orders</p>
                 <Button size="sm" variant="outline" onClick={fetchCashOrders} disabled={cashLoading} className="h-7 text-xs px-2">
                   {cashLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                   <span className="ml-1">Refresh</span>
