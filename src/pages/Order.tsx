@@ -294,13 +294,15 @@ const Order = () => {
     }
 
     if (paymentStatus === "canceled") {
+      console.log("[cancel] totalPrice:", totalPrice, "address:", address);
       // If we still have in-memory state, just go back to confirm step
       if (totalPrice > 0 && address) {
         setStep("confirm");
       } else {
-        // Page reloaded from Stripe redirect — restore from sessionStorage snapshot
+        // Page reloaded from Stripe redirect — restore from localStorage snapshot
         try {
-          const raw = sessionStorage.getItem("pending_order_snapshot");
+          const raw = localStorage.getItem("pending_order_snapshot");
+          console.log("[cancel] localStorage snapshot:", raw ? "found" : "missing");
           if (raw) {
             const snap = JSON.parse(raw);
             setAddress(snap.address || "");
@@ -316,6 +318,8 @@ const Order = () => {
               setResult(snap.result);
             }
             setStep("confirm");
+            // Clean up after restore
+            localStorage.removeItem("pending_order_snapshot");
           } else {
             setStep("address");
           }
@@ -782,9 +786,9 @@ const Order = () => {
       setPendingOrderId(insertedOrder?.id || null);
       setLookupToken(insertedOrder?.lookup_token || null);
 
-      // Save order state to sessionStorage so it can be restored if Stripe is canceled
+      // Save order state to localStorage so it survives Stripe redirect (cross-origin clears sessionStorage)
       try {
-        sessionStorage.setItem("pending_order_snapshot", JSON.stringify({
+        localStorage.setItem("pending_order_snapshot", JSON.stringify({
           address,
           form,
           quantity,
@@ -801,6 +805,7 @@ const Order = () => {
           saturdaySurchargeTotal,
           taxInfo,
         }));
+        console.log("[checkout] saved snapshot to localStorage before redirect");
       } catch {}
 
       if (isEmbedded) {
