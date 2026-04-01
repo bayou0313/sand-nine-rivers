@@ -1088,6 +1088,15 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
 
+  // Fetch live visitors when navigating to that tab + auto-refresh every 30s
+  useEffect(() => {
+    if (activePage === "live" && authenticated) {
+      fetchLiveVisitors();
+      const interval = setInterval(fetchLiveVisitors, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [activePage, authenticated, fetchLiveVisitors]);
+
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
