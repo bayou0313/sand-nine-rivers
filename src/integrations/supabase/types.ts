@@ -46,6 +46,7 @@ export type Database = {
           region: string | null
           state: string
           status: string | null
+          status_reason: string | null
           updated_at: string | null
           why_choose_intro: string | null
           zip_codes: string[] | null
@@ -81,6 +82,7 @@ export type Database = {
           region?: string | null
           state?: string
           status?: string | null
+          status_reason?: string | null
           updated_at?: string | null
           why_choose_intro?: string | null
           zip_codes?: string[] | null
@@ -116,6 +118,7 @@ export type Database = {
           region?: string | null
           state?: string
           status?: string | null
+          status_reason?: string | null
           updated_at?: string | null
           why_choose_intro?: string | null
           zip_codes?: string[] | null
@@ -565,6 +568,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      waitlist_leads: {
+        Row: {
+          city_name: string
+          city_slug: string
+          converted: boolean | null
+          created_at: string | null
+          customer_email: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          notified_at: string | null
+        }
+        Insert: {
+          city_name: string
+          city_slug: string
+          converted?: boolean | null
+          created_at?: string | null
+          customer_email: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notified_at?: string | null
+        }
+        Update: {
+          city_name?: string
+          city_slug?: string
+          converted?: boolean | null
+          created_at?: string | null
+          customer_email?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          notified_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
