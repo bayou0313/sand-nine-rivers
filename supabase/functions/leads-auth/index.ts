@@ -153,7 +153,8 @@ serve(async (req) => {
       // Whitelist allowed fields
       const allowed = ["stage","delivery_address","address_lat","address_lng",
         "calculated_price","serviceable","nearest_pit_id","nearest_pit_name",
-        "customer_name","customer_email","customer_phone","order_id","order_number"];
+        "customer_name","customer_email","customer_phone","order_id","order_number",
+        "entry_page","entry_city_page","entry_city_name"];
       const safe: Record<string, any> = {};
       for (const k of allowed) {
         if (updates[k] !== undefined) safe[k] = updates[k];
