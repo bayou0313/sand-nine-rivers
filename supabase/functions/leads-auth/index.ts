@@ -37,7 +37,9 @@ async function getDrivingDistances(
         `https://maps.googleapis.com/maps/api/distancematrix/json` +
         `?origins=${originLat},${originLon}` +
         `&destinations=${destsStr}` +
-        `&units=imperial&mode=driving&avoid=ferries` +
+        `&units=imperial` +
+        `&mode=driving` +
+        `&avoid=ferries%7Ctolls` +
         `&key=${apiKey}`;
       const resp = await fetch(url);
       const data = await resp.json();
