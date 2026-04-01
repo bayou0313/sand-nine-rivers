@@ -326,6 +326,35 @@ const Leads = () => {
   const [cityPageSortKey, setCityPageSortKey] = useState<"city_name" | "state" | "distance_from_pit" | "base_price" | "status" | "page_views">("city_name");
   const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
   const [deletingAll, setDeletingAll] = useState(false);
+  const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
+
+  const sendPaymentLink = useCallback(async (order: any) => {
+    setSendingPaymentLink(order.id);
+    try {
+      const cardTotal = Math.round(Number(order.price) * 1.035 * 100) / 100;
+      const amountCents = Math.round(cardTotal * 100);
+      const { data, error: fnError } = await supabase.functions.invoke("create-checkout-link", {
+        body: {
+          amount: amountCents,
+          description: `River Sand Delivery — ${order.order_number || "N/A"} (Card Payment)`,
+          customer_name: order.customer_name,
+          customer_email: order.customer_email || undefined,
+          order_id: order.id,
+          order_number: order.order_number,
+          origin_url: "https://riversand.net",
+          return_mode: "popup",
+        },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      const url = data?.url;
+      if (!url) throw new Error("No URL returned");
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Payment link copied", description: `$${cardTotal.toFixed(2)} — link copied to clipboard` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setSendingPaymentLink(null); }
+  }, [toast]);
 
   const fetchCashOrders = useCallback(async () => {
     setCashLoading(true);
