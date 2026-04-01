@@ -133,7 +133,12 @@ serve(async (req) => {
       }
       safe.updated_at = new Date().toISOString();
       safe.last_seen_at = new Date().toISOString();
-      await sb.from("visitor_sessions").update(safe).eq("session_token", session_token);
+      console.log("[session_update] token:", session_token?.slice(0, 8));
+      console.log("[session_update] updates:", JSON.stringify(updates));
+      await sb.from("visitor_sessions").upsert(
+        { session_token, ...safe },
+        { onConflict: "session_token", ignoreDuplicates: false }
+      );
       return new Response(JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
