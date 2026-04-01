@@ -485,6 +485,23 @@ serve(async (req) => {
       );
     }
 
+    // ── LIST LIVE VISITORS (active in last 30 mins) ──
+    if (action === "list_live_visitors") {
+      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("*")
+        .gte("last_seen_at", thirtyMinsAgo)
+        .order("last_seen_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      console.log("[list_live_visitors] found:", data?.length, "active sessions");
+      return new Response(
+        JSON.stringify({ sessions: data }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── LIST ABANDONED SESSIONS ──
     if (action === "list_abandoned") {
       const { data, error } = await supabase

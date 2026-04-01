@@ -162,7 +162,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "cash_orders" | "city_pages" | "profile" | "settings";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "profile" | "settings";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -177,6 +177,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
       { id: "cash_orders", label: "Orders", icon: DollarSign },
       { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
+      { id: "live" as NavPage, label: "Live", icon: Users },
     ],
   },
   {
@@ -279,7 +280,11 @@ const Leads = () => {
   const [abandonedLoading, setAbandonedLoading] = useState(false);
   const [runningEmailCheck, setRunningEmailCheck] = useState(false);
 
-  // Cash orders state
+  // Live visitors state
+  const [liveVisitors, setLiveVisitors] = useState<any[]>([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+
+
   const [cashOrders, setCashOrders] = useState<any[]>([]);
   const [cashLoading, setCashLoading] = useState(false);
   const [cashFilter, setCashFilter] = useState<"all" | "pending" | "overdue" | "collected">("all");
@@ -410,6 +415,17 @@ const Leads = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally { setMarkingPaid(false); }
   }, [cashOrderToMark, cashCollectedBy, cashSendEmail, fetchCashOrders, toast]);
+
+  const fetchLiveVisitors = useCallback(async () => {
+    setLiveLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_live_visitors" },
+      });
+      if (!fnError && data?.sessions) setLiveVisitors(data.sessions);
+    } catch (err) { console.warn("Failed to fetch live visitors:", err); }
+    finally { setLiveLoading(false); }
+  }, []);
 
   const fetchAbandonedSessions = useCallback(async () => {
     setAbandonedLoading(true);
@@ -1072,6 +1088,15 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
 
+  // Fetch live visitors when navigating to that tab + auto-refresh every 30s
+  useEffect(() => {
+    if (activePage === "live" && authenticated) {
+      fetchLiveVisitors();
+      const interval = setInterval(fetchLiveVisitors, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [activePage, authenticated, fetchLiveVisitors]);
+
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
@@ -1474,6 +1499,7 @@ const Leads = () => {
     pipeline: { title: "PIPELINE", subtitle: `$${metrics.pipelineValue.toLocaleString()} active` },
     revenue: { title: "REVENUE FORECAST" },
     abandoned: { title: "ABANDONED SESSIONS", subtitle: "Checkout drop-offs" },
+    live: { title: "LIVE VISITORS", subtitle: `${liveVisitors.length} active now` },
     cash_orders: { title: "ORDERS", subtitle: `${cashOrders.length} orders` },
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
@@ -3896,6 +3922,86 @@ const Leads = () => {
           </>
         );
 
+      case "live": {
+        const LIVE_STAGE_CONFIG: Record<string, { label: string; color: string }> = {
+          visited: { label: "Browsing", color: "#9CA3AF" },
+          entered_address: { label: "Entered Address", color: "#3B82F6" },
+          got_price: { label: "Got Price", color: "#F59E0B" },
+          started_checkout: { label: "At Checkout", color: "#EA580C" },
+          reached_payment: { label: "At Payment", color: "#DC2626" },
+          completed_order: { label: "Converted", color: "#22C55E" },
+        };
+        const timeAgo = (iso: string) => {
+          const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+          if (diff < 60) return `${diff}s ago`;
+          if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+          return `${Math.floor(diff / 3600)}h ago`;
+        };
+        return (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <p className="text-sm text-gray-500">{liveVisitors.length} active visitor{liveVisitors.length !== 1 ? "s" : ""} (last 30 min)</p>
+              </div>
+              <Button onClick={fetchLiveVisitors} disabled={liveLoading} size="sm" variant="outline">
+                {liveLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+            {liveLoading && liveVisitors.length === 0 ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : liveVisitors.length === 0 ? (
+              <div className="text-center py-16 text-gray-400">
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">No active visitors right now</p>
+                <p className="text-xs mt-1">Auto-refreshes every 30 seconds</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {liveVisitors.map(s => {
+                  const stageInfo = LIVE_STAGE_CONFIG[s.stage] || { label: s.stage || "Unknown", color: "#9CA3AF" };
+                  return (
+                    <div key={s.id} className="bg-white rounded-xl border shadow-sm p-4" style={{ borderColor: CARD_BORDER, borderLeftWidth: 4, borderLeftColor: stageInfo.color }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: stageInfo.color }}>
+                          {stageInfo.label}
+                        </span>
+                        <span className="text-[11px] text-gray-400">{s.last_seen_at ? timeAgo(s.last_seen_at) : "—"}</span>
+                      </div>
+                      {s.delivery_address && (
+                        <div className="flex items-start gap-1.5 mb-1.5">
+                          <MapPin className="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" />
+                          <span className="text-xs text-gray-700 line-clamp-2">{s.delivery_address}</span>
+                        </div>
+                      )}
+                      {s.calculated_price && (
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <DollarSign className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-sm font-semibold" style={{ color: BRAND_NAVY }}>${Number(s.calculated_price).toFixed(0)}</span>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-gray-500">
+                        {s.customer_name && <span>👤 {s.customer_name}</span>}
+                        {s.customer_email && <span>✉ {s.customer_email}</span>}
+                        {s.visit_count > 1 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                            {s.visit_count}× visits
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        );
+      }
+
       default:
         return null;
     }
@@ -3954,6 +4060,12 @@ const Leads = () => {
                   >
                     <Icon className="w-[18px] h-[18px]" />
                     <span>{item.label}</span>
+                    {item.id === "live" && (
+                      <span className="relative flex h-2 w-2 ml-auto">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </span>
+                    )}
                   </button>
                 );
               })}
