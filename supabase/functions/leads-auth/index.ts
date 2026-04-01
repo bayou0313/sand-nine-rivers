@@ -599,12 +599,13 @@ serve(async (req) => {
     // ── LIST ABANDONED SESSIONS ──
     if (action === "list_abandoned") {
       const stages = ["got_price", "clicked_order_now", "entered_address", "started_checkout", "reached_payment"];
-      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const stalenessMs = 5 * 60 * 1000; // 5 min for testing (change back to 30 * 60 * 1000)
+      const cutoffTime = new Date(Date.now() - stalenessMs).toISOString();
       const { data, error } = await supabase
         .from("visitor_sessions")
         .select("*")
         .in("stage", stages)
-        .lt("updated_at", thirtyMinAgo)
+        .lt("updated_at", cutoffTime)
         .order("updated_at", { ascending: false })
         .limit(200);
       if (error) throw error;
