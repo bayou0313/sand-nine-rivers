@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { updateSession } from "@/lib/session";
+import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
@@ -78,6 +78,8 @@ const Order = () => {
     if (matchedPit) return getEffectivePrice(matchedPit, globalPricing);
     return { base_price: globalPricing.base_price, free_miles: globalPricing.free_miles, extra_per_mile: globalPricing.extra_per_mile, max_distance: globalPricing.max_distance, saturday_surcharge: globalPricing.saturday_surcharge };
   }, [matchedPit, globalPricing]);
+
+  useEffect(() => { initSession(); }, []);
 
   useEffect(() => {
     const fetchData = async () => {
