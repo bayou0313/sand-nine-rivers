@@ -1153,6 +1153,12 @@ const Order = () => {
                       pitSchedule={matchedPitSchedule}
                       globalSaturdaySurcharge={globalSaturdaySurcharge}
                     />
+                    {recalculating && (
+                      <div className="mt-3 flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <p className="font-body text-sm">Recalculating price for this date…</p>
+                      </div>
+                    )}
                     {dateError && (
                       <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
