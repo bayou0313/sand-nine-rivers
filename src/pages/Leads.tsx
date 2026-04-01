@@ -2614,7 +2614,7 @@ const Leads = () => {
                       Generate Pages for Selected ({discoverChecked.size})
                     </Button>
                     <Button onClick={() => setShowDiscoverModal(false)} disabled={creatingPages} variant="outline">Cancel</Button>
-                    <p className="text-xs mt-2" style={{ color: "#666" }}>Pages will be created as drafts. Run Regen Outdated after to generate AI content for each city.</p>
+                    <p className="text-xs mt-2" style={{ color: "#666" }}>Pages will be created as drafts. AI content will be auto-generated when pricing changes or pits are updated.</p>
                   </div>
                 </div>
               </div>
