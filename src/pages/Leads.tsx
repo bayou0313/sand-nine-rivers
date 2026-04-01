@@ -185,6 +185,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
     items: [
       { id: "pit", label: "PIT", icon: Zap },
       { id: "city_pages", label: "City Pages", icon: MapIcon },
+      { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
       { id: "all", label: "All Leads", icon: Users },
     ],
   },
