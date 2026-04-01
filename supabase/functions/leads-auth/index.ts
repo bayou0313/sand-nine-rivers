@@ -434,14 +434,78 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "settings must be an array of { key, value }" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      const savedKeys: string[] = [];
       for (const setting of bulkSettings) {
         await supabase.from("global_settings").upsert(
           { key: setting.key, value: setting.value, updated_at: new Date().toISOString() },
           { onConflict: "key" }
         );
+        savedKeys.push(setting.key);
       }
+
+      // ── PART 2: Auto-regen when pricing-related global settings change ──
+      const pricingKeys = ["default_base_price", "default_free_miles", "default_extra_per_mile", "default_max_distance", "saturday_surcharge"];
+      const pricingChanged = savedKeys.some(k => pricingKeys.includes(k));
+      let pages_regenerated = 0;
+
+      if (pricingChanged) {
+        // Re-fetch updated global settings
+        const { data: gs } = await supabase.from("global_settings").select("key, value");
+        const gMap: Record<string, string> = {};
+        for (const r of gs || []) gMap[r.key] = r.value;
+
+        // Get all pits for effective pricing
+        const { data: allPits } = await supabase.from("pits").select("*").eq("status", "active");
+        const pitMap: Record<string, any> = {};
+        for (const p of allPits || []) pitMap[p.id] = p;
+
+        const { data: allPages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, distance_from_pit, pit_id")
+          .in("status", ["active", "draft"]);
+
+        console.log(`[save_settings] Pricing changed — queuing regen for ${allPages?.length || 0} pages`);
+
+        const regenUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-city-page`;
+        const regenHeaders = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        };
+
+        for (const page of allPages || []) {
+          try {
+            // Recalculate price using pit overrides + new global defaults
+            const pit = pitMap[page.pit_id];
+            const effBP = pit?.base_price ?? parseFloat(gMap.default_base_price || "195");
+            const effFM = pit?.free_miles ?? parseFloat(gMap.default_free_miles || "15");
+            const effEPM = pit?.price_per_extra_mile ?? parseFloat(gMap.default_extra_per_mile || "5");
+            const dist = page.distance_from_pit || 0;
+            const extraMiles = Math.max(0, dist - effFM);
+            const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+            await supabase.from("city_pages").update({
+              base_price: newPrice,
+              price_changed: true,
+              regen_reason: 'price_changed',
+              updated_at: new Date().toISOString(),
+            }).eq("id", page.id);
+
+            await fetch(regenUrl, {
+              method: "POST",
+              headers: regenHeaders,
+              body: JSON.stringify({ city_page_id: page.id, force: true }),
+            });
+            console.log(`[save_settings] Regenerated: ${page.city_name} ($${newPrice})`);
+            pages_regenerated++;
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } catch (err: any) {
+            console.error(`[save_settings] Failed: ${page.city_name}`, err.message);
+          }
+        }
+      }
+
       return new Response(
-        JSON.stringify({ success: true, saved: bulkSettings.length }),
+        JSON.stringify({ success: true, saved: bulkSettings.length, pages_regenerated }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -519,8 +583,19 @@ serve(async (req) => {
         savedPit = data;
       }
 
+      const isNewPit = !pit.id;
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      const regenUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-city-page`;
+      const regenHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+      };
+
       let prices_updated = 0;
-      if (existingPit && pit.id) {
+      let pages_regenerated = 0;
+
+      // ── PART 1: Auto-update prices & regen when existing pit pricing changes ──
+      if (existingPit && !isNewPit) {
         const pricingChanged =
           (pit.base_price ?? null) !== (existingPit.base_price ?? null) ||
           (pit.free_miles ?? null) !== (existingPit.free_miles ?? null) ||
@@ -535,27 +610,107 @@ serve(async (req) => {
           const effFM = savedPit.free_miles ?? parseFloat(gMap.default_free_miles || "15");
           const effEPM = savedPit.price_per_extra_mile ?? parseFloat(gMap.default_extra_per_mile || "5");
 
-          const { data: cityPages } = await supabase
-            .from("city_pages").select("id, distance_from_pit").eq("pit_id", pit.id);
+          const { data: affectedPages } = await supabase
+            .from("city_pages")
+            .select("id, city_name, distance_from_pit")
+            .eq("pit_id", savedPit.id)
+            .in("status", ["active", "draft"]);
 
-          for (const page of cityPages ?? []) {
-            const dist = page.distance_from_pit || 0;
-            const extraMiles = Math.max(0, dist - effFM);
-            const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
-            await supabase.from("city_pages").update({
-              base_price: newPrice,
-              price_changed: true,
-              prompt_version: null,
-              regen_reason: 'price_changed',
-              updated_at: new Date().toISOString()
-            }).eq("id", page.id);
-            prices_updated++;
+          console.log(`[save_pit] Pricing changed — auto-updating ${affectedPages?.length || 0} city pages for pit ${savedPit.name}`);
+
+          for (const page of affectedPages ?? []) {
+            try {
+              const dist = page.distance_from_pit || 0;
+              const extraMiles = Math.max(0, dist - effFM);
+              const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+              await supabase.from("city_pages").update({
+                base_price: newPrice,
+                price_changed: true,
+                regen_reason: 'price_changed',
+                updated_at: new Date().toISOString()
+              }).eq("id", page.id);
+              prices_updated++;
+
+              // Auto-regen content
+              await fetch(regenUrl, {
+                method: "POST",
+                headers: regenHeaders,
+                body: JSON.stringify({ city_page_id: page.id, force: true }),
+              });
+              console.log(`[save_pit] Regenerated: ${page.city_name}`);
+              pages_regenerated++;
+
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (err: any) {
+              console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
+            }
+          }
+        }
+      }
+
+      // ── PART 3: Auto-discover when new pit is created ──
+      let pages_reassigned = 0;
+      if (isNewPit && savedPit.status === "active") {
+        console.log(`[save_pit] New pit created (${savedPit.name}) — checking for closer city pages`);
+
+        const { data: allCityPages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, lat, lng, distance_from_pit, pit_id")
+          .in("status", ["active", "draft"]);
+
+        const pagesWithCoords = (allCityPages || []).filter((p: any) => p.lat && p.lng);
+
+        if (pagesWithCoords.length > 0) {
+          const distances = await getDrivingDistances(
+            savedPit.lat, savedPit.lon,
+            pagesWithCoords.map((p: any) => ({ lat: p.lat, lng: p.lng })),
+            apiKey
+          );
+
+          const { data: gs } = await supabase.from("global_settings").select("key, value");
+          const gMap: Record<string, string> = {};
+          for (const r of gs || []) gMap[r.key] = r.value;
+          const effBP = savedPit.base_price ?? parseFloat(gMap.default_base_price || "195");
+          const effFM = savedPit.free_miles ?? parseFloat(gMap.default_free_miles || "15");
+          const effEPM = savedPit.price_per_extra_mile ?? parseFloat(gMap.default_extra_per_mile || "5");
+
+          for (let i = 0; i < pagesWithCoords.length; i++) {
+            const page = pagesWithCoords[i];
+            const distFromNewPit = distances[i];
+            if (distFromNewPit == null) continue;
+            if (distFromNewPit < (page.distance_from_pit ?? 999)) {
+              const extraMiles = Math.max(0, distFromNewPit - effFM);
+              const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+              await supabase.from("city_pages").update({
+                pit_id: savedPit.id,
+                distance_from_pit: distFromNewPit,
+                base_price: newPrice,
+                pit_reassigned: true,
+                regen_reason: 'pit_reassigned',
+                updated_at: new Date().toISOString(),
+              }).eq("id", page.id);
+              console.log(`[save_pit] Reassigned ${page.city_name} to new pit ${savedPit.name} (${distFromNewPit.toFixed(1)}mi)`);
+              pages_reassigned++;
+
+              // Auto-regen content
+              try {
+                await fetch(regenUrl, {
+                  method: "POST",
+                  headers: regenHeaders,
+                  body: JSON.stringify({ city_page_id: page.id, force: true }),
+                });
+                pages_regenerated++;
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              } catch (err: any) {
+                console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
+              }
+            }
           }
         }
       }
 
       return new Response(
-        JSON.stringify({ success: true, pit: savedPit, prices_updated }),
+        JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

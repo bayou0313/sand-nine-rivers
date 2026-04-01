@@ -2141,31 +2141,6 @@ const Leads = () => {
                 <option value="all">All PITs</option>
                 {pits.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <button
-                onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
-                className="h-9 px-3 rounded-md border text-xs font-bold transition-colors"
-                style={{
-                  borderColor: showDuplicatesOnly ? "#F59E0B" : BRAND_NAVY + "30",
-                  backgroundColor: showDuplicatesOnly ? "#FEF3C7" : "white",
-                  color: showDuplicatesOnly ? "#92400E" : BRAND_NAVY,
-                }}
-              >
-                <AlertTriangle className="w-3 h-3 inline mr-1" />
-                Show Duplicates Only {duplicateCount > 0 && `(${duplicateCount})`}
-              </button>
-              {duplicateCount > 0 && (
-  
-              <Button
-                  onClick={() => setShowDeduplicateConfirm(true)}
-                  disabled={deduplicating}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs"
-                >
-                  {deduplicating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
-                  Remove Duplicates ({duplicateCount})
-                </Button>
-               )}
               {cityPageSortKey !== "city_name" && (
                 <button
                   onClick={() => { setCityPageSortKey("city_name"); setCityPageSortDir("asc"); }}
@@ -2175,39 +2150,6 @@ const Leads = () => {
                   Reset Sort
                 </button>
               )}
-              <Button
-                onClick={async () => {
-                  try {
-                    toast({ title: "Recalculating all distances…", description: "This may take a moment." });
-                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
-                      body: { password: storedPassword(), action: "recalculate_all_distances" },
-                    });
-                    if (fnError) throw fnError;
-                    toast({ title: "Distances recalculated", description: `${data?.updated || 0} of ${data?.total || 0} pages updated. ${data?.errors || 0} errors.` });
-                    fetchCityPages();
-                  } catch (err: any) {
-                    toast({ title: "Error", description: err.message, variant: "destructive" });
-                  }
-                }}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                style={{ borderColor: BRAND_NAVY + "40", color: BRAND_NAVY }}
-              >
-                <MapIcon className="w-3 h-3 mr-1" />
-                Recalculate Distances
-              </Button>
-              <Button
-                onClick={() => setShowRegenOutdatedConfirm(true)}
-                disabled={needsRegenCount === 0 || regenQueue?.status === "running"}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                style={{ borderColor: needsRegenCount > 0 ? BRAND_GOLD + "40" : undefined, color: needsRegenCount > 0 ? BRAND_GOLD : undefined }}
-              >
-                {regenQueue?.status === "running" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-3 h-3 mr-1" />}
-                Regen Outdated ({needsRegenCount})
-              </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
@@ -2484,46 +2426,8 @@ const Leads = () => {
               );
             })()}
 
-            {/* Regen Queue Progress */}
-            {regenQueue && regenQueue.status === "running" && (
-              <div className="mb-4 p-3 rounded-lg border" style={{ borderColor: BRAND_GOLD + "40", backgroundColor: BRAND_GOLD + "08" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium" style={{ color: BRAND_NAVY }}>
-                    Regenerating city pages... <strong>{regenQueue.currentCity}</strong> ({regenQueue.current} of {regenQueue.total})
-                  </span>
-                  <button
-                    onClick={() => { regenCancelRef.current = true; }}
-                    className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
-                    style={{ borderColor: "#EF444440", color: "#EF4444" }}
-                  >Cancel</button>
-                </div>
-                <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: BRAND_NAVY + "15" }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${(regenQueue.current / regenQueue.total) * 100}%`, backgroundColor: BRAND_GOLD }}
-                  />
-                </div>
-              </div>
-            )}
 
-            {/* Regen Outdated Confirmation Modal */}
-            {showRegenOutdatedConfirm && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regenerate outdated city pages?</h3>
-                   <p className="text-sm text-gray-600">
-                     This will regenerate content for <strong>{needsRegenCount}</strong> city pages using the current AI prompt. Pages are processed one at a time to avoid rate limits. This may take several minutes.
-                   </p>
-                  <div className="flex gap-3 justify-end">
-                    <Button variant="outline" onClick={() => setShowRegenOutdatedConfirm(false)}>Cancel</Button>
-                    <Button
-                      style={{ backgroundColor: BRAND_GOLD, color: "white" }}
-                      onClick={() => { setShowRegenOutdatedConfirm(false); regenOutdated(); }}
-                    >Start Regen Queue</Button>
-                  </div>
-                </div>
-              </div>
-            )}
+
 
             {/* Table */}
             <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
@@ -2710,7 +2614,7 @@ const Leads = () => {
                       Generate Pages for Selected ({discoverChecked.size})
                     </Button>
                     <Button onClick={() => setShowDiscoverModal(false)} disabled={creatingPages} variant="outline">Cancel</Button>
-                    <p className="text-xs mt-2" style={{ color: "#666" }}>Pages will be created as drafts. Run Regen Outdated after to generate AI content for each city.</p>
+                    <p className="text-xs mt-2" style={{ color: "#666" }}>Pages will be created as drafts. AI content will be auto-generated when pricing changes or pits are updated.</p>
                   </div>
                 </div>
               </div>
