@@ -19,7 +19,7 @@ const About = () => {
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">ABOUT US</motion.p>
           <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Why New Orleans Contractors Choose RiverSand.net</motion.h2>
           <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.25, duration: 0.5 }} className="font-body text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed text-lg">
-            We've been providing quality river sand to the Greater New Orleans area for over 15 years. Our commitment is simple — deliver clean, screened sand on time, at a fair price, every single time.
+            We've been providing quality river sand to the Greater New Orleans area for over 11 years. Our commitment is simple — deliver clean, screened sand on time, at a fair price, every single time.
           </motion.p>
         </div>
 

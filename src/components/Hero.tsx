@@ -41,7 +41,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
             <div className="inline-flex items-center gap-2 bg-foreground/60 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/10">
               <Clock className="w-3.5 h-3.5 text-accent" />
               <p className="font-display tracking-wider text-accent text-lg">{label}</p>
-              <span className="font-mono text-primary-foreground/90 font-medium tracking-wide text-lg">{timeLeft}</span>
+              <span className="font-mono text-primary-foreground/90 font-medium tracking-wide text-lg pt-0 pb-[4px]">{timeLeft}</span>
             </div>
           </motion.div>
 

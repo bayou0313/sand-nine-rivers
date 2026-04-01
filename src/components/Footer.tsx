@@ -86,7 +86,7 @@ const Footer = () => {
             />
           </a>
           <p style={{ color: "#888888", fontSize: 11 }}>
-            © 2026 WAYS® Materials LLC
+            © 2015-2026 WAYS® Materials LLC
           </p>
           <p style={{ color: "#AAAAAA", fontSize: 11 }}>
             orders@riversand.net · 1-855-GOT-WAYS

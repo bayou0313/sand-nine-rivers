@@ -58,7 +58,7 @@ const CTA = () => {
           </p>
           <a
             href="tel:+18554689297"
-            className="font-body text-muted-foreground/50 text-sm hover:text-muted-foreground/70 transition-colors flex items-center gap-1.5"
+            className="font-body text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors flex items-center gap-1.5 text-base font-bold"
           >
             <Phone className="w-3.5 h-3.5" />
             or call us: 1-855-GOT-WAYS

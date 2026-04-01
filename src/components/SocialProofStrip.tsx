@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import { Truck, Clock, Award } from "lucide-react";
 
 const stats = [
-  { icon: Truck, number: "500+", label: "Loads Delivered" },
+  { icon: Truck, number: "15000+", label: "Loads Delivered" },
   { icon: Clock, number: "Same-Day", label: "Service Available" },
-  { icon: Award, number: "#1", label: "Gulf South Sand Delivery" },
+  { icon: Award, number: "\u200BSince 2015", label: "Serving New Orleans " },
 ];
 
 const SocialProofStrip = () => {

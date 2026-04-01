@@ -190,7 +190,7 @@ const Pricing = () => {
           ))}
         </motion.div>
 
-        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center text-muted-foreground/60 text-xs font-body max-w-lg mx-auto mb-8">
+        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center text-xs font-body max-w-lg mx-auto mb-8 text-primary">
           All deliveries are curbside only. Due to liability, we cannot deliver inside backyards or enclosed areas.
         </motion.p>
 

@@ -54,7 +54,7 @@ const ContactForm = () => {
                 </div>
                 <div>
                   <p className="font-display text-lg tracking-widest">EMAIL US</p>
-                  <p className="font-body text-muted-foreground">support@ways.us</p>
+                  <p className="font-body text-muted-foreground">orders@riversand.net</p>
                 </div>
               </a>
               <div className="flex items-center gap-4 text-foreground">
