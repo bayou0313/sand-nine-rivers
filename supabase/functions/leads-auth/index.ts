@@ -579,6 +579,23 @@ serve(async (req) => {
       );
     }
 
+    // ── GET ACTIVITY MAP (address dots for last 30 days) ──
+    if (action === "get_activity_map") {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("address_lat, address_lng, stage, calculated_price, delivery_address, geo_city, entry_city_name, created_at")
+        .not("address_lat", "is", null)
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ points: data }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── LIST ABANDONED SESSIONS ──
     if (action === "list_abandoned") {
       const { data, error } = await supabase
