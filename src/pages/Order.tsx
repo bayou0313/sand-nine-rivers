@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { updateSession } from "@/lib/session";
+import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
