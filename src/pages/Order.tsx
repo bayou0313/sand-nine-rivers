@@ -1513,34 +1513,21 @@ const Order = () => {
                   </label>
                 </div>
 
-                {/* Card Authorization — only for COD orders */}
+                {/* Payment Policy — COD orders */}
                 {(paymentMethod === "cash" || paymentMethod === "check" ||
                   codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
-                  <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
-                    <p className="font-display text-xs tracking-wider text-foreground">
-                      CARD AUTHORIZATION FOR UNPAID DELIVERIES
+                  <div style={{ background: "#FEF9C3", border: "1px solid #FDE68A", borderRadius: "8px", padding: "16px", marginTop: "16px" }}>
+                    <p style={{ fontSize: "11px", fontWeight: "bold", color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
+                      Payment Due at Delivery
                     </p>
-                    <p className="font-body text-xs text-muted-foreground leading-relaxed">
-                      In the event that cash or check payment is not collected at the
-                      time of delivery, you authorize Ways Materials LLC to charge the
-                      payment card associated with this order.
+                    <p style={{ fontSize: "13px", color: "#78350F", lineHeight: "1.6", margin: 0 }}>
+                      Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.
                     </p>
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={cardAuthAccepted}
-                        onChange={(e) => setCardAuthAccepted(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded accent-primary"
-                      />
-                      <span className="font-body text-xs text-foreground leading-relaxed">
-                        I authorize Ways Materials LLC to charge the payment card
-                        associated with this order in the amount of{" "}
-                        <strong>${totalPrice.toFixed(2)}</strong> if cash or check
-                        payment is not collected at the time of delivery. I understand
-                        this charge will appear as 'RIVERSAND.NET' on my statement.
-                        This authorization is valid for this order only.
-                      </span>
-                    </label>
+                    <p style={{ fontSize: "12px", color: "#92400E", marginTop: "8px", marginBottom: 0 }}>
+                      Note: Card payments include a 3.5% processing fee.
+                      <br />
+                      Cash/Check total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(totalPrice * 1.035)}</strong>
+                    </p>
                   </div>
                 )}
 
