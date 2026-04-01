@@ -35,11 +35,13 @@ const Pricing = () => {
   const scrollToEstimator = () => {
     const el = document.getElementById("estimator");
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.scrollIntoView({ behavior: "smooth" });
       setTimeout(() => {
         const input = el.querySelector("input") as HTMLInputElement | null;
-        if (input) input.focus();
-      }, 600);
+        input?.focus({ preventScroll: true });
+      }, 500);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
