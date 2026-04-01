@@ -280,6 +280,9 @@ const Leads = () => {
   const [waitlistData, setWaitlistData] = useState<any[]>([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
 
+  // Regen queue state
+  const [regenQueuePending, setRegenQueuePending] = useState(0);
+
   // Abandoned sessions state
   const [abandonedSessions, setAbandonedSessions] = useState<any[]>([]);
   const [abandonedLoading, setAbandonedLoading] = useState(false);
