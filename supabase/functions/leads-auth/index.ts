@@ -1208,43 +1208,56 @@ serve(async (req) => {
         existingSlugs.set(p.city_slug, { pit_id: p.pit_id, pit_name: (p as any).pits?.name || "" });
       }
 
-      // Calculate effective pricing
-      const { data: gsData } = await supabase.from("global_settings").select("key, value");
-      const gs: Record<string, string> = {};
-      for (const row of gsData || []) gs[row.key] = row.value;
-      const bPrice = pitData.base_price ?? parseFloat(gs.default_base_price || "195");
-      const freeMiles = pitData.free_miles ?? parseFloat(gs.default_free_miles || "15");
-      const extraPerMile = pitData.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+      // Fetch ALL active pits for closest-pit calculation
+      const { data: allActivePits } = await supabase
+        .from("pits").select("*").eq("status", "active");
 
-      // Build final results — pass ALL cities directly to Distance Matrix (no haversine pre-filter)
+      // Build final results — calculate distance from ALL pits for each city
       const discovered: any[] = [];
       const seenSlugs = new Set<string>();
-
       const allCities = [...cityMap.entries()];
-      const drivingDists = await getDrivingDistances(
-        pitData.lat, pitData.lon,
-        allCities.map(([, city]) => ({ lat: city.lat, lng: city.lng })),
-        apiKey
-      );
+
+      // Calculate distances from EACH active pit to ALL discovered cities
+      const pitDistances: Record<string, (number | null)[]> = {};
+      for (const pit of allActivePits || []) {
+        const dists = await getDrivingDistances(
+          Number(pit.lat), Number(pit.lon),
+          allCities.map(([, city]) => ({ lat: city.lat, lng: city.lng })),
+          apiKey
+        );
+        pitDistances[pit.id] = dists;
+      }
 
       for (let idx = 0; idx < allCities.length; idx++) {
         const [, city] = allCities[idx];
-        const distance = drivingDists[idx];
-        if (distance === null) continue; // No road route found — skip this city
-        if (distance > maxDist) continue;
+
+        // Find closest pit from ALL active pits
+        let closestPit: any = null;
+        let closestDistance = Infinity;
+        for (const pit of allActivePits || []) {
+          const dist = pitDistances[pit.id][idx];
+          if (dist != null && dist < closestDistance) {
+            closestDistance = dist;
+            closestPit = pit;
+          }
+        }
+
+        if (!closestPit || closestDistance === Infinity) continue;
+        const closestMaxDist = closestPit.max_distance || 30;
+        if (closestDistance > closestMaxDist) continue;
 
         let slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
-
-        if (seenSlugs.has(slug) || (existingSlugs.has(slug) && existingSlugs.get(slug).pit_id !== pit_id)) {
-          // Don't append state suffix — skip instead to prevent duplicates
-          console.log(`Skipped ${slug}: already exists`);
-          continue;
-        }
+        if (seenSlugs.has(slug)) continue;
         seenSlugs.add(slug);
 
-        const extra = distance > freeMiles ? (distance - freeMiles) * extraPerMile : 0;
-        const price = bPrice + extra;
         const existing = existingSlugs.get(slug);
+
+        // Calculate price using CLOSEST pit's settings
+        const effBP = closestPit.base_price ?? parseFloat(gs.default_base_price || "195");
+        const effFM = closestPit.free_miles ?? parseFloat(gs.default_free_miles || "15");
+        const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+        const extraMiles = Math.max(0, closestDistance - effFM);
+        const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
 
         discovered.push({
           city_name: city.name,
@@ -1252,8 +1265,10 @@ serve(async (req) => {
           state: city.state || "US",
           lat: city.lat,
           lng: city.lng,
-          distance: Math.round(distance * 10) / 10,
+          distance: Math.round(closestDistance * 10) / 10,
           price: Math.round(price * 100) / 100,
+          closest_pit_id: closestPit.id,
+          closest_pit_name: closestPit.name,
           duplicate: !!existing,
           existing_pit_name: existing?.pit_name || null,
         });
