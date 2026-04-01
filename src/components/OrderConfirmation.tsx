@@ -56,6 +56,10 @@ const DELIVERY_TERMS = [
     title: "Same-Day Orders",
     body: "Same-day delivery requests are subject to availability and confirmation by our dispatch team. We will call you to confirm scheduling.",
   },
+  {
+    title: "Cancellation Policy",
+    body: "Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.",
+  },
 ];
 
 /* ── Animated SVG Checkmark ── */

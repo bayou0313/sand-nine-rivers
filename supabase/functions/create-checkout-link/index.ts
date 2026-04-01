@@ -56,7 +56,7 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: description || "River Sand Delivery",
+              name: description || "River Sand Delivery — Processing fees non-refundable. Cancel 2+ hrs before delivery for full refund.",
             },
             unit_amount: amount, // in cents
           },

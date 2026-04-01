@@ -1387,6 +1387,7 @@ const Order = () => {
                     <p className="font-body text-xs text-muted-foreground">• Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
                     <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
                     <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
+                    <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
                   </div>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
@@ -1396,10 +1397,8 @@ const Order = () => {
                       className="mt-0.5 w-4 h-4 rounded accent-primary"
                     />
                     <span className="font-body text-xs text-foreground leading-relaxed">
-                      I have read and agree to the delivery terms above. I understand
-                      delivery is curbside only and Ways Materials LLC is not responsible
-                      for property damage. I will ensure a clear accessible delivery area
-                      and be present or designate a representative at time of delivery.
+                      I have read and agree to the delivery terms and cancellation policy.
+                      I understand that processing fees are non-refundable.
                     </span>
                   </label>
                 </div>
