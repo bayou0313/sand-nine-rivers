@@ -2175,7 +2175,13 @@ const Leads = () => {
               <MetricCard label="Total Views" value={totalViews} />
             </div>
 
-            {/* PIT Filter */}
+            {regenQueuePending > 0 && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm" style={{ background: "#FEF9C3", color: "#854D0E" }}>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                ⏳ Generating content for {regenQueuePending} pages... (auto-processing every 30s)
+              </div>
+            )}
+
             <div className="mb-4 flex flex-wrap gap-2 items-center">
               <select
                 value={cityPageFilter}
