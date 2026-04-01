@@ -2151,6 +2151,28 @@ const Leads = () => {
                 </button>
               )}
               <Button
+                onClick={async () => {
+                  try {
+                    toast({ title: "Fixing all pit assignments…", description: "Recalculating distances from all pits. This may take a moment." });
+                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                      body: { password: storedPassword(), action: "recalculate_all_distances" },
+                    });
+                    if (fnError) throw fnError;
+                    toast({ title: "Pit assignments fixed", description: `${data?.updated || 0} pages updated, ${data?.reassigned || 0} reassigned to closer pits. ${data?.errors || 0} errors.` });
+                    fetchCityPages();
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Fix All Pit Assignments
+              </Button>
+              <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
                 size="sm"
@@ -2582,6 +2604,7 @@ const Leads = () => {
                         <tr style={{ backgroundColor: "#F3F3F3" }}>
                           <th className="px-2 py-2 w-8"><input type="checkbox" checked={discoverChecked.size === discoveredCities.filter(c => !c.duplicate).length} onChange={e => { if (e.target.checked) { setDiscoverChecked(new Set(discoveredCities.map((_, i) => i).filter(i => !discoveredCities[i].duplicate))); } else { setDiscoverChecked(new Set()); } }} /></th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">City</th>
+                          <th className="px-2 py-2 text-left text-xs font-bold uppercase">Closest PIT</th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">Distance</th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">Price</th>
                           <th className="px-2 py-2 text-left text-xs font-bold uppercase">Status</th>
@@ -2594,6 +2617,7 @@ const Leads = () => {
                               {!c.duplicate && <input type="checkbox" checked={discoverChecked.has(i)} onChange={e => { const s = new Set(discoverChecked); e.target.checked ? s.add(i) : s.delete(i); setDiscoverChecked(s); }} />}
                             </td>
                             <td className="px-2 py-2 font-medium" style={{ color: BRAND_NAVY }}>{c.city_name}</td>
+                            <td className="px-2 py-2 text-xs" style={{ color: SECTION_LABEL }}>{c.closest_pit_name || "—"}</td>
                             <td className="px-2 py-2 text-xs">{c.distance} mi</td>
                             <td className="px-2 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${c.price}</td>
                             <td className="px-2 py-2 text-xs">

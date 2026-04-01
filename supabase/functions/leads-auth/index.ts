@@ -1208,43 +1208,56 @@ serve(async (req) => {
         existingSlugs.set(p.city_slug, { pit_id: p.pit_id, pit_name: (p as any).pits?.name || "" });
       }
 
-      // Calculate effective pricing
-      const { data: gsData } = await supabase.from("global_settings").select("key, value");
-      const gs: Record<string, string> = {};
-      for (const row of gsData || []) gs[row.key] = row.value;
-      const bPrice = pitData.base_price ?? parseFloat(gs.default_base_price || "195");
-      const freeMiles = pitData.free_miles ?? parseFloat(gs.default_free_miles || "15");
-      const extraPerMile = pitData.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+      // Fetch ALL active pits for closest-pit calculation
+      const { data: allActivePits } = await supabase
+        .from("pits").select("*").eq("status", "active");
 
-      // Build final results — pass ALL cities directly to Distance Matrix (no haversine pre-filter)
+      // Build final results — calculate distance from ALL pits for each city
       const discovered: any[] = [];
       const seenSlugs = new Set<string>();
-
       const allCities = [...cityMap.entries()];
-      const drivingDists = await getDrivingDistances(
-        pitData.lat, pitData.lon,
-        allCities.map(([, city]) => ({ lat: city.lat, lng: city.lng })),
-        apiKey
-      );
+
+      // Calculate distances from EACH active pit to ALL discovered cities
+      const pitDistances: Record<string, (number | null)[]> = {};
+      for (const pit of allActivePits || []) {
+        const dists = await getDrivingDistances(
+          Number(pit.lat), Number(pit.lon),
+          allCities.map(([, city]) => ({ lat: city.lat, lng: city.lng })),
+          apiKey
+        );
+        pitDistances[pit.id] = dists;
+      }
 
       for (let idx = 0; idx < allCities.length; idx++) {
         const [, city] = allCities[idx];
-        const distance = drivingDists[idx];
-        if (distance === null) continue; // No road route found — skip this city
-        if (distance > maxDist) continue;
+
+        // Find closest pit from ALL active pits
+        let closestPit: any = null;
+        let closestDistance = Infinity;
+        for (const pit of allActivePits || []) {
+          const dist = pitDistances[pit.id][idx];
+          if (dist != null && dist < closestDistance) {
+            closestDistance = dist;
+            closestPit = pit;
+          }
+        }
+
+        if (!closestPit || closestDistance === Infinity) continue;
+        const closestMaxDist = closestPit.max_distance || 30;
+        if (closestDistance > closestMaxDist) continue;
 
         let slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
-
-        if (seenSlugs.has(slug) || (existingSlugs.has(slug) && existingSlugs.get(slug).pit_id !== pit_id)) {
-          // Don't append state suffix — skip instead to prevent duplicates
-          console.log(`Skipped ${slug}: already exists`);
-          continue;
-        }
+        if (seenSlugs.has(slug)) continue;
         seenSlugs.add(slug);
 
-        const extra = distance > freeMiles ? (distance - freeMiles) * extraPerMile : 0;
-        const price = bPrice + extra;
         const existing = existingSlugs.get(slug);
+
+        // Calculate price using CLOSEST pit's settings
+        const effBP = closestPit.base_price ?? parseFloat(gs.default_base_price || "195");
+        const effFM = closestPit.free_miles ?? parseFloat(gs.default_free_miles || "15");
+        const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+        const extraMiles = Math.max(0, closestDistance - effFM);
+        const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
 
         discovered.push({
           city_name: city.name,
@@ -1252,8 +1265,10 @@ serve(async (req) => {
           state: city.state || "US",
           lat: city.lat,
           lng: city.lng,
-          distance: Math.round(distance * 10) / 10,
+          distance: Math.round(closestDistance * 10) / 10,
           price: Math.round(price * 100) / 100,
+          closest_pit_id: closestPit.id,
+          closest_pit_name: closestPit.name,
           duplicate: !!existing,
           existing_pit_name: existing?.pit_name || null,
         });
@@ -1270,87 +1285,107 @@ serve(async (req) => {
 
     // ── CREATE CITY PAGES ──
     if (action === "create_city_pages") {
-      if (!cities || !Array.isArray(cities) || !pit_id) {
-        return new Response(JSON.stringify({ error: "Missing cities array or pit_id" }),
+      if (!cities || !Array.isArray(cities)) {
+        return new Response(JSON.stringify({ error: "Missing cities array" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      const { data: pitForGen } = await supabase.from("pits").select("*").eq("id", pit_id).single();
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      // Fetch ALL active pits — always find closest
+      const { data: allActivePits } = await supabase
+        .from("pits").select("*").eq("status", "active");
       const { data: gsForGen } = await supabase.from("global_settings").select("key, value");
       const gsMap: Record<string, string> = {};
       for (const row of gsForGen || []) gsMap[row.key] = row.value;
 
-      const pitFreeMiles = pitForGen?.free_miles ?? parseFloat(gsMap.default_free_miles || "15");
-      const pitBasePrice = pitForGen?.base_price ?? parseFloat(gsMap.default_base_price || "195");
-      const pitExtraPerMile = pitForGen?.price_per_extra_mile ?? parseFloat(gsMap.default_extra_per_mile || "5");
-      const satAvailable = pitForGen?.operating_days ? pitForGen.operating_days.includes(6) : true;
+      // Calculate distances from EACH pit to ALL cities
+      const pitDistances: Record<string, (number | null)[]> = {};
+      for (const pit of allActivePits || []) {
+        const dists = await getDrivingDistances(
+          Number(pit.lat), Number(pit.lon),
+          cities.map((c: any) => ({ lat: c.lat, lng: c.lng })),
+          apiKey
+        );
+        pitDistances[pit.id] = dists;
+      }
+
       const created: string[] = [];
       const skippedList: Array<{ city: string; reason: string }> = [];
       let skippedCount = 0;
-      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      let updatedCount = 0;
 
-      // Fetch all active PITs for multi-PIT coverage detection
-      const { data: allActivePits } = await supabase
-        .from("pits")
-        .select("id, lat, lon, max_distance")
-        .eq("status", "active");
+      for (let cityIdx = 0; cityIdx < cities.length; cityIdx++) {
+        const city = cities[cityIdx];
 
-      const otherPits = (allActivePits ?? []).filter(p => p.id !== pit_id);
-
-      // Pre-compute driving distances from each other PIT to all cities — no haversine pre-filter
-      const multiPitDrivingCache = new Map<string, number | null>();
-      for (const otherPit of otherPits) {
-        const cityCoords = cities.map((c: any) => ({ lat: c.lat, lng: c.lng }));
-        if (cityCoords.length > 0) {
-          const dists = await getDrivingDistances(otherPit.lat, otherPit.lon, cityCoords, apiKey);
-          for (let j = 0; j < cities.length; j++) {
-            multiPitDrivingCache.set(`${otherPit.id}:${j}`, dists[j]);
+        // Find closest pit from ALL active pits
+        let closestPit: any = null;
+        let closestDistance = Infinity;
+        for (const pit of allActivePits || []) {
+          const dist = pitDistances[pit.id][cityIdx];
+          if (dist != null && dist < closestDistance) {
+            closestDistance = dist;
+            closestPit = pit;
           }
         }
-      }
 
-      for (const city of cities) {
-        // Multi-PIT coverage detection (driving distance only)
-        const cityIdx = cities.indexOf(city);
-        const competingPits = otherPits.filter(otherPit => {
-          const cacheKey = `${otherPit.id}:${cityIdx}`;
-          const drivingDist = multiPitDrivingCache.get(cacheKey);
-          if (drivingDist === null || drivingDist === undefined) return false; // No road route — not competing
-          return drivingDist <= (otherPit.max_distance || 30);
+        if (!closestPit || closestDistance === Infinity) {
+          skippedList.push({ city: city.city_name, reason: "No road route from any pit" });
+          skippedCount++;
+          continue;
+        }
+
+        // Calculate effective pricing from closest pit
+        const effBP = closestPit.base_price ?? parseFloat(gsMap.default_base_price || "195");
+        const effFM = closestPit.free_miles ?? parseFloat(gsMap.default_free_miles || "15");
+        const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gsMap.default_extra_per_mile || "5");
+        const maxDist = closestPit.max_distance ?? parseFloat(gsMap.default_max_distance || "30");
+
+        if (closestDistance > maxDist) {
+          skippedList.push({ city: city.city_name, reason: `Outside max distance (${closestDistance.toFixed(1)} > ${maxDist})` });
+          skippedCount++;
+          continue;
+        }
+
+        const extraMiles = Math.max(0, closestDistance - effFM);
+        const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+        // Multi-PIT coverage detection
+        const competingPits = (allActivePits || []).filter((p: any) => {
+          if (p.id === closestPit!.id) return false;
+          const dist = pitDistances[p.id][cityIdx];
+          return dist != null && dist <= (p.max_distance || 30);
         });
         const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
         const isMultiPit = competingPits.length > 0 || forceSuppressPrice;
-        const competingIds = competingPits.length > 0 ? competingPits.map(p => p.id) : null;
+        const competingIds = competingPits.length > 0 ? competingPits.map((p: any) => p.id) : null;
 
-        // Normalize slug before any creation
         const normalizedSlug = normalizeSlug(city.city_slug);
 
-        // Check for existing page by normalized slug
+        // Check for existing page by slug
         const { data: existingBySlug } = await supabase
-          .from("city_pages")
-          .select("id, city_slug, distance_from_pit, status")
-          .eq("city_slug", normalizedSlug)
-          .maybeSingle();
+          .from("city_pages").select("id, city_slug, distance_from_pit, status")
+          .eq("city_slug", normalizedSlug).maybeSingle();
 
         // Check for existing page by city name (case insensitive)
         const { data: existingByName } = await supabase
-          .from("city_pages")
-          .select("id, city_slug, distance_from_pit, status")
-          .ilike("city_name", city.city_name)
-          .maybeSingle();
+          .from("city_pages").select("id, city_slug, distance_from_pit, status")
+          .ilike("city_name", city.city_name).maybeSingle();
 
         const existing = existingBySlug || existingByName;
         if (existing) {
-          if (city.distance < (existing.distance_from_pit ?? 999)) {
-            const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
+          if (closestDistance < (existing.distance_from_pit ?? 999)) {
             await supabase.from("city_pages").update({
-              pit_id, distance_from_pit: city.distance, base_price: newPrice,
-              multi_pit_coverage: isMultiPit, competing_pit_ids: competingIds,
+              pit_id: closestPit.id,
+              distance_from_pit: Math.round(closestDistance * 10) / 10,
+              base_price: price,
+              multi_pit_coverage: isMultiPit,
+              competing_pit_ids: competingIds,
               pit_reassigned: true, price_changed: false,
               prompt_version: null, regen_reason: 'pit_reassigned',
               updated_at: new Date().toISOString(),
             }).eq("id", existing.id);
-            console.log(`Updated ${city.city_slug} to closer PIT (${city.distance} mi) — flagged for regen`);
+            console.log(`[create_city_pages] Updated ${city.city_name} → ${closestPit.name} (${closestDistance.toFixed(1)}mi, $${price})`);
+            updatedCount++;
           } else {
             if (isMultiPit) {
               await supabase.from("city_pages").update({
@@ -1365,39 +1400,31 @@ serve(async (req) => {
           continue;
         }
 
+        // Insert new page with closest pit
         const { data: inserted, error: insertErr } = await supabase
-          .from("city_pages")
-          .insert({
-            pit_id,
+          .from("city_pages").insert({
+            pit_id: closestPit.id,
             city_name: city.city_name,
             city_slug: normalizedSlug,
             state: city.state || "LA",
-            lat: city.lat,
-            lng: city.lng,
-            distance_from_pit: city.distance,
-            base_price: Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile)),
+            lat: city.lat, lng: city.lng,
+            distance_from_pit: Math.round(closestDistance * 10) / 10,
+            base_price: price,
             multi_pit_coverage: isMultiPit,
             competing_pit_ids: competingIds,
             status: "draft",
             page_views: 0,
-            pit_reassigned: false,
-            price_changed: false,
-            prompt_version: null,
-            regen_reason: 'missing_content',
-          })
-          .select()
-          .single();
+            pit_reassigned: false, price_changed: false,
+            prompt_version: null, regen_reason: 'missing_content',
+          }).select().single();
 
-        if (insertErr) {
-          console.error("Insert city page error:", insertErr);
-          continue;
-        }
-
+        if (insertErr) { console.error("Insert city page error:", insertErr); continue; }
         created.push(inserted.id);
+        console.log(`[create_city_pages] ${city.city_name} → ${closestPit.name} (${closestDistance.toFixed(1)}mi, $${price})`);
       }
 
       return new Response(
-        JSON.stringify({ success: true, created: created.length, skipped: skippedCount, skipped_details: skippedList, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
+        JSON.stringify({ success: true, created: created.length, updated: updatedCount, skipped: skippedCount, skipped_details: skippedList }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -1589,6 +1616,44 @@ serve(async (req) => {
         }
       }
 
+      // Post-dedup: recalculate each unique city from ALL pits to ensure correct closest-pit assignment
+      const uniqueCities = [...bestBySlug.values()];
+      const allPitDistances: Record<string, (number | null)[]> = {};
+      for (const pit of allPits) {
+        const dists = await getDrivingDistances(
+          Number(pit.lat), Number(pit.lon),
+          uniqueCities.map(c => ({ lat: c.lat, lng: c.lng })),
+          apiKey
+        );
+        allPitDistances[pit.id] = dists;
+      }
+
+      // Reassign each city to its actual closest pit
+      for (let i = 0; i < uniqueCities.length; i++) {
+        const city = uniqueCities[i];
+        let closestPit: any = null;
+        let closestDistance = Infinity;
+        for (const pit of allPits) {
+          const dist = allPitDistances[pit.id][i];
+          if (dist != null && dist < closestDistance) {
+            closestDistance = dist;
+            closestPit = pit;
+          }
+        }
+        if (closestPit && closestDistance < Infinity) {
+          const effBP = closestPit.base_price ?? parseFloat(gs.default_base_price || "195");
+          const effFM = closestPit.free_miles ?? parseFloat(gs.default_free_miles || "15");
+          const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
+          const extraMiles = Math.max(0, closestDistance - effFM);
+          const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+          city.pit_id = closestPit.id;
+          city.pit_name = closestPit.name;
+          city.distance_from_pit = Math.round(closestDistance * 10) / 10;
+          city.base_price = price;
+          console.log(`[bulk] Verified ${city.city_name} → ${closestPit.name} (${closestDistance.toFixed(1)}mi, $${price})`);
+        }
+      }
+
       // Fetch existing pages for duplicate detection (by slug AND city_name)
       const { data: existingPages } = await supabase
         .from("city_pages")
@@ -1608,17 +1673,29 @@ serve(async (req) => {
       let skippedCount = 0;
 
       for (const city of bestBySlug.values()) {
-        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
-        const isMultiPit = forceSuppressPrice;
+        const closestMaxDist = allPits.find((p: any) => p.id === city.pit_id)?.max_distance || 30;
+        if (city.distance_from_pit > closestMaxDist) {
+          skippedCount++;
+          continue;
+        }
 
-        // Check for existing page by slug
+        // Multi-PIT coverage detection
+        const cityIdx = uniqueCities.indexOf(city);
+        const competingPits = allPits.filter((p: any) => {
+          if (p.id === city.pit_id) return false;
+          const dist = allPitDistances[p.id][cityIdx];
+          return dist != null && dist <= (p.max_distance || 30);
+        });
+        const forceSuppressPrice = LARGE_CITIES_NO_STATIC_PRICE.has(city.city_name.toLowerCase());
+        const isMultiPit = competingPits.length > 0 || forceSuppressPrice;
+        const competingIds = competingPits.length > 0 ? competingPits.map((p: any) => p.id) : null;
+
+        // Check for existing page by slug or name
         const existingBySlug = existingBySlugMap.get(city.city_slug);
-        // Check for existing page by city name (case insensitive)
         const existingByName = existingByNameMap.get(city.city_name.toLowerCase());
         const existing = existingBySlug || existingByName;
 
         if (existing) {
-          // City exists — only update if new distance is shorter
           if (city.distance_from_pit < (existing.distance_from_pit ?? 999)) {
             await supabase.from("city_pages").update({
               pit_id: city.pit_id,
@@ -1626,15 +1703,20 @@ serve(async (req) => {
               base_price: city.base_price,
               city_slug: city.city_slug,
               multi_pit_coverage: isMultiPit,
-              pit_reassigned: true,
-              price_changed: false,
-              prompt_version: null,
-              regen_reason: 'pit_reassigned',
+              competing_pit_ids: competingIds,
+              pit_reassigned: true, price_changed: false,
+              prompt_version: null, regen_reason: 'pit_reassigned',
               updated_at: new Date().toISOString(),
             }).eq("id", existing.id);
-            console.log(`[bulk] Updated ${city.city_name} to closer PIT (${city.distance_from_pit} mi)`);
+            console.log(`[bulk] Updated ${city.city_name} → ${city.pit_name} (${city.distance_from_pit} mi)`);
             updatedCount++;
           } else {
+            if (isMultiPit) {
+              await supabase.from("city_pages").update({
+                multi_pit_coverage: true, competing_pit_ids: competingIds,
+                updated_at: new Date().toISOString(),
+              }).eq("id", existing.id);
+            }
             skippedCount++;
           }
           continue;
@@ -1647,8 +1729,8 @@ serve(async (req) => {
             pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
             state: city.state, lat: city.lat, lng: city.lng,
             distance_from_pit: city.distance_from_pit, base_price: city.base_price,
-            multi_pit_coverage: isMultiPit, status: "draft",
-            prompt_version: null, regen_reason: 'missing_content',
+            multi_pit_coverage: isMultiPit, competing_pit_ids: competingIds,
+            status: "draft", prompt_version: null, regen_reason: 'missing_content',
           });
         if (insertErr) { console.error("Insert error:", insertErr); continue; }
         created++;
@@ -1657,7 +1739,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true, created, updated: updatedCount, skipped: skippedCount,
-          message: `${created} created, ${updatedCount} updated with closer pit, ${skippedCount} skipped (already optimal). Run Regen Outdated to generate content.`,
+          message: `${created} created, ${updatedCount} updated with closer pit, ${skippedCount} skipped (already optimal).`,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
