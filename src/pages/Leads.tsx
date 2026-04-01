@@ -3904,6 +3904,7 @@ const Leads = () => {
                           {(() => {
                             const stageMap: Record<string, { label: string; bg: string; bold?: boolean }> = {
                               got_price: { label: "Got Price", bg: "#F59E0B" },
+                              got_out_of_area: { label: "OUT OF AREA", bg: "#EF4444", bold: true },
                               clicked_order_now: { label: "Clicked Order", bg: "#EA580C" },
                               entered_address: { label: "Entered Address", bg: "#3B82F6" },
                               started_checkout: { label: "At Checkout", bg: "#DC2626" },
@@ -3911,11 +3912,18 @@ const Leads = () => {
                             };
                             const cfg = stageMap[s.stage || ""] || { label: s.stage || "—", bg: "#9CA3AF", bold: false };
                             return (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] text-white" style={{
-                                backgroundColor: cfg.bg,
-                                fontWeight: cfg.bold ? 800 : 600,
-                              }}>
-                                {cfg.label}
+                              <span className="inline-flex items-center gap-1">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] text-white" style={{
+                                  backgroundColor: cfg.bg,
+                                  fontWeight: cfg.bold ? 800 : 600,
+                                }}>
+                                  {cfg.label}
+                                </span>
+                                {s.stage === "got_out_of_area" && s.nearest_pit_name && (
+                                  <span className="text-[9px] text-gray-500" title={`Nearest pit: ${s.nearest_pit_name}`}>
+                                    📍 {s.nearest_pit_name}
+                                  </span>
+                                )}
                               </span>
                             );
                           })()}

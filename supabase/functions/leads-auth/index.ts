@@ -161,6 +161,11 @@ serve(async (req) => {
       }
       safe.updated_at = new Date().toISOString();
       safe.last_seen_at = new Date().toISOString();
+      // Capture IP on every session update
+      const visitorIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || null;
+      if (visitorIp) safe.ip_address = visitorIp;
       console.log("[session_update] token:", session_token?.slice(0, 8));
       console.log("[session_update] updates:", JSON.stringify(updates));
       await sb.from("visitor_sessions").upsert(
