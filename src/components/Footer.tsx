@@ -113,7 +113,7 @@ const Footer = () => {
             }}
           >
             <p
-              className="font-display text-xs tracking-[0.25em] uppercase mb-5 text-center"
+              className="font-display tracking-[0.25em] uppercase mb-5 text-center text-lg"
               style={{ color: "#C07A00" }}
             >
               {getCitiesSectionHeading(cityLinks)}
