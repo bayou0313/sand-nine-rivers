@@ -219,6 +219,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
       });
       updateSession({
         stage: "got_price",
+        delivery_address: currentAddress,
         calculated_price: bestResult.price,
         nearest_pit_id: bestResult.pit.id,
         nearest_pit_name: bestResult.pit.name,
