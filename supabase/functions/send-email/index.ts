@@ -266,6 +266,7 @@ function orderCustomerEmail(order: any): string {
                           </td>
                         </tr>
                         ${satRow}
+                        ${distRow}
                         <tr>
                           <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;${satSurcharge > 0 ? '' : 'background-color:#F8F7F2;'}">
                             Tax (${taxParish} ${taxRate}%)
