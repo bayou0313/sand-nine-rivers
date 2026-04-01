@@ -416,6 +416,17 @@ const Leads = () => {
     } finally { setMarkingPaid(false); }
   }, [cashOrderToMark, cashCollectedBy, cashSendEmail, fetchCashOrders, toast]);
 
+  const fetchLiveVisitors = useCallback(async () => {
+    setLiveLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_live_visitors" },
+      });
+      if (!fnError && data?.sessions) setLiveVisitors(data.sessions);
+    } catch (err) { console.warn("Failed to fetch live visitors:", err); }
+    finally { setLiveLoading(false); }
+  }, []);
+
   const fetchAbandonedSessions = useCallback(async () => {
     setAbandonedLoading(true);
     try {
