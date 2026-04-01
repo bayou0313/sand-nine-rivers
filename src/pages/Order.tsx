@@ -299,10 +299,11 @@ const Order = () => {
       if (totalPrice > 0 && address) {
         setStep("confirm");
       } else {
-        // Page reloaded from Stripe redirect — restore from localStorage snapshot
+        // Page reloaded from Stripe redirect — restore from sessionStorage snapshot
         try {
-          const raw = localStorage.getItem("pending_order_snapshot");
-          console.log("[cancel] localStorage snapshot:", raw ? "found" : "missing");
+          const raw = sessionStorage.getItem("pending_order_snapshot");
+          console.log("[cancel] snapshot found:", !!raw);
+          console.log("[cancel] snapshot content:", raw);
           if (raw) {
             const snap = JSON.parse(raw);
             setAddress(snap.address || "");
@@ -319,7 +320,7 @@ const Order = () => {
             }
             setStep("confirm");
             // Clean up after restore
-            localStorage.removeItem("pending_order_snapshot");
+            sessionStorage.removeItem("pending_order_snapshot");
           } else {
             setStep("address");
           }
