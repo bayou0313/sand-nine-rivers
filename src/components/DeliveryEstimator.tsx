@@ -43,6 +43,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
   const [pits, setPits] = useState<PitData[]>([]);
   const [matchedEffective, setMatchedEffective] = useState<{ free_miles: number; extra_per_mile: number; saturday_surcharge: number } | null>(null);
+  const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -197,6 +198,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
       }
 
       const effective = getEffectivePrice(bestResult.pit, globalPricing);
+      setMatchedPit(bestResult.pit);
       setMatchedEffective({
         free_miles: effective.free_miles,
         extra_per_mile: effective.extra_per_mile,
@@ -305,7 +307,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
-                <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}`} onClick={() => updateSession({ stage: "clicked_order_now", calculated_price: result!.price, delivery_address: address })}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
+                <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}${matchedPit?.operating_days ? `&operating_days=${matchedPit.operating_days.join(",")}` : ""}${matchedPit?.saturday_surcharge_override != null ? `&sat_surcharge=${matchedPit.saturday_surcharge_override}` : ""}${matchedPit?.same_day_cutoff ? `&same_day_cutoff=${encodeURIComponent(matchedPit.same_day_cutoff)}` : ""}`} onClick={() => updateSession({ stage: "clicked_order_now", calculated_price: result!.price, delivery_address: address })}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
               </Button>
               <Button variant="outline" className={`flex-1 h-12 font-display tracking-wider text-lg rounded-xl ${embedded ? "border-white/20 text-white hover:bg-white/10" : ""}`} asChild>
                 <a href="tel:+18554689297">CALL TO ORDER</a>
