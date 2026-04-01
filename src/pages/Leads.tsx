@@ -327,6 +327,8 @@ const Leads = () => {
   const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
   const [deletingAll, setDeletingAll] = useState(false);
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
+  const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
+
 
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
@@ -368,6 +370,27 @@ const Leads = () => {
     } catch (err) { console.warn("Failed to fetch cash orders:", err); }
     finally { setCashLoading(false); }
   }, []);
+
+  const syncStripePayment = useCallback(async (order: any) => {
+    setSyncingPayment(order.id);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "sync_stripe_payment", order_id: order.id },
+      });
+      if (fnError) throw fnError;
+      if (data?.error && data.synced === undefined) throw new Error(data.error);
+      if (data?.synced) {
+        toast({ title: "Payment confirmed", description: "Order updated to paid" });
+        fetchCashOrders();
+      } else if (data?.synced === false && !data?.error) {
+        toast({ title: "Not paid yet", description: `Stripe status: ${data.payment_status || "unpaid"}` });
+      } else if (data?.error) {
+        toast({ title: "No session found", description: data.error });
+      }
+    } catch (err: any) {
+      toast({ title: "Sync failed", description: err.message || "Check manually in Stripe", variant: "destructive" });
+    } finally { setSyncingPayment(null); }
+  }, [toast, fetchCashOrders]);
 
   const markCashPaid = useCallback(async () => {
     if (!cashOrderToMark) return;
@@ -3747,18 +3770,26 @@ const Leads = () => {
                             </span>
                           </td>
                           <td className="px-3 py-2">
-                            {!o.cash_collected ? (
-                              <div className="flex gap-1">
+                            {o.payment_status === "paid" || o.cash_collected ? (
+                              <span className="text-[10px]" style={{ color: "#22C55E" }}>
+                                Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                              </span>
+                            ) : (
+                              <div className="flex gap-1 flex-wrap">
+                                {["stripe", "stripe-link", "card"].includes((o.payment_method || "").toLowerCase()) && o.payment_status === "pending" && (
+                                  <Button size="sm" onClick={() => syncStripePayment(o)} disabled={syncingPayment === o.id} className="h-7 text-[10px] px-2" style={{ backgroundColor: "#3B82F6", color: "white" }}>
+                                    {syncingPayment === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                                    Sync
+                                  </Button>
+                                )}
                                 <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                                  Mark as Paid
+                                  Mark Paid
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}>
                                   {sendingPaymentLink === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link className="w-3 h-3 mr-1" />}
                                   Pay Link
                                 </Button>
                               </div>
-                            ) : (
-                              <span className="text-[10px]" style={{ color: "#22C55E" }}>Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
                             )}
                           </td>
                         </tr>
