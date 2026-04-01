@@ -1,0 +1,1 @@
+ALTER TABLE city_pages ADD CONSTRAINT city_pages_city_name_unique UNIQUE (city_name);

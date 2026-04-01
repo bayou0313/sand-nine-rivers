@@ -77,6 +77,20 @@ async function getDrivingDistances(
  * regardless of PIT count.
  * Add any city here where a single centroid distance is misleading.
  */
+/**
+ * Normalize city slugs by removing state suffixes to prevent duplicates
+ * like "kenner" vs "kenner-la".
+ */
+function normalizeSlug(slug: string): string {
+  return slug
+    .replace(/-la$/, '')
+    .replace(/-tx$/, '')
+    .replace(/-ms$/, '')
+    .replace(/-al$/, '')
+    .toLowerCase()
+    .trim();
+}
+
 const LARGE_CITIES_NO_STATIC_PRICE = new Set([
   "new orleans",
   "new orleans east",
@@ -835,9 +849,12 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Missing city_page_id or city_page" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Normalize slug if provided to prevent state-suffix duplicates
+      const normalizedSlug = city_page.city_slug ? normalizeSlug(city_page.city_slug) : undefined;
       const { error } = await supabase
         .from("city_pages")
         .update({
+          ...(normalizedSlug ? { city_slug: normalizedSlug } : {}),
           meta_title: city_page.meta_title,
           meta_description: city_page.meta_description,
           h1_text: city_page.h1_text,
@@ -1061,12 +1078,13 @@ serve(async (req) => {
         if (distance === null) continue; // No road route found — skip this city
         if (distance > maxDist) continue;
 
-        let slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        let slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
 
         if (seenSlugs.has(slug) || (existingSlugs.has(slug) && existingSlugs.get(slug).pit_id !== pit_id)) {
-          slug = `${slug}-${(city.state || "us").toLowerCase()}`;
+          // Don't append state suffix — skip instead to prevent duplicates
+          console.log(`Skipped ${slug}: already exists`);
+          continue;
         }
-        if (seenSlugs.has(slug)) continue;
         seenSlugs.add(slug);
 
         const extra = distance > freeMiles ? (distance - freeMiles) * extraPerMile : 0;
@@ -1112,7 +1130,8 @@ serve(async (req) => {
       const pitExtraPerMile = pitForGen?.price_per_extra_mile ?? parseFloat(gsMap.default_extra_per_mile || "5");
       const satAvailable = pitForGen?.operating_days ? pitForGen.operating_days.includes(6) : true;
       const created: string[] = [];
-      let skipped = 0;
+      const skippedList: Array<{ city: string; reason: string }> = [];
+      let skippedCount = 0;
       const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
 
       // Fetch all active PITs for multi-PIT coverage detection
@@ -1148,12 +1167,24 @@ serve(async (req) => {
         const isMultiPit = competingPits.length > 0 || forceSuppressPrice;
         const competingIds = competingPits.length > 0 ? competingPits.map(p => p.id) : null;
 
-        // Closest-PIT dedup
-        const { data: existing } = await supabase
+        // Normalize slug before any creation
+        const normalizedSlug = normalizeSlug(city.city_slug);
+
+        // Check for existing page by normalized slug
+        const { data: existingBySlug } = await supabase
           .from("city_pages")
-          .select("id, distance_from_pit")
-          .eq("city_slug", city.city_slug)
+          .select("id, city_slug, distance_from_pit, status")
+          .eq("city_slug", normalizedSlug)
           .maybeSingle();
+
+        // Check for existing page by city name (case insensitive)
+        const { data: existingByName } = await supabase
+          .from("city_pages")
+          .select("id, city_slug, distance_from_pit, status")
+          .ilike("city_name", city.city_name)
+          .maybeSingle();
+
+        const existing = existingBySlug || existingByName;
         if (existing) {
           if (city.distance < (existing.distance_from_pit ?? 999)) {
             const newPrice = Math.max(pitBasePrice, Math.round(pitBasePrice + Math.max(0, city.distance - pitFreeMiles) * pitExtraPerMile));
@@ -1172,9 +1203,10 @@ serve(async (req) => {
                 updated_at: new Date().toISOString(),
               }).eq("id", existing.id);
             }
-            console.log(`Skipped ${city.city_slug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
+            console.log(`Skipped ${normalizedSlug}: existing PIT is closer (${existing.distance_from_pit} mi)`);
           }
-          skipped++;
+          skippedList.push({ city: city.city_name, reason: `Already exists as /${existing.city_slug}/river-sand-delivery` });
+          skippedCount++;
           continue;
         }
 
@@ -1183,7 +1215,7 @@ serve(async (req) => {
           .insert({
             pit_id,
             city_name: city.city_name,
-            city_slug: city.city_slug,
+            city_slug: normalizedSlug,
             state: city.state || "LA",
             lat: city.lat,
             lng: city.lng,
@@ -1210,7 +1242,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, created: created.length, skipped, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
+        JSON.stringify({ success: true, created: created.length, skipped: skippedCount, skipped_details: skippedList, message: "Cities created as drafts. Run Regen Outdated to generate content." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -1380,7 +1412,7 @@ serve(async (req) => {
           const distance = drivingDists[idx];
           if (distance === null) continue; // No road route found — skip this city
           if (distance > maxDist) continue;
-          const slug = city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+          const slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
           const extraMiles = Math.max(0, distance - freeMiles);
           const price = Math.max(bPrice, Math.round(bPrice + extraMiles * extraPerMile));
 
