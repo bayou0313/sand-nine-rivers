@@ -312,6 +312,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: "Added to waitlist" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
