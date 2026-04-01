@@ -4074,6 +4074,13 @@ const Leads = () => {
                         </span>
                         <span className="text-[11px] text-gray-400">{s.last_seen_at ? timeAgo(s.last_seen_at) : "—"}</span>
                       </div>
+                      {s.geo_city && (
+                        <p className="text-[11px] text-gray-500 mb-1">📍 {s.geo_city}{s.geo_region ? `, ${s.geo_region}` : ""}{s.ip_address ? ` · ${s.ip_address}` : ""}</p>
+                      )}
+                      {s.entry_city_name && (
+                        <p className="text-[11px] text-blue-500 mb-1">🏙️ Via: {s.entry_city_name} page</p>
+                      )}
+                      {s.referrer && !s.entry_city_name && (() => { try { return <p className="text-[11px] text-gray-400 mb-1">↗ From: {new URL(s.referrer).hostname}</p>; } catch { return null; } })()}
                       {s.delivery_address && (
                         <div className="flex items-start gap-1.5 mb-1.5">
                           <MapPin className="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" />
