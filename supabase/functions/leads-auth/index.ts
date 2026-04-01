@@ -2167,6 +2167,20 @@ serve(async (req) => {
       }
     }
 
+    // ── LIST WAITLIST ──
+    if (action === "list_waitlist") {
+      const { data: waitlist, error: wlErr } = await supabase
+        .from("waitlist_leads")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (wlErr) {
+        return new Response(JSON.stringify({ error: wlErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ waitlist: waitlist || [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
