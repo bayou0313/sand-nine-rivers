@@ -1,3 +1,9 @@
+/**
+ * IMPORTANT: This system does NOT use haversine (straight-line) distances anywhere.
+ * All distance calculations use the Google Distance Matrix API with
+ * mode=driving and avoid=ferries|tolls. This ensures accurate road-based
+ * mileage for pricing. Never add haversine as a fallback or pre-filter.
+ */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
