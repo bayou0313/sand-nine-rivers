@@ -1127,7 +1127,8 @@ serve(async (req) => {
       const pitExtraPerMile = pitForGen?.price_per_extra_mile ?? parseFloat(gsMap.default_extra_per_mile || "5");
       const satAvailable = pitForGen?.operating_days ? pitForGen.operating_days.includes(6) : true;
       const created: string[] = [];
-      let skipped = 0;
+      const skippedList: Array<{ city: string; reason: string }> = [];
+      let skippedCount = 0;
       const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
 
       // Fetch all active PITs for multi-PIT coverage detection
