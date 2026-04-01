@@ -198,6 +198,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
       }
 
       const effective = getEffectivePrice(bestResult.pit, globalPricing);
+      setMatchedPit(bestResult.pit);
       setMatchedEffective({
         free_miles: effective.free_miles,
         extra_per_mile: effective.extra_per_mile,
