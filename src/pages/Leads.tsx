@@ -1088,9 +1088,9 @@ const Leads = () => {
     setProfileSettings(prev => ({ ...prev, business_address: result.formattedAddress }));
   }, []);
 
-  // Fetch abandoned sessions when navigating to that page
+  // Fetch abandoned sessions when navigating to that page (only if empty)
   useEffect(() => {
-    if (activePage === "abandoned" && authenticated) {
+    if (activePage === "abandoned" && authenticated && abandonedSessions.length === 0) {
       fetchAbandonedSessions();
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
