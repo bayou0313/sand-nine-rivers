@@ -188,10 +188,27 @@ type Props = {
   weekdayPitName?: string;
 };
 
-const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturdaySurcharge, pitId }: Props) => {
-  const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule), [pitSchedule]);
-  const effectiveSatSurcharge = useMemo(() => getEffectiveSaturdaySurcharge(pitSchedule, globalSaturdaySurcharge), [pitSchedule, globalSaturdaySurcharge]);
-  const effectiveSunSurcharge = useMemo(() => getEffectiveSundaySurcharge(pitSchedule), [pitSchedule]);
+const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturdaySurcharge, pitId, weekendPitMap, weekdayPitName }: Props) => {
+  const rawDates = useMemo(() => getAvailableDeliveryDates(pitSchedule), [pitSchedule]);
+
+  // Filter out weekend dates where weekendPitMap has no serviceable PIT
+  const dates = useMemo(() => {
+    if (!weekendPitMap || Object.keys(weekendPitMap).length === 0) return rawDates;
+    return rawDates.filter(d => {
+      if (d.isSaturday && !(6 in weekendPitMap)) return false;
+      if (d.isSunday && !(0 in weekendPitMap)) return false;
+      return true;
+    });
+  }, [rawDates, weekendPitMap]);
+
+  const effectiveSatSurcharge = useMemo(() => {
+    if (weekendPitMap?.[6]) return weekendPitMap[6].satSurcharge;
+    return getEffectiveSaturdaySurcharge(pitSchedule, globalSaturdaySurcharge);
+  }, [pitSchedule, globalSaturdaySurcharge, weekendPitMap]);
+  const effectiveSunSurcharge = useMemo(() => {
+    if (weekendPitMap?.[0]) return weekendPitMap[0].sunSurcharge;
+    return getEffectiveSundaySurcharge(pitSchedule);
+  }, [pitSchedule, weekendPitMap]);
   const [loadData, setLoadData] = useState<LoadCounts | null>(null);
 
   // Fetch load counts when pitId changes
