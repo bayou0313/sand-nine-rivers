@@ -130,6 +130,7 @@ export interface OrderConfirmationProps {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  companyName?: string;
   confirmedTotals: {
     totalPrice: number;
     totalWithProcessingFee: number;
