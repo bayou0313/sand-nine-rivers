@@ -3147,7 +3147,7 @@ const Leads = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Free delivery radius</label>
+                      <label className="text-xs text-gray-500 block mb-1">Free delivery distance (miles)</label>
                       <div className="relative">
                         <Input className="pr-12 h-9" value={editSettings.default_free_miles || ""} onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })} />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
