@@ -1100,10 +1100,18 @@ const Leads = () => {
         }
       }
 
-      // Server handles price rollover automatically
+      // Build toast description from server response
+      const parts: string[] = [];
       const pricesUpdated = data?.prices_updated || 0;
-      if (pricesUpdated > 0) {
-        toast({ title: "PIT saved", description: `${pricesUpdated} city page prices updated. Pages flagged for content refresh.` });
+      const pagesRegen = data?.pages_regenerated || 0;
+      const pagesReassigned = data?.deactivation_reassigned || 0;
+      const pagesWaitlisted = data?.deactivation_waitlisted || 0;
+      if (pricesUpdated > 0) parts.push(`${pricesUpdated} city page prices updated`);
+      if (pagesRegen > 0) parts.push(`${pagesRegen} pages regenerated`);
+      if (pagesReassigned > 0) parts.push(`${pagesReassigned} pages reassigned to other PITs`);
+      if (pagesWaitlisted > 0) parts.push(`${pagesWaitlisted} pages moved to waitlist`);
+      if (parts.length > 0) {
+        toast({ title: "PIT saved", description: parts.join(". ") + "." });
         fetchCityPages();
       } else {
         toast({ title: "PIT updated" });
@@ -3147,7 +3155,7 @@ const Leads = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 block mb-1">Free delivery radius</label>
+                      <label className="text-xs text-gray-500 block mb-1">Free delivery distance (miles)</label>
                       <div className="relative">
                         <Input className="pr-12 h-9" value={editSettings.default_free_miles || ""} onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })} />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
@@ -4609,7 +4617,7 @@ const Leads = () => {
                     <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery radius (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles)</label>
                     <Input placeholder="e.g. 15" value={newPit.free_miles ?? ""} onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
@@ -4654,7 +4662,35 @@ const Leads = () => {
                 )}
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
-                  <Input placeholder="e.g. 10:00" value={newPit.same_day_cutoff} onChange={e => setNewPit({ ...newPit, same_day_cutoff: e.target.value })} className="h-9 text-sm w-40" />
+                  {(() => {
+                    const val = newPit.same_day_cutoff || "";
+                    const match = val.match(/^(\d{1,2}):(\d{2})$/);
+                    let h24 = match ? parseInt(match[1]) : 10;
+                    let m = match ? parseInt(match[2]) : 0;
+                    const isPM = h24 >= 12;
+                    const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+                    const updateCutoff = (hour12: number, minute: number, pm: boolean) => {
+                      let h = hour12 === 12 ? 0 : hour12;
+                      if (pm) h += 12;
+                      const v = `${String(h).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+                      setNewPit({ ...newPit, same_day_cutoff: v });
+                    };
+                    return (
+                      <div className="flex gap-1.5 items-center">
+                        <select value={h12} onChange={e => updateCutoff(parseInt(e.target.value), m, isPM)} className="h-9 px-2 rounded-md border text-sm w-16">
+                          {[1,2,3,4,5,6,7,8,9,10,11,12].map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <span className="text-sm">:</span>
+                        <select value={m} onChange={e => updateCutoff(h12, parseInt(e.target.value), isPM)} className="h-9 px-2 rounded-md border text-sm w-16">
+                          {[0,15,30,45].map(mi => <option key={mi} value={mi}>{String(mi).padStart(2, "0")}</option>)}
+                        </select>
+                        <select value={isPM ? "PM" : "AM"} onChange={e => updateCutoff(h12, m, e.target.value === "PM")} className="h-9 px-2 rounded-md border text-sm w-16">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      </div>
+                    );
+                  })()}
                   <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
                 </div>
               </div>
@@ -4704,7 +4740,10 @@ const Leads = () => {
 
       {/* ─── EDIT PIT MODAL ─── */}
       {editingPitId && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-0" onClick={() => cancelEditPit()}>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-0"
+          onMouseDown={e => { if (e.target === e.currentTarget) (e.currentTarget as any).__backdropDown = true; }}
+          onMouseUp={e => { if (e.target === e.currentTarget && (e.currentTarget as any).__backdropDown) cancelEditPit(); (e.currentTarget as any).__backdropDown = false; }}
+        >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto md:my-auto" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
@@ -4847,7 +4886,7 @@ const Leads = () => {
                     <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery radius (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles)</label>
                     <Input placeholder="e.g. 15" value={editPitData.free_miles ?? ""} onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
@@ -4897,7 +4936,35 @@ const Leads = () => {
                 )}
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
-                  <Input placeholder="e.g. 10:00" value={editPitData.same_day_cutoff ?? ""} onChange={e => setEditPitData({ ...editPitData, same_day_cutoff: e.target.value })} className="h-9 text-sm w-40" />
+                  {(() => {
+                    const val = (editPitData.same_day_cutoff as string) || "";
+                    const match = val.match(/^(\d{1,2}):(\d{2})$/);
+                    let h24 = match ? parseInt(match[1]) : 10;
+                    let m = match ? parseInt(match[2]) : 0;
+                    const isPM = h24 >= 12;
+                    const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+                    const updateCutoff = (hour12: number, minute: number, pm: boolean) => {
+                      let h = hour12 === 12 ? 0 : hour12;
+                      if (pm) h += 12;
+                      const v = `${String(h).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+                      setEditPitData({ ...editPitData, same_day_cutoff: v });
+                    };
+                    return (
+                      <div className="flex gap-1.5 items-center">
+                        <select value={h12} onChange={e => updateCutoff(parseInt(e.target.value), m, isPM)} className="h-9 px-2 rounded-md border text-sm w-16">
+                          {[1,2,3,4,5,6,7,8,9,10,11,12].map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <span className="text-sm">:</span>
+                        <select value={m} onChange={e => updateCutoff(h12, parseInt(e.target.value), isPM)} className="h-9 px-2 rounded-md border text-sm w-16">
+                          {[0,15,30,45].map(mi => <option key={mi} value={mi}>{String(mi).padStart(2, "0")}</option>)}
+                        </select>
+                        <select value={isPM ? "PM" : "AM"} onChange={e => updateCutoff(h12, m, e.target.value === "PM")} className="h-9 px-2 rounded-md border text-sm w-16">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      </div>
+                    );
+                  })()}
                   <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
                 </div>
               </div>
