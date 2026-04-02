@@ -900,6 +900,18 @@ serve(async (req) => {
       console.log("[email] Customer email sent to:", customerEmail);
       console.log("[email] Owner email sent to:", ownerEmail);
 
+      // Contact form notification
+      try {
+        const sbNotif = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        await sbNotif.from("notifications").insert({
+          type: "contact_form",
+          title: "Contact Form",
+          message: `${data.name || "Someone"} submitted a contact form`,
+          entity_type: "contact",
+          entity_id: null,
+        });
+      } catch (notifErr) { console.error("[email] Notification insert error:", notifErr); }
+
     } else if (type === "callback") {
       const rows = [
         ["Name", data.name || "Not provided"],

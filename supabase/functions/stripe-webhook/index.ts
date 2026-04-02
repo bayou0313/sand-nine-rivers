@@ -345,6 +345,17 @@ serve(async (req) => {
           } catch (emailErr) {
             console.error("[stripe-webhook] Failed to send order email:", emailErr);
           }
+
+          // Payment completed notification
+          try {
+            await supabase.from("notifications").insert({
+              type: "payment_completed",
+              title: "Payment Received",
+              message: `Order ${currentOrder.order_number} paid — ${currentOrder.customer_name}`,
+              entity_type: "order",
+              entity_id: orderId,
+            });
+          } catch (notifErr) { console.error("[stripe-webhook] Notification insert error:", notifErr); }
         }
       } else {
         // Non-paid status updates (failed, canceled, refunded)

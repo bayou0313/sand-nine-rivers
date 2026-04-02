@@ -3111,6 +3111,55 @@ serve(async (req) => {
       );
     }
 
+    // ── NOTIFY NEW ORDER (no password required — public, fire-and-forget from frontend) ──
+    if (action === "notify_new_order") {
+      const { customer_name: notifName, payment_method: notifPM, delivery_address: notifAddr, order_id: notifOrderId } = body;
+      if (!notifName || !notifAddr || !notifOrderId) {
+        return new Response(JSON.stringify({ error: "Missing required fields" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+      await sb.from("notifications").insert({
+        type: "new_order",
+        title: "New Order",
+        message: `${notifName} placed a ${notifPM || "COD"} order for ${notifAddr}`,
+        entity_type: "order",
+        entity_id: notifOrderId,
+      });
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── GET NOTIFICATIONS (password required) ──
+    if (action === "get_notifications") {
+      // Delete old notifications (>7 days)
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from("notifications").delete().lt("created_at", sevenDaysAgo);
+      const { data: notifs, error: notifErr } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (notifErr) throw notifErr;
+      return new Response(JSON.stringify({ success: true, notifications: notifs }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── MARK NOTIFICATIONS READ (password required) ──
+    if (action === "mark_notifications_read") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      await supabase.from("notifications").update({ read: true } as any).eq("read", false);
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -1072,6 +1072,17 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
+      // Fire-and-forget new order notification
+      supabase.functions.invoke("leads-auth", {
+        body: {
+          action: "notify_new_order",
+          customer_name: form.name,
+          payment_method: "stripe-link",
+          delivery_address: address,
+          order_id: insertedOrder?.id,
+        },
+      }).catch(() => {});
+
       // Store order ID and token for DB polling
       setPendingOrderId(insertedOrder?.id || null);
       setLookupToken(insertedOrder?.lookup_token || null);
