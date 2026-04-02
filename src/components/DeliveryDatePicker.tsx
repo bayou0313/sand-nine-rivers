@@ -211,26 +211,56 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
   }, [pitSchedule, weekendPitMap]);
   const [loadData, setLoadData] = useState<LoadCounts | null>(null);
 
-  // Fetch load counts when pitId changes
+  // Fetch load counts — use weekend PIT IDs when available
   useEffect(() => {
-    if (!pitId || dates.length === 0) {
-      setLoadData(null);
-      return;
+    if (dates.length === 0) { setLoadData(null); return; }
+    const weekendDates = dates.filter(d => d.isSaturday || d.isSunday);
+    if (weekendDates.length === 0) { setLoadData(null); return; }
+
+    // Determine unique PIT IDs to query for weekend dates
+    const pitQueries: { pit_id: string; dates: string[] }[] = [];
+    const weekdayPitDates: string[] = [];
+    for (const d of weekendDates) {
+      const dayKey = d.isSaturday ? 6 : 0;
+      const wPit = weekendPitMap?.[dayKey as 0 | 6];
+      if (wPit) {
+        const existing = pitQueries.find(q => q.pit_id === wPit.pit.id);
+        if (existing) existing.dates.push(d.iso);
+        else pitQueries.push({ pit_id: wPit.pit.id, dates: [d.iso] });
+      } else if (pitId) {
+        weekdayPitDates.push(d.iso);
+      }
     }
-    const weekendDates = dates.filter(d => d.isSaturday || d.isSunday).map(d => d.iso);
-    if (weekendDates.length === 0) {
-      setLoadData(null);
-      return;
+    if (pitId && weekdayPitDates.length > 0) {
+      const existing = pitQueries.find(q => q.pit_id === pitId);
+      if (existing) existing.dates.push(...weekdayPitDates);
+      else pitQueries.push({ pit_id: pitId, dates: weekdayPitDates });
     }
+    if (pitQueries.length === 0) { setLoadData(null); return; }
+
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("leads-auth", {
-          body: { action: "get_date_load_counts", pit_id: pitId, dates: weekendDates },
-        });
-        if (!error && data) setLoadData(data);
+        // Fetch all pit queries in parallel and merge
+        const results = await Promise.all(
+          pitQueries.map(q =>
+            supabase.functions.invoke("leads-auth", {
+              body: { action: "get_date_load_counts", pit_id: q.pit_id, dates: q.dates },
+            })
+          )
+        );
+        const merged: LoadCounts = { counts: {}, saturday_load_limit: null, sunday_load_limit: null, max_daily_limit: null };
+        for (const r of results) {
+          if (!r.error && r.data) {
+            Object.assign(merged.counts, r.data.counts || {});
+            if (r.data.saturday_load_limit != null) merged.saturday_load_limit = r.data.saturday_load_limit;
+            if (r.data.sunday_load_limit != null) merged.sunday_load_limit = r.data.sunday_load_limit;
+            if (r.data.max_daily_limit != null) merged.max_daily_limit = r.data.max_daily_limit;
+          }
+        }
+        setLoadData(merged);
       } catch { /* silent */ }
     })();
-  }, [pitId, dates]);
+  }, [pitId, dates, weekendPitMap]);
 
   const isFullyBooked = (d: DeliveryDate & { blocked?: boolean }) => {
     if (!loadData || d.blocked) return false;
