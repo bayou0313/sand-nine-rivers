@@ -268,6 +268,7 @@ const Order = () => {
                 taxAmount: orderTaxAmount,
                 subtotal: orderSubtotal,
                 saturdaySurchargeTotal: orderSatSurcharge,
+                sundaySurchargeTotal: order.sunday_surcharge_amount || 0,
                 distanceFee: 0,
                 taxInfo: { rate: orderTaxRate, parish: "" },
               });
