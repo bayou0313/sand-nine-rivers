@@ -167,6 +167,7 @@ export { SATURDAY_SURCHARGE };
 
 type LoadCounts = {
   counts: Record<string, number>;
+  global_counts: Record<string, number>;
   saturday_load_limit: number | null;
   sunday_load_limit: number | null;
   max_daily_limit: number | null;
