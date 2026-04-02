@@ -370,7 +370,7 @@ const Order = () => {
             taxAmount: snap.taxAmount,
             subtotal: snap.subtotal,
             saturdaySurchargeTotal: snap.saturdaySurchargeTotal,
-            sundaySurchargeTotal: snap.sundaySurchargeTotal || 0,
+            sundaySurchargeTotal: (snap as any).sundaySurchargeTotal || 0,
             distanceFee: snap.result ? Math.max(0, (snap.result.distance - snap.effectivePricing.free_miles) * snap.effectivePricing.extra_per_mile * snap.quantity) : 0,
             taxInfo: snap.taxInfo,
           });
