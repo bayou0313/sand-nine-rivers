@@ -1595,9 +1595,9 @@ const Order = () => {
                           </motion.div>
                         )}
                         <CreditCard className={`w-6 h-6 mb-2 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
-                        <p className="font-display text-sm text-foreground tracking-wider">PAY NOW</p>
-                        <p className="font-body text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                          <Lock className="w-2.5 h-2.5" /> Secure Stripe Checkout
+                        <p className="font-display text-base text-foreground tracking-wider">PAY NOW</p>
+                        <p className="font-body text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Secure Stripe Checkout
                         </p>
                       </button>
 
@@ -1617,61 +1617,92 @@ const Order = () => {
                             </motion.div>
                           )}
                           <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
-                          <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
+                          <p className="font-display text-base text-foreground tracking-wider">AT DELIVERY</p>
+                          <p className="font-body text-xs text-muted-foreground mt-1">Cash or Check — no processing fee</p>
                         </button>
                       )}
                     </div>
 
                     {isWeekendDate && (
-                      <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                      <p className="font-body text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-4 flex items-center gap-1.5 leading-relaxed">
+                        <CalendarDays className="w-4 h-4 shrink-0" />
                         Weekend deliveries require card payment.
                       </p>
                     )}
 
+                    {/* Policy notice: PAY NOW */}
+                    <AnimatePresence mode="wait">
                     {paymentMethod === "stripe-link" && (
-                      <div className="space-y-3">
-                        <div className="bg-card border border-border rounded-lg p-3 space-y-1.5">
-                          <div className="flex justify-between text-sm">
+                      <motion.div
+                        key="stripe-policy"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
+                      >
+                        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                          <div className="flex justify-between text-base">
                             <span className="font-body text-muted-foreground">Order Total</span>
                             <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="font-body text-muted-foreground">Processing Fee (3.5%)</span>
+                          <div className="flex justify-between text-base">
+                            <span className="font-body text-muted-foreground">Processing Fee (3.5% + $0.30)</span>
                             <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
                           </div>
                           <Separator className="my-1" />
                           <div className="flex justify-between">
-                            <span className="font-display text-sm text-foreground">TOTAL CHARGE</span>
-                            <span className="font-display text-lg text-primary">{formatCurrency(totalWithProcessingFee)}</span>
+                            <span className="font-display text-base text-foreground">TOTAL CHARGE</span>
+                            <span className="font-display text-xl text-primary">{formatCurrency(totalWithProcessingFee)}</span>
                           </div>
                         </div>
-                        <p className="font-body text-[10px] text-muted-foreground text-center">
-                          3.5% processing fee applies. Pay at delivery to avoid.
-                        </p>
-                      </div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1.5">
+                          <p className="font-body text-sm text-blue-900 leading-relaxed flex items-start gap-2">
+                            <CreditCard className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
+                            Processing fee ({formatCurrency(processingFee)}) is <strong>non-refundable</strong> if order is cancelled
+                          </p>
+                        </div>
+                      </motion.div>
                     )}
 
+                    {/* Policy notice: AT DELIVERY */}
                     {(paymentMethod === "cash" || paymentMethod === "check") && (
-                      <RadioGroup
-                        value={codSubOption}
-                        onValueChange={(v) => {
-                          setCodSubOption(v as "cash" | "check");
-                          setPaymentMethod(v as "cash" | "check");
-                        }}
-                        className="flex gap-6"
+                      <motion.div
+                        key="cod-policy"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
                       >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="cash" id="cash" />
-                          <label htmlFor="cash" className="font-body text-sm text-foreground cursor-pointer">Cash</label>
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-1.5">
+                          <p className="font-body text-sm text-green-900 leading-relaxed flex items-start gap-2">
+                            <Banknote className="w-4 h-4 mt-0.5 shrink-0 text-green-600" />
+                            Cash or check accepted at delivery — no processing fee
+                          </p>
+                          <p className="font-body text-sm text-green-800 leading-relaxed pl-6">No cancellation fee for COD orders</p>
+                          <p className="font-body text-sm text-green-800 leading-relaxed pl-6">Driver will collect payment on arrival</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="check" id="check" />
-                          <label htmlFor="check" className="font-body text-sm text-foreground cursor-pointer">Check</label>
-                        </div>
-                      </RadioGroup>
+                        <RadioGroup
+                          value={codSubOption}
+                          onValueChange={(v) => {
+                            setCodSubOption(v as "cash" | "check");
+                            setPaymentMethod(v as "cash" | "check");
+                          }}
+                          className="flex gap-6"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="cash" id="cash" />
+                            <label htmlFor="cash" className="font-body text-base text-foreground cursor-pointer">Cash</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="check" id="check" />
+                            <label htmlFor="check" className="font-body text-base text-foreground cursor-pointer">Check</label>
+                          </div>
+                        </RadioGroup>
+                      </motion.div>
                     )}
+                    </AnimatePresence>
 
                     {!paymentMethod && (
                       <p className="font-body text-xs text-muted-foreground text-center">Select a payment method to continue.</p>
