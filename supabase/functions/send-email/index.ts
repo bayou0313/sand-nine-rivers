@@ -1185,8 +1185,8 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <p style="font-size:15px;color:#555;line-height:1.6">Our delivery manager is reviewing your request and will get back to you within <strong>${responseTime} hours</strong> during business hours (${bizDays}, ${bizHours}).</p>
         <p style="font-size:15px;color:#555;line-height:1.6">If you have any questions in the meantime, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
-          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">${SENDER_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${SENDER_TITLE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
           <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>
