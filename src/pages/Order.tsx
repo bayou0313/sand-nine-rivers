@@ -171,7 +171,8 @@ const Order = () => {
     return getTaxRateFromAddress(address);
   }, [address, detectedParish]);
 
-  const PROCESSING_FEE_RATE = 0.035;
+  const PROCESSING_FEE_RATE = globalPricing.card_processing_fee_percent / 100;
+  const PROCESSING_FEE_FIXED = globalPricing.card_processing_fee_fixed;
   const effectiveSatSurcharge = getEffectiveSaturdaySurcharge(matchedPitSchedule, globalSaturdaySurcharge);
   const effectiveSunSurcharge = getEffectiveSundaySurcharge(matchedPitSchedule);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
@@ -180,7 +181,7 @@ const Order = () => {
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
-  const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
+  const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2));
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
 
   // Auto-switch to card-only on weekend dates
@@ -1647,7 +1648,7 @@ const Order = () => {
                             <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
                           </div>
                           <div className="flex justify-between text-base">
-                            <span className="font-body text-muted-foreground">Processing Fee (3.5% + $0.30)</span>
+                            <span className="font-body text-muted-foreground">Processing Fee ({globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)})</span>
                             <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
                           </div>
                           <Separator className="my-1" />
@@ -1810,7 +1811,7 @@ const Order = () => {
                       {paymentMethod === "stripe-link" && (
                         <>
                           <ReceiptRow label="Subtotal" value={formatCurrency(totalPrice)} />
-                          <ReceiptRow label="Processing Fee (3.5%)" value={`+${formatCurrency(processingFee)}`} />
+                          <ReceiptRow label={`Processing Fee (${globalPricing.card_processing_fee_percent}% + $${globalPricing.card_processing_fee_fixed.toFixed(2)})`} value={`+${formatCurrency(processingFee)}`} />
                         </>
                       )}
                     </div>

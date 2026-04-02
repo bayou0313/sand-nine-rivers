@@ -243,13 +243,14 @@ const SidebarAccordion = ({ title, children, defaultOpen = false }: { title: str
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
+            key="content"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
           >
-            {children}
+            <div>{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -426,7 +427,9 @@ const Leads = () => {
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
     try {
-      const cardTotal = Math.round(Number(order.price) * 1.035 * 100) / 100;
+      const feePercent = parseFloat(globalSettings.card_processing_fee_percent || "3.5") / 100;
+      const feeFixed = parseFloat(globalSettings.card_processing_fee_fixed || "0.30");
+      const cardTotal = Math.round((Number(order.price) * (1 + feePercent) + feeFixed) * 100) / 100;
       const amountCents = Math.round(cardTotal * 100);
       const { data, error: fnError } = await supabase.functions.invoke("create-checkout-link", {
         body: {
@@ -3598,6 +3601,40 @@ const Leads = () => {
                       <label className="text-xs text-gray-500 block mb-1">Max Daily Delivery Limit (all PITs combined)</label>
                       <Input className="h-9" type="number" value={editSettings.max_daily_limit || ""} onChange={e => setEditSettings({ ...editSettings, max_daily_limit: e.target.value })} placeholder="e.g. 10" />
                       <p className="text-[10px] text-gray-400 mt-1">Leave blank for no global limit</p>
+                    </div>
+                  </div>
+
+                  {/* Processing Fee Settings */}
+                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: BRAND_NAVY }}>Processing Fees</h4>
+                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Applied to card payments and COD late payment conversions</p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Card processing fee (%)</label>
+                      <div className="relative">
+                        <Input className="pr-8 h-9" value={editSettings.card_processing_fee_percent || ""} onChange={e => setEditSettings({ ...editSettings, card_processing_fee_percent: e.target.value })} placeholder="3.5" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Card processing fee (fixed)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 h-9" value={editSettings.card_processing_fee_fixed || ""} onChange={e => setEditSettings({ ...editSettings, card_processing_fee_fixed: e.target.value })} placeholder="0.30" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">COD late payment fee (%)</label>
+                      <div className="relative">
+                        <Input className="pr-8 h-9" value={editSettings.cod_late_payment_fee_percent || ""} onChange={e => setEditSettings({ ...editSettings, cod_late_payment_fee_percent: e.target.value })} placeholder="3.5" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">COD late payment fee (fixed)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 h-9" value={editSettings.cod_late_payment_fee_fixed || ""} onChange={e => setEditSettings({ ...editSettings, cod_late_payment_fee_fixed: e.target.value })} placeholder="0.30" />
+                      </div>
                     </div>
                   </div>
                   <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
