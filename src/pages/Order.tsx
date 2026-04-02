@@ -1233,7 +1233,7 @@ const Order = () => {
             className="flex items-center justify-center gap-1 sm:gap-3 mb-2"
           >
             {stepLabels.map((label, i) => {
-              const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
+              const stepIndex = ["address", "details", "confirm"].indexOf(step);
               const isActive = i <= stepIndex;
               const isCurrent = i === stepIndex;
               const isCompleted = i < stepIndex;
