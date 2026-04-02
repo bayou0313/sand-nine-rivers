@@ -1085,6 +1085,77 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
       await sendMail(resend, data.customer_email, `Great news — River Sand now delivers to ${data.city_name}!`, availableHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Waitlist available notification sent to:", data.customer_email);
 
+    } else if (type === "lead_confirmation") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const responseTime = data.response_time_hours || "2";
+      const bizHours = data.business_hours || "7:00 AM – 5:00 PM";
+      const bizDays = data.business_days || "Monday–Saturday";
+      const leadConfirmHtml = emailWrapper(`
+        <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+        <p style="font-size:15px;color:#555;line-height:1.6">Thank you for your interest in River Sand delivery. We've received your request for delivery to:</p>
+        <div style="background:#F8F7F2;border-left:4px solid ${BRAND_GOLD};padding:16px 20px;border-radius:0 8px 8px 0;margin:16px 0">
+          <p style="margin:0;font-size:15px;font-weight:600;color:${BRAND_COLOR}">${data.delivery_address || "your address"}</p>
+        </div>
+        <p style="font-size:15px;color:#555;line-height:1.6">Our delivery manager is reviewing your request and will get back to you within <strong>${responseTime} hours</strong> during business hours (${bizDays}, ${bizHours}).</p>
+        <p style="font-size:15px;color:#555;line-height:1.6">If you have any questions in the meantime, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
+        <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+        </div>
+      `);
+      await sendMail(resend, data.customer_email, "We received your request — riversand.net", leadConfirmHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Lead confirmation sent to:", data.customer_email);
+
+    } else if (type === "lead_offer") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const price = Number(data.price || 0).toFixed(2);
+      const leadOfferHtml = emailWrapper(`
+        <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+        <p style="font-size:15px;color:#555;line-height:1.6">Great news — we can deliver river sand to your location. Here's your quote:</p>
+        <div style="border:2px solid ${BRAND_GOLD};border-radius:12px;padding:24px;margin:24px 0;text-align:center">
+          <p style="margin:0 0 8px;font-size:14px;color:#555;text-transform:uppercase;letter-spacing:1px">River Sand — 9 Cubic Yards</p>
+          <p style="margin:0 0 4px;font-size:13px;color:#777">Delivered to: ${data.delivery_address || ""}</p>
+          <p style="margin:16px 0 0;font-size:32px;font-weight:700;color:${BRAND_GOLD}">$${price}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#999">Your price, delivered</p>
+        </div>
+        <div style="text-align:center;margin:24px 0">
+          <a href="${data.payment_url || "https://riversand.net"}" style="display:inline-block;background:${BRAND_GOLD};color:#fff!important;padding:16px 48px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:1px">COMPLETE YOUR ORDER</a>
+        </div>
+        <p style="font-size:13px;color:#999;text-align:center">This payment link will expire. Please complete your order promptly.</p>
+        <p style="font-size:14px;color:#555;line-height:1.8">Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a> — we're real people and happy to help.</p>
+        <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+        </div>
+      `);
+      await sendMail(resend, data.customer_email, "Your river sand delivery quote — riversand.net", leadOfferHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Lead offer sent to:", data.customer_email);
+
+    } else if (type === "lead_decline") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const cityName = data.city_name || "your area";
+      const leadDeclineHtml = emailWrapper(`
+        <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+        <p style="font-size:15px;color:#555;line-height:1.6">Thank you for your interest in River Sand delivery. After reviewing your request, we're not yet able to deliver to <strong>${data.delivery_address || cityName}</strong>.</p>
+        <p style="font-size:15px;color:#555;line-height:1.6">The good news is we're actively expanding our delivery area. We've added you to our notification list and will reach out as soon as we begin serving ${cityName}.</p>
+        <div style="text-align:center;margin:24px 0">
+          <a href="https://riversand.net" style="display:inline-block;background:${BRAND_GOLD};color:#fff!important;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px">CHECK DELIVERY AVAILABILITY</a>
+        </div>
+        <p style="font-size:14px;color:#555;line-height:1.8">In the meantime, feel free to check back — our coverage area is growing. Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
+        <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+        </div>
+      `);
+      await sendMail(resend, data.customer_email, "About your river sand delivery request — riversand.net", leadDeclineHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Lead decline sent to:", data.customer_email);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),
