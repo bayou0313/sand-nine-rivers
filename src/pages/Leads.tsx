@@ -1292,6 +1292,13 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchLiveVisitors]);
 
+  // Fetch pending review orders when navigating to that page
+  useEffect(() => {
+    if (activePage === "pending_review" && authenticated) {
+      fetchPendingReview();
+    }
+  }, [activePage, authenticated, fetchPendingReview]);
+
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
