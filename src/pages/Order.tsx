@@ -154,9 +154,11 @@ const Order = () => {
 
   const PROCESSING_FEE_RATE = 0.035;
   const effectiveSatSurcharge = getEffectiveSaturdaySurcharge(matchedPitSchedule, globalSaturdaySurcharge);
+  const effectiveSunSurcharge = getEffectiveSundaySurcharge(matchedPitSchedule);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
+  const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
   const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
-  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal - effectiveDiscount : 0;
+  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
   const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
