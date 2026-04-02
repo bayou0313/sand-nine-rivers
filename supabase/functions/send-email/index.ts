@@ -714,8 +714,8 @@ function brandedEmailWrapper(options: {
 }
 
 // Keep old emailWrapper as alias for backward compat
-function emailWrapper(body: string) {
-  return brandedEmailWrapper({ content: body });
+function emailWrapper(body: string, bizOverrides?: { bizPhone?: string; bizEmail?: string; bizWebsite?: string; bizLegalName?: string }) {
+  return brandedEmailWrapper({ content: body, ...bizOverrides });
 }
 
 function orderInternalEmail(order: any) {
