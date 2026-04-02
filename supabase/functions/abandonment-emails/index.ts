@@ -137,7 +137,7 @@ serve(async (req: Request) => {
             <p>We noticed you didn't complete your order. Your delivery details are saved.</p>
             <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW</a></p>
             <p>Questions? Call us at <a href="tel:+18554689297">${PHONE}</a> — we're real people and happy to help.</p>
-            <p style="margin-top:24px">— Silas Caldeira<br>River Sand | ${PHONE}</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
           `),
         });
 
