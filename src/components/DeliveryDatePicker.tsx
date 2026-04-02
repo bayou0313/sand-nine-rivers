@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const SATURDAY_SURCHARGE = 35;
 const CUTOFF_HOUR = 10; // 10:00 AM Central
@@ -13,6 +14,7 @@ export type DeliveryDate = {
   fullLabel: string;    // "Friday, March 28"
   isSameDay: boolean;
   isSaturday: boolean;
+  isSunday: boolean;
   iso: string;          // "2026-03-28"
   dayOfWeek: string;    // "Monday", "Saturday", etc.
 };
@@ -20,6 +22,7 @@ export type DeliveryDate = {
 export type PitSchedule = {
   operating_days: number[] | null; // 0=Sun..6=Sat, null=all days
   saturday_surcharge_override: number | null;
+  sunday_surcharge: number | null;
   same_day_cutoff: string | null; // "HH:MM" 24hr Central
 };
 
@@ -108,6 +111,9 @@ export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null): (De
     // Never show Sundays unless PIT explicitly includes Sunday
     if (isSunday(d) && !(hasDaysConfig && operatingDays!.includes(0))) continue;
 
+    // Never show Saturdays unless PIT explicitly includes Saturday
+    if (isSaturday(d) && hasDaysConfig && !operatingDays!.includes(6)) continue;
+
     const isToday = i === 0;
 
     // Determine if today qualifies for same-day
@@ -125,6 +131,7 @@ export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null): (De
       fullLabel: formatFull(d),
       isSameDay: isToday,
       isSaturday: isSaturday(d),
+      isSunday: isSunday(d),
       iso: toIso(d),
       dayOfWeek: formatDayOfWeek(d),
     };
@@ -152,19 +159,64 @@ export function getEffectiveSaturdaySurcharge(pitSchedule?: PitSchedule | null, 
   return SATURDAY_SURCHARGE;
 }
 
+export function getEffectiveSundaySurcharge(pitSchedule?: PitSchedule | null): number {
+  return pitSchedule?.sunday_surcharge ?? 0;
+}
+
 export { SATURDAY_SURCHARGE };
+
+type LoadCounts = {
+  counts: Record<string, number>;
+  saturday_load_limit: number | null;
+  sunday_load_limit: number | null;
+  max_daily_limit: number | null;
+};
 
 type Props = {
   selectedDate: DeliveryDate | null;
   onSelect: (d: DeliveryDate) => void;
   pitSchedule?: PitSchedule | null;
   globalSaturdaySurcharge?: number;
+  pitId?: string | null;
 };
 
-const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturdaySurcharge }: Props) => {
+const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturdaySurcharge, pitId }: Props) => {
   const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule), [pitSchedule]);
   const effectiveSatSurcharge = useMemo(() => getEffectiveSaturdaySurcharge(pitSchedule, globalSaturdaySurcharge), [pitSchedule, globalSaturdaySurcharge]);
-  const allBlocked = useMemo(() => dates.length === 0 || dates.every(d => d.blocked), [dates]);
+  const effectiveSunSurcharge = useMemo(() => getEffectiveSundaySurcharge(pitSchedule), [pitSchedule]);
+  const [loadData, setLoadData] = useState<LoadCounts | null>(null);
+
+  // Fetch load counts when pitId changes
+  useEffect(() => {
+    if (!pitId || dates.length === 0) {
+      setLoadData(null);
+      return;
+    }
+    const weekendDates = dates.filter(d => d.isSaturday || d.isSunday).map(d => d.iso);
+    if (weekendDates.length === 0) {
+      setLoadData(null);
+      return;
+    }
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("leads-auth", {
+          body: { action: "get_date_load_counts", pit_id: pitId, dates: weekendDates },
+        });
+        if (!error && data) setLoadData(data);
+      } catch { /* silent */ }
+    })();
+  }, [pitId, dates]);
+
+  const isFullyBooked = (d: DeliveryDate & { blocked?: boolean }) => {
+    if (!loadData || d.blocked) return false;
+    const count = loadData.counts[d.iso] || 0;
+    if (loadData.max_daily_limit != null && count >= loadData.max_daily_limit) return true;
+    if (d.isSaturday && loadData.saturday_load_limit != null && count >= loadData.saturday_load_limit) return true;
+    if (d.isSunday && loadData.sunday_load_limit != null && count >= loadData.sunday_load_limit) return true;
+    return false;
+  };
+
+  const allBlocked = useMemo(() => dates.length === 0 || dates.every(d => d.blocked || isFullyBooked(d)), [dates, loadData]);
   const showCutoffWarning = useMemo(() => {
     if (!selectedDate?.isSameDay) return false;
     return getSameDayCutoffWarning(pitSchedule);
@@ -187,7 +239,8 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {dates.map((d, i) => {
             const isSelected = selectedDate?.iso === d.iso;
-            const isBlocked = d.blocked;
+            const isBlocked = d.blocked || isFullyBooked(d);
+            const booked = isFullyBooked(d);
             return (
               <motion.button
                 key={d.iso}
@@ -200,25 +253,34 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
                 className={`flex-shrink-0 w-[88px] rounded-xl p-3 text-center border-2 transition-all duration-200 ${
                   isBlocked
                     ? "border-border bg-muted/50 opacity-50 cursor-not-allowed"
+                    : isSelected && d.isSunday
+                    ? "border-indigo-500 bg-indigo-50 shadow-lg shadow-indigo-500/20 scale-105"
                     : isSelected && d.isSaturday
                     ? "border-amber-500 bg-amber-50 shadow-lg shadow-amber-500/20 scale-105"
                     : isSelected
                     ? "border-accent bg-accent/10 shadow-lg shadow-accent/20 scale-105"
+                    : d.isSunday
+                    ? "border-indigo-300 bg-indigo-50/60 hover:border-indigo-400 hover:shadow-md"
                     : d.isSaturday
                     ? "border-amber-300 bg-amber-50/60 hover:border-amber-400 hover:shadow-md"
                     : "border-border bg-card hover:border-primary/40 hover:shadow-md"
                 }`}
               >
-                <p className={`font-display text-sm tracking-wider ${isBlocked ? "text-muted-foreground" : isSelected ? "text-accent" : "text-muted-foreground"}`}>
+                <p className={`font-display text-sm tracking-wider ${isBlocked ? "text-muted-foreground" : isSelected ? (d.isSunday ? "text-indigo-600" : d.isSaturday ? "text-amber-600" : "text-accent") : "text-muted-foreground"}`}>
                   {d.label}
                 </p>
                 <p className={`font-display text-xl mt-1 ${isBlocked ? "text-muted-foreground line-through" : "text-foreground"}`}>
                   {d.dateStr.split(" ")[1]}
                 </p>
-                <p className={`font-body text-[10px] mt-0.5 ${isBlocked ? "text-muted-foreground" : isSelected ? "text-accent" : "text-muted-foreground"}`}>
+                <p className={`font-body text-[10px] mt-0.5 ${isBlocked ? "text-muted-foreground" : isSelected ? (d.isSunday ? "text-indigo-600" : d.isSaturday ? "text-amber-600" : "text-accent") : "text-muted-foreground"}`}>
                   {d.dateStr.split(" ")[0]}
                 </p>
-                {isBlocked && (
+                {booked && (
+                  <span className="inline-block mt-1.5 text-[8px] font-display tracking-wider bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">
+                    FULLY BOOKED
+                  </span>
+                )}
+                {!isBlocked && d.blocked && (
                   <span className="inline-block mt-1.5 text-[8px] font-display tracking-wider text-muted-foreground">
                     CLOSED
                   </span>
@@ -228,9 +290,14 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
                     SAME DAY
                   </span>
                 )}
-                {!isBlocked && d.isSaturday && (
+                {!isBlocked && !booked && d.isSaturday && (
                   <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-amber-400/20 text-amber-600 px-1.5 py-0.5 rounded-full">
                     SAT +${effectiveSatSurcharge}
+                  </span>
+                )}
+                {!isBlocked && !booked && d.isSunday && effectiveSunSurcharge > 0 && (
+                  <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-indigo-400/20 text-indigo-600 px-1.5 py-0.5 rounded-full">
+                    SUN +${effectiveSunSurcharge}
                   </span>
                 )}
               </motion.button>
@@ -248,6 +315,19 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
           <p className="font-body text-sm text-amber-800 flex items-center gap-2">
             <CalendarDays className="w-4 h-4 shrink-0" />
             Saturday delivery — ${effectiveSatSurcharge} surcharge added. Limited spots available.
+          </p>
+        </motion.div>
+      )}
+
+      {selectedDate?.isSunday && effectiveSunSurcharge > 0 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg"
+        >
+          <p className="font-body text-sm text-indigo-800 flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 shrink-0" />
+            Sunday delivery — ${effectiveSunSurcharge} surcharge added. Limited spots available.
           </p>
         </motion.div>
       )}
