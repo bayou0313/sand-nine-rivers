@@ -1702,6 +1702,7 @@ const Leads = () => {
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
     settings: { title: "GLOBAL SETTINGS" },
+    pending_review: { title: "PENDING REVIEW", subtitle: `${pendingReviewOrders.length} orders to review` },
   };
 
   // Login screen
