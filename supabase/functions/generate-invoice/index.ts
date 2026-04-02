@@ -57,20 +57,20 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
 
   const textY = footerY + 10;
 
-  // WAYS logo on the left
+  // WAYS logo on the left — 40% larger
   if (footerLogoB64) {
     try {
-      doc.addImage(`data:image/png;base64,${footerLogoB64}`, "PNG", mx, footerY + 3, 24, 0);
+      doc.addImage(`data:image/png;base64,${footerLogoB64}`, "PNG", mx, footerY + 2, 33.6, 0);
     } catch { /* skip */ }
   }
 
-  // Text right-aligned
+  // Text right-aligned — 40% brighter
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(180, 180, 180);
   doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw - mx, textY, { align: "right" });
   doc.setFontSize(6);
-  doc.setTextColor(160, 160, 160);
+  doc.setTextColor(200, 200, 200);
   doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 4, { align: "right" });
 }
 
