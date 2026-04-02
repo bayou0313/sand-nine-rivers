@@ -999,6 +999,17 @@ const Order = () => {
         order_number: inserted?.order_number || null,
       });
 
+      // Fire-and-forget new order notification
+      supabase.functions.invoke("leads-auth", {
+        body: {
+          action: "notify_new_order",
+          customer_name: form.name,
+          payment_method: codSubOption,
+          delivery_address: address,
+          order_id: inserted?.id,
+        },
+      }).catch(() => {});
+
       // Send order confirmation email with totals passed directly (state not yet updated)
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
 
