@@ -1847,8 +1847,8 @@ const Order = () => {
                       className="mt-0.5 w-4 h-4 rounded accent-primary"
                     />
                     <span className="font-body text-xs text-foreground leading-relaxed">
-                      I have read and agree to the delivery terms and cancellation policy.
-                      I understand that processing fees are non-refundable.
+                      I agree to the payment terms and cancellation policy.
+                      Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.
                     </span>
                   </label>
                 </div>
