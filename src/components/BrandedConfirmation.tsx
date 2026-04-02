@@ -135,14 +135,14 @@ export default function BrandedConfirmation({
             Questions? We're here to help.
           </p>
           <a
-            href="tel:18554689297"
+            href={`tel:${biz.phone_tel}`}
             className="font-display text-lg tracking-wider block"
             style={{ color: "#C07A00" }}
           >
-            1-855-GOT-WAYS
+            {biz.phone}
           </a>
           <p className="text-xs" style={{ color: "#9CA3AF" }}>
-            orders@riversand.net
+            {biz.support_email}
           </p>
         </div>
 
