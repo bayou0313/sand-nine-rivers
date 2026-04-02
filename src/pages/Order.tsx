@@ -1847,6 +1847,15 @@ const Order = () => {
             {/* SUCCESS — Full Confirmation Page */}
             {step === "success" && (
               <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+                {verifyingPayment ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                    <h2 className="text-xl font-semibold text-foreground">Confirming your payment...</h2>
+                    <p className="text-muted-foreground text-sm text-center max-w-md">
+                      We're verifying your payment with our processor. This usually takes just a few seconds.
+                    </p>
+                  </div>
+                ) : (
                 <OrderConfirmation
                   orderNumber={orderNumber}
                   address={address}
