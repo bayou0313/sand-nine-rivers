@@ -1,89 +1,63 @@
 
 
-## Plan: Independent Weekend PIT Selection
+## Plan: City Name "La" Suffix Cleanup
 
-### Overview
-Pre-resolve the best PIT for Saturday and Sunday independently when the delivery address is confirmed. Store results in a `weekendPitMap`. When a weekend date is selected, swap the active PIT/price/schedule to the weekend PIT's values. When switching back to weekday, restore the original weekday PIT. Two files only.
+### Part A — Data Fix (SQL Migration)
+
+**Step 1: Audit query** (run first to see affected rows):
+```sql
+SELECT id, city_name, city_slug
+FROM city_pages
+WHERE city_name ~* '\s*,?\s*la$';
+```
+
+**Step 2: UPDATE statement** (in a migration):
+```sql
+UPDATE city_pages
+SET city_name = RTRIM(regexp_replace(city_name, '\s*,?\s*[Ll][Aa]$', ''), ' '),
+    updated_at = now()
+WHERE city_name ~* '\s*,?\s*la$';
+```
+
+This strips trailing ` La`, ` LA`, ` la`, `, La`, `, LA`, `, la` from `city_name`.
 
 ---
 
-### Order.tsx Changes
+### Part B — Template Guard in `CityPage.tsx`
 
-**New types** (after line 44):
+**Add a utility function** near line 27 (next to `slugToTitle`):
 ```typescript
-type WeekendPitEntry = {
-  pit: PitData;
-  distance: number;
-  price: number;
-  schedule: PitSchedule;
-  satSurcharge: number;
-  sunSurcharge: number;
-};
-type WeekendPitMap = Partial<Record<0 | 6, WeekendPitEntry>>;
+const cleanCityName = (name: string): string =>
+  name.replace(/\s*,?\s*[Ll][Aa]$/, '').trim();
 ```
 
-**New state** (after line 74):
-- `weekendPitMap: WeekendPitMap` — resolved weekend PITs
-- `weekdayPit / weekdayResult / weekdayPitSchedule` — stashed weekday values for restore
-
-**New helper** `resolveWeekendPits(allPits, lat, lng, globalPricing, supabase) → WeekendPitMap`:
-- Runs `findBestPitDriving` in parallel for day 6 and day 0
-- For each serviceable result, builds entry with pit, distance, price, schedule (from pit's fields), `satSurcharge` (from `saturday_surcharge_override ?? global`), `sunSurcharge` (from `sunday_surcharge ?? 0`)
-- Non-serviceable or null → omitted from map (that weekend day won't show)
-
-**In `calculateDistance`** (after line 631, after setting matchedPit):
-- Stash weekday state: `setWeekdayPit(bestResult.pit)`, `setWeekdayResult(resultObj)`, `setWeekdayPitSchedule(scheduleObj)`
-- Call `resolveWeekendPits` and store in `weekendPitMap`
-
-**URL params flow** (Risk Area 2 — new `useEffect`):
-- Watch `[allPits, address]` — when allPits loaded AND address exists from URL params AND `customerCoords` is null AND weekendPitMap is empty:
-  - Geocode the address using `window.google.maps.Geocoder` to get coords
-  - Set `customerCoords`
-  - Call `resolveWeekendPits` with those coords
-  - Also stash the current matchedPit as weekdayPit
-
-**Replace onSelect handler** (lines 1149–1173):
-- Remove the existing reactive `findBestPitDriving` call on date select
-- New logic:
-  - If weekend date selected → look up `weekendPitMap[dayKey]`; if found, swap matchedPit/result/schedule to weekend entry values
-  - If weekday date selected → restore weekdayPit/weekdayResult/weekdayPitSchedule
-  - No API calls on date selection — everything pre-resolved
-
-**Pass new props to DeliveryDatePicker** (line 1177):
-- `weekendPitMap={weekendPitMap}`
-- `weekdayPitName={weekdayPit?.name || matchedPit?.name}`
-
-**buildOrderData** (line 710): `pit_id: matchedPit?.id` — already correct since matchedPit dynamically reflects the active PIT.
-
----
-
-### DeliveryDatePicker.tsx Changes
-
-**New props**:
+**Apply it once** after data is fetched — in the `fetchPage` callback (~line 193), right after `setCityPage(data)`:
 ```typescript
-weekendPitMap?: Partial<Record<0 | 6, {
-  pit: { id: string; name: string };
-  satSurcharge: number;
-  sunSurcharge: number;
-}>>;
-weekdayPitName?: string;
+data.city_name = cleanCityName(data.city_name);
+setCityPage(data);
 ```
 
-**Date filtering**: After computing dates, filter out:
-- Saturday dates where `weekendPitMap` is provided but has no entry for key `6`
-- Sunday dates where `weekendPitMap` is provided but has no entry for key `0`
+This single mutation point ensures every downstream usage (Helmet title, H1, schemas, Hero, waitlist page, "Other Areas" links) receives the cleaned name. No other render locations need individual fixes.
 
-**"From [name]" label**: On weekend date cards, if `weekendPitMap[dayKey]?.pit.name !== weekdayPitName`, show small text below the date.
+Also apply to the `slugToTitle` loading-state path (~line 242) — this path derives from the URL slug, not DB data, so it's already clean. No change needed there.
 
-**Weekend surcharge badges**: When `weekendPitMap` is provided, use `weekendPitMap[6]?.satSurcharge` for Saturday badges and `weekendPitMap[0]?.sunSurcharge` for Sunday badges instead of the default pitSchedule values.
-
-**Load count fetching**: Update the `useEffect` to fetch load counts per unique weekend PIT ID from the map (Saturday PIT may differ from Sunday PIT and from weekday PIT).
+The WaitlistPage component receives `cityPage` as a prop, so it inherits the cleaned name automatically.
 
 ---
 
 ### Files Modified
-- `src/pages/Order.tsx`
-- `src/components/DeliveryDatePicker.tsx`
+1. **New migration file** — SQL UPDATE to clean existing data
+2. **`src/pages/CityPage.tsx`** — add `cleanCityName` utility, apply after fetch
 
-No edge functions, database, or other files changed.
+### Files NOT Touched
+- `Order.tsx`, `pits.ts`, `google-maps.ts`, `useGoogleMaps.ts`
+- All Supabase edge functions (stripe-webhook, send-email, generate-city-page, leads-auth, etc.)
+- `create_order` RPC, RLS policies, pricing logic
+- No other components or pages
+
+### Risk Areas
+- **Regex edge case**: A city literally ending in "la" (e.g., "Eola") would be affected. The regex `\s*,?\s*[Ll][Aa]$` requires whitespace or comma before "La", so "Eola" is safe. "Mandeville La" → "Mandeville" ✓. "Eola" → unchanged ✓.
+- **Migration is a one-way data change** — but the template guard prevents recurrence, and the AI generation pipeline (`generate-city-page`) may re-insert suffixed names. The guard handles that defensively.
+
+### No Questions — Ready for Approval
 
