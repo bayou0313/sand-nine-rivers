@@ -241,6 +241,7 @@ const Order = () => {
                   iso: order.delivery_date,
                   dayOfWeek: order.delivery_day_of_week || dayNames[d.getDay()],
                   isSaturday: order.saturday_surcharge || false,
+                  isSunday: order.sunday_surcharge || false,
                   isSameDay: order.same_day_requested || false,
                 });
               }
