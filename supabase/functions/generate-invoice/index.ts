@@ -69,9 +69,12 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
   doc.setFont("helvetica", "normal");
   doc.setTextColor(180, 180, 180);
   doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw - mx, textY, { align: "right" });
+  doc.setFontSize(7);
+  doc.setTextColor(180, 180, 180);
+  doc.text("202 Larosa Dr, Long Beach, MS", pw - mx, textY + 4, { align: "right" });
   doc.setFontSize(6);
   doc.setTextColor(200, 200, 200);
-  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 4, { align: "right" });
+  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 8, { align: "right" });
 }
 
 serve(async (req) => {
@@ -335,11 +338,8 @@ serve(async (req) => {
       y += rowH;
     });
 
-    // Grey separator after line items
-    y += 1;
-    doc.setDrawColor(...LIGHT_GRAY);
-    doc.line(tableX, y, pw - mx, y);
-    y += 6;
+    // Tight spacing after last line item
+    y += 3;
 
     // ─── PAYMENT STATUS BOX ───
     if (isPaid) {
@@ -375,12 +375,12 @@ serve(async (req) => {
     ];
 
     const hasCODBox = !isPaid;
-    const codBlockH = 16;
+    const codBlockH = 14;
 
     // Measure terms height to position just above footer
     let termsHeight = 0;
     if (hasCODBox) {
-      termsHeight += codBlockH + 4; // text block + gap
+      termsHeight += codBlockH + 2; // text block + tight gap
     }
     termsHeight += 5; // DELIVERY TERMS header
     bullets.forEach((b) => {
@@ -389,7 +389,7 @@ serve(async (req) => {
     });
 
     // Position terms: either after content or pushed to fill space above footer
-    const termsStartY = Math.max(y + 4, maxContentY - termsHeight - 4);
+    const termsStartY = Math.max(y + 2, maxContentY - termsHeight - 2);
 
     // Check if terms fit on current page, otherwise add page
     if (termsStartY + termsHeight > maxContentY) {
@@ -421,7 +421,7 @@ serve(async (req) => {
       doc.setTextColor(...GRAY);
       doc.text("Exact amount required — driver carries no change", pw - mx, y + 9, { align: "right" });
 
-      y += 16;
+      y += 14;
     }
 
     // Delivery terms
