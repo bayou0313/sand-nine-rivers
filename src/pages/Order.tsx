@@ -1462,6 +1462,10 @@ const Order = () => {
                         <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div>
+                        <label htmlFor="order-company" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Company Name</label>
+                        <Input id="order-company" name="companyName" autoComplete="organization" placeholder="Optional" maxLength={100} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="h-[52px] rounded-lg text-base" />
+                      </div>
+                      <div>
                         <label htmlFor="order-phone" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Phone *</label>
                         <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-[52px] rounded-lg text-base" />
                       </div>
