@@ -1684,7 +1684,7 @@ const Order = () => {
                             </li>
                             <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
                               <span className="text-amber-500 mt-0.5 shrink-0">•</span>
-                              Cash is accepted on arrival
+                              Cash or check is accepted on arrival
                             </li>
                             <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
                               <span className="text-amber-500 mt-0.5 shrink-0">•</span>
