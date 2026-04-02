@@ -389,7 +389,7 @@ serve(async (req) => {
 
     interface PriceLine { desc: string; amt: string }
     const priceLines: PriceLine[] = [];
-    priceLines.push({ desc: `River Sand — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
+    priceLines.push({ desc: `${biz.site_name} — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
     if (distanceFee > 0) priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
     if (satSurcharge > 0) priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
     if (taxAmount > 0) {
