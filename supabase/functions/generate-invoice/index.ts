@@ -372,12 +372,12 @@ serve(async (req) => {
     ];
 
     const hasCODBox = !isPaid;
-    const codBlockH = 16;
+    const codBlockH = 14;
 
     // Measure terms height to position just above footer
     let termsHeight = 0;
     if (hasCODBox) {
-      termsHeight += codBlockH + 4; // text block + gap
+      termsHeight += codBlockH + 2; // text block + tight gap
     }
     termsHeight += 5; // DELIVERY TERMS header
     bullets.forEach((b) => {
