@@ -3635,7 +3635,6 @@ const Leads = () => {
                       </div>
                     </div>
                   </div>
-                  </div>
                   <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
