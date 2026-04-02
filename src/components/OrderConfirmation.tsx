@@ -58,7 +58,7 @@ const DELIVERY_TERMS = [
   },
   {
     title: "Cancellation Policy",
-    body: "Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.",
+    body: "Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.",
   },
 ];
 
