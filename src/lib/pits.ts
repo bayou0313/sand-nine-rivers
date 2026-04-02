@@ -25,6 +25,7 @@ export interface PitData {
   saturday_surcharge_override: number | null;
   same_day_cutoff: string | null;
   sunday_surcharge: number | null;
+  is_pickup_only?: boolean;
 }
 
 export interface GlobalPricing {
