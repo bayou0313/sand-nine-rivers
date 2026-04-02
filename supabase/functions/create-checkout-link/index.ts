@@ -66,8 +66,14 @@ serve(async (req) => {
       mode: "payment",
       customer_email: customer_email || undefined,
       customer_creation: "always",
+      client_reference_id: order_id || undefined,
       payment_intent_data: {
         setup_future_usage: "off_session",
+        metadata: {
+          order_id: order_id || "",
+          order_number: order_number || "",
+          customer_name: customer_name || "",
+        },
       },
       metadata: {
         order_id: order_id || "",
@@ -77,6 +83,8 @@ serve(async (req) => {
       success_url: `${safeOrigin}/order?payment=success&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}&session_id={CHECKOUT_SESSION_ID}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
       cancel_url: `${safeOrigin}/order?payment=canceled&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
     });
+
+    console.log(`[create-checkout-link] session created: ${session.id}, order_id: ${order_id}, order_number: ${order_number}`);
 
     return new Response(
       JSON.stringify({ url: session.url }),
