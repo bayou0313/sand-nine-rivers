@@ -291,22 +291,15 @@ serve(async (req) => {
       y += rowH;
     });
 
-    // Grey separator before total
+    // Grey separator after line items
     y += 1;
     doc.setDrawColor(...LIGHT_GRAY);
     doc.line(tableX, y, pw - mx, y);
-    y += 2;
+    y += 6;
 
-    // TOTAL row — left label, right-aligned amount
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...BLACK);
-    doc.text(isPaid ? "TOTAL CHARGED" : "TOTAL DUE AT DELIVERY", tableX, y + 5);
-    doc.text(fmt(order.price), amtX, y + 5, { align: "right" });
-    y += 12;
-
-    // ─── PAYMENT STATUS (card only — green paid box) ───
+    // ─── PAYMENT STATUS BOX ───
     if (isPaid) {
+      // Green "PAID IN FULL" box for card orders
       doc.setDrawColor(187, 247, 208);
       doc.setLineWidth(0.3);
       doc.roundedRect(mx, y, cw, 14, 2, 2, "S");
@@ -324,8 +317,31 @@ serve(async (req) => {
         doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
       }
       y += 18;
+    } else {
+      // Amber "DUE AT DELIVERY" callout box for COD orders
+      const AMBER = [146, 64, 14] as const;
+      const AMBER_BORDER = [217, 119, 6] as const;
+      const boxH = 11;
+      const boxPx = 6;
+      doc.setDrawColor(...AMBER_BORDER);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(mx, y, cw, boxH, 2, 2, "S");
+      doc.setLineWidth(0.2);
+      // Left: label
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...AMBER);
+      doc.text("DUE AT DELIVERY", mx + boxPx, y + 4.5);
+      // Right: amount
+      doc.setFontSize(12);
+      doc.text(fmt(order.price), mx + cw - boxPx, y + 4.5, { align: "right" });
+      // Disclaimer
+      doc.setFontSize(6.5);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY);
+      doc.text("Exact amount required — driver carries no change", mx + boxPx, y + 8.5);
+      y += boxH + 4;
     }
-    // No amber "DUE AT DELIVERY" box — info is covered by total line and terms below
 
     // ─── TERMS BLOCK (pushed to just above footer) ───
     // Calculate how much space the terms block needs
