@@ -401,8 +401,8 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
                   </a>
                 </p>
                 <p style="margin:0;text-align:center;">
-                  <a href="mailto:orders@riversand.net" style="color:#666;font-size:13px;text-decoration:none;">
-                    orders@riversand.net
+                  <a href="mailto:${SUPPORT_EMAIL}" style="color:#666;font-size:13px;text-decoration:none;">
+                    ${SUPPORT_EMAIL}
                   </a>
                 </p>
 
