@@ -319,29 +319,29 @@ const CityPage = () => {
             "@type": "Service",
             name: `River Sand Delivery in ${cityPage.city_name}`,
             description: `Same-day bulk river sand delivery to ${cityPage.city_name}, ${cityPage.state}. 9 cubic yards per load.`,
+            image: "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
           },
-          ...(cityPage.base_price && !cityPage.multi_pit_coverage
+          ...(cityPage.base_price
             ? {
                 price: Number(cityPage.base_price).toFixed(2),
                 priceCurrency: "USD",
-                priceSpecification: {
-                  "@type": "PriceSpecification",
-                  price: Number(cityPage.base_price).toFixed(2),
-                  priceCurrency: "USD",
-                  description: "Starting price for this area",
-                },
               }
-            : {
-                priceSpecification: {
-                  "@type": "PriceSpecification",
-                  priceCurrency: "USD",
-                  description: "Price varies by location — enter address for exact quote",
-                },
-              }),
+            : {}),
+          image: "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
           availability: "https://schema.org/InStock",
           areaServed: {
             "@type": "City",
             name: cityPage.city_name,
+          },
+          hasMerchantReturnPolicy: {
+            "@type": "MerchantReturnPolicy",
+            applicableCountry: "US",
+            returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+          },
+          shippingDetails: {
+            "@type": "OfferShippingDetails",
+            shippingRate: { "@type": "MonetaryAmount", value: "0", currency: "USD" },
+            shippingDestination: { "@type": "DefinedRegion", addressCountry: "US" },
           },
         },
       ],
