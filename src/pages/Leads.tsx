@@ -2248,6 +2248,17 @@ const Leads = () => {
                 Fix All Pit Assignments
               </Button>
               <Button
+                onClick={() => setShowRegenAllConfirm(true)}
+                disabled={cityPages.filter(c => c.status === "active").length === 0}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Regen All to v3.1
+              </Button>
+              <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
                 size="sm"
@@ -2259,6 +2270,49 @@ const Leads = () => {
                 Delete All City Pages
               </Button>
             </div>
+
+            {/* Regen All to v3.1 Confirmation Modal */}
+            {showRegenAllConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regen All to v3.1?</h3>
+                  <p className="text-sm text-gray-600">
+                    This will flag all <strong>{cityPages.filter(c => c.status === "active").length}</strong> active city pages for regeneration with the updated v3.1 prompt (unique meta titles & descriptions with pricing).
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Pages will be queued and processed automatically by the background regen system. No content will change until the queue runs.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" onClick={() => setShowRegenAllConfirm(false)}>Cancel</Button>
+                    <Button
+                      style={{ backgroundColor: BRAND_GOLD, color: "#fff" }}
+                      disabled={flaggingRegenAll}
+                      onClick={async () => {
+                        setFlaggingRegenAll(true);
+                        try {
+                          const pw = sessionStorage.getItem("leads_pw") || "";
+                          const { data, error: fnErr } = await supabase.functions.invoke("leads-auth", {
+                            body: { password: pw, action: "flag_regen_all", regen_reason: "prompt_upgrade" },
+                          });
+                          if (fnErr) throw fnErr;
+                          if (data?.error) throw new Error(data.error);
+                          toast({ title: "Queued for regen", description: `${data.flagged} active pages flagged. Background queue will process them.` });
+                          setShowRegenAllConfirm(false);
+                          fetchCityPages();
+                        } catch (err: any) {
+                          toast({ title: "Error", description: err.message, variant: "destructive" });
+                        } finally {
+                          setFlaggingRegenAll(false);
+                        }
+                      }}
+                    >
+                      {flaggingRegenAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Flag All for Regen
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Delete All City Pages — Step 1 Confirmation Modal */}
             {showDeleteAllConfirm && (

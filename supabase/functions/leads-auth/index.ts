@@ -2444,6 +2444,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ waitlist: waitlist || [] }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    // ── FLAG REGEN ALL (prompt upgrade) ──
+    if (action === "flag_regen_all") {
+      const { regen_reason } = body;
+      const { data: flagged, error: flagErr } = await supabase
+        .from("city_pages")
+        .update({ needs_regen: true, regen_reason: regen_reason || "prompt_upgrade" })
+        .eq("status", "active")
+        .select("id");
+      if (flagErr) throw flagErr;
+      const count = flagged?.length || 0;
+      console.log(`[flag_regen_all] Flagged ${count} active pages for regen (reason: ${regen_reason || "prompt_upgrade"})`);
+      return new Response(
+        JSON.stringify({ success: true, flagged: count }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // ── PROCESS REGEN QUEUE ──
     if (action === "process_regen_queue") {
