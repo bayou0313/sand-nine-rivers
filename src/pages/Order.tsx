@@ -1912,6 +1912,7 @@ const Order = () => {
       address={outOfAreaAddress}
       distanceMiles={outOfAreaDistance}
       nearestPit={nearestPitInfo}
+      calculatedPrice={null}
     />
   </>
   );
