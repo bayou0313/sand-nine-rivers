@@ -91,7 +91,7 @@ function parseCutoffHour(cutoff: string | null | undefined): number {
   return CUTOFF_HOUR;
 }
 
-export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null): (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] {
+export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null, maxSlots: number = 7): (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] {
   const centralNow = getCentralTime();
   const centralHour = centralNow.getHours() + centralNow.getMinutes() / 60;
   const today = getCentralDate();
