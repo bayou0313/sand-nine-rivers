@@ -1811,7 +1811,7 @@ const Order = () => {
                       {paymentMethod === "stripe-link" && (
                         <>
                           <ReceiptRow label="Subtotal" value={formatCurrency(totalPrice)} />
-                          <ReceiptRow label="Processing Fee (3.5%)" value={`+${formatCurrency(processingFee)}`} />
+                          <ReceiptRow label={`Processing Fee (${globalPricing.card_processing_fee_percent}% + $${globalPricing.card_processing_fee_fixed.toFixed(2)})`} value={`+${formatCurrency(processingFee)}`} />
                         </>
                       )}
                     </div>
