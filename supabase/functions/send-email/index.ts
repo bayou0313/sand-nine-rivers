@@ -879,6 +879,8 @@ serve(async (req) => {
     SITE_NAME = emailCfg.site_name || "River Sand";
     COPYRIGHT_YEAR = emailCfg.copyright_year || "2026";
     TAGLINE = emailCfg.tagline || "Real Sand. Real People.";
+    const SENDER_NAME = emailCfg.sender_name || "Silas Caldeira";
+    const SENDER_TITLE = emailCfg.sender_title || "Founder & CEO";
 
     // Biz overrides for brandedEmailWrapper calls
     const bizOverrides = { bizPhone: PHONE, bizEmail: SUPPORT_EMAIL, bizWebsite: WEBSITE, bizLegalName: LEGAL_NAME };
