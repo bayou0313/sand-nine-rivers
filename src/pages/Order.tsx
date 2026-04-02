@@ -72,6 +72,7 @@ const Order = () => {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
   const { loaded: apiLoaded } = useGoogleMaps();
