@@ -847,6 +847,8 @@ serve(async (req) => {
     const FROM_NAME = emailCfg.email_from_name || DEFAULT_FROM_NAME;
     const REPLY_TO = emailCfg.email_reply_to || DEFAULT_REPLY_TO;
     const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
+    const FEE_PERCENT = parseFloat(emailCfg.card_processing_fee_percent || "3.5");
+    const FEE_FIXED = parseFloat(emailCfg.card_processing_fee_fixed || "0.30");
 
     console.log("[send-email] Email config — dispatch:", DISPATCH_EMAIL, "from:", FROM);
 
