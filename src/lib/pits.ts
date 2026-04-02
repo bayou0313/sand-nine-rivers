@@ -82,6 +82,8 @@ export function parseGlobalSettings(rows: { key: string; value: string }[]): Glo
     extra_per_mile: parseFloat(map.default_extra_per_mile) || FALLBACK_EXTRA_PER_MILE,
     max_distance: parseFloat(map.default_max_distance) || FALLBACK_MAX_DISTANCE,
     saturday_surcharge: parseFloat(map.saturday_surcharge) || FALLBACK_SATURDAY_SURCHARGE,
+    card_processing_fee_percent: parseFloat(map.card_processing_fee_percent) || 3.5,
+    card_processing_fee_fixed: parseFloat(map.card_processing_fee_fixed) || 0.30,
   };
 }
 
