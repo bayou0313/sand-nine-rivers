@@ -146,10 +146,11 @@ export interface OrderConfirmationProps {
   taxInfo: { rate: number; parish: string };
   basePricePerLoad: number;
   distanceFee: number;
-  onPrint: () => void;
   onDownloadInvoice: () => void;
   downloadingInvoice: boolean;
   canDownload: boolean;
+  customerName: string;
+  customerPhone: string;
 }
 
 export default function OrderConfirmation({
