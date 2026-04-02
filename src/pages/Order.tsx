@@ -1881,6 +1881,7 @@ const Order = () => {
                   downloadingInvoice={downloadingInvoice}
                   canDownload={!!confirmedOrderId}
                 />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
