@@ -1130,7 +1130,7 @@ const Order = () => {
 
   const handleDownloadInvoice = async () => {
     if (!confirmedOrderId || !lookupToken) {
-      toast({ title: "Unable to download", description: "Order information not available.", variant: "destructive" });
+      toast({ title: "Unable to view", description: "Order information not available.", variant: "destructive" });
       return;
     }
     setDownloadingInvoice(true);
@@ -1142,15 +1142,10 @@ const Order = () => {
 
       const blob = new Blob([response.data], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Invoice-${orderNumber || "order"}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Open in new tab for viewing/printing instead of triggering download
+      window.open(url, "_blank");
     } catch (err: any) {
-      toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
+      toast({ title: "Failed to open invoice", description: err.message || "Please try again.", variant: "destructive" });
     } finally {
       setDownloadingInvoice(false);
     }
