@@ -267,6 +267,46 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
   };
 
   const allBlocked = useMemo(() => dates.length === 0 || dates.every(d => d.blocked || isFullyBooked(d)), [dates, loadData]);
+
+  // Find the next available date beyond the initial 7 when all are blocked
+  const [nextAvailable, setNextAvailable] = useState<DeliveryDate | null>(null);
+  useEffect(() => {
+    if (!allBlocked || !pitId) { setNextAvailable(null); return; }
+    // Scan up to 21 days out
+    const extended = getAvailableDeliveryDates(pitSchedule, 21);
+    // Filter to dates beyond the initial set
+    const lastShownIso = dates.length > 0 ? dates[dates.length - 1].iso : "";
+    const candidates = extended.filter(d => d.iso > lastShownIso && !d.blocked);
+    if (candidates.length === 0) { setNextAvailable(null); return; }
+
+    // Fetch load counts for candidates to check if they're booked
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("leads-auth", {
+          body: { action: "get_date_load_counts", pit_id: pitId, dates: candidates.map(c => c.iso) },
+        });
+        if (!data) { setNextAvailable(candidates[0]); return; }
+        const maxDaily = data.max_daily_limit;
+        const globalCts = data.global_counts || {};
+        const satLimit = data.saturday_load_limit;
+        const sunLimit = data.sunday_load_limit;
+        const cts = data.counts || {};
+        for (const c of candidates) {
+          const gc = globalCts[c.iso] || 0;
+          const pc = cts[c.iso] || 0;
+          if (maxDaily != null && gc >= maxDaily) continue;
+          if (c.isSaturday && satLimit != null && pc >= satLimit) continue;
+          if (c.isSunday && sunLimit != null && pc >= sunLimit) continue;
+          setNextAvailable(c);
+          return;
+        }
+        setNextAvailable(null);
+      } catch {
+        setNextAvailable(candidates[0]);
+      }
+    })();
+  }, [allBlocked, pitId, pitSchedule, dates]);
+
   const showCutoffWarning = useMemo(() => {
     if (!selectedDate?.isSameDay) return false;
     return getSameDayCutoffWarning(pitSchedule);
@@ -281,9 +321,20 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
           <p className="font-body text-sm text-amber-800 font-medium">
             No delivery dates available in the next 7 days from this location.
           </p>
-          <p className="font-body text-xs text-amber-600 mt-1">
-            Call 1-855-GOT-WAYS for scheduling.
-          </p>
+          {nextAvailable ? (
+            <button
+              type="button"
+              onClick={() => onSelect(nextAvailable)}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground font-display text-sm tracking-wider rounded-lg shadow-md hover:shadow-lg hover:bg-accent/90 transition-all"
+            >
+              <CalendarDays className="w-4 h-4" />
+              Next available: {nextAvailable.fullLabel}
+            </button>
+          ) : (
+            <p className="font-body text-xs text-amber-600 mt-1">
+              Call 1-855-GOT-WAYS for scheduling.
+            </p>
+          )}
         </div>
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
