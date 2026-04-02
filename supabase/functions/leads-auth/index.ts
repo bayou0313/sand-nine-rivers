@@ -791,6 +791,90 @@ serve(async (req) => {
         console.log(`[save_pit] Deactivation complete: ${deactivation_reassigned} reassigned, ${deactivation_waitlisted} waitlisted`);
       }
 
+      // ── PART 2b: PIT reactivation — reassign closer pages ──
+      let reactivation_reassigned = 0;
+      let reactivation_unwaitlisted = 0;
+      if (!isNewPit && existingPitStatus !== "active" && savedPit.status === "active") {
+        console.log(`[save_pit] PIT reactivated: ${savedPit.name} — checking for closer assignments`);
+
+        // Get ALL city pages with coordinates
+        const { data: allPages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, city_slug, lat, lng, distance_from_pit, pit_id, status, base_price")
+          .not("lat", "is", null)
+          .not("lng", "is", null);
+
+        if (allPages && allPages.length > 0) {
+          // Fetch global settings for pricing
+          const { data: gsReact } = await supabase.from("global_settings").select("key, value");
+          const gMapReact: Record<string, string> = {};
+          for (const r of gsReact || []) gMapReact[r.key] = r.value;
+
+          const reactMaxDist = savedPit.max_distance || parseFloat(gMapReact.default_max_distance || "30");
+          const effBP = savedPit.base_price ?? parseFloat(gMapReact.default_base_price || "195");
+          const effFM = savedPit.free_miles ?? parseFloat(gMapReact.default_free_miles || "15");
+          const effEPM = savedPit.price_per_extra_mile ?? parseFloat(gMapReact.default_extra_per_mile || "5");
+
+          // Calculate driving distances from reactivated PIT to all city pages
+          const destinations = allPages.map(p => ({ lat: Number(p.lat), lng: Number(p.lng) }));
+          const drivingDists = await getDrivingDistances(
+            Number(savedPit.lat), Number(savedPit.lon),
+            destinations, apiKey
+          );
+
+          for (let i = 0; i < allPages.length; i++) {
+            const page = allPages[i];
+            const newDist = drivingDists[i];
+            if (newDist == null || newDist > reactMaxDist) continue;
+
+            try {
+              if (page.status === "waitlist") {
+                // Waitlisted page — reassign if within range
+                const extraMiles = Math.max(0, newDist - effFM);
+                const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+                await supabase.from("city_pages").update({
+                  pit_id: savedPit.id,
+                  distance_from_pit: Math.round(newDist * 10) / 10,
+                  base_price: newPrice,
+                  status: "active",
+                  status_reason: null,
+                  pit_reassigned: true,
+                  regen_reason: "pit_reactivated",
+                  needs_regen: true,
+                  updated_at: new Date().toISOString(),
+                }).eq("id", page.id);
+                reactivation_unwaitlisted++;
+                console.log(`[save_pit] Un-waitlisted: ${page.city_name} → ${savedPit.name} (${newDist.toFixed(1)}mi, $${newPrice})`);
+              } else if (page.pit_id !== savedPit.id) {
+                // Already assigned to another PIT — only reassign if ≥3 miles closer
+                const currentDist = page.distance_from_pit || 999;
+                const improvement = currentDist - newDist;
+                if (improvement >= 3) {
+                  const extraMiles = Math.max(0, newDist - effFM);
+                  const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+                  await supabase.from("city_pages").update({
+                    pit_id: savedPit.id,
+                    distance_from_pit: Math.round(newDist * 10) / 10,
+                    base_price: newPrice,
+                    pit_reassigned: true,
+                    regen_reason: "pit_reactivated",
+                    needs_regen: true,
+                    updated_at: new Date().toISOString(),
+                  }).eq("id", page.id);
+                  reactivation_reassigned++;
+                  console.log(`[save_pit] Reactivation reassigned: ${page.city_name} → ${savedPit.name} (${newDist.toFixed(1)}mi vs ${currentDist.toFixed(1)}mi, improvement: ${improvement.toFixed(1)}mi)`);
+                }
+              }
+            } catch (err: any) {
+              console.error(`[save_pit] Reactivation error for ${page.city_name}:`, err.message);
+            }
+          }
+        }
+        console.log(`[save_pit] Reactivation complete: ${reactivation_reassigned} reassigned, ${reactivation_unwaitlisted} un-waitlisted`);
+      }
+
       // ── PART 3: Auto-discover cities when new pit is created ──
       let pages_reassigned = 0;
       let pages_created_count = 0;
