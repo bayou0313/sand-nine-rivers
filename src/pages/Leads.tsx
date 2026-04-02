@@ -2257,8 +2257,31 @@ const Leads = () => {
                 className="text-xs"
                 style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
               >
-                <RefreshCw className="w-3 h-3 mr-1" />
+               <RefreshCw className="w-3 h-3 mr-1" />
                 Regen All to v3.1
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/leads-auth`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ password: adminPassword, action: "backfill_regions" }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Backfill failed");
+                    toast({ title: "Regions Backfilled", description: data.message });
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Backfill Regions
               </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}

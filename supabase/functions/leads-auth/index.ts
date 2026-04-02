@@ -1852,6 +1852,7 @@ serve(async (req) => {
             city_name: city.city_name,
             city_slug: normalizedSlug,
             state: city.state || "LA",
+            region: city.region || null,
             lat: city.lat, lng: city.lng,
             distance_from_pit: Math.round(closestDistance * 10) / 10,
             base_price: price,
