@@ -361,34 +361,10 @@ serve(async (req) => {
         doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
       }
       y += 18;
-    } else {
-      // Amber "DUE AT DELIVERY" callout box for COD orders
-      const AMBER = [146, 64, 14] as const;
-      const AMBER_BORDER = [217, 119, 6] as const;
-      const boxH = 11;
-      const boxPx = 6;
-      doc.setDrawColor(...AMBER_BORDER);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(mx, y, cw, boxH, 2, 2, "S");
-      doc.setLineWidth(0.2);
-      // Left: label
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...AMBER);
-      doc.text("DUE AT DELIVERY", mx + boxPx, y + 4.5);
-      // Right: amount
-      doc.setFontSize(12);
-      doc.text(fmt(order.price), mx + cw - boxPx, y + 4.5, { align: "right" });
-      // Disclaimer
-      doc.setFontSize(6.5);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...GRAY);
-      doc.text("Exact amount required — driver carries no change", mx + boxPx, y + 8.5);
-      y += boxH + 4;
     }
+    // Amber box is drawn below in the terms area for COD orders
 
     // ─── TERMS BLOCK (pushed to just above footer) ───
-    // Calculate how much space the terms block needs
     const bullets = [
       "Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.",
       "Customer must ensure clear, accessible delivery area before arrival.",
@@ -398,17 +374,13 @@ serve(async (req) => {
       "Cancellation Policy: Orders canceled a day before scheduled delivery are fully refunded. Processing fees are non-refundable.",
     ];
 
-    // For COD orders, add payment due text before terms
-    const hasCODBlock = !isPaid;
-    const codLines = hasCODBlock ? [
-      "Cash or check payment is due at the time of delivery.",
-      "If payment cannot be collected, a card payment link will be sent.",
-    ] : [];
+    const hasCODBox = !isPaid;
+    const amberBoxH = 16;
 
     // Measure terms height to position just above footer
     let termsHeight = 0;
-    if (hasCODBlock) {
-      termsHeight += 5 + codLines.length * 4 + 4; // header + lines + gap
+    if (hasCODBox) {
+      termsHeight += amberBoxH + 6; // amber box + gap
     }
     termsHeight += 5; // DELIVERY TERMS header
     bullets.forEach((b) => {
@@ -427,19 +399,37 @@ serve(async (req) => {
       y = termsStartY;
     }
 
-    // COD payment info
-    if (hasCODBlock) {
-      doc.setFontSize(7);
-      doc.setTextColor(146, 64, 14);
+    // ─── Redesigned amber "DUE AT DELIVERY" two-column box ───
+    if (hasCODBox) {
+      const AMBER = [146, 64, 14] as const;
+      const AMBER_BORDER = [217, 119, 6] as const;
+      const boxPx = 6;
+      doc.setDrawColor(...AMBER_BORDER);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(mx, y, cw, amberBoxH, 2, 2, "S");
+      doc.setLineWidth(0.2);
+
+      // Left column: label + disclaimer
+      doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.text("PAYMENT DUE AT DELIVERY", mx, y);
-      y += 5;
+      doc.setTextColor(...AMBER);
+      doc.text("DUE AT DELIVERY", mx + boxPx, y + 6);
+      doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
-      codLines.forEach((line) => {
-        doc.text(line, mx, y);
-        y += 4;
-      });
-      y += 4;
+      doc.setTextColor(...GRAY);
+      doc.text("Cash or check payment due at the time of delivery.", mx + boxPx, y + 11);
+
+      // Right column: amount + disclaimer
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...AMBER);
+      doc.text(fmt(order.price), mx + cw - boxPx, y + 6, { align: "right" });
+      doc.setFontSize(6.5);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY);
+      doc.text("Exact amount required — driver carries no change", mx + cw - boxPx, y + 11, { align: "right" });
+
+      y += amberBoxH + 4;
     }
 
     // Delivery terms
