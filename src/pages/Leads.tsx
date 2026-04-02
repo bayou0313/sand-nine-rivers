@@ -51,6 +51,18 @@ interface Lead {
   nearest_pit_name: string | null;
   nearest_pit_id: string | null;
   nearest_pit_distance: number | null;
+  // Fraud fields
+  user_agent?: string | null;
+  browser_geolat?: number | null;
+  browser_geolng?: number | null;
+  geo_matches_address?: boolean | null;
+  fraud_score?: number | null;
+  fraud_signals?: string[] | null;
+  submission_count?: number | null;
+  pre_order_id?: string | null;
+  offer_sent_at?: string | null;
+  declined_at?: string | null;
+  calculated_price?: number | null;
 }
 
 interface ParsedLead extends Lead {
