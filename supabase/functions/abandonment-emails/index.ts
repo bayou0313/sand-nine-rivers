@@ -97,7 +97,7 @@ serve(async (req: Request) => {
             <p>You were so close! Your River Sand delivery to <strong>${s.delivery_address || "your address"}</strong> is still available.</p>
             <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW</a></p>
             <p>Same-day delivery still available if you order before 10 AM.</p>
-            <p style="margin-top:24px">— Silas Caldeira<br>River Sand | ${PHONE}</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
           `),
         });
 
