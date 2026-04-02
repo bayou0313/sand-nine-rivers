@@ -312,6 +312,167 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: "Added to waitlist" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    // ── CREATE OUT-OF-AREA LEAD (no password required — public) ──
+    if (action === "create_out_of_area_lead") {
+      const { customer_name, customer_email, customer_phone, address: leadAddress, distance_miles: leadDist, notes: leadNotes, ip_address: clientIp, user_agent: clientUA, browser_geolat, browser_geolng, calculated_price: leadPrice, nearest_pit_id: leadPitId, nearest_pit_name: leadPitName, nearest_pit_distance: leadPitDist } = body;
+      if (!customer_name || !leadAddress) {
+        return new Response(JSON.stringify({ error: "Missing required fields" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+
+      // Server-side IP (more reliable than client-reported)
+      const serverIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || clientIp
+        || null;
+
+      // ── Fraud scoring ──
+      let fraudScore = 0;
+      const fraudSignals: string[] = [];
+
+      // Signal 1: IP rate limiting
+      if (serverIp) {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: recentLeads } = await sb
+          .from("delivery_leads")
+          .select("id")
+          .eq("ip_address", serverIp)
+          .gte("created_at", twentyFourHoursAgo);
+        const ipCount = recentLeads?.length || 0;
+        if (ipCount > 5) { fraudScore += 60; fraudSignals.push("ip_flood"); }
+        else if (ipCount > 2) { fraudScore += 40; fraudSignals.push("repeated_ip"); }
+      }
+
+      // Signal 2: Check blocked_ips
+      if (serverIp) {
+        const { data: blocked } = await sb
+          .from("blocked_ips")
+          .select("id")
+          .eq("ip_address", serverIp)
+          .limit(1);
+        if (blocked && blocked.length > 0) {
+          // Silent block — return success but don't insert
+          console.log("[create_out_of_area_lead] Blocked IP:", serverIp);
+          return new Response(JSON.stringify({ success: true }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
+      // Signal 3: Geolocation mismatch (haversine is fine — browser vs address comparison)
+      if (browser_geolat != null && browser_geolng != null) {
+        // Extract lat/lng from address if available, or use a rough check with nearest pit
+        if (leadPitId) {
+          const { data: pitData } = await sb.from("pits").select("lat, lon").eq("id", leadPitId).single();
+          if (pitData) {
+            const R = 3958.8; // Earth radius in miles
+            const dLat = (browser_geolat - pitData.lat) * Math.PI / 180;
+            const dLon = (browser_geolng - pitData.lon) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(browser_geolat * Math.PI / 180) * Math.cos(pitData.lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            const browserToPitMiles = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            // If browser is very far from the nearest PIT (proxy for address area)
+            if (browserToPitMiles > 200) { fraudScore += 50; fraudSignals.push("severe_geo_mismatch"); }
+            else if (browserToPitMiles > 50) { fraudScore += 30; fraudSignals.push("geo_mismatch"); }
+          }
+        }
+      }
+
+      // Signal 4: Disposable email
+      const disposableDomains = ["mailinator.com","guerrillamail.com","tempmail.com","throwaway.email","fakeinbox.com","yopmail.com","maildrop.cc","dispostable.com","trashmail.com","10minutemail.com","guerrillamail.info","sharklasers.com","grr.la","guerrillamail.net","guerrillamail.org"];
+      if (customer_email) {
+        const emailDomain = customer_email.split("@")[1]?.toLowerCase();
+        if (emailDomain && disposableDomains.includes(emailDomain)) {
+          fraudScore += 40; fraudSignals.push("disposable_email");
+        }
+      }
+
+      // Signal 5: Missing contact info
+      if (!customer_phone && !customer_email) {
+        fraudScore += 20; fraudSignals.push("no_contact");
+      }
+
+      const riskLevel = fraudScore >= 80 ? "high" : fraudScore >= 40 ? "medium" : "low";
+
+      // Count submission from same IP for submission_count
+      let submissionCount = 1;
+      if (serverIp) {
+        const { data: allFromIp } = await sb.from("delivery_leads").select("id").eq("ip_address", serverIp);
+        submissionCount = (allFromIp?.length || 0) + 1;
+      }
+
+      // Insert lead
+      const insertData: Record<string, any> = {
+        address: leadAddress,
+        distance_miles: leadDist ?? null,
+        customer_name,
+        customer_email: customer_email || null,
+        customer_phone: customer_phone || null,
+        notes: leadNotes || null,
+        ip_address: serverIp,
+        user_agent: clientUA || null,
+        browser_geolat: browser_geolat ?? null,
+        browser_geolng: browser_geolng ?? null,
+        calculated_price: leadPrice ?? null,
+        nearest_pit_id: leadPitId || null,
+        nearest_pit_name: leadPitName || null,
+        nearest_pit_distance: leadPitDist ?? null,
+        fraud_score: fraudScore,
+        fraud_signals: fraudSignals.length > 0 ? fraudSignals : null,
+        submission_count: submissionCount,
+        geo_matches_address: browser_geolat != null ? !fraudSignals.includes("geo_mismatch") && !fraudSignals.includes("severe_geo_mismatch") : null,
+      };
+
+      const { data: inserted, error: insertErr } = await sb.from("delivery_leads").insert(insertData as any).select("id, lead_number").single();
+      if (insertErr) throw insertErr;
+
+      console.log(`[create_out_of_area_lead] Created lead ${inserted.lead_number}, fraud_score: ${fraudScore}, risk: ${riskLevel}`);
+
+      // Send admin notification email (fire-and-forget)
+      const ownerEmail = Deno.env.get("GMAIL_USER") || "cmo@haulogix.com";
+      fetch(`${supabaseUrl}/functions/v1/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+        body: JSON.stringify({
+          type: "out_of_area_lead",
+          data: {
+            lead_number: inserted.lead_number,
+            address: leadAddress,
+            distance_miles: leadDist?.toFixed?.(1) || "Unknown",
+            customer_name,
+            customer_email: customer_email || "Not provided",
+            customer_phone: customer_phone || "Not provided",
+            notes: leadNotes || "",
+            fraud_score: fraudScore,
+            risk_level: riskLevel,
+            fraud_signals: fraudSignals.join(", ") || "None",
+            ip_address: serverIp || "Unknown",
+            created_at: new Date().toISOString(),
+          },
+        }),
+      }).catch((err: any) => console.error("[lead-email] Admin notification error:", err));
+
+      // Send customer auto-confirmation email (fire-and-forget)
+      if (customer_email) {
+        fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+          body: JSON.stringify({
+            type: "lead_confirmation",
+            data: {
+              customer_name,
+              customer_email,
+              address: leadAddress,
+            },
+          }),
+        }).catch((err: any) => console.error("[lead-email] Customer confirmation error:", err));
+      }
+
+      return new Response(JSON.stringify({ success: true, lead_id: inserted.id }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── GET DATE LOAD COUNTS (no password required — called from frontend) ──
     if (action === "get_date_load_counts") {
       const { pit_id: loadPitId, dates: loadDates } = body;
@@ -487,6 +648,259 @@ serve(async (req) => {
         JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ── SEND OFFER (create pre-order + Stripe payment link) ──
+    if (action === "send_offer") {
+      const { lead_id, pit_id: offerPitId, calculated_price: offerPrice } = body;
+      if (!lead_id || !offerPitId || !offerPrice) {
+        return new Response(JSON.stringify({ error: "Missing lead_id, pit_id, or calculated_price" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Fetch lead
+      const { data: lead, error: leadErr } = await supabase
+        .from("delivery_leads").select("*").eq("id", lead_id).single();
+      if (leadErr || !lead) {
+        return new Response(JSON.stringify({ error: "Lead not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Create order via RPC
+      const orderData = {
+        customer_name: lead.customer_name,
+        customer_email: lead.customer_email || "",
+        customer_phone: lead.customer_phone || "",
+        delivery_address: lead.address,
+        distance_miles: lead.distance_miles || 0,
+        price: offerPrice,
+        quantity: 1,
+        notes: lead.notes || "",
+        payment_method: "stripe",
+        payment_status: "pending",
+        pit_id: offerPitId,
+        lead_reference: lead.lead_number || "",
+      };
+
+      const { data: orderResult, error: orderErr } = await supabase.rpc("create_order", { p_data: orderData });
+      if (orderErr) throw orderErr;
+      const orderId = orderResult.id;
+      const orderNumber = orderResult.order_number;
+
+      // Generate Stripe checkout link
+      const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const amountCents = Math.round(offerPrice * 100);
+      const checkoutResp = await fetch(`${supabaseUrl2}/functions/v1/create-checkout-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey2}` },
+        body: JSON.stringify({
+          amount: amountCents,
+          description: `River Sand Delivery — ${lead.address}`,
+          customer_name: lead.customer_name,
+          customer_email: lead.customer_email,
+          order_id: orderId,
+          order_number: orderNumber,
+          origin_url: "https://riversand.net",
+        }),
+      });
+      const checkoutData = await checkoutResp.json();
+      const paymentUrl = checkoutData.url;
+
+      // Update lead
+      await supabase.from("delivery_leads").update({
+        stage: "quoted",
+        offer_sent_at: new Date().toISOString(),
+        pre_order_id: orderId,
+        calculated_price: offerPrice,
+      } as any).eq("id", lead_id);
+
+      // Send offer email to customer (fire-and-forget)
+      if (lead.customer_email) {
+        fetch(`${supabaseUrl2}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey2}` },
+          body: JSON.stringify({
+            type: "lead_offer",
+            data: {
+              customer_name: lead.customer_name,
+              customer_email: lead.customer_email,
+              address: lead.address,
+              price: offerPrice,
+              payment_url: paymentUrl,
+              order_number: orderNumber,
+            },
+          }),
+        }).catch((err: any) => console.error("[send_offer] Email error:", err));
+      }
+
+      console.log(`[send_offer] Created order ${orderNumber} for lead ${lead_id}, payment URL generated`);
+
+      return new Response(JSON.stringify({ success: true, order_id: orderId, order_number: orderNumber, payment_url: paymentUrl }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── DECLINE LEAD ──
+    if (action === "decline_lead") {
+      const { lead_id } = body;
+      if (!lead_id) {
+        return new Response(JSON.stringify({ error: "Missing lead_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { data: lead, error: leadErr } = await supabase
+        .from("delivery_leads").select("*").eq("id", lead_id).single();
+      if (leadErr || !lead) {
+        return new Response(JSON.stringify({ error: "Lead not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Update lead stage
+      await supabase.from("delivery_leads").update({
+        stage: "lost",
+        declined_at: new Date().toISOString(),
+      } as any).eq("id", lead_id);
+
+      // Add to waitlist
+      if (lead.customer_email) {
+        const cityMatch = lead.address.match(/,\s*([^,]+),\s*[A-Z]{2}\s+\d{5}/);
+        const cityName = cityMatch?.[1]?.trim() || lead.address.split(",")[0]?.trim() || "Unknown";
+        const citySlug = cityName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+        await supabase.from("waitlist_leads").upsert({
+          city_slug: citySlug,
+          city_name: cityName,
+          customer_name: lead.customer_name,
+          customer_email: lead.customer_email,
+          customer_phone: lead.customer_phone,
+        }, { onConflict: "customer_email,city_slug" }).select();
+
+        // Send decline email (fire-and-forget)
+        const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
+        const serviceRoleKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        fetch(`${supabaseUrl2}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey2}` },
+          body: JSON.stringify({
+            type: "lead_decline",
+            data: {
+              customer_name: lead.customer_name,
+              customer_email: lead.customer_email,
+              address: lead.address,
+              city_name: cityName,
+            },
+          }),
+        }).catch((err: any) => console.error("[decline_lead] Email error:", err));
+      }
+
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── VERIFY CALL (confirm order after phone verification) ──
+    if (action === "verify_call") {
+      const { order_id: verifyOrderId, verified_by } = body;
+      if (!verifyOrderId) {
+        return new Response(JSON.stringify({ error: "Missing order_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { error: updateErr } = await supabase.from("orders").update({
+        review_status: "call_verified",
+        call_verified_at: new Date().toISOString(),
+        call_verified_by: verified_by || "admin",
+        status: "confirmed",
+      }).eq("id", verifyOrderId);
+      if (updateErr) throw updateErr;
+
+      // Send dispatch notification (fire-and-forget)
+      const { data: order } = await supabase.from("orders").select("*").eq("id", verifyOrderId).single();
+      if (order) {
+        const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
+        const serviceRoleKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        fetch(`${supabaseUrl2}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey2}` },
+          body: JSON.stringify({ type: "order", data: order }),
+        }).catch((err: any) => console.error("[verify_call] Email error:", err));
+      }
+
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── FLAG FRAUD (block IP, refund if order exists) ──
+    if (action === "flag_fraud") {
+      const { lead_id: fraudLeadId, order_id: fraudOrderId, reason: fraudReason } = body;
+      if (!fraudLeadId && !fraudOrderId) {
+        return new Response(JSON.stringify({ error: "Missing lead_id or order_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      let ipToBlock: string | null = null;
+
+      // Handle lead fraud
+      if (fraudLeadId) {
+        const { data: lead } = await supabase.from("delivery_leads").select("ip_address").eq("id", fraudLeadId).single();
+        if (lead?.ip_address) ipToBlock = lead.ip_address;
+        await supabase.from("delivery_leads").update({
+          fraud_score: 100,
+          fraud_signals: ["manually_flagged"],
+          stage: "lost",
+        } as any).eq("id", fraudLeadId);
+      }
+
+      // Handle order fraud
+      if (fraudOrderId) {
+        const { data: order } = await supabase.from("orders").select("stripe_payment_id, delivery_address").eq("id", fraudOrderId).single();
+        await supabase.from("orders").update({
+          fraud_score: 100,
+          fraud_signals: ["manually_flagged"],
+          status: "cancelled",
+          review_status: "cancelled",
+        } as any).eq("id", fraudOrderId);
+
+        // Trigger refund via create-refund function
+        if (order?.stripe_payment_id) {
+          const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
+          const serviceRoleKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          try {
+            const refundResp = await fetch(`${supabaseUrl2}/functions/v1/create-refund`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey2}` },
+              body: JSON.stringify({ payment_intent_id: order.stripe_payment_id, reason: "fraudulent" }),
+            });
+            const refundData = await refundResp.json();
+            console.log(`[flag_fraud] Refund result for order ${fraudOrderId}:`, refundData);
+          } catch (refErr: any) {
+            console.error("[flag_fraud] Refund error:", refErr);
+          }
+        }
+      }
+
+      // Block IP
+      if (ipToBlock) {
+        await supabase.from("blocked_ips").insert({
+          ip_address: ipToBlock,
+          reason: fraudReason || "Manually flagged as fraud",
+          blocked_by: "admin",
+        } as any);
+      }
+
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── GET PENDING REVIEW ORDERS ──
+    if (action === "get_pending_review_orders") {
+      const { data: orders, error: ordersErr } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("review_status", "pending_review")
+        .order("created_at", { ascending: false });
+      if (ordersErr) throw ordersErr;
+      return new Response(JSON.stringify({ orders }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ── GET SETTINGS ──

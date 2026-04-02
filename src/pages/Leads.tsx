@@ -51,6 +51,18 @@ interface Lead {
   nearest_pit_name: string | null;
   nearest_pit_id: string | null;
   nearest_pit_distance: number | null;
+  // Fraud fields
+  user_agent?: string | null;
+  browser_geolat?: number | null;
+  browser_geolng?: number | null;
+  geo_matches_address?: boolean | null;
+  fraud_score?: number | null;
+  fraud_signals?: string[] | null;
+  submission_count?: number | null;
+  pre_order_id?: string | null;
+  offer_sent_at?: string | null;
+  declined_at?: string | null;
+  calculated_price?: number | null;
 }
 
 interface ParsedLead extends Lead {
@@ -167,7 +179,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -181,6 +193,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "pipeline", label: "Pipeline", icon: List },
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
       { id: "cash_orders", label: "Orders", icon: DollarSign },
+      { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
       { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
       { id: "live" as NavPage, label: "Live", icon: Users },
     ],
@@ -350,6 +363,19 @@ const Leads = () => {
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
   const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
 
+  // Pending review orders state
+  const [pendingReviewOrders, setPendingReviewOrders] = useState<any[]>([]);
+  const [pendingReviewLoading, setPendingReviewLoading] = useState(false);
+  const [verifyingCall, setVerifyingCall] = useState<string | null>(null);
+
+  // Lead detail actions state
+  const [sendingOffer, setSendingOffer] = useState(false);
+  const [decliningLead, setDecliningLead] = useState(false);
+  const [flaggingFraud, setFlaggingFraud] = useState(false);
+  const [fraudReason, setFraudReason] = useState("");
+  const [offerPitId, setOfferPitId] = useState("");
+  const [offerPrice, setOfferPrice] = useState("");
+  const [offerResult, setOfferResult] = useState<{ payment_url: string; order_number: string } | null>(null);
 
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
@@ -459,6 +485,99 @@ const Leads = () => {
     } catch (err) { console.warn("Failed to fetch abandoned sessions:", err); }
     finally { setAbandonedLoading(false); }
   }, []);
+
+  const fetchPendingReview = useCallback(async () => {
+    setPendingReviewLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "get_pending_review_orders" },
+      });
+      if (!fnError && data?.orders) setPendingReviewOrders(data.orders);
+    } catch (err) { console.warn("Failed to fetch pending review:", err); }
+    finally { setPendingReviewLoading(false); }
+  }, []);
+
+  const handleSendOffer = useCallback(async () => {
+    if (!selectedLead || !offerPitId || !offerPrice) return;
+    setSendingOffer(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "send_offer", lead_id: selectedLead.id, pit_id: offerPitId, calculated_price: parseFloat(offerPrice) },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      setOfferResult({ payment_url: data.payment_url, order_number: data.order_number });
+      toast({ title: "Offer sent", description: `Order ${data.order_number} created. Payment link ready.` });
+      fetchLeads(storedPassword());
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setSendingOffer(false); }
+  }, [selectedLead, offerPitId, offerPrice, toast]);
+
+  const handleDeclineLead = useCallback(async () => {
+    if (!selectedLead) return;
+    setDecliningLead(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "decline_lead", lead_id: selectedLead.id },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Lead declined", description: "Customer added to waitlist and notified." });
+      setSelectedLead(null);
+      fetchLeads(storedPassword());
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setDecliningLead(false); }
+  }, [selectedLead, toast]);
+
+  const handleFlagFraud = useCallback(async () => {
+    if (!selectedLead) return;
+    setFlaggingFraud(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "flag_fraud", lead_id: selectedLead.id, reason: fraudReason || "Manually flagged" },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Flagged as fraud", description: "IP blocked and lead marked." });
+      setSelectedLead(null);
+      setFraudReason("");
+      fetchLeads(storedPassword());
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setFlaggingFraud(false); }
+  }, [selectedLead, fraudReason, toast]);
+
+  const handleVerifyCall = useCallback(async (orderId: string) => {
+    setVerifyingCall(orderId);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "verify_call", order_id: orderId, verified_by: "admin" },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Call verified", description: "Order confirmed and dispatch notified." });
+      fetchPendingReview();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setVerifyingCall(null); }
+  }, [toast, fetchPendingReview]);
+
+  const handleCancelFraudOrder = useCallback(async (orderId: string) => {
+    setVerifyingCall(orderId);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "flag_fraud", order_id: orderId, reason: "Billing mismatch - cancelled by admin" },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Order cancelled", description: "Refund initiated and IP blocked." });
+      fetchPendingReview();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setVerifyingCall(null); }
+  }, [toast, fetchPendingReview]);
 
   const runEmailCheck = useCallback(async () => {
     setRunningEmailCheck(true);
@@ -1173,6 +1292,13 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchLiveVisitors]);
 
+  // Fetch pending review orders when navigating to that page
+  useEffect(() => {
+    if (activePage === "pending_review" && authenticated) {
+      fetchPendingReview();
+    }
+  }, [activePage, authenticated, fetchPendingReview]);
+
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
@@ -1438,7 +1564,15 @@ const Leads = () => {
     return <span className="text-xs px-2 py-0.5 rounded-full font-bold inline-block" style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.text}` }}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>;
   };
 
-  const openDetail = (l: ParsedLead) => { setSelectedLead(l); setDetailStage(l.stage); setDetailNote(""); };
+  const openDetail = (l: ParsedLead) => {
+    setSelectedLead(l);
+    setDetailStage(l.stage);
+    setDetailNote("");
+    setOfferPitId(l.nearest_pit_id || "");
+    setOfferPrice(l.calculated_price ? String(l.calculated_price) : "");
+    setOfferResult(null);
+    setFraudReason("");
+  };
 
   const saveDetail = async () => {
     if (!selectedLead) return;
@@ -1583,6 +1717,7 @@ const Leads = () => {
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
     settings: { title: "GLOBAL SETTINGS" },
+    pending_review: { title: "PENDING REVIEW", subtitle: `${pendingReviewOrders.length} orders to review` },
   };
 
   // Login screen
@@ -2923,6 +3058,64 @@ const Leads = () => {
               <LeadsTable data={paginatedLeads} />
               <Pagination />
             </div>
+          </>
+        );
+
+      case "pending_review":
+        return (
+          <>
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm" style={{ color: BRAND_NAVY }}>Orders flagged for review due to billing/delivery address mismatch or fraud signals.</p>
+              <Button size="sm" onClick={fetchPendingReview} disabled={pendingReviewLoading} variant="outline">
+                {pendingReviewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              </Button>
+            </div>
+            {pendingReviewOrders.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">{pendingReviewLoading ? "Loading..." : "No orders pending review."}</div>
+            ) : (
+              <div className="space-y-4">
+                {pendingReviewOrders.map((order: any) => (
+                  <div key={order.id} className="bg-white rounded-xl border shadow-sm p-4" style={{ borderColor: CARD_BORDER }}>
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 mb-3 flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      <span className="text-sm font-bold text-amber-800">⚠️ Call customer before dispatch — no exceptions</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                      <div><p className="text-xs text-gray-400">Order #</p><p className="font-bold" style={{ color: BRAND_NAVY }}>{order.order_number || "—"}</p></div>
+                      <div><p className="text-xs text-gray-400">Customer</p><p>{order.customer_name}</p></div>
+                      <div><p className="text-xs text-gray-400">Phone</p><p>{order.customer_phone}</p></div>
+                      <div><p className="text-xs text-gray-400">Price</p><p className="font-bold" style={{ color: BRAND_GOLD }}>${order.price}</p></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3">
+                      <div className="p-2 rounded border">
+                        <p className="text-xs text-gray-400 mb-1">Delivery Address</p>
+                        <p className="font-medium">{order.delivery_address}</p>
+                      </div>
+                      <div className={`p-2 rounded border ${order.billing_matches_delivery === false ? "border-red-300 bg-red-50" : ""}`}>
+                        <p className="text-xs text-gray-400 mb-1">Billing Address</p>
+                        <p className="font-medium">{order.billing_address || "—"}</p>
+                        {order.billing_matches_delivery === false && <p className="text-xs text-red-600 font-bold mt-1">❌ ZIP MISMATCH</p>}
+                      </div>
+                    </div>
+                    {order.fraud_signals && Array.isArray(order.fraud_signals) && order.fraud_signals.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {order.fraud_signals.map((s: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">{s}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleVerifyCall(order.id)} disabled={verifyingCall === order.id} style={{ backgroundColor: "#22C55E", color: "white" }}>
+                        {verifyingCall === order.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />} Call Verified
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleCancelFraudOrder(order.id)} disabled={verifyingCall === order.id} className="border-red-300 text-red-600">
+                        Cancel & Refund
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         );
 
@@ -4405,50 +4598,149 @@ const Leads = () => {
       {/* Detail Modal */}
       {selectedLead && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelectedLead(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
-              <p className="font-mono text-sm" style={{ color: BRAND_GOLD }}>{selectedLead.lead_number || "—"}</p>
-              <h2 className="text-lg font-bold text-white">{selectedLead.customer_name}</h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-mono text-sm" style={{ color: BRAND_GOLD }}>{selectedLead.lead_number || "—"}</p>
+                  <h2 className="text-lg font-bold text-white">{selectedLead.customer_name}</h2>
+                </div>
+                {selectedLead.fraud_score != null && selectedLead.fraud_score > 0 && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{
+                    backgroundColor: selectedLead.fraud_score >= 80 ? "#EF4444" : selectedLead.fraud_score >= 40 ? "#F59E0B" : "#22C55E"
+                  }}>
+                    Risk: {selectedLead.fraud_score >= 80 ? "HIGH" : selectedLead.fraud_score >= 40 ? "MEDIUM" : "LOW"} ({selectedLead.fraud_score})
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-xs text-gray-400">Submitted</p><p className="font-medium">{formatLeadDate(selectedLead.created_at)}</p></div>
-                <div><p className="text-xs text-gray-400">IP Address</p><p className="font-mono text-xs">{selectedLead.ip_address || "—"}</p></div>
-                <div className="col-span-2"><p className="text-xs text-gray-400">Address</p><p className="font-medium">{selectedLead.address}</p></div>
-                <div><p className="text-xs text-gray-400">Distance</p><p>{selectedLead.distance_miles?.toFixed(1) || "—"} mi</p></div>
-                <div><p className="text-xs text-gray-400">Email</p><p>{selectedLead.customer_email || "—"}</p></div>
-                <div><p className="text-xs text-gray-400">Phone</p><p>{selectedLead.customer_phone || "—"}</p></div>
-                <div>
-                  <p className="text-xs text-gray-400">Contacted</p>
-                  <ContactedBadge contacted={selectedLead.contacted} onClick={() => { toggleContacted(selectedLead.id); setSelectedLead({ ...selectedLead, contacted: !selectedLead.contacted }); }} loading={toggling === selectedLead.id} />
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left: Customer Info */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>Customer Info</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div><p className="text-xs text-gray-400">Submitted</p><p className="font-medium">{formatLeadDate(selectedLead.created_at)}</p></div>
+                    <div><p className="text-xs text-gray-400">Distance</p><p>{selectedLead.distance_miles?.toFixed(1) || "—"} mi</p></div>
+                    <div className="col-span-2"><p className="text-xs text-gray-400">Address</p><p className="font-medium">{selectedLead.address}</p></div>
+                    <div><p className="text-xs text-gray-400">Email</p><p>{selectedLead.customer_email || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Phone</p><p>{selectedLead.customer_phone || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Nearest PIT</p><p>{selectedLead.nearest_pit_name || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Calculated Price</p><p className="font-bold" style={{ color: BRAND_GOLD }}>{selectedLead.calculated_price ? `$${selectedLead.calculated_price}` : "—"}</p></div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Contacted</p>
+                    <ContactedBadge contacted={selectedLead.contacted} onClick={() => { toggleContacted(selectedLead.id); setSelectedLead({ ...selectedLead, contacted: !selectedLead.contacted }); }} loading={toggling === selectedLead.id} />
+                  </div>
+                  {selectedLead.stage === "won" && (
+                    <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-center">
+                      <span className="text-green-700 font-bold text-sm">✅ ORDER PLACED</span>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Stage</label>
+                    <select value={detailStage} onChange={e => setDetailStage(e.target.value)} className="w-full h-10 px-3 rounded-md border">
+                      {STAGES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
+                  </div>
+                  {selectedLead.notes && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-1">History</p>
+                      <pre className="text-xs bg-gray-50 p-3 rounded border whitespace-pre-wrap max-h-24 overflow-y-auto">{selectedLead.notes}</pre>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Add Note</label>
+                    <Textarea rows={2} value={detailNote} onChange={e => setDetailNote(e.target.value)} placeholder="Type a note..." />
+                  </div>
+                  <Button onClick={saveDetail} disabled={savingDetail} className="w-full" style={{ backgroundColor: BRAND_NAVY, color: "white" }}>
+                    {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+                  </Button>
+                </div>
+
+                {/* Right: Fraud Panel */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>Fraud Analysis</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 border space-y-3 text-sm">
+                    <div><p className="text-xs text-gray-400">Fraud Score</p>
+                      <p className="text-xl font-bold" style={{ color: (selectedLead.fraud_score || 0) >= 80 ? "#EF4444" : (selectedLead.fraud_score || 0) >= 40 ? "#F59E0B" : "#22C55E" }}>
+                        {selectedLead.fraud_score ?? 0}
+                      </p>
+                    </div>
+                    <div><p className="text-xs text-gray-400">Signals</p>
+                      {selectedLead.fraud_signals && selectedLead.fraud_signals.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedLead.fraud_signals.map((s, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">{s}</span>
+                          ))}
+                        </div>
+                      ) : <p className="text-green-600 text-xs font-medium">No fraud signals</p>}
+                    </div>
+                    <div><p className="text-xs text-gray-400">IP Address</p><p className="font-mono text-xs">{selectedLead.ip_address || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">User Agent</p><p className="text-xs truncate">{selectedLead.user_agent || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Browser Location</p>
+                      <p className="text-xs">{selectedLead.browser_geolat != null ? `${selectedLead.browser_geolat.toFixed(4)}, ${selectedLead.browser_geolng?.toFixed(4)}` : "Not provided"}</p>
+                    </div>
+                    <div><p className="text-xs text-gray-400">Geo Matches Address</p>
+                      <p className="text-xs font-medium" style={{ color: selectedLead.geo_matches_address === false ? "#EF4444" : "#22C55E" }}>
+                        {selectedLead.geo_matches_address == null ? "N/A" : selectedLead.geo_matches_address ? "✅ Yes" : "❌ No"}
+                      </p>
+                    </div>
+                    <div><p className="text-xs text-gray-400">Submissions from IP</p><p className="text-xs">{selectedLead.submission_count || 1}</p></div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="space-y-2 border-t pt-4">
+                    <h4 className="text-xs font-bold uppercase text-gray-400">Actions</h4>
+
+                    {/* Send Offer */}
+                    {selectedLead.stage !== "won" && selectedLead.stage !== "lost" && !offerResult && (
+                      <div className="bg-green-50 rounded-lg p-3 border border-green-200 space-y-2">
+                        <p className="text-xs font-bold text-green-700">Send Offer</p>
+                        <select value={offerPitId} onChange={e => setOfferPitId(e.target.value)} className="w-full h-8 px-2 rounded border text-sm">
+                          <option value="">Select PIT...</option>
+                          {pits.filter(p => p.status === "active").map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                        <Input type="number" placeholder="Price ($)" value={offerPrice} onChange={e => setOfferPrice(e.target.value)} className="h-8" />
+                        <Button onClick={handleSendOffer} disabled={sendingOffer || !offerPitId || !offerPrice} size="sm" className="w-full" style={{ backgroundColor: "#22C55E", color: "white" }}>
+                          {sendingOffer ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Send Offer & Payment Link
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Offer result */}
+                    {offerResult && (
+                      <div className="bg-green-50 rounded-lg p-3 border border-green-200 space-y-2">
+                        <p className="text-xs font-bold text-green-700">✅ Offer Sent — {offerResult.order_number}</p>
+                        <div className="flex gap-1">
+                          <Input value={offerResult.payment_url} readOnly className="h-8 text-xs" />
+                          <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(offerResult.payment_url); toast({ title: "Copied" }); }}>
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Decline */}
+                    {selectedLead.stage !== "won" && selectedLead.stage !== "lost" && (
+                      <Button onClick={handleDeclineLead} disabled={decliningLead} variant="outline" size="sm" className="w-full border-red-300 text-red-600 hover:bg-red-50">
+                        {decliningLead ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Decline Lead
+                      </Button>
+                    )}
+
+                    {/* Flag Fraud */}
+                    <div className="space-y-1">
+                      <Input placeholder="Fraud reason..." value={fraudReason} onChange={e => setFraudReason(e.target.value)} className="h-8 text-xs" />
+                      <Button onClick={handleFlagFraud} disabled={flaggingFraud} variant="outline" size="sm" className="w-full border-gray-300 text-gray-600">
+                        {flaggingFraud ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Flag as Fraud & Block IP
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {selectedLead.stage === "won" && (
-                <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-center">
-                  <span className="text-green-700 font-bold text-sm">✅ ORDER PLACED</span>
-                </div>
-              )}
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Stage</label>
-                <select value={detailStage} onChange={e => setDetailStage(e.target.value)} className="w-full h-10 px-3 rounded-md border">
-                  {STAGES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                </select>
-              </div>
-              {selectedLead.notes && (
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">History</p>
-                  <pre className="text-xs bg-gray-50 p-3 rounded border whitespace-pre-wrap max-h-32 overflow-y-auto">{selectedLead.notes}</pre>
-                </div>
-              )}
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Add Note</label>
-                <Textarea rows={2} value={detailNote} onChange={e => setDetailNote(e.target.value)} placeholder="Type a note..." />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={saveDetail} disabled={savingDetail} className="flex-1" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                  {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
-                </Button>
-                <Button onClick={() => setSelectedLead(null)} variant="outline" className="flex-1">Close</Button>
+
+              <div className="flex justify-end mt-4">
+                <Button onClick={() => setSelectedLead(null)} variant="outline">Close</Button>
               </div>
             </div>
           </div>

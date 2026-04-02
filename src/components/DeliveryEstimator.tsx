@@ -339,6 +339,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         address={outOfAreaAddress}
         distanceMiles={outOfAreaDistance}
         nearestPit={nearestPitInfo}
+        calculatedPrice={result?.price ?? null}
       />
     </>
   );

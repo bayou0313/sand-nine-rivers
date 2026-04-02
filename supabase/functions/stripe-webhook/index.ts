@@ -132,6 +132,77 @@ serve(async (req) => {
           .eq("id", orderId);
       }
 
+      // Extract and store billing address from Stripe session
+      const customerDetails = (session as any).customer_details;
+      const billingAddress = customerDetails?.address;
+      const billingName = customerDetails?.name;
+
+      if (orderId && billingAddress) {
+        const billingAddressStr = [
+          billingAddress.line1,
+          billingAddress.line2,
+          billingAddress.city,
+          billingAddress.state,
+          billingAddress.postal_code,
+        ].filter(Boolean).join(", ");
+
+        // Get order's delivery address for comparison
+        const { data: orderForBilling } = await supabase
+          .from("orders")
+          .select("delivery_address, fraud_signals")
+          .eq("id", orderId)
+          .single();
+
+        // Extract ZIP from delivery address
+        const deliveryZipMatch = orderForBilling?.delivery_address?.match(/\b(\d{5})\b/);
+        const deliveryZip = deliveryZipMatch?.[1] || null;
+        const billingMatchesDelivery = billingAddress.postal_code && deliveryZip
+          ? billingAddress.postal_code === deliveryZip
+          : null;
+
+        const billingUpdate: Record<string, any> = {
+          billing_address: billingAddressStr,
+          billing_name: billingName || null,
+          billing_zip: billingAddress.postal_code || null,
+          billing_country: billingAddress.country || null,
+          billing_matches_delivery: billingMatchesDelivery,
+        };
+
+        // Flag for review if mismatch
+        if (billingMatchesDelivery === false) {
+          billingUpdate.review_status = "pending_review";
+          const existingSignals = orderForBilling?.fraud_signals || [];
+          const signals = Array.isArray(existingSignals) ? existingSignals : [];
+          billingUpdate.fraud_signals = [...signals, "billing_delivery_mismatch"];
+          console.log("[stripe-webhook] Billing/delivery ZIP mismatch — flagging for review. billing:", billingAddress.postal_code, "delivery:", deliveryZip);
+
+          // Send admin alert (fire-and-forget)
+          const emailUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`;
+          fetch(emailUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({
+              type: "fraud_alert",
+              data: {
+                order_id: orderId,
+                order_number: session.metadata?.order_number || "Unknown",
+                customer_name: billingName || session.metadata?.customer_name || "Unknown",
+                billing_zip: billingAddress.postal_code,
+                delivery_zip: deliveryZip,
+                billing_address: billingAddressStr,
+                delivery_address: orderForBilling?.delivery_address || "Unknown",
+                alert_type: "billing_delivery_mismatch",
+              },
+            }),
+          }).catch((err) => console.error("[stripe-webhook] Fraud alert email error:", err));
+        }
+
+        await supabase.from("orders").update(billingUpdate).eq("id", orderId);
+      }
+
       // Fallback 3: match by stripe_payment_id
       if (!orderId && stripePaymentId) {
         const { data: matchedOrder } = await supabase

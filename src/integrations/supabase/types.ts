@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_ips: {
+        Row: {
+          blocked_at: string | null
+          blocked_by: string | null
+          id: string
+          ip_address: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          id?: string
+          ip_address: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          id?: string
+          ip_address?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       city_pages: {
         Row: {
           base_price: number | null
@@ -139,12 +163,19 @@ export type Database = {
       delivery_leads: {
         Row: {
           address: string
+          browser_geolat: number | null
+          browser_geolng: number | null
+          calculated_price: number | null
           contacted: boolean
           created_at: string
           customer_email: string | null
           customer_name: string
           customer_phone: string | null
+          declined_at: string | null
           distance_miles: number | null
+          fraud_score: number | null
+          fraud_signals: Json | null
+          geo_matches_address: boolean | null
           id: string
           ip_address: string | null
           lead_number: string | null
@@ -152,16 +183,27 @@ export type Database = {
           nearest_pit_id: string | null
           nearest_pit_name: string | null
           notes: string | null
+          offer_sent_at: string | null
+          pre_order_id: string | null
           stage: string | null
+          submission_count: number | null
+          user_agent: string | null
         }
         Insert: {
           address: string
+          browser_geolat?: number | null
+          browser_geolng?: number | null
+          calculated_price?: number | null
           contacted?: boolean
           created_at?: string
           customer_email?: string | null
           customer_name: string
           customer_phone?: string | null
+          declined_at?: string | null
           distance_miles?: number | null
+          fraud_score?: number | null
+          fraud_signals?: Json | null
+          geo_matches_address?: boolean | null
           id?: string
           ip_address?: string | null
           lead_number?: string | null
@@ -169,16 +211,27 @@ export type Database = {
           nearest_pit_id?: string | null
           nearest_pit_name?: string | null
           notes?: string | null
+          offer_sent_at?: string | null
+          pre_order_id?: string | null
           stage?: string | null
+          submission_count?: number | null
+          user_agent?: string | null
         }
         Update: {
           address?: string
+          browser_geolat?: number | null
+          browser_geolng?: number | null
+          calculated_price?: number | null
           contacted?: boolean
           created_at?: string
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string | null
+          declined_at?: string | null
           distance_miles?: number | null
+          fraud_score?: number | null
+          fraud_signals?: Json | null
+          geo_matches_address?: boolean | null
           id?: string
           ip_address?: string | null
           lead_number?: string | null
@@ -186,7 +239,11 @@ export type Database = {
           nearest_pit_id?: string | null
           nearest_pit_name?: string | null
           notes?: string | null
+          offer_sent_at?: string | null
+          pre_order_id?: string | null
           stage?: string | null
+          submission_count?: number | null
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -219,6 +276,13 @@ export type Database = {
       }
       orders: {
         Row: {
+          billing_address: string | null
+          billing_country: string | null
+          billing_matches_delivery: boolean | null
+          billing_name: string | null
+          billing_zip: string | null
+          call_verified_at: string | null
+          call_verified_by: string | null
           card_authorization_accepted: boolean | null
           card_authorization_timestamp: string | null
           cash_collected: boolean | null
@@ -237,17 +301,21 @@ export type Database = {
           delivery_window: string
           discount_amount: number | null
           distance_miles: number
+          fraud_score: number | null
+          fraud_signals: Json | null
           id: string
           lead_reference: string | null
           lookup_token: string | null
           lookup_token_used: boolean
           notes: string | null
           order_number: string | null
+          payment_attempts: number | null
           payment_method: string
           payment_status: string
           pit_id: string | null
           price: number
           quantity: number
+          review_status: string | null
           same_day_requested: boolean
           saturday_surcharge: boolean
           saturday_surcharge_amount: number
@@ -261,6 +329,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_address?: string | null
+          billing_country?: string | null
+          billing_matches_delivery?: boolean | null
+          billing_name?: string | null
+          billing_zip?: string | null
+          call_verified_at?: string | null
+          call_verified_by?: string | null
           card_authorization_accepted?: boolean | null
           card_authorization_timestamp?: string | null
           cash_collected?: boolean | null
@@ -279,17 +354,21 @@ export type Database = {
           delivery_window?: string
           discount_amount?: number | null
           distance_miles: number
+          fraud_score?: number | null
+          fraud_signals?: Json | null
           id?: string
           lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
           notes?: string | null
           order_number?: string | null
+          payment_attempts?: number | null
           payment_method?: string
           payment_status?: string
           pit_id?: string | null
           price: number
           quantity?: number
+          review_status?: string | null
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
@@ -303,6 +382,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_address?: string | null
+          billing_country?: string | null
+          billing_matches_delivery?: boolean | null
+          billing_name?: string | null
+          billing_zip?: string | null
+          call_verified_at?: string | null
+          call_verified_by?: string | null
           card_authorization_accepted?: boolean | null
           card_authorization_timestamp?: string | null
           cash_collected?: boolean | null
@@ -321,17 +407,21 @@ export type Database = {
           delivery_window?: string
           discount_amount?: number | null
           distance_miles?: number
+          fraud_score?: number | null
+          fraud_signals?: Json | null
           id?: string
           lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
           notes?: string | null
           order_number?: string | null
+          payment_attempts?: number | null
           payment_method?: string
           payment_status?: string
           pit_id?: string | null
           price?: number
           quantity?: number
+          review_status?: string | null
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
