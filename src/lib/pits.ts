@@ -66,6 +66,8 @@ export const FALLBACK_GLOBAL_PRICING: GlobalPricing = {
   extra_per_mile: FALLBACK_EXTRA_PER_MILE,
   max_distance: FALLBACK_MAX_DISTANCE,
   saturday_surcharge: FALLBACK_SATURDAY_SURCHARGE,
+  card_processing_fee_percent: 3.5,
+  card_processing_fee_fixed: 0.30,
 };
 
 /**
