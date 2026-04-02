@@ -1318,7 +1318,7 @@ const Order = () => {
                   <div className="p-6">
                     <SectionHeading icon={CreditCard} title="PAYMENT METHOD" />
 
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className={`grid ${isWeekendDate ? 'grid-cols-1' : 'grid-cols-2'} gap-3 mb-4`}>
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("stripe-link")}
@@ -1340,25 +1340,34 @@ const Order = () => {
                         </p>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("cash")}
-                        className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
-                          paymentMethod === "cash" || paymentMethod === "check"
-                            ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
-                            : "border-border bg-card hover:border-accent/40 hover:shadow-md"
-                        }`}
-                      >
-                        {(paymentMethod === "cash" || paymentMethod === "check") && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                            <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
-                          </motion.div>
-                        )}
-                        <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                        <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
-                        <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
-                      </button>
+                      {!isWeekendDate && (
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("cash")}
+                          className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
+                            paymentMethod === "cash" || paymentMethod === "check"
+                              ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
+                              : "border-border bg-card hover:border-accent/40 hover:shadow-md"
+                          }`}
+                        >
+                          {(paymentMethod === "cash" || paymentMethod === "check") && (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                              <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
+                            </motion.div>
+                          )}
+                          <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
+                          <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
+                          <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
+                        </button>
+                      )}
                     </div>
+
+                    {isWeekendDate && (
+                      <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 flex items-center gap-1.5">
+                        <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                        Weekend deliveries require card payment.
+                      </p>
+                    )}
 
                     {paymentMethod === "stripe-link" && (
                       <div className="space-y-3">
