@@ -4847,7 +4847,7 @@ const Leads = () => {
                     <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery radius (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles)</label>
                     <Input placeholder="e.g. 15" value={editPitData.free_miles ?? ""} onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
