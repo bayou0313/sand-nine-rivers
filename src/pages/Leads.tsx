@@ -4533,50 +4533,149 @@ const Leads = () => {
       {/* Detail Modal */}
       {selectedLead && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelectedLead(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
-              <p className="font-mono text-sm" style={{ color: BRAND_GOLD }}>{selectedLead.lead_number || "—"}</p>
-              <h2 className="text-lg font-bold text-white">{selectedLead.customer_name}</h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-mono text-sm" style={{ color: BRAND_GOLD }}>{selectedLead.lead_number || "—"}</p>
+                  <h2 className="text-lg font-bold text-white">{selectedLead.customer_name}</h2>
+                </div>
+                {selectedLead.fraud_score != null && selectedLead.fraud_score > 0 && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{
+                    backgroundColor: selectedLead.fraud_score >= 80 ? "#EF4444" : selectedLead.fraud_score >= 40 ? "#F59E0B" : "#22C55E"
+                  }}>
+                    Risk: {selectedLead.fraud_score >= 80 ? "HIGH" : selectedLead.fraud_score >= 40 ? "MEDIUM" : "LOW"} ({selectedLead.fraud_score})
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-xs text-gray-400">Submitted</p><p className="font-medium">{formatLeadDate(selectedLead.created_at)}</p></div>
-                <div><p className="text-xs text-gray-400">IP Address</p><p className="font-mono text-xs">{selectedLead.ip_address || "—"}</p></div>
-                <div className="col-span-2"><p className="text-xs text-gray-400">Address</p><p className="font-medium">{selectedLead.address}</p></div>
-                <div><p className="text-xs text-gray-400">Distance</p><p>{selectedLead.distance_miles?.toFixed(1) || "—"} mi</p></div>
-                <div><p className="text-xs text-gray-400">Email</p><p>{selectedLead.customer_email || "—"}</p></div>
-                <div><p className="text-xs text-gray-400">Phone</p><p>{selectedLead.customer_phone || "—"}</p></div>
-                <div>
-                  <p className="text-xs text-gray-400">Contacted</p>
-                  <ContactedBadge contacted={selectedLead.contacted} onClick={() => { toggleContacted(selectedLead.id); setSelectedLead({ ...selectedLead, contacted: !selectedLead.contacted }); }} loading={toggling === selectedLead.id} />
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left: Customer Info */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>Customer Info</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div><p className="text-xs text-gray-400">Submitted</p><p className="font-medium">{formatLeadDate(selectedLead.created_at)}</p></div>
+                    <div><p className="text-xs text-gray-400">Distance</p><p>{selectedLead.distance_miles?.toFixed(1) || "—"} mi</p></div>
+                    <div className="col-span-2"><p className="text-xs text-gray-400">Address</p><p className="font-medium">{selectedLead.address}</p></div>
+                    <div><p className="text-xs text-gray-400">Email</p><p>{selectedLead.customer_email || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Phone</p><p>{selectedLead.customer_phone || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Nearest PIT</p><p>{selectedLead.nearest_pit_name || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Calculated Price</p><p className="font-bold" style={{ color: BRAND_GOLD }}>{selectedLead.calculated_price ? `$${selectedLead.calculated_price}` : "—"}</p></div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Contacted</p>
+                    <ContactedBadge contacted={selectedLead.contacted} onClick={() => { toggleContacted(selectedLead.id); setSelectedLead({ ...selectedLead, contacted: !selectedLead.contacted }); }} loading={toggling === selectedLead.id} />
+                  </div>
+                  {selectedLead.stage === "won" && (
+                    <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-center">
+                      <span className="text-green-700 font-bold text-sm">✅ ORDER PLACED</span>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Stage</label>
+                    <select value={detailStage} onChange={e => setDetailStage(e.target.value)} className="w-full h-10 px-3 rounded-md border">
+                      {STAGES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
+                  </div>
+                  {selectedLead.notes && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-1">History</p>
+                      <pre className="text-xs bg-gray-50 p-3 rounded border whitespace-pre-wrap max-h-24 overflow-y-auto">{selectedLead.notes}</pre>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Add Note</label>
+                    <Textarea rows={2} value={detailNote} onChange={e => setDetailNote(e.target.value)} placeholder="Type a note..." />
+                  </div>
+                  <Button onClick={saveDetail} disabled={savingDetail} className="w-full" style={{ backgroundColor: BRAND_NAVY, color: "white" }}>
+                    {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+                  </Button>
+                </div>
+
+                {/* Right: Fraud Panel */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>Fraud Analysis</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 border space-y-3 text-sm">
+                    <div><p className="text-xs text-gray-400">Fraud Score</p>
+                      <p className="text-xl font-bold" style={{ color: (selectedLead.fraud_score || 0) >= 80 ? "#EF4444" : (selectedLead.fraud_score || 0) >= 40 ? "#F59E0B" : "#22C55E" }}>
+                        {selectedLead.fraud_score ?? 0}
+                      </p>
+                    </div>
+                    <div><p className="text-xs text-gray-400">Signals</p>
+                      {selectedLead.fraud_signals && selectedLead.fraud_signals.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedLead.fraud_signals.map((s, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">{s}</span>
+                          ))}
+                        </div>
+                      ) : <p className="text-green-600 text-xs font-medium">No fraud signals</p>}
+                    </div>
+                    <div><p className="text-xs text-gray-400">IP Address</p><p className="font-mono text-xs">{selectedLead.ip_address || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">User Agent</p><p className="text-xs truncate">{selectedLead.user_agent || "—"}</p></div>
+                    <div><p className="text-xs text-gray-400">Browser Location</p>
+                      <p className="text-xs">{selectedLead.browser_geolat != null ? `${selectedLead.browser_geolat.toFixed(4)}, ${selectedLead.browser_geolng?.toFixed(4)}` : "Not provided"}</p>
+                    </div>
+                    <div><p className="text-xs text-gray-400">Geo Matches Address</p>
+                      <p className="text-xs font-medium" style={{ color: selectedLead.geo_matches_address === false ? "#EF4444" : "#22C55E" }}>
+                        {selectedLead.geo_matches_address == null ? "N/A" : selectedLead.geo_matches_address ? "✅ Yes" : "❌ No"}
+                      </p>
+                    </div>
+                    <div><p className="text-xs text-gray-400">Submissions from IP</p><p className="text-xs">{selectedLead.submission_count || 1}</p></div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="space-y-2 border-t pt-4">
+                    <h4 className="text-xs font-bold uppercase text-gray-400">Actions</h4>
+
+                    {/* Send Offer */}
+                    {selectedLead.stage !== "won" && selectedLead.stage !== "lost" && !offerResult && (
+                      <div className="bg-green-50 rounded-lg p-3 border border-green-200 space-y-2">
+                        <p className="text-xs font-bold text-green-700">Send Offer</p>
+                        <select value={offerPitId} onChange={e => setOfferPitId(e.target.value)} className="w-full h-8 px-2 rounded border text-sm">
+                          <option value="">Select PIT...</option>
+                          {pits.filter(p => p.status === "active").map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                        <Input type="number" placeholder="Price ($)" value={offerPrice} onChange={e => setOfferPrice(e.target.value)} className="h-8" />
+                        <Button onClick={handleSendOffer} disabled={sendingOffer || !offerPitId || !offerPrice} size="sm" className="w-full" style={{ backgroundColor: "#22C55E", color: "white" }}>
+                          {sendingOffer ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Send Offer & Payment Link
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Offer result */}
+                    {offerResult && (
+                      <div className="bg-green-50 rounded-lg p-3 border border-green-200 space-y-2">
+                        <p className="text-xs font-bold text-green-700">✅ Offer Sent — {offerResult.order_number}</p>
+                        <div className="flex gap-1">
+                          <Input value={offerResult.payment_url} readOnly className="h-8 text-xs" />
+                          <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(offerResult.payment_url); toast({ title: "Copied" }); }}>
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Decline */}
+                    {selectedLead.stage !== "won" && selectedLead.stage !== "lost" && (
+                      <Button onClick={handleDeclineLead} disabled={decliningLead} variant="outline" size="sm" className="w-full border-red-300 text-red-600 hover:bg-red-50">
+                        {decliningLead ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Decline Lead
+                      </Button>
+                    )}
+
+                    {/* Flag Fraud */}
+                    <div className="space-y-1">
+                      <Input placeholder="Fraud reason..." value={fraudReason} onChange={e => setFraudReason(e.target.value)} className="h-8 text-xs" />
+                      <Button onClick={handleFlagFraud} disabled={flaggingFraud} variant="outline" size="sm" className="w-full border-gray-300 text-gray-600">
+                        {flaggingFraud ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Flag as Fraud & Block IP
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {selectedLead.stage === "won" && (
-                <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-center">
-                  <span className="text-green-700 font-bold text-sm">✅ ORDER PLACED</span>
-                </div>
-              )}
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Stage</label>
-                <select value={detailStage} onChange={e => setDetailStage(e.target.value)} className="w-full h-10 px-3 rounded-md border">
-                  {STAGES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                </select>
-              </div>
-              {selectedLead.notes && (
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">History</p>
-                  <pre className="text-xs bg-gray-50 p-3 rounded border whitespace-pre-wrap max-h-32 overflow-y-auto">{selectedLead.notes}</pre>
-                </div>
-              )}
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Add Note</label>
-                <Textarea rows={2} value={detailNote} onChange={e => setDetailNote(e.target.value)} placeholder="Type a note..." />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={saveDetail} disabled={savingDetail} className="flex-1" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                  {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
-                </Button>
-                <Button onClick={() => setSelectedLead(null)} variant="outline" className="flex-1">Close</Button>
+
+              <div className="flex justify-end mt-4">
+                <Button onClick={() => setSelectedLead(null)} variant="outline">Close</Button>
               </div>
             </div>
           </div>
