@@ -4661,6 +4661,70 @@ const Leads = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Notification bell */}
+            <div className="relative" ref={notifPanelRef}>
+              <button
+                onClick={() => {
+                  setShowNotifPanel(prev => !prev);
+                  if (!showNotifPanel && unreadCount > 0) markNotificationsRead();
+                }}
+                className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Bell className="w-5 h-5" style={{ color: BRAND_NAVY }} />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ backgroundColor: BRAND_GOLD }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification panel */}
+              {showNotifPanel && (
+                <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border z-50" style={{ borderColor: CARD_BORDER }}>
+                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
+                    <h3 className="text-sm font-bold" style={{ color: BRAND_NAVY }}>Notifications</h3>
+                    <button onClick={() => setShowNotifPanel(false)} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-gray-400">No notifications</div>
+                  ) : (
+                    notifications.slice(0, 20).map((n: any) => (
+                      <div
+                        key={n.id}
+                        className="px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors cursor-default"
+                        style={{ borderColor: CARD_BORDER, backgroundColor: n.read ? "transparent" : "#FFFDF5" }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold" style={{ color: BRAND_NAVY }}>{n.title}</p>
+                          <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                            {(() => {
+                              try {
+                                const d = new Date(n.created_at);
+                                const now = new Date();
+                                const diffMs = now.getTime() - d.getTime();
+                                const diffMin = Math.floor(diffMs / 60000);
+                                if (diffMin < 1) return "just now";
+                                if (diffMin < 60) return `${diffMin}m ago`;
+                                const diffHrs = Math.floor(diffMin / 60);
+                                if (diffHrs < 24) return `${diffHrs}h ago`;
+                                return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                              } catch { return ""; }
+                            })()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
             {(activePage === "overview" || activePage === "all") && (
               <Button onClick={exportCSV} variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-1" /> Export CSV
