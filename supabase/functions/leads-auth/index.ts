@@ -1592,7 +1592,7 @@ serve(async (req) => {
       }
       console.log(`Sampling ${samplePoints.length} points for reverse geocoding`);
 
-      const cityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
+      const cityMap = new Map<string, { name: string; state: string; lat: number; lng: number; region: string }>();
 
       const BATCH_SIZE = 10;
       for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
