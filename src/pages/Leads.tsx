@@ -1827,7 +1827,7 @@ const Leads = () => {
           />
           {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
           <Button onClick={handleLogin} disabled={loading} className="w-full" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ACCESS LEADS"}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ACCESS LMT"}
           </Button>
         </div>
       </div>
