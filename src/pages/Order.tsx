@@ -506,6 +506,9 @@ const Order = () => {
 
           const verifyOrderId = snap.pendingOrderId || signal.order_id || null;
           const verifyToken = snap.lookupToken || null;
+          // Restore to React state so handleDownloadInvoice can use them
+          if (verifyToken) setLookupToken(verifyToken);
+          if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
 
           if (verifyOrderId && verifyToken) {
             verifyStripePayment(verifyOrderId, verifyToken).then((verified) => {
