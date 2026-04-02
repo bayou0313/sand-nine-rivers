@@ -3601,6 +3601,41 @@ const Leads = () => {
                       <p className="text-[10px] text-gray-400 mt-1">Leave blank for no global limit</p>
                     </div>
                   </div>
+
+                  {/* Processing Fee Settings */}
+                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: BRAND_NAVY }}>Processing Fees</h4>
+                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Applied to card payments and COD late payment conversions</p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Card processing fee (%)</label>
+                      <div className="relative">
+                        <Input className="pr-8 h-9" value={editSettings.card_processing_fee_percent || ""} onChange={e => setEditSettings({ ...editSettings, card_processing_fee_percent: e.target.value })} placeholder="3.5" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Card processing fee (fixed)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 h-9" value={editSettings.card_processing_fee_fixed || ""} onChange={e => setEditSettings({ ...editSettings, card_processing_fee_fixed: e.target.value })} placeholder="0.30" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">COD late payment fee (%)</label>
+                      <div className="relative">
+                        <Input className="pr-8 h-9" value={editSettings.cod_late_payment_fee_percent || ""} onChange={e => setEditSettings({ ...editSettings, cod_late_payment_fee_percent: e.target.value })} placeholder="3.5" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">COD late payment fee (fixed)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                        <Input className="pl-6 h-9" value={editSettings.cod_late_payment_fee_fixed || ""} onChange={e => setEditSettings({ ...editSettings, cod_late_payment_fee_fixed: e.target.value })} placeholder="0.30" />
+                      </div>
+                    </div>
+                  </div>
+                  </div>
                   <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
