@@ -171,7 +171,8 @@ const Order = () => {
     return getTaxRateFromAddress(address);
   }, [address, detectedParish]);
 
-  const PROCESSING_FEE_RATE = 0.035;
+  const PROCESSING_FEE_RATE = globalPricing.card_processing_fee_percent / 100;
+  const PROCESSING_FEE_FIXED = globalPricing.card_processing_fee_fixed;
   const effectiveSatSurcharge = getEffectiveSaturdaySurcharge(matchedPitSchedule, globalSaturdaySurcharge);
   const effectiveSunSurcharge = getEffectiveSundaySurcharge(matchedPitSchedule);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
@@ -180,7 +181,7 @@ const Order = () => {
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
-  const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
+  const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2));
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
 
   // Auto-switch to card-only on weekend dates
