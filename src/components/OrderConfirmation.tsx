@@ -20,24 +20,6 @@ const LOGO_BLACK =
 const WAYS_LOGO =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
 
-const SERVED_CITIES: { name: string; slug: string }[] = [
-  { name: "New Orleans", slug: "new-orleans-la" },
-  { name: "Metairie", slug: "metairie-la" },
-  { name: "Kenner", slug: "kenner-la" },
-  { name: "Chalmette", slug: "chalmette-la" },
-  { name: "Gretna", slug: "gretna-la" },
-  { name: "Harvey", slug: "harvey-la" },
-  { name: "Westwego", slug: "westwego-la" },
-  { name: "Slidell", slug: "slidell-la" },
-  { name: "Belle Chasse", slug: "belle-chasse-la" },
-  { name: "Marrero", slug: "marrero-la" },
-  { name: "Terrytown", slug: "terrytown-la" },
-  { name: "Arabi", slug: "arabi-la" },
-  { name: "Harahan", slug: "harahan-la" },
-  { name: "River Ridge", slug: "river-ridge-la" },
-  { name: "Elmwood", slug: "elmwood-la" },
-  { name: "Avondale", slug: "avondale-la" },
-];
 
 const DELIVERY_TERMS = [
   {
