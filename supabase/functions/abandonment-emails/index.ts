@@ -60,6 +60,17 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const resend = new Resend(resendKey);
 
+    // Fetch sender identity from global_settings
+    const { data: settingsRows } = await supabase
+      .from("global_settings")
+      .select("key, value")
+      .in("key", ["sender_name", "sender_title", "site_name"]);
+    const cfg: Record<string, string> = {};
+    (settingsRows || []).forEach((r: any) => { cfg[r.key] = r.value; });
+    const SENDER_NAME = cfg.sender_name || "Silas Caldeira";
+    const SENDER_TITLE = cfg.sender_title || "Founder & CEO";
+    const SITE = cfg.site_name || "River Sand";
+
     const results = { email_1hr: 0, email_24hr: 0, email_72hr: 0, errors: [] as string[] };
 
     // Email 1: 1 hour after abandonment
