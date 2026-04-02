@@ -196,7 +196,7 @@ export default function OrderConfirmation({
   });
 
   return (
-    <div className="print-confirmation">
+    <div className="print-confirmation max-w-[720px] mx-auto my-6 rounded-2xl shadow-lg border border-border/40 overflow-hidden" style={{ backgroundColor: "#FFFFFF" }}>
       {/* ── HEADER ── */}
       <FadeIn delay={0}>
         <Link
