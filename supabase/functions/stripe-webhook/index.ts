@@ -198,6 +198,17 @@ serve(async (req) => {
               },
             }),
           }).catch((err) => console.error("[stripe-webhook] Fraud alert email error:", err));
+
+          // Billing mismatch notification
+          try {
+            await supabase.from("notifications").insert({
+              type: "fraud_flagged",
+              title: "⚠️ Billing Mismatch",
+              message: `Order ${session.metadata?.order_number || "Unknown"} — billing ZIP does not match delivery address`,
+              entity_type: "order",
+              entity_id: orderId,
+            });
+          } catch (notifErr) { console.error("[stripe-webhook] Notification insert error:", notifErr); }
         }
 
         await supabase.from("orders").update(billingUpdate).eq("id", orderId);
