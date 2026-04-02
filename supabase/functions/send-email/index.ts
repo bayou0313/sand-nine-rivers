@@ -11,12 +11,15 @@ const corsHeaders = {
 const BRAND_COLOR = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
-const DEFAULT_PHONE = "1-855-GOT-WAYS";
-const DEFAULT_WEBSITE = "riversand.net";
-const DEFAULT_LEGAL_NAME = "WAYS® Materials LLC";
-const DEFAULT_SUPPORT_EMAIL = "orders@riversand.net";
-const DEFAULT_SITE_NAME = "River Sand";
-const DEFAULT_TAGLINE = "Real Sand. Real People.";
+// Module-level defaults — used by template functions defined outside serve()
+// Runtime values from global_settings override these inside the serve handler
+let PHONE = "1-855-GOT-WAYS";
+let WEBSITE = "riversand.net";
+let LEGAL_NAME = "WAYS® Materials LLC";
+let SUPPORT_EMAIL = "orders@riversand.net";
+let SITE_NAME = "River Sand";
+let COPYRIGHT_YEAR = "2026";
+let TAGLINE = "Real Sand. Real People.";
 
 // Defaults — overridden by global_settings at runtime
 const DEFAULT_FROM_NAME = "River Sand";
