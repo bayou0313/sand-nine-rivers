@@ -71,6 +71,7 @@ export default function BrandedConfirmation({
   detail,
   children,
 }: BrandedConfirmationProps) {
+  const biz = useBusinessSettings();
   return (
     <div className="min-h-screen flex flex-col font-body" style={{ backgroundColor: "#F9FAFB" }}>
       {/* ── HEADER ── */}
