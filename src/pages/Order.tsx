@@ -5,7 +5,7 @@ import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { useCountdown } from "@/hooks/use-countdown";
-import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish } from "@/lib/format";
+import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1558,10 +1558,23 @@ const Order = () => {
                             <span className="font-display text-foreground">+{formatCurrency(sundaySurchargeTotal)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-sm">
-                          <span className="font-body text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
-                          <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
-                        </div>
+                        {(() => {
+                          const stateTaxAmt = Math.round((taxAmount / (taxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
+                          const parishTaxAmt = Math.round((taxAmount - stateTaxAmt) * 100) / 100;
+                          const parishLocalRate = taxInfo.rate - LA_STATE_TAX_RATE;
+                          return (
+                            <>
+                              <div className="flex justify-between text-sm">
+                                <span className="font-body text-muted-foreground">Louisiana State Tax ({(LA_STATE_TAX_RATE * 100).toFixed(2)}%)</span>
+                                <span className="font-display text-foreground">+{formatCurrency(stateTaxAmt)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="font-body text-muted-foreground">{taxInfo.parish} Tax ({(parishLocalRate * 100).toFixed(2)}%)</span>
+                                <span className="font-display text-foreground">+{formatCurrency(parishTaxAmt)}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
                         <Separator className="my-1" />
                         <div className="flex justify-between items-center">
                           <span className="font-display text-lg text-foreground">TOTAL DUE</span>
@@ -1802,7 +1815,17 @@ const Order = () => {
                       {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
                         <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} destructive />
                       )}
-                      <ReceiptRow label={`Sales tax — ${taxInfo.parish} (${(taxInfo.rate * 100).toFixed(2)}%)`} value={`+${formatCurrency(taxAmount)}`} />
+                      {(() => {
+                        const stateTaxAmt = Math.round((taxAmount / (taxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
+                        const parishTaxAmt = Math.round((taxAmount - stateTaxAmt) * 100) / 100;
+                        const parishLocalRate = taxInfo.rate - LA_STATE_TAX_RATE;
+                        return (
+                          <>
+                            <ReceiptRow label={`Louisiana State Tax (${(LA_STATE_TAX_RATE * 100).toFixed(2)}%)`} value={`+${formatCurrency(stateTaxAmt)}`} />
+                            <ReceiptRow label={`${taxInfo.parish} Tax (${(parishLocalRate * 100).toFixed(2)}%)`} value={`+${formatCurrency(parishTaxAmt)}`} />
+                          </>
+                        );
+                      })()}
 
                       {paymentMethod === "stripe-link" && (
                         <>

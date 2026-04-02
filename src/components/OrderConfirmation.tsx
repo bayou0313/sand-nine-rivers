@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Loader2, Download, ChevronDown, MessageCircle, Mail, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import {
   Accordion,
@@ -467,12 +467,23 @@ export default function OrderConfirmation({
                 value={formatCurrency(displaySatSurcharge)}
               />
             )}
-            {displayTaxAmount > 0 && (
-              <PriceRow
-                label={`${displayTaxInfo.parish} Tax (${(displayTaxInfo.rate * 100).toFixed(2)}%)`}
-                value={formatCurrency(displayTaxAmount)}
-              />
-            )}
+            {displayTaxAmount > 0 && (() => {
+              const stateTaxAmt = Math.round((displayTaxAmount / (displayTaxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
+              const parishTaxAmt = Math.round((displayTaxAmount - stateTaxAmt) * 100) / 100;
+              const parishLocalRate = displayTaxInfo.rate - LA_STATE_TAX_RATE;
+              return (
+                <>
+                  <PriceRow
+                    label={`Louisiana State Tax (${(LA_STATE_TAX_RATE * 100).toFixed(2)}%)`}
+                    value={formatCurrency(stateTaxAmt)}
+                  />
+                  <PriceRow
+                    label={`${displayTaxInfo.parish} Tax (${(parishLocalRate * 100).toFixed(2)}%)`}
+                    value={formatCurrency(parishTaxAmt)}
+                  />
+                </>
+              );
+            })()}
             {isStripePaid && (
               <PriceRow
                 label="Processing fee"

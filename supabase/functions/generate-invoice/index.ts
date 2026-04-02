@@ -303,8 +303,32 @@ serve(async (req) => {
         }
       }
     }
-    // Fallback: derive parish rate from combined rate
+    // Fallback: city-to-parish mapping
+    if (!parishName) {
+      const cityToParish: Record<string, string> = {
+        "new orleans": "orleans", "metairie": "jefferson", "kenner": "jefferson",
+        "gretna": "jefferson", "harvey": "jefferson", "marrero": "jefferson",
+        "westwego": "jefferson", "terrytown": "jefferson", "bridge city": "jefferson",
+        "avondale": "jefferson", "chalmette": "st. bernard", "arabi": "st. bernard",
+        "meraux": "st. bernard", "slidell": "st. tammany", "mandeville": "st. tammany",
+        "covington": "st. tammany", "madisonville": "st. tammany", "abita springs": "st. tammany",
+        "belle chasse": "plaquemines", "luling": "st. charles", "destrehan": "st. charles",
+        "laplace": "st. john the baptist", "reserve": "st. john the baptist",
+        "thibodaux": "lafourche", "hammond": "tangipahoa", "ponchatoula": "tangipahoa",
+      };
+      const sortedCities = Object.keys(cityToParish).sort((a, b) => b.length - a.length);
+      for (const city of sortedCities) {
+        if (addrLower.includes(city)) {
+          const pk = cityToParish[city];
+          parishName = pk.replace(/\b\w/g, c => c.toUpperCase());
+          parishLocalRate = PARISH_TAX_RATES[pk] || 0;
+          break;
+        }
+      }
+    }
+    // Last fallback: derive parish rate from combined rate
     if (!parishName && combinedRate > 0) {
+      parishName = "Local";
       parishLocalRate = Math.max(0, combinedRate - LA_STATE_RATE);
     }
 
@@ -388,15 +412,11 @@ serve(async (req) => {
       termsHeight += bLines.length * 3.5 + 0.5;
     });
 
-    // Position terms: either after content or pushed to fill space above footer
-    const termsStartY = Math.max(y + 2, maxContentY - termsHeight - 2);
-
-    // Check if terms fit on current page, otherwise add page
-    if (termsStartY + termsHeight > maxContentY) {
+    // Position terms: flow naturally after content, no push-down
+    // Only add a new page if content won't fit
+    if (y + termsHeight > maxContentY) {
       doc.addPage();
       y = 20;
-    } else {
-      y = termsStartY;
     }
 
     // ─── Clean "DUE AT DELIVERY" two-column text (no box) ───
