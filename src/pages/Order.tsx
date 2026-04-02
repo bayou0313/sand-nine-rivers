@@ -267,6 +267,9 @@ const Order = () => {
           }
         } catch {}
       }
+      // Restore to React state so handleDownloadInvoice can use them
+      if (verifyToken) setLookupToken(verifyToken);
+      if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
 
       // Show verifying state while we confirm with backend
       setVerifyingPayment(true);
