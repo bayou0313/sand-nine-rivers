@@ -5,6 +5,7 @@ import { Loader2, Download, ChevronDown, MessageCircle, Mail, Share2 } from "luc
 import { Button } from "@/components/ui/button";
 import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import {
   Accordion,
   AccordionContent,
@@ -19,24 +20,6 @@ const LOGO_BLACK =
 const WAYS_LOGO =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
 
-const SERVED_CITIES: { name: string; slug: string }[] = [
-  { name: "New Orleans", slug: "new-orleans-la" },
-  { name: "Metairie", slug: "metairie-la" },
-  { name: "Kenner", slug: "kenner-la" },
-  { name: "Chalmette", slug: "chalmette-la" },
-  { name: "Gretna", slug: "gretna-la" },
-  { name: "Harvey", slug: "harvey-la" },
-  { name: "Westwego", slug: "westwego-la" },
-  { name: "Slidell", slug: "slidell-la" },
-  { name: "Belle Chasse", slug: "belle-chasse-la" },
-  { name: "Marrero", slug: "marrero-la" },
-  { name: "Terrytown", slug: "terrytown-la" },
-  { name: "Arabi", slug: "arabi-la" },
-  { name: "Harahan", slug: "harahan-la" },
-  { name: "River Ridge", slug: "river-ridge-la" },
-  { name: "Elmwood", slug: "elmwood-la" },
-  { name: "Avondale", slug: "avondale-la" },
-];
 
 const DELIVERY_TERMS = [
   {
@@ -181,6 +164,7 @@ export default function OrderConfirmation({
   canDownload,
 }: OrderConfirmationProps) {
   const { toast } = useToast();
+  const biz = useBusinessSettings();
   const [showWhatsAppChoice, setShowWhatsAppChoice] = useState(false);
 
   const isStripePaid =
@@ -721,36 +705,6 @@ export default function OrderConfirmation({
         </div>
       </FadeIn>
 
-      {/* ── AREAS WE SERVE ── */}
-      <FadeIn delay={0.65} className="print-hide">
-        <div className="px-6 py-8 text-center" style={{ backgroundColor: "#FAFAF8" }}>
-          <p
-            className="text-[10px] font-bold tracking-[0.25em] uppercase mb-4 font-display"
-            style={{ color: "#C07A00" }}
-          >
-            Same-Day Delivery Available In
-          </p>
-          <div className="flex flex-wrap justify-center gap-x-1 gap-y-1 max-w-[600px] mx-auto">
-            {SERVED_CITIES.map((city, i) => (
-              <span key={city.slug}>
-                <Link
-                  to={`/${city.slug}/river-sand-delivery`}
-                  className="text-sm font-body hover:underline transition-colors"
-                  style={{ color: "#6B7280" }}
-                >
-                  {city.name}
-                </Link>
-                {i < SERVED_CITIES.length - 1 && (
-                  <span className="mx-1" style={{ color: "#D1D5DB" }}>
-                    ·
-                  </span>
-                )}
-              </span>
-            ))}
-          </div>
-        </div>
-      </FadeIn>
-
       {/* ── FOOTER ── */}
       <FadeIn delay={0.7} className="print-hide">
         <div
@@ -782,19 +736,25 @@ export default function OrderConfirmation({
             className="text-xs mb-1 font-body"
             style={{ color: "rgba(255,255,255,0.3)" }}
           >
-            © 2026 Ways Materials LLC
+            © {biz.copyright_year} {biz.legal_name}
           </p>
           <p
             className="text-xs mb-1 font-body"
             style={{ color: "rgba(255,255,255,0.25)" }}
           >
-            orders@riversand.net · 1-855-GOT-WAYS
+            {biz.footer_address}
+          </p>
+          <p
+            className="text-xs mb-1 font-body"
+            style={{ color: "rgba(255,255,255,0.25)" }}
+          >
+            {biz.support_email} · {biz.phone}
           </p>
           <p
             className="text-xs font-body"
             style={{ color: "rgba(255,255,255,0.2)" }}
           >
-            River Sand — Real Sand. Real People.
+            {biz.site_name} — {biz.tagline}
           </p>
         </div>
       </FadeIn>

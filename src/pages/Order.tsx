@@ -267,6 +267,9 @@ const Order = () => {
           }
         } catch {}
       }
+      // Restore to React state so handleDownloadInvoice can use them
+      if (verifyToken) setLookupToken(verifyToken);
+      if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
 
       // Show verifying state while we confirm with backend
       setVerifyingPayment(true);
@@ -281,6 +284,7 @@ const Order = () => {
             name: orderData.customer_name || prev.name,
             phone: orderData.customer_phone || prev.phone,
             email: orderData.customer_email || prev.email,
+            companyName: orderData.company_name || prev.companyName,
           }));
           setQuantity(orderData.quantity || 1);
           if (orderData.delivery_date) {
@@ -331,18 +335,36 @@ const Order = () => {
               duration: "",
             });
           }
-        } else if (totalPrice > 0 && address) {
-          setConfirmedTotals({
-            totalPrice,
-            totalWithProcessingFee,
-            processingFee,
-            taxAmount,
-            subtotal,
-            saturdaySurchargeTotal,
-            sundaySurchargeTotal,
-            distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
-            taxInfo,
-          });
+        } else if (returnedOrderNumber) {
+          // Live state was wiped by Stripe redirect — fetch order from DB
+          (async () => {
+            try {
+              const { data: fallbackOrder } = await supabase
+                .from("orders")
+                .select("*")
+                .eq("order_number", returnedOrderNumber)
+                .single();
+              if (fallbackOrder && fallbackOrder.price > 0) {
+                setConfirmedOrderId(fallbackOrder.id);
+                showSuccess(fallbackOrder);
+                return;
+              }
+            } catch {}
+            // Final fallback — use live state if available
+            if (totalPrice > 0 && address) {
+              setConfirmedTotals({
+                totalPrice,
+                totalWithProcessingFee,
+                processingFee,
+                taxAmount,
+                subtotal,
+                saturdaySurchargeTotal,
+                sundaySurchargeTotal,
+                distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
+                taxInfo,
+              });
+            }
+          })();
         }
         toast({
           title: "Payment successful",
@@ -503,6 +525,9 @@ const Order = () => {
 
           const verifyOrderId = snap.pendingOrderId || signal.order_id || null;
           const verifyToken = snap.lookupToken || null;
+          // Restore to React state so handleDownloadInvoice can use them
+          if (verifyToken) setLookupToken(verifyToken);
+          if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
 
           if (verifyOrderId && verifyToken) {
             verifyStripePayment(verifyOrderId, verifyToken).then((verified) => {
@@ -1788,8 +1813,10 @@ const Order = () => {
                     {/* Delivery */}
                     <div>
                       <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">DELIVERY</p>
-                      <ReceiptRow label="Address" value="" />
-                      <p className="font-body text-sm text-foreground -mt-1 mb-2 text-right">{address}</p>
+                      <div className="flex justify-between items-start py-2.5 gap-4">
+                        <span className="font-body text-base text-muted-foreground leading-relaxed shrink-0">Address</span>
+                        <span className="font-display text-base text-foreground text-right break-words min-w-0">{address}</span>
+                      </div>
                       <ReceiptRow label="Date" value={selectedDeliveryDate.fullLabel} />
                       <ReceiptRow label="Window" value="8:00 AM – 5:00 PM" />
                     </div>
@@ -1860,7 +1887,7 @@ const Order = () => {
                     <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
                     <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
                     <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
-                    <p className="font-body text-xs text-muted-foreground">• Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
+                    <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
                     <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
                     <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
                     <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
