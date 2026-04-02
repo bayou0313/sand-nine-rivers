@@ -4732,7 +4732,10 @@ const Leads = () => {
 
       {/* ─── EDIT PIT MODAL ─── */}
       {editingPitId && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-0" onClick={() => cancelEditPit()}>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-0"
+          onMouseDown={e => { if (e.target === e.currentTarget) (e.currentTarget as any).__backdropDown = true; }}
+          onMouseUp={e => { if (e.target === e.currentTarget && (e.currentTarget as any).__backdropDown) cancelEditPit(); (e.currentTarget as any).__backdropDown = false; }}
+        >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto md:my-auto" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
