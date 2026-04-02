@@ -2263,13 +2263,11 @@ const Leads = () => {
               <Button
                 onClick={async () => {
                   try {
-                    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/leads-auth`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ password: adminPassword, action: "backfill_regions" }),
+                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                      body: { password: storedPassword(), action: "backfill_regions" },
                     });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || "Backfill failed");
+                    if (fnError) throw fnError;
+                    if (data?.error) throw new Error(data.error);
                     toast({ title: "Regions Backfilled", description: data.message });
                   } catch (err: any) {
                     toast({ title: "Error", description: err.message, variant: "destructive" });
