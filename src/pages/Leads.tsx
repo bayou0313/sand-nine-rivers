@@ -1100,10 +1100,18 @@ const Leads = () => {
         }
       }
 
-      // Server handles price rollover automatically
+      // Build toast description from server response
+      const parts: string[] = [];
       const pricesUpdated = data?.prices_updated || 0;
-      if (pricesUpdated > 0) {
-        toast({ title: "PIT saved", description: `${pricesUpdated} city page prices updated. Pages flagged for content refresh.` });
+      const pagesRegen = data?.pages_regenerated || 0;
+      const pagesReassigned = data?.deactivation_reassigned || 0;
+      const pagesWaitlisted = data?.deactivation_waitlisted || 0;
+      if (pricesUpdated > 0) parts.push(`${pricesUpdated} city page prices updated`);
+      if (pagesRegen > 0) parts.push(`${pagesRegen} pages regenerated`);
+      if (pagesReassigned > 0) parts.push(`${pagesReassigned} pages reassigned to other PITs`);
+      if (pagesWaitlisted > 0) parts.push(`${pagesWaitlisted} pages moved to waitlist`);
+      if (parts.length > 0) {
+        toast({ title: "PIT saved", description: parts.join(". ") + "." });
         fetchCityPages();
       } else {
         toast({ title: "PIT updated" });
