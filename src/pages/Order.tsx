@@ -1144,7 +1144,7 @@ const Order = () => {
                               const newResult = await findBestPitDriving(allPits, customerCoords.lat, customerCoords.lng, globalPricing, supabase, dayOfWeek);
                               if (newResult && newResult.serviceable) {
                                 setMatchedPit(newResult.pit);
-                                setMatchedPitSchedule({ operating_days: newResult.pit.operating_days, saturday_surcharge_override: newResult.pit.saturday_surcharge_override != null ? Number(newResult.pit.saturday_surcharge_override) : null, same_day_cutoff: newResult.pit.same_day_cutoff });
+                                setMatchedPitSchedule({ operating_days: newResult.pit.operating_days, saturday_surcharge_override: newResult.pit.saturday_surcharge_override != null ? Number(newResult.pit.saturday_surcharge_override) : null, sunday_surcharge: (newResult.pit as any).sunday_surcharge != null ? Number((newResult.pit as any).sunday_surcharge) : null, same_day_cutoff: newResult.pit.same_day_cutoff });
                                 setResult(prev => prev ? { ...prev, distance: parseFloat(newResult.distance.toFixed(1)), price: newResult.price, address: `${newResult.distance.toFixed(1)} miles away` } : prev);
                                 toast({ title: "Price updated", description: `Delivery on ${d.fullLabel} will be from a different location. Price updated to ${formatCurrency(newResult.price)}.` });
                               } else {
