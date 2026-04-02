@@ -1078,6 +1078,9 @@ const Leads = () => {
         operating_days: editPitData.operating_days ?? null,
         saturday_surcharge_override: editPitData.saturday_surcharge_override ?? null,
         same_day_cutoff: editPitData.same_day_cutoff || null,
+        sunday_surcharge: editPitData.sunday_surcharge ?? null,
+        saturday_load_limit: editPitData.saturday_load_limit ?? null,
+        sunday_load_limit: editPitData.sunday_load_limit ?? null,
       };
 
       // Save directly — price rollover handled server-side
