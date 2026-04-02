@@ -1818,6 +1818,23 @@ const Order = () => {
                   </div>
                 )}
 
+                {/* COD Payment Confirmation Checkbox */}
+                {paymentMethod !== "stripe-link" && (
+                  <div className="mt-4">
+                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={codPaymentConfirmed}
+                        onChange={(e) => setCodPaymentConfirmed(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded accent-primary"
+                      />
+                      <span className="font-body text-xs text-foreground leading-relaxed font-medium">
+                        I confirm that payment is due at delivery.
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 {/* Action buttons */}
                 <div className="space-y-3">
                   <div className="flex gap-3">
