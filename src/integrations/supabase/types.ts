@@ -245,6 +245,7 @@ export type Database = {
           order_number: string | null
           payment_method: string
           payment_status: string
+          pit_id: string | null
           price: number
           quantity: number
           same_day_requested: boolean
@@ -253,6 +254,8 @@ export type Database = {
           status: string
           stripe_customer_id: string | null
           stripe_payment_id: string | null
+          sunday_surcharge: boolean
+          sunday_surcharge_amount: number
           tax_amount: number
           tax_rate: number
           updated_at: string
@@ -284,6 +287,7 @@ export type Database = {
           order_number?: string | null
           payment_method?: string
           payment_status?: string
+          pit_id?: string | null
           price: number
           quantity?: number
           same_day_requested?: boolean
@@ -292,6 +296,8 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null
+          sunday_surcharge?: boolean
+          sunday_surcharge_amount?: number
           tax_amount?: number
           tax_rate?: number
           updated_at?: string
@@ -323,6 +329,7 @@ export type Database = {
           order_number?: string | null
           payment_method?: string
           payment_status?: string
+          pit_id?: string | null
           price?: number
           quantity?: number
           same_day_requested?: boolean
@@ -331,6 +338,8 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null
+          sunday_surcharge?: boolean
+          sunday_surcharge_amount?: number
           tax_amount?: number
           tax_rate?: number
           updated_at?: string
@@ -388,9 +397,12 @@ export type Database = {
           operating_days: number[] | null
           price_per_extra_mile: number | null
           same_day_cutoff: string | null
+          saturday_load_limit: number | null
           saturday_surcharge_override: number | null
           served_cities: Json | null
           status: string
+          sunday_load_limit: number | null
+          sunday_surcharge: number | null
           updated_at: string
         }
         Insert: {
@@ -408,9 +420,12 @@ export type Database = {
           operating_days?: number[] | null
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
+          saturday_load_limit?: number | null
           saturday_surcharge_override?: number | null
           served_cities?: Json | null
           status?: string
+          sunday_load_limit?: number | null
+          sunday_surcharge?: number | null
           updated_at?: string
         }
         Update: {
@@ -428,9 +443,12 @@ export type Database = {
           operating_days?: number[] | null
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
+          saturday_load_limit?: number | null
           saturday_surcharge_override?: number | null
           served_cities?: Json | null
           status?: string
+          sunday_load_limit?: number | null
+          sunday_surcharge?: number | null
           updated_at?: string
         }
         Relationships: []

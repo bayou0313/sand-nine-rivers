@@ -74,6 +74,9 @@ interface Pit {
   operating_days: number[] | null;
   saturday_surcharge_override: number | null;
   same_day_cutoff: string | null;
+  sunday_surcharge: number | null;
+  saturday_load_limit: number | null;
+  sunday_load_limit: number | null;
 }
 
 interface GlobalSettings {
@@ -229,7 +232,7 @@ const Leads = () => {
 
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "" });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "", sunday_surcharge: null as number | null, saturday_load_limit: null as number | null, sunday_load_limit: null as number | null });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number; location_type?: string; formatted_address?: string }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
@@ -910,7 +913,7 @@ const Leads = () => {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit },
         },
       });
       if (fnError) throw fnError;
@@ -920,7 +923,7 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
-      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "" });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -1075,6 +1078,9 @@ const Leads = () => {
         operating_days: editPitData.operating_days ?? null,
         saturday_surcharge_override: editPitData.saturday_surcharge_override ?? null,
         same_day_cutoff: editPitData.same_day_cutoff || null,
+        sunday_surcharge: editPitData.sunday_surcharge ?? null,
+        saturday_load_limit: editPitData.saturday_load_limit ?? null,
+        sunday_load_limit: editPitData.sunday_load_limit ?? null,
       };
 
       // Save directly — price rollover handled server-side
@@ -3189,6 +3195,11 @@ const Leads = () => {
                         <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
                       </div>
                     </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Max Daily Delivery Limit (all PITs combined)</label>
+                      <Input className="h-9" type="number" value={editSettings.max_daily_limit || ""} onChange={e => setEditSettings({ ...editSettings, max_daily_limit: e.target.value })} placeholder="e.g. 10" />
+                      <p className="text-[10px] text-gray-400 mt-1">Leave blank for no global limit</p>
+                    </div>
                   </div>
                   <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
@@ -4666,6 +4677,27 @@ const Leads = () => {
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
                   </div>
                 )}
+                {newPit.operating_days?.includes(0) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Surcharge ($)</label>
+                    <Input placeholder="e.g. 50.00" value={newPit.sunday_surcharge ?? ""} onChange={e => setNewPit({ ...newPit, sunday_surcharge: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
+                {newPit.operating_days?.includes(6) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday Load Limit (confirmed orders)</label>
+                    <Input placeholder="e.g. 3" value={newPit.saturday_load_limit ?? ""} onChange={e => setNewPit({ ...newPit, saturday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
+                {newPit.operating_days?.includes(0) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Load Limit (confirmed orders)</label>
+                    <Input placeholder="e.g. 2" value={newPit.sunday_load_limit ?? ""} onChange={e => setNewPit({ ...newPit, sunday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
                   {(() => {
@@ -4938,6 +4970,27 @@ const Leads = () => {
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday surcharge for this PIT</label>
                     <Input placeholder="e.g. 35.00" value={editPitData.saturday_surcharge_override ?? ""} onChange={e => setEditPitData({ ...editPitData, saturday_surcharge_override: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
+                  </div>
+                )}
+                {(editPitData.operating_days as number[] | null)?.includes(0) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Surcharge ($)</label>
+                    <Input placeholder="e.g. 50.00" value={(editPitData as any).sunday_surcharge ?? ""} onChange={e => setEditPitData({ ...editPitData, sunday_surcharge: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
+                {(editPitData.operating_days as number[] | null)?.includes(6) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday Load Limit (confirmed orders)</label>
+                    <Input placeholder="e.g. 3" value={(editPitData as any).saturday_load_limit ?? ""} onChange={e => setEditPitData({ ...editPitData, saturday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
+                {(editPitData.operating_days as number[] | null)?.includes(0) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Load Limit (confirmed orders)</label>
+                    <Input placeholder="e.g. 2" value={(editPitData as any).sunday_load_limit ?? ""} onChange={e => setEditPitData({ ...editPitData, sunday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
                   </div>
                 )}
                 <div>

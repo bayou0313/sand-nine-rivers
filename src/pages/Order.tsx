@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge } from "@/components/DeliveryDatePicker";
+import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge, getEffectiveSundaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
@@ -86,7 +86,7 @@ const Order = () => {
     const fetchData = async () => {
       const [settingsRes, pitsRes] = await Promise.all([
         supabase.from("global_settings").select("key, value"),
-        supabase.from("pits").select("id, name, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active"),
+        supabase.from("pits").select("id, name, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff, sunday_surcharge").eq("status", "active"),
       ]);
       if (settingsRes.data) {
         const gp = parseGlobalSettings(settingsRes.data as any);
@@ -122,6 +122,7 @@ const Order = () => {
     taxAmount: number;
     subtotal: number;
     saturdaySurchargeTotal: number;
+    sundaySurchargeTotal: number;
     distanceFee: number;
     taxInfo: { rate: number; parish: string };
   } | null>(null);
@@ -154,13 +155,23 @@ const Order = () => {
 
   const PROCESSING_FEE_RATE = 0.035;
   const effectiveSatSurcharge = getEffectiveSaturdaySurcharge(matchedPitSchedule, globalSaturdaySurcharge);
+  const effectiveSunSurcharge = getEffectiveSundaySurcharge(matchedPitSchedule);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
+  const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
   const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
-  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal - effectiveDiscount : 0;
+  const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
   const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
+
+  // Auto-switch to card-only on weekend dates
+  const isWeekendDate = selectedDeliveryDate?.isSaturday || selectedDeliveryDate?.isSunday;
+  useEffect(() => {
+    if (isWeekendDate && paymentMethod !== "stripe-link") {
+      setPaymentMethod("stripe-link");
+    }
+  }, [isWeekendDate]);
 
   // Scroll to top on step change
   useEffect(() => {
@@ -205,6 +216,7 @@ const Order = () => {
           taxAmount,
           subtotal,
           saturdaySurchargeTotal,
+          sundaySurchargeTotal,
           distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
           taxInfo,
         });
@@ -239,6 +251,7 @@ const Order = () => {
                   iso: order.delivery_date,
                   dayOfWeek: order.delivery_day_of_week || dayNames[d.getDay()],
                   isSaturday: order.saturday_surcharge || false,
+                  isSunday: order.sunday_surcharge || false,
                   isSameDay: order.same_day_requested || false,
                 });
               }
@@ -263,6 +276,7 @@ const Order = () => {
                 taxAmount: orderTaxAmount,
                 subtotal: orderSubtotal,
                 saturdaySurchargeTotal: orderSatSurcharge,
+                sundaySurchargeTotal: order.sunday_surcharge_amount || 0,
                 distanceFee: 0,
                 taxInfo: { rate: orderTaxRate, parish: "" },
               });
@@ -364,6 +378,7 @@ const Order = () => {
             taxAmount: snap.taxAmount,
             subtotal: snap.subtotal,
             saturdaySurchargeTotal: snap.saturdaySurchargeTotal,
+            sundaySurchargeTotal: (snap as any).sundaySurchargeTotal || 0,
             distanceFee: snap.result ? Math.max(0, (snap.result.distance - snap.effectivePricing.free_miles) * snap.effectivePricing.extra_per_mile * snap.quantity) : 0,
             taxInfo: snap.taxInfo,
           });
@@ -508,9 +523,11 @@ const Order = () => {
       const paramPitId = searchParams.get("pit_id");
       const paramPitName = searchParams.get("pit_name");
       if (paramOpDays || paramSatSurcharge || paramSameDayCutoff) {
+        const paramSunSurcharge = searchParams.get("sun_surcharge");
         setMatchedPitSchedule({
           operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null,
           saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null,
+          sunday_surcharge: paramSunSurcharge != null ? Number(paramSunSurcharge) : null,
           same_day_cutoff: paramSameDayCutoff || null,
         });
       }
@@ -520,7 +537,7 @@ const Order = () => {
         if (pit) setMatchedPit(pit);
       } else if (paramPitId && paramPitName) {
         // Pits not loaded yet — set a stub that will be replaced when allPits loads
-        setMatchedPit({ id: paramPitId, name: decodeURIComponent(paramPitName), lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null, saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null, same_day_cutoff: paramSameDayCutoff || null } as PitData);
+        setMatchedPit({ id: paramPitId, name: decodeURIComponent(paramPitName), lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null, saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null, same_day_cutoff: paramSameDayCutoff || null, sunday_surcharge: null } as PitData);
       }
 
       setStep(prev => prev === "address" ? "details" : prev);
@@ -615,6 +632,7 @@ const Order = () => {
       setMatchedPitSchedule({
         operating_days: bestResult.pit.operating_days,
         saturday_surcharge_override: bestResult.pit.saturday_surcharge_override != null ? Number(bestResult.pit.saturday_surcharge_override) : null,
+        sunday_surcharge: (bestResult.pit as any).sunday_surcharge != null ? Number((bestResult.pit as any).sunday_surcharge) : null,
         same_day_cutoff: bestResult.pit.same_day_cutoff,
       });
 
@@ -687,6 +705,9 @@ const Order = () => {
     delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
     saturday_surcharge: selectedDeliveryDate!.isSaturday,
     saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? effectiveSatSurcharge * quantity : 0,
+    sunday_surcharge: selectedDeliveryDate!.isSunday,
+    sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
+    pit_id: matchedPit?.id || null,
     delivery_window: "8:00 AM – 5:00 PM",
     same_day_requested: selectedDeliveryDate!.isSameDay,
     tax_rate: taxInfo.rate,
@@ -727,6 +748,7 @@ const Order = () => {
         taxAmount,
         subtotal,
         saturdaySurchargeTotal,
+        sundaySurchargeTotal,
         distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
         taxInfo,
       };
@@ -1138,7 +1160,7 @@ const Order = () => {
                               const newResult = await findBestPitDriving(allPits, customerCoords.lat, customerCoords.lng, globalPricing, supabase, dayOfWeek);
                               if (newResult && newResult.serviceable) {
                                 setMatchedPit(newResult.pit);
-                                setMatchedPitSchedule({ operating_days: newResult.pit.operating_days, saturday_surcharge_override: newResult.pit.saturday_surcharge_override != null ? Number(newResult.pit.saturday_surcharge_override) : null, same_day_cutoff: newResult.pit.same_day_cutoff });
+                                setMatchedPitSchedule({ operating_days: newResult.pit.operating_days, saturday_surcharge_override: newResult.pit.saturday_surcharge_override != null ? Number(newResult.pit.saturday_surcharge_override) : null, sunday_surcharge: (newResult.pit as any).sunday_surcharge != null ? Number((newResult.pit as any).sunday_surcharge) : null, same_day_cutoff: newResult.pit.same_day_cutoff });
                                 setResult(prev => prev ? { ...prev, distance: parseFloat(newResult.distance.toFixed(1)), price: newResult.price, address: `${newResult.distance.toFixed(1)} miles away` } : prev);
                                 toast({ title: "Price updated", description: `Delivery on ${d.fullLabel} will be from a different location. Price updated to ${formatCurrency(newResult.price)}.` });
                               } else {
@@ -1152,6 +1174,7 @@ const Order = () => {
                       }}
                       pitSchedule={matchedPitSchedule}
                       globalSaturdaySurcharge={globalSaturdaySurcharge}
+                      pitId={matchedPit?.id}
                     />
                     {recalculating && (
                       <div className="mt-3 flex items-center gap-2 text-muted-foreground">
@@ -1240,7 +1263,14 @@ const Order = () => {
                       {selectedDeliveryDate.isSaturday && (
                         <>
                           <div className="border-b border-dashed border-border" />
-                          <ReceiptRow label={`Saturday Surcharge ($35 × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                          <ReceiptRow label={`Saturday Surcharge ($${effectiveSatSurcharge} × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                        </>
+                      )}
+
+                      {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
+                        <>
+                          <div className="border-b border-dashed border-border" />
+                          <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} destructive />
                         </>
                       )}
 
@@ -1263,6 +1293,12 @@ const Order = () => {
                             <span className="font-display text-foreground">+{formatCurrency(saturdaySurchargeTotal)}</span>
                           </div>
                         )}
+                        {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="font-body text-muted-foreground">Sunday delivery fee</span>
+                            <span className="font-display text-foreground">+{formatCurrency(sundaySurchargeTotal)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-sm">
                           <span className="font-body text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
                           <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
@@ -1282,7 +1318,7 @@ const Order = () => {
                   <div className="p-6">
                     <SectionHeading icon={CreditCard} title="PAYMENT METHOD" />
 
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className={`grid ${isWeekendDate ? 'grid-cols-1' : 'grid-cols-2'} gap-3 mb-4`}>
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("stripe-link")}
@@ -1304,25 +1340,34 @@ const Order = () => {
                         </p>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("cash")}
-                        className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
-                          paymentMethod === "cash" || paymentMethod === "check"
-                            ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
-                            : "border-border bg-card hover:border-accent/40 hover:shadow-md"
-                        }`}
-                      >
-                        {(paymentMethod === "cash" || paymentMethod === "check") && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                            <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
-                          </motion.div>
-                        )}
-                        <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                        <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
-                        <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
-                      </button>
+                      {!isWeekendDate && (
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("cash")}
+                          className={`relative p-5 rounded-xl border-2 text-left transition-all duration-200 ${
+                            paymentMethod === "cash" || paymentMethod === "check"
+                              ? "border-accent bg-accent/5 shadow-lg shadow-accent/15"
+                              : "border-border bg-card hover:border-accent/40 hover:shadow-md"
+                          }`}
+                        >
+                          {(paymentMethod === "cash" || paymentMethod === "check") && (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                              <CheckCircle2 className="w-3 h-3 text-accent-foreground" />
+                            </motion.div>
+                          )}
+                          <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
+                          <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
+                          <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
+                        </button>
+                      )}
                     </div>
+
+                    {isWeekendDate && (
+                      <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 flex items-center gap-1.5">
+                        <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                        Weekend deliveries require card payment.
+                      </p>
+                    )}
 
                     {paymentMethod === "stripe-link" && (
                       <div className="space-y-3">
@@ -1463,7 +1508,10 @@ const Order = () => {
                       )}
 
                       {selectedDeliveryDate.isSaturday && (
-                        <ReceiptRow label={`Saturday Surcharge ($35 × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                        <ReceiptRow label={`Saturday Surcharge ($${effectiveSatSurcharge} × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                      )}
+                      {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
+                        <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} destructive />
                       )}
                       <ReceiptRow label={`Sales tax — ${taxInfo.parish} (${(taxInfo.rate * 100).toFixed(2)}%)`} value={`+${formatCurrency(taxAmount)}`} />
 
