@@ -1966,6 +1966,7 @@ const Order = () => {
                   customerName={form.name}
                   customerEmail={form.email}
                   customerPhone={form.phone}
+                  companyName={form.companyName}
                   confirmedTotals={confirmedTotals}
                   totalPrice={totalPrice}
                   totalWithProcessingFee={totalWithProcessingFee}
