@@ -159,14 +159,8 @@ export default function BrandedConfirmation({
           <img
             src={WAYS_LOGO}
             alt="WAYS"
-            className="w-[80px] opacity-40 mb-1"
+            className="w-[80px] opacity-40 mb-4"
           />
-          <p
-            className="text-[10px] mb-6"
-            style={{ color: "rgba(255,255,255,0.3)" }}
-          >
-            We Are Your Supply
-          </p>
 
           <div
             style={{ width: 40, height: 1, backgroundColor: "#C07A00", marginBottom: 24 }}

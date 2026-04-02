@@ -1221,7 +1221,8 @@ const Order = () => {
             <button onClick={() => setShowProposalBanner(false)} className="ml-4 text-lg font-bold" style={{ color: "#0D2137" }}>×</button>
           </motion.div>
         )}
-        {/* Sticky countdown + progress */}
+        {/* Sticky countdown + progress — hidden on success */}
+        {step !== "success" && (
         <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-border/30 -mx-4 px-4 mb-6 shadow-sm">
           <CountdownBar />
           {/* Progress steps */}
@@ -1232,7 +1233,7 @@ const Order = () => {
             className="flex items-center justify-center gap-1 sm:gap-3 mb-2"
           >
             {stepLabels.map((label, i) => {
-              const stepIndex = ["address", "details", "confirm"].indexOf(step === "success" ? "confirm" : step);
+              const stepIndex = ["address", "details", "confirm"].indexOf(step);
               const isActive = i <= stepIndex;
               const isCurrent = i === stepIndex;
               const isCompleted = i < stepIndex;
@@ -1273,6 +1274,7 @@ const Order = () => {
             })}
           </motion.div>
         </div>
+        )}
 
         <div className="max-w-2xl mx-auto">
           <AnimatePresence mode="wait">
@@ -1902,6 +1904,12 @@ const Order = () => {
                   <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
                     <ShieldCheck className="w-3 h-3" /> 256-bit SSL encryption • Your data is protected
                   </p>
+                  {paymentMethod === "stripe-link" && (
+                    <div className="flex items-center justify-center gap-2 mt-1">
+                      <svg className="w-3 h-3 text-muted-foreground/60" viewBox="0 0 24 24" fill="currentColor"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-7.076-2.19L3.312 21.98C5.263 23.171 8.26 24 11.342 24c2.589 0 4.758-.631 6.299-1.828 1.667-1.301 2.487-3.155 2.487-5.516 0-4.096-2.535-5.772-6.152-7.206z"/></svg>
+                      <span className="font-body text-[10px] text-muted-foreground/60">Powered by Stripe</span>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

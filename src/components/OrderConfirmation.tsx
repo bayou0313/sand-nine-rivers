@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Loader2, Download, ChevronDown, MessageCircle, Mail, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
+import { useToast } from "@/hooks/use-toast";
 import {
   Accordion,
   AccordionContent,
@@ -13,6 +14,8 @@ import {
 
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
+const LOGO_BLACK =
+  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png";
 const WAYS_LOGO =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
 
@@ -175,6 +178,9 @@ export default function OrderConfirmation({
   downloadingInvoice,
   canDownload,
 }: OrderConfirmationProps) {
+  const { toast } = useToast();
+  const [showWhatsAppChoice, setShowWhatsAppChoice] = useState(false);
+
   const isStripePaid =
     paymentMethod === "stripe-link" || stripePaymentId != null;
 
@@ -195,29 +201,90 @@ export default function OrderConfirmation({
     year: "numeric",
   });
 
+  const shareText = `River Sand Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
+
+  const handleMailtoClick = () => {
+    const subject = `River Sand Order ${orderNumber || ""}`;
+    const body = `Order: ${orderNumber || "N/A"}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\n\nQuestions? Call 1-855-GOT-WAYS`;
+    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const a = document.createElement("a");
+    a.href = href;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleForwardByEmail = () => {
+    const subject = `River Sand Order ${orderNumber || ""} — Order Details`;
+    const body = `Here are the details for my River Sand order:\n\nOrder: ${orderNumber || "N/A"}\nCustomer: ${customerName}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\nPayment: ${isStripePaid ? "Paid by Card" : `${codSubOption === "check" ? "Check" : "Cash"} — Due at Delivery`}\n\nQuestions? Call 1-855-GOT-WAYS or email orders@riversand.net`;
+    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const a = document.createElement("a");
+    a.href = href;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleWhatsApp = () => {
+    setShowWhatsAppChoice(true);
+  };
+
+  const sendWhatsAppApp = () => {
+    setShowWhatsAppChoice(false);
+    const url = `whatsapp://send?text=${encodeURIComponent(shareText)}`;
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Fallback after timeout — if app didn't open, try web
+      setTimeout(() => {
+        // Can't reliably detect if it opened, so we don't auto-fallback here
+      }, 1500);
+    } catch {
+      sendWhatsAppWeb();
+    }
+  };
+
+  const sendWhatsAppWeb = () => {
+    setShowWhatsAppChoice(false);
+    const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+    const win = window.open(url, "_blank");
+    if (!win) {
+      // Clipboard fallback
+      navigator.clipboard.writeText(shareText).then(() => {
+        toast({ title: "Copied to clipboard", description: "Order details copied — paste into WhatsApp." });
+      }).catch(() => {});
+    }
+  };
+
   return (
-    <div className="print-confirmation max-w-[720px] mx-auto my-6 rounded-2xl shadow-lg border border-border/40 overflow-hidden" style={{ backgroundColor: "#FFFFFF" }}>
+    <div className="print-confirmation max-w-[720px] mx-auto my-6 rounded-2xl shadow-lg border border-border/40 overflow-hidden font-body" style={{ backgroundColor: "#FFFFFF" }}>
       {/* ── HEADER ── */}
       <FadeIn delay={0}>
-        <Link
-          to="/"
-          className="flex flex-col items-center py-8 rounded-t-2xl cursor-pointer"
+        <div
+          className="flex items-center justify-between px-6 py-5 rounded-t-2xl"
           style={{ backgroundColor: "#0D2137" }}
         >
-          <img
-            src={LOGO_WHITE}
-            alt="River Sand"
-            className="w-[200px] object-contain"
-          />
-          <div
-            className="mt-4"
-            style={{
-              width: 60,
-              height: 2,
-              backgroundColor: "#C07A00",
-            }}
-          />
-        </Link>
+          <Link to="/">
+            <img
+              src={LOGO_WHITE}
+              alt="River Sand"
+              className="h-10 object-contain"
+            />
+          </Link>
+          <a
+            href="tel:18554689297"
+            className="font-display text-sm tracking-wider"
+            style={{ color: "#C07A00" }}
+          >
+            1-855-GOT-WAYS
+          </a>
+        </div>
       </FadeIn>
 
       {/* ── HERO STATUS ── */}
@@ -242,14 +309,14 @@ export default function OrderConfirmation({
             {isStripePaid ? "Order Confirmed" : "Payment Due at Delivery"}
           </h2>
 
-          <p className="mt-2 text-sm" style={{ color: "#6B7280" }}>
+          <p className="mt-2 text-sm font-body" style={{ color: "#6B7280" }}>
             {orderNumber ? `${orderNumber} · ` : ""}
             {orderDate}
           </p>
 
           {/* Status pill */}
           <div
-            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold"
+            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold font-body"
             style={
               isStripePaid
                 ? { backgroundColor: "#DCFCE7", color: "#166534" }
@@ -262,7 +329,7 @@ export default function OrderConfirmation({
           </div>
 
           {customerEmail && (
-            <p className="mt-4 text-xs" style={{ color: "#9CA3AF" }}>
+            <p className="mt-4 text-xs font-body" style={{ color: "#9CA3AF" }}>
               Confirmation sent to{" "}
               <span className="font-medium" style={{ color: "#374151" }}>
                 {customerEmail}
@@ -279,7 +346,7 @@ export default function OrderConfirmation({
             {/* LEFT — DELIVERY */}
             <div className="rounded-xl p-5" style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
               <p
-                className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4"
+                className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4 font-display"
                 style={{ color: "#0D2137" }}
               >
                 DELIVERY
@@ -299,7 +366,7 @@ export default function OrderConfirmation({
             {/* RIGHT — PAYMENT */}
             <div className="rounded-xl p-5" style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
               <p
-                className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4"
+                className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4 font-display"
                 style={{ color: "#0D2137" }}
               >
                 PAYMENT
@@ -313,11 +380,11 @@ export default function OrderConfirmation({
                       valuePill={{ bg: "#DCFCE7", color: "#166534" }}
                     />
                     <div className="flex items-baseline justify-between">
-                      <span className="text-xs" style={{ color: "#6B7280" }}>
+                      <span className="text-xs font-body" style={{ color: "#6B7280" }}>
                         Amount
                       </span>
                       <span
-                        className="text-xl font-bold"
+                        className="text-xl font-bold font-display"
                         style={{ color: "#C07A00" }}
                       >
                         {formatCurrency(displayTotalWithFee)}
@@ -326,7 +393,7 @@ export default function OrderConfirmation({
                     <Row label="Method" value="Credit Card" />
                     {stripePaymentId && (
                       <div>
-                        <span className="text-xs" style={{ color: "#6B7280" }}>
+                        <span className="text-xs font-body" style={{ color: "#6B7280" }}>
                           Reference
                         </span>
                         <p
@@ -337,7 +404,7 @@ export default function OrderConfirmation({
                         </p>
                       </div>
                     )}
-                    <p className="text-xs" style={{ color: "#16A34A" }}>
+                    <p className="text-xs font-body" style={{ color: "#16A34A" }}>
                       Nothing due at delivery
                     </p>
                   </>
@@ -349,11 +416,11 @@ export default function OrderConfirmation({
                       valuePill={{ bg: "#FEF3C7", color: "#92400E" }}
                     />
                     <div className="flex items-baseline justify-between">
-                      <span className="text-xs" style={{ color: "#6B7280" }}>
+                      <span className="text-xs font-body" style={{ color: "#6B7280" }}>
                         Amount
                       </span>
                       <span
-                        className="text-xl font-bold"
+                        className="text-xl font-bold font-display"
                         style={{ color: "#D97706" }}
                       >
                         {formatCurrency(displayTotal)}
@@ -363,11 +430,8 @@ export default function OrderConfirmation({
                       label="Method"
                       value={codSubOption === "check" ? "Check" : "Cash"}
                     />
-                    <p className="text-xs" style={{ color: "#D97706" }}>
-                      Have exact amount ready
-                    </p>
-                    <p className="text-xs" style={{ color: "#9CA3AF" }}>
-                      Driver carries no change
+                    <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
+                      Please have the exact amount ready — driver carries no change.
                     </p>
                   </>
                 )}
@@ -381,7 +445,7 @@ export default function OrderConfirmation({
       <FadeIn delay={0.4}>
         <div className="bg-white px-6 pb-8 max-w-[680px] mx-auto">
           <p
-            className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3"
+            className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3 font-display"
             style={{ color: "#0D2137" }}
           >
             PRICING SUMMARY
@@ -441,13 +505,13 @@ export default function OrderConfirmation({
         <FadeIn delay={0.45}>
           <div className="px-6 pb-6 max-w-[680px] mx-auto">
             <div style={{ background: "#FEF9C3", border: "1px solid #FDE68A", borderRadius: "8px", padding: "20px 24px", marginTop: "8px", marginBottom: "8px" }}>
-              <p style={{ fontSize: "11px", fontWeight: "bold", color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
+              <p className="font-display" style={{ fontSize: "11px", fontWeight: "bold", color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
                 Payment Due at Delivery
               </p>
-              <p style={{ fontSize: "13px", color: "#78350F", lineHeight: "1.6", margin: 0 }}>
+              <p className="font-body" style={{ fontSize: "13px", color: "#78350F", lineHeight: "1.6", margin: 0 }}>
                 Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.
               </p>
-              <p style={{ fontSize: "12px", color: "#92400E", marginTop: "8px", marginBottom: 0 }}>
+              <p className="font-body" style={{ fontSize: "12px", color: "#92400E", marginTop: "8px", marginBottom: 0 }}>
                 Note: Card payments include a 3.5% processing fee.
                 <br />
                 Cash/Check total: <strong>{formatCurrency(displayTotal)}</strong> · Card total if needed: <strong>{formatCurrency(displayTotal * 1.035)}</strong>
@@ -465,10 +529,10 @@ export default function OrderConfirmation({
             style={{ backgroundColor: "#F8F7F2" }}
           >
             <div>
-              <p className="font-bold text-sm mb-3" style={{ color: "#0D2137" }}>
+              <p className="font-bold text-sm mb-3 font-display" style={{ color: "#0D2137" }}>
                 What to expect
               </p>
-              <ul className="space-y-2 text-sm" style={{ color: "#374151" }}>
+              <ul className="space-y-2 text-sm font-body" style={{ color: "#374151" }}>
                 <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Driver calls 30 minutes before arrival</li>
                 <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Ensure clear access to delivery area</li>
                 <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />Be present or designate a representative</li>
@@ -476,10 +540,10 @@ export default function OrderConfirmation({
               </ul>
             </div>
             <div>
-              <p className="font-bold text-sm mb-3" style={{ color: "#0D2137" }}>
+              <p className="font-bold text-sm mb-3 font-display" style={{ color: "#0D2137" }}>
                 Please note
               </p>
-              <ul className="space-y-2 text-sm" style={{ color: "#6B7280" }}>
+              <ul className="space-y-2 text-sm font-body" style={{ color: "#6B7280" }}>
                 <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />Driver will not enter private property</li>
                 <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />No delivery into backyards or gated areas</li>
                 <li className="flex items-start gap-2">
@@ -497,12 +561,12 @@ export default function OrderConfirmation({
           {/* Desktop: always visible */}
           <div className="hidden md:block">
             <p
-              className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3"
+              className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3 font-display"
               style={{ color: "#0D2137" }}
             >
               DELIVERY TERMS
             </p>
-            <ol className="list-decimal list-inside space-y-3 text-sm" style={{ color: "#6B7280" }}>
+            <ol className="list-decimal list-inside space-y-3 text-sm font-body" style={{ color: "#6B7280" }}>
               {DELIVERY_TERMS.map((t) => (
                 <li key={t.title}>
                   <span className="font-semibold" style={{ color: "#374151" }}>
@@ -517,7 +581,7 @@ export default function OrderConfirmation({
           {/* Mobile: accordion */}
           <div className="md:hidden">
             <p
-              className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3"
+              className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3 font-display"
               style={{ color: "#0D2137" }}
             >
               DELIVERY TERMS
@@ -525,13 +589,13 @@ export default function OrderConfirmation({
             <Accordion type="single" collapsible className="space-y-1">
               {DELIVERY_TERMS.map((t, i) => (
                 <AccordionItem key={i} value={`term-${i}`} className="border rounded-lg px-3">
-                  <AccordionTrigger className="text-sm py-3 hover:no-underline">
+                  <AccordionTrigger className="text-sm py-3 hover:no-underline font-body">
                     <span style={{ color: "#374151" }}>
                       {i + 1}. {t.title}
                     </span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className="text-xs pb-2" style={{ color: "#6B7280" }}>
+                    <p className="text-xs pb-2 font-body" style={{ color: "#6B7280" }}>
                       {t.body}
                     </p>
                   </AccordionContent>
@@ -546,10 +610,7 @@ export default function OrderConfirmation({
       <FadeIn delay={0.6} className="print-hide">
         <div className="px-6 pb-6 max-w-[680px] mx-auto space-y-4">
           <Button
-            onClick={() => {
-              // Open invoice PDF in browser for viewing/printing instead of downloading
-              onDownloadInvoice();
-            }}
+            onClick={onDownloadInvoice}
             disabled={downloadingInvoice || !canDownload}
             variant="outline"
             className="w-full h-12 rounded-xl font-display tracking-wider"
@@ -562,14 +623,23 @@ export default function OrderConfirmation({
             View Order Details
           </Button>
 
+          {/* Forward by Email */}
+          <Button
+            variant="outline"
+            className="w-full h-11 rounded-xl font-display tracking-wider text-sm"
+            onClick={handleForwardByEmail}
+          >
+            <Mail className="w-4 h-4 mr-2" /> Forward Invoice by Email
+          </Button>
+
           {/* Share buttons */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 relative">
             <Button
               variant="outline"
               className="h-11 rounded-xl font-display tracking-wider text-xs"
               onClick={() => {
                 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-                const body = `Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} of River Sand to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
+                const body = shareText;
                 const smsUrl = isIOS ? `sms:&body=${encodeURIComponent(body)}` : `sms:?body=${encodeURIComponent(body)}`;
                 window.open(smsUrl);
               }}
@@ -579,35 +649,59 @@ export default function OrderConfirmation({
             <Button
               variant="outline"
               className="h-11 rounded-xl font-display tracking-wider text-xs"
-              onClick={() => {
-                const subject = `River Sand Order ${orderNumber || ""}`;
-                const body = `Order: ${orderNumber || "N/A"}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\n\nQuestions? Call 1-855-GOT-WAYS`;
-                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-              }}
+              onClick={handleMailtoClick}
             >
               <Mail className="w-4 h-4 mr-1" /> Email
             </Button>
             <Button
               variant="outline"
               className="h-11 rounded-xl font-display tracking-wider text-xs"
-              onClick={() => {
-                const text = `River Sand Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
-                const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-                // Try opening WhatsApp; provide copy fallback for desktop
-                const win = window.open(waUrl, "_blank");
-                if (!win) {
-                  navigator.clipboard.writeText(text).then(() => {
-                    alert("Order details copied to clipboard!");
-                  }).catch(() => {});
-                }
-              }}
+              onClick={handleWhatsApp}
             >
               <Share2 className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
+
+            {/* WhatsApp choice modal */}
+            {showWhatsAppChoice && (
+              <div className="absolute bottom-full mb-2 right-0 bg-white rounded-xl shadow-xl border border-border p-3 z-50 w-56">
+                <p className="text-xs font-semibold font-display mb-2" style={{ color: "#0D2137" }}>
+                  Open with:
+                </p>
+                <button
+                  onClick={sendWhatsAppApp}
+                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                  📱 WhatsApp App
+                </button>
+                <button
+                  onClick={sendWhatsAppWeb}
+                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                  💻 WhatsApp Web
+                </button>
+                <button
+                  onClick={() => {
+                    setShowWhatsAppChoice(false);
+                    navigator.clipboard.writeText(shareText).then(() => {
+                      toast({ title: "Copied to clipboard", description: "Order details copied — paste into WhatsApp." });
+                    }).catch(() => {});
+                  }}
+                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                  📋 Copy to Clipboard
+                </button>
+                <button
+                  onClick={() => setShowWhatsAppChoice(false)}
+                  className="w-full text-center text-xs font-body text-muted-foreground mt-1 py-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="text-center space-y-1 pt-2">
-            <p className="text-sm" style={{ color: "#6B7280" }}>
+            <p className="text-sm font-body" style={{ color: "#6B7280" }}>
               Questions about your order?
             </p>
             <a
@@ -617,7 +711,7 @@ export default function OrderConfirmation({
             >
               1-855-GOT-WAYS
             </a>
-            <p className="text-xs" style={{ color: "#9CA3AF" }}>
+            <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
               orders@riversand.net
             </p>
           </div>
@@ -628,7 +722,7 @@ export default function OrderConfirmation({
       <FadeIn delay={0.65} className="print-hide">
         <div className="px-6 py-8 text-center" style={{ backgroundColor: "#FAFAF8" }}>
           <p
-            className="text-[10px] font-bold tracking-[0.25em] uppercase mb-4"
+            className="text-[10px] font-bold tracking-[0.25em] uppercase mb-4 font-display"
             style={{ color: "#C07A00" }}
           >
             Same-Day Delivery Available In
@@ -638,7 +732,7 @@ export default function OrderConfirmation({
               <span key={city.slug}>
                 <Link
                   to={`/${city.slug}/river-sand-delivery`}
-                  className="text-sm hover:underline transition-colors"
+                  className="text-sm font-body hover:underline transition-colors"
                   style={{ color: "#6B7280" }}
                 >
                   {city.name}
@@ -661,7 +755,7 @@ export default function OrderConfirmation({
           style={{ backgroundColor: "#0D2137" }}
         >
           <p
-            className="text-[9px] tracking-[0.2em] uppercase mb-2"
+            className="text-[9px] tracking-[0.2em] uppercase mb-2 font-display"
             style={{ color: "rgba(255,255,255,0.35)" }}
           >
             Powered by
@@ -669,14 +763,8 @@ export default function OrderConfirmation({
           <img
             src={WAYS_LOGO}
             alt="WAYS"
-            className="w-[80px] opacity-40 mb-1"
+            className="w-[80px] opacity-40 mb-4"
           />
-          <p
-            className="text-[10px] mb-6"
-            style={{ color: "rgba(255,255,255,0.3)" }}
-          >
-            We Are Your Supply
-          </p>
 
           <div
             style={{
@@ -688,19 +776,19 @@ export default function OrderConfirmation({
           />
 
           <p
-            className="text-xs mb-1"
+            className="text-xs mb-1 font-body"
             style={{ color: "rgba(255,255,255,0.3)" }}
           >
             © 2026 Ways Materials LLC
           </p>
           <p
-            className="text-xs mb-1"
+            className="text-xs mb-1 font-body"
             style={{ color: "rgba(255,255,255,0.25)" }}
           >
             orders@riversand.net · 1-855-GOT-WAYS
           </p>
           <p
-            className="text-xs"
+            className="text-xs font-body"
             style={{ color: "rgba(255,255,255,0.2)" }}
           >
             River Sand — Real Sand. Real People.
@@ -712,7 +800,7 @@ export default function OrderConfirmation({
       <div className="text-center py-6 print-hide">
         <Link
           to="/"
-          className="text-sm hover:underline"
+          className="text-sm font-body hover:underline"
           style={{ color: "#6B7280" }}
         >
           Back to Home
@@ -738,18 +826,18 @@ function Row({
     <div className="flex items-start gap-2">
       {icon && <span className="text-sm shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1">
-        <p className="text-xs" style={{ color: "#9CA3AF" }}>
+        <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
           {label}
         </p>
         {valuePill ? (
           <span
-            className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mt-0.5"
+            className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mt-0.5 font-body"
             style={{ backgroundColor: valuePill.bg, color: valuePill.color }}
           >
             {value}
           </span>
         ) : (
-          <p className="text-sm font-medium break-words" style={{ color: "#111827" }}>
+          <p className="text-sm font-medium break-words font-body" style={{ color: "#111827" }}>
             {value}
           </p>
         )}
@@ -762,10 +850,10 @@ function Row({
 function PriceRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center py-3">
-      <span className="text-sm" style={{ color: "#6B7280" }}>
+      <span className="text-sm font-body" style={{ color: "#6B7280" }}>
         {label}
       </span>
-      <span className="text-sm font-medium" style={{ color: "#111827" }}>
+      <span className="text-sm font-medium font-body" style={{ color: "#111827" }}>
         {value}
       </span>
     </div>
