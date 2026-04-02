@@ -284,6 +284,7 @@ const Order = () => {
             name: orderData.customer_name || prev.name,
             phone: orderData.customer_phone || prev.phone,
             email: orderData.customer_email || prev.email,
+            companyName: orderData.company_name || prev.companyName,
           }));
           setQuantity(orderData.quantity || 1);
           if (orderData.delivery_date) {
