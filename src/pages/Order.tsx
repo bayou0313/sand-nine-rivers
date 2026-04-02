@@ -43,6 +43,16 @@ type EstimateResult = {
 
 type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
 
+export type WeekendPitEntry = {
+  pit: PitData;
+  distance: number;
+  price: number;
+  schedule: PitSchedule;
+  satSurcharge: number;
+  sunSurcharge: number;
+};
+export type WeekendPitMap = Partial<Record<0 | 6, WeekendPitEntry>>;
+
 const CountdownBar = () => {
   const { timeLeft, label } = useCountdown();
   return (
