@@ -1080,8 +1080,8 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
           <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
-          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">New Orleans, Louisiana</p>
         </div>
       `);
