@@ -363,6 +363,19 @@ const Leads = () => {
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
   const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
 
+  // Pending review orders state
+  const [pendingReviewOrders, setPendingReviewOrders] = useState<any[]>([]);
+  const [pendingReviewLoading, setPendingReviewLoading] = useState(false);
+  const [verifyingCall, setVerifyingCall] = useState<string | null>(null);
+
+  // Lead detail actions state
+  const [sendingOffer, setSendingOffer] = useState(false);
+  const [decliningLead, setDecliningLead] = useState(false);
+  const [flaggingFraud, setFlaggingFraud] = useState(false);
+  const [fraudReason, setFraudReason] = useState("");
+  const [offerPitId, setOfferPitId] = useState("");
+  const [offerPrice, setOfferPrice] = useState("");
+  const [offerResult, setOfferResult] = useState<{ payment_url: string; order_number: string } | null>(null);
 
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
