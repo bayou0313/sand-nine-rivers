@@ -191,10 +191,10 @@ serve(async (req) => {
 
     if (headerLogoB64) {
       try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 0); } catch {
-        doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
+        doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(biz.site_name.toUpperCase(), mx, 18);
       }
     } else {
-      doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
+      doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(biz.site_name.toUpperCase(), mx, 18);
     }
 
     doc.setFontSize(9);
