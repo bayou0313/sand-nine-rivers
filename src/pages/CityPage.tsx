@@ -24,7 +24,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
+const cleanCityName = (name: string): string =>
+  name.replace(/\s*,?\s*[Ll][Aa]$/, '').trim();
+
 const slugToTitle = (slug: string): string => {
+  return slug
+    .split("-")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
   return slug
     .split("-")
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
