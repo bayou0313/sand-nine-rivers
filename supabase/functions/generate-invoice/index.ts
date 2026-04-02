@@ -140,6 +140,30 @@ serve(async (req) => {
       });
     }
 
+    // ─── Fetch business settings from global_settings ───
+    const { data: settingsRows } = await supabase
+      .from("global_settings")
+      .select("key, value")
+      .in("key", [
+        "legal_name", "site_name", "phone", "website",
+        "footer_address", "ein_number", "support_email",
+        "base_price", "free_miles", "price_per_extra_mile",
+        "card_processing_fee_percent", "card_processing_fee_fixed",
+      ]);
+
+    const settings: Record<string, string> = {};
+    (settingsRows || []).forEach((r: { key: string; value: string }) => { settings[r.key] = r.value; });
+
+    const biz: BizSettings = {
+      legal_name: settings.legal_name || DEFAULT_BIZ.legal_name,
+      site_name: settings.site_name || DEFAULT_BIZ.site_name,
+      phone: settings.phone || DEFAULT_BIZ.phone,
+      website: settings.website || DEFAULT_BIZ.website,
+      footer_address: settings.footer_address || DEFAULT_BIZ.footer_address,
+      ein_number: settings.ein_number || DEFAULT_BIZ.ein_number,
+      support_email: settings.support_email || DEFAULT_BIZ.support_email,
+    };
+
     const HEADER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png";
     const FOOTER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
     const [headerLogoB64, footerLogoB64] = await Promise.all([
@@ -158,9 +182,9 @@ serve(async (req) => {
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
     const isPaid = order.payment_status === "paid";
     const isCard = order.payment_method === "stripe-link" || order.payment_method === "card";
-    const basePrice = 195;
-    const baseMiles = 15;
-    const perMileExtra = 5.5;
+    const basePrice = Number(settings.base_price) || 195;
+    const baseMiles = Number(settings.free_miles) || 15;
+    const perMileExtra = Number(settings.price_per_extra_mile) || 5.5;
 
     // ─── HEADER ───
     y = 18;
