@@ -2700,6 +2700,7 @@ const Leads = () => {
                           })()}
                         </td>
                         <td className="px-3 py-2 text-xs">{cp.page_views || 0}</td>
+                        <td className="px-3 py-2 text-xs text-gray-400">{cp.prompt_version || "—"}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
                             <button onClick={() => window.open(`https://riversand.net/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}>View</button>
