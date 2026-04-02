@@ -285,7 +285,7 @@ serve(async (req) => {
     doc.setFontSize(9);
     doc.setTextColor(...BLACK);
     doc.setFont("helvetica", "normal");
-    doc.text(`River Sand — 9 cu/yd  ×  ${order.quantity} load${order.quantity > 1 ? "s" : ""}`, mx, y);
+    doc.text(`${biz.site_name} — 9 cu/yd  ×  ${order.quantity} load${order.quantity > 1 ? "s" : ""}`, mx, y);
     y += 5;
     if (order.notes) {
       doc.setFontSize(8);
