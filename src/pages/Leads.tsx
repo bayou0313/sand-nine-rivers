@@ -78,6 +78,7 @@ interface Pit {
   sunday_surcharge: number | null;
   saturday_load_limit: number | null;
   sunday_load_limit: number | null;
+  is_pickup_only?: boolean;
 }
 
 interface GlobalSettings {
