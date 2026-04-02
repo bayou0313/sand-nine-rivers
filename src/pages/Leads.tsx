@@ -4672,6 +4672,27 @@ const Leads = () => {
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
                   </div>
                 )}
+                {newPit.operating_days?.includes(0) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Surcharge ($)</label>
+                    <Input placeholder="e.g. 50.00" value={newPit.sunday_surcharge ?? ""} onChange={e => setNewPit({ ...newPit, sunday_surcharge: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
+                {newPit.operating_days?.includes(6) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday Load Limit (confirmed orders)</label>
+                    <Input placeholder="e.g. 3" value={newPit.saturday_load_limit ?? ""} onChange={e => setNewPit({ ...newPit, saturday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
+                {newPit.operating_days?.includes(0) && (
+                  <div className="mb-3">
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Load Limit (confirmed orders)</label>
+                    <Input placeholder="e.g. 2" value={newPit.sunday_load_limit ?? ""} onChange={e => setNewPit({ ...newPit, sunday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
+                    <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
                   {(() => {
