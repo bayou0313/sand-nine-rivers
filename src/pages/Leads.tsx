@@ -4656,42 +4656,45 @@ const Leads = () => {
                 <p className="text-xs text-gray-500 mb-3">Set the days this PIT accepts deliveries. Leave all unchecked to allow all days.</p>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
-                    const checked = newPit.operating_days?.includes(idx) ?? false;
+                    const rawDays = (newPit.operating_days as (number | string)[] | null) || [];
+                    const days = rawDays.map(Number);
+                    const checked = days.includes(idx);
                     return (
                       <label key={idx} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
                         <input type="checkbox" checked={checked} onChange={e => {
-                          const days = newPit.operating_days ? [...newPit.operating_days] : [];
-                          if (e.target.checked) { if (!days.includes(idx)) days.push(idx); }
-                          else { const i = days.indexOf(idx); if (i >= 0) days.splice(i, 1); }
-                          setNewPit({ ...newPit, operating_days: days.length > 0 ? days : null });
+                          const currentDays = ((newPit.operating_days as (number | string)[] | null) || []).map(Number);
+                          let newDays: number[];
+                          if (e.target.checked) { newDays = currentDays.includes(idx) ? currentDays : [...currentDays, idx]; }
+                          else { newDays = currentDays.filter(d => d !== idx); }
+                          setNewPit({ ...newPit, operating_days: newDays.length > 0 ? newDays : null });
                         }} className="w-4 h-4 rounded" />
                         {label}
                       </label>
                     );
                   })}
                 </div>
-                {newPit.operating_days?.includes(6) && (
+                {((newPit.operating_days as (number | string)[] | null) || []).map(Number).includes(6) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday surcharge for this PIT</label>
                     <Input placeholder="e.g. 35.00" value={newPit.saturday_surcharge_override ?? ""} onChange={e => setNewPit({ ...newPit, saturday_surcharge_override: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
                   </div>
                 )}
-                {newPit.operating_days?.includes(0) && (
+                {((newPit.operating_days as (number | string)[] | null) || []).map(Number).includes(0) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Surcharge ($)</label>
                     <Input placeholder="e.g. 50.00" value={newPit.sunday_surcharge ?? ""} onChange={e => setNewPit({ ...newPit, sunday_surcharge: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
                   </div>
                 )}
-                {newPit.operating_days?.includes(6) && (
+                {((newPit.operating_days as (number | string)[] | null) || []).map(Number).includes(6) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday Load Limit (confirmed orders)</label>
                     <Input placeholder="e.g. 3" value={newPit.saturday_load_limit ?? ""} onChange={e => setNewPit({ ...newPit, saturday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
                   </div>
                 )}
-                {newPit.operating_days?.includes(0) && (
+                {((newPit.operating_days as (number | string)[] | null) || []).map(Number).includes(0) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Load Limit (confirmed orders)</label>
                     <Input placeholder="e.g. 2" value={newPit.sunday_load_limit ?? ""} onChange={e => setNewPit({ ...newPit, sunday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
