@@ -22,7 +22,10 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Parish-based Louisiana sales tax rates (state + local)
+// Louisiana state tax rate
+export const LA_STATE_TAX_RATE = 0.0445;
+
+// Parish-based Louisiana sales tax rates (state + local combined)
 const PARISH_TAX_RATES: Record<string, number> = {
   "jefferson": 0.0975,
   "orleans": 0.1000,
