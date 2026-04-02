@@ -193,6 +193,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "pipeline", label: "Pipeline", icon: List },
       { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
       { id: "cash_orders", label: "Orders", icon: DollarSign },
+      { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
       { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
       { id: "live" as NavPage, label: "Live", icon: Users },
     ],
