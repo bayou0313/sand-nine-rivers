@@ -106,7 +106,7 @@ serve(async (req) => {
     y = 18;
 
     if (headerLogoB64) {
-      try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 16); } catch {
+      try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 0, undefined, undefined, undefined); } catch {
         doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
       }
     } else {
