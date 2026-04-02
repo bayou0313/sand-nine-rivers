@@ -427,7 +427,9 @@ const Leads = () => {
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
     try {
-      const cardTotal = Math.round(Number(order.price) * 1.035 * 100) / 100;
+      const feePercent = parseFloat(globalSettings.card_processing_fee_percent || "3.5") / 100;
+      const feeFixed = parseFloat(globalSettings.card_processing_fee_fixed || "0.30");
+      const cardTotal = Math.round((Number(order.price) * (1 + feePercent) + feeFixed) * 100) / 100;
       const amountCents = Math.round(cardTotal * 100);
       const { data, error: fnError } = await supabase.functions.invoke("create-checkout-link", {
         body: {
