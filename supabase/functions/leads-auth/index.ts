@@ -429,6 +429,27 @@ serve(async (req) => {
 
       console.log(`[create_out_of_area_lead] Created lead ${inserted.lead_number}, fraud_score: ${fraudScore}, risk: ${riskLevel}`);
 
+      // Insert new_lead notification
+      try {
+        await sb.from("notifications").insert({
+          type: "new_lead",
+          title: "New Lead",
+          message: `${customer_name} submitted a request for ${leadAddress}`,
+          entity_type: "lead",
+          entity_id: inserted.id,
+        });
+        // Fraud notification if high risk
+        if (fraudScore >= 80) {
+          await sb.from("notifications").insert({
+            type: "fraud_flagged",
+            title: "⚠️ High Risk Lead",
+            message: `High fraud score (${fraudScore}) on lead from ${serverIp || "unknown"}`,
+            entity_type: "lead",
+            entity_id: inserted.id,
+          });
+        }
+      } catch (notifErr) { console.error("[create_out_of_area_lead] Notification insert error:", notifErr); }
+
       // Send admin notification email (fire-and-forget)
       const ownerEmail = Deno.env.get("GMAIL_USER") || "cmo@haulogix.com";
       fetch(`${supabaseUrl}/functions/v1/send-email`, {
