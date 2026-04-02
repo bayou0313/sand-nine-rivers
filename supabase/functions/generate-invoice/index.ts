@@ -335,11 +335,8 @@ serve(async (req) => {
       y += rowH;
     });
 
-    // Grey separator after line items
-    y += 1;
-    doc.setDrawColor(...LIGHT_GRAY);
-    doc.line(tableX, y, pw - mx, y);
-    y += 6;
+    // Tight spacing after last line item
+    y += 3;
 
     // ─── PAYMENT STATUS BOX ───
     if (isPaid) {
