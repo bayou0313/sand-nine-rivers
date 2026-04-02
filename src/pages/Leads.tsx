@@ -2716,7 +2716,7 @@ const Leads = () => {
                       </tr>
                     ))}
                     {filteredCityPages.length === 0 && (
-                      <tr><td colSpan={12} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
+                      <tr><td colSpan={13} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
                     )}
                   </tbody>
                 </table>
