@@ -870,17 +870,17 @@ serve(async (req) => {
     const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
     const FEE_PERCENT = parseFloat(emailCfg.card_processing_fee_percent || "3.5");
     const FEE_FIXED = parseFloat(emailCfg.card_processing_fee_fixed || "0.30");
-    const PHONE = emailCfg.phone || DEFAULT_PHONE;
-    const WEBSITE = emailCfg.website?.replace(/^https?:\/\//, "") || DEFAULT_WEBSITE;
-    const LEGAL_NAME = emailCfg.legal_name || DEFAULT_LEGAL_NAME;
-    const SUPPORT_EMAIL = emailCfg.support_email || DEFAULT_SUPPORT_EMAIL;
-    const SITE_NAME = emailCfg.site_name || DEFAULT_SITE_NAME;
-    const COPYRIGHT_YEAR = emailCfg.copyright_year || "2026";
-    const TAGLINE = emailCfg.tagline || DEFAULT_TAGLINE;
+    // Update module-level vars so template functions pick up runtime settings
+    PHONE = emailCfg.phone || "1-855-GOT-WAYS";
+    WEBSITE = emailCfg.website?.replace(/^https?:\/\//, "") || "riversand.net";
+    LEGAL_NAME = emailCfg.legal_name || "WAYS® Materials LLC";
+    SUPPORT_EMAIL = emailCfg.support_email || "orders@riversand.net";
+    SITE_NAME = emailCfg.site_name || "River Sand";
+    COPYRIGHT_YEAR = emailCfg.copyright_year || "2026";
+    TAGLINE = emailCfg.tagline || "Real Sand. Real People.";
 
-    // Biz overrides for email wrappers — passed to all emailWrapper/brandedEmailWrapper calls
+    // Biz overrides for brandedEmailWrapper calls
     const bizOverrides = { bizPhone: PHONE, bizEmail: SUPPORT_EMAIL, bizWebsite: WEBSITE, bizLegalName: LEGAL_NAME };
-    // Convenience: wrap content with biz settings
     const wrapEmail = (body: string) => emailWrapper(body, bizOverrides);
 
 
