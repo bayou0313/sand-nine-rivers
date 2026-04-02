@@ -1625,6 +1625,8 @@ serve(async (req) => {
             }
             const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
             if (stateComp) stateCode = stateComp.short_name;
+            const regionComp = components.find((c: any) => c.types?.includes("administrative_area_level_2"));
+            const regionName = regionComp ? regionComp.long_name : "";
 
             if (!cityName) continue;
             cityName = cleanCityName(cityName);
@@ -1634,7 +1636,7 @@ serve(async (req) => {
             if (!cityMap.has(key)) {
               const loc = result.geometry?.location;
               if (loc) {
-                cityMap.set(key, { name: cityName, state: stateCode, lat: loc.lat, lng: loc.lng });
+                cityMap.set(key, { name: cityName, state: stateCode, lat: loc.lat, lng: loc.lng, region: regionName });
               }
             }
           }
