@@ -298,7 +298,7 @@ function orderCustomerEmail(order: any): string {
                   <tr>
                     <td style="background-color:#FEF9C3;border:1px solid #FDE68A;padding:12px 16px;border-radius:8px;">
                       <p style="margin:0 0 6px 0;font-size:11px;font-weight:bold;color:#92400E;text-transform:uppercase;letter-spacing:1px;">Payment Due at Delivery</p>
-                      <p style="margin:0 0 8px 0;font-size:13px;color:#78350F;line-height:1.6;">Cash payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.</p>
+                      <p style="margin:0 0 8px 0;font-size:13px;color:#78350F;line-height:1.6;">Cash or check payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.</p>
                       <p style="margin:0;font-size:12px;color:#92400E;">Cash total: <strong>$${fmt(Number(order.price))}</strong> · Card total if needed includes processing fee</p>
                     </td>
                   </tr>
