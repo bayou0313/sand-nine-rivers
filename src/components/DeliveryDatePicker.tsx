@@ -103,7 +103,7 @@ export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null, maxS
 
   const dates: (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] = [];
 
-  for (let i = 0; dates.length < 7 && i < 14; i++) {
+  for (let i = 0; dates.length < maxSlots && i < (maxSlots * 3); i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const dayOfWeek = d.getDay();
