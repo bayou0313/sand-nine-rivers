@@ -1833,6 +1833,7 @@ const Leads = () => {
                       <p className="text-xs text-gray-500">{p.address}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <StatusBadge status={p.status} />
+                        {p.is_pickup_only && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Pickup Only</span>}
                       </div>
                       <p className="text-xs mt-2" style={{ color: hasOverride ? BRAND_GOLD : "#999" }}>
                         Effective: ${eff.base_price} base · {eff.free_miles}mi free · ${eff.extra_per_mile}/mi · {eff.max_distance}mi max
