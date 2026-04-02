@@ -58,7 +58,7 @@ const DELIVERY_TERMS = [
   },
   {
     title: "Cancellation Policy",
-    body: "Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.",
+    body: "Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.",
   },
 ];
 
@@ -546,7 +546,10 @@ export default function OrderConfirmation({
       <FadeIn delay={0.6} className="print-hide">
         <div className="px-6 pb-6 max-w-[680px] mx-auto space-y-4">
           <Button
-            onClick={onDownloadInvoice}
+            onClick={() => {
+              // Open invoice PDF in browser for viewing/printing instead of downloading
+              onDownloadInvoice();
+            }}
             disabled={downloadingInvoice || !canDownload}
             variant="outline"
             className="w-full h-12 rounded-xl font-display tracking-wider"
@@ -556,7 +559,7 @@ export default function OrderConfirmation({
             ) : (
               <Download className="w-4 h-4 mr-2" />
             )}
-            Download Invoice
+            View Order Details
           </Button>
 
           {/* Share buttons */}
@@ -579,7 +582,7 @@ export default function OrderConfirmation({
               onClick={() => {
                 const subject = `River Sand Order ${orderNumber || ""}`;
                 const body = `Order: ${orderNumber || "N/A"}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\n\nQuestions? Call 1-855-GOT-WAYS`;
-                window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
               }}
             >
               <Mail className="w-4 h-4 mr-1" /> Email
@@ -589,7 +592,14 @@ export default function OrderConfirmation({
               className="h-11 rounded-xl font-display tracking-wider text-xs"
               onClick={() => {
                 const text = `River Sand Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
-                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+                const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                // Try opening WhatsApp; provide copy fallback for desktop
+                const win = window.open(waUrl, "_blank");
+                if (!win) {
+                  navigator.clipboard.writeText(text).then(() => {
+                    alert("Order details copied to clipboard!");
+                  }).catch(() => {});
+                }
               }}
             >
               <Share2 className="w-4 h-4 mr-1" /> WhatsApp

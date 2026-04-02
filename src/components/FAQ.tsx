@@ -41,7 +41,7 @@ const faqs = [
   },
   {
     q: "Can I pay with cash?",
-    a: "Yes. We offer cash on delivery (COD) at no extra charge. You can also pay by card online through Stripe checkout.",
+    a: "Yes. We offer cash or check on delivery (COD) at no extra charge. You can also pay by card online through Stripe checkout.",
   },
   {
     q: "What if it rains on my delivery day?",

@@ -1130,7 +1130,7 @@ const Order = () => {
 
   const handleDownloadInvoice = async () => {
     if (!confirmedOrderId || !lookupToken) {
-      toast({ title: "Unable to download", description: "Order information not available.", variant: "destructive" });
+      toast({ title: "Unable to view", description: "Order information not available.", variant: "destructive" });
       return;
     }
     setDownloadingInvoice(true);
@@ -1142,15 +1142,10 @@ const Order = () => {
 
       const blob = new Blob([response.data], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Invoice-${orderNumber || "order"}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Open in new tab for viewing/printing instead of triggering download
+      window.open(url, "_blank");
     } catch (err: any) {
-      toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
+      toast({ title: "Failed to open invoice", description: err.message || "Please try again.", variant: "destructive" });
     } finally {
       setDownloadingInvoice(false);
     }
@@ -1323,7 +1318,7 @@ const Order = () => {
                       <p className="font-body text-sm text-destructive">{error}</p>
                     </motion.div>
                   )}
-                  <Button data-calc-btn onClick={calculateDistance} disabled={loading} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                  <Button data-calc-btn onClick={calculateDistance} disabled={loading || !customerCoords} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow disabled:opacity-40 disabled:cursor-not-allowed">
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET DELIVERY PRICE</>}
                   </Button>
                 </div>
@@ -1684,7 +1679,7 @@ const Order = () => {
                             </li>
                             <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
                               <span className="text-amber-500 mt-0.5 shrink-0">•</span>
-                              Cash is accepted on arrival
+                              Cash or check is accepted on arrival
                             </li>
                             <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
                               <span className="text-amber-500 mt-0.5 shrink-0">•</span>
@@ -1837,7 +1832,7 @@ const Order = () => {
                     <p className="font-body text-xs text-muted-foreground">• Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
                     <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
                     <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
-                    <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
+                    <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
                   </div>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
@@ -1847,8 +1842,8 @@ const Order = () => {
                       className="mt-0.5 w-4 h-4 rounded accent-primary"
                     />
                     <span className="font-body text-xs text-foreground leading-relaxed">
-                      I have read and agree to the delivery terms and cancellation policy.
-                      I understand that processing fees are non-refundable.
+                      I agree to the payment terms and cancellation policy.
+                      Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.
                     </span>
                   </label>
                 </div>
@@ -1859,7 +1854,7 @@ const Order = () => {
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
                     <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAYMENT DUE AT DELIVERY</p>
                     <p className="font-body text-sm text-amber-800 leading-relaxed mb-2">
-                      Cash payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
+                      Cash or check payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
                     </p>
                     <p className="font-body text-xs text-amber-700">
                       Cash total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(parseFloat((totalPrice * (1 + globalPricing.card_processing_fee_percent / 100) + globalPricing.card_processing_fee_fixed).toFixed(2)))}</strong> (includes {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} fee)

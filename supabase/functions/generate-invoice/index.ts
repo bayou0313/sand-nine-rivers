@@ -106,7 +106,7 @@ serve(async (req) => {
     y = 18;
 
     if (headerLogoB64) {
-      try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 16); } catch {
+      try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 0, undefined, undefined, undefined); } catch {
         doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
       }
     } else {
@@ -333,17 +333,18 @@ serve(async (req) => {
       doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
       y += 18;
 
-      // COD payment policy
+      // COD payment policy — with proper spacing
+      y += 6;
       doc.setFontSize(7);
       doc.setTextColor(146, 64, 14);
       doc.setFont("helvetica", "bold");
       doc.text("PAYMENT DUE AT DELIVERY", mx, y);
-      y += 4;
+      y += 5;
       doc.setFont("helvetica", "normal");
-      doc.text("Cash payment is due at the time of delivery.", mx, y);
+      doc.text("Cash or check payment is due at the time of delivery.", mx, y);
       y += 4;
       doc.text("If payment cannot be collected, a card payment link will be sent.", mx, y);
-      y += 6;
+      y += 8;
     }
 
     // ─── DELIVERY TERMS ───
@@ -359,7 +360,7 @@ serve(async (req) => {
       "WAYS® Materials LLC not liable for damage to driveways, landscaping, or property.",
       "Customer or representative must be present at delivery.",
       "Same-day orders subject to dispatch confirmation within 30 minutes.",
-      "Cancellation Policy: Orders canceled more than 2 hours before delivery are fully refunded. Processing fees are non-refundable.",
+      "Cancellation Policy: Orders canceled a day before scheduled delivery are fully refunded. Processing fees are non-refundable.",
     ];
 
     doc.setFontSize(7);
@@ -400,7 +401,7 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Invoice-${invoiceNum}.pdf"`,
+        "Content-Disposition": `inline; filename="Invoice-${invoiceNum}.pdf"`,
       },
     });
   } catch (err) {

@@ -44,7 +44,7 @@ function fmt(n: number): string {
   return n.toFixed(2);
 }
 
-function orderCustomerEmail(order: any): string {
+function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): string {
   const customerName = order.customer_name || "there";
   const orderNumber = order.order_number || "N/A";
   const deliveryAddress = order.delivery_address || "";
@@ -135,8 +135,9 @@ function orderCustomerEmail(order: any): string {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body style="margin:0;padding:0;background-color:#F0EDE5;font-family:Arial,Helvetica,sans-serif;">
+    <body style="margin:0;padding:0;background-color:#F0EDE5;font-family:'DM Sans',Arial,Helvetica,sans-serif;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0EDE5;">
       <tr>
         <td align="center" style="padding:24px 16px;">
@@ -298,8 +299,8 @@ function orderCustomerEmail(order: any): string {
                   <tr>
                     <td style="background-color:#FEF9C3;border:1px solid #FDE68A;padding:12px 16px;border-radius:8px;">
                       <p style="margin:0 0 6px 0;font-size:11px;font-weight:bold;color:#92400E;text-transform:uppercase;letter-spacing:1px;">Payment Due at Delivery</p>
-                      <p style="margin:0 0 8px 0;font-size:13px;color:#78350F;line-height:1.6;">Cash payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.</p>
-                      <p style="margin:0;font-size:12px;color:#92400E;">Cash total: <strong>$${fmt(Number(order.price))}</strong> · Card total if needed includes processing fee</p>
+                      <p style="margin:0 0 8px 0;font-size:13px;color:#78350F;line-height:1.6;">Cash or check payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.</p>
+                      <p style="margin:0;font-size:12px;color:#92400E;">Cash/Check total: <strong>$${fmt(Number(order.price))}</strong> · Card total if needed: <strong>$${fmt(Number(order.price) * (1 + feePercent / 100) + feeFixed)}</strong> (includes ${feePercent}% + $${feeFixed.toFixed(2)} fee)</p>
                     </td>
                   </tr>
                 </table>
@@ -361,12 +362,12 @@ function orderCustomerEmail(order: any): string {
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
                   <tr>
                     <td style="padding:16px 24px;border-top:1px solid #E8E5DC;">
-                      <p style="font-size:11px;font-weight:bold;color:#0D2137;letter-spacing:1px;margin:0 0 6px 0;text-transform:uppercase;">
-                        Cancellation Policy
-                      </p>
-                      <p style="font-size:12px;color:#666666;margin:0;line-height:1.6;">
-                        Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.
-                      </p>
+                       <p style="font-size:11px;font-weight:bold;color:#0D2137;letter-spacing:1px;margin:0 0 6px 0;text-transform:uppercase;">
+                         Cancellation Policy
+                       </p>
+                       <p style="font-size:12px;color:#666666;margin:0;line-height:1.6;">
+                         Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.
+                       </p>
                     </td>
                   </tr>
                 </table>
@@ -660,8 +661,8 @@ function brandedEmailWrapper(options: {
     </table>` : "";
 
   return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#F0EDE5;font-family:Arial,Helvetica,sans-serif;">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background-color:#F0EDE5;font-family:'DM Sans',Arial,Helvetica,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0EDE5;">
 <tr><td align="center" style="padding:24px 16px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
@@ -835,7 +836,7 @@ serve(async (req) => {
     const { data: settingsData } = await sb
       .from("global_settings")
       .select("key, value")
-      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to"]);
+      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to", "card_processing_fee_percent", "card_processing_fee_fixed"]);
 
     const emailCfg: Record<string, string> = {};
     for (const row of settingsData || []) {
@@ -846,6 +847,8 @@ serve(async (req) => {
     const FROM_NAME = emailCfg.email_from_name || DEFAULT_FROM_NAME;
     const REPLY_TO = emailCfg.email_reply_to || DEFAULT_REPLY_TO;
     const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
+    const FEE_PERCENT = parseFloat(emailCfg.card_processing_fee_percent || "3.5");
+    const FEE_FIXED = parseFloat(emailCfg.card_processing_fee_fixed || "0.30");
 
     console.log("[send-email] Email config — dispatch:", DISPATCH_EMAIL, "from:", FROM);
 
@@ -900,7 +903,7 @@ serve(async (req) => {
         ),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data), attachments, FROM, REPLY_TO));
+        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data, FEE_PERCENT, FEE_FIXED), attachments, FROM, REPLY_TO));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);

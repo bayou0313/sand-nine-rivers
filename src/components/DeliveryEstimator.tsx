@@ -274,7 +274,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             ) : (
               <div className="flex-1 h-12 rounded-xl border border-input bg-background animate-pulse" />
             )}
-            <Button type="button" data-estimator-btn onClick={() => { console.log("BUTTON CLICKED"); calculateDistance(); }} disabled={loading} className="h-12 min-h-[44px] font-display tracking-wider text-base px-8 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Button type="button" data-estimator-btn onClick={() => { console.log("BUTTON CLICKED"); calculateDistance(); }} disabled={loading || !customerCoords} className="h-12 min-h-[44px] font-display tracking-wider text-base px-8 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
             </Button>
           </div>
