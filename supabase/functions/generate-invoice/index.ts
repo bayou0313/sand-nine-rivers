@@ -401,7 +401,7 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Invoice-${invoiceNum}.pdf"`,
+        "Content-Disposition": `inline; filename="Invoice-${invoiceNum}.pdf"`,
       },
     });
   } catch (err) {
