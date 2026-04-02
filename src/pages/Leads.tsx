@@ -3054,6 +3054,64 @@ const Leads = () => {
           </>
         );
 
+      case "pending_review":
+        return (
+          <>
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm" style={{ color: BRAND_NAVY }}>Orders flagged for review due to billing/delivery address mismatch or fraud signals.</p>
+              <Button size="sm" onClick={fetchPendingReview} disabled={pendingReviewLoading} variant="outline">
+                {pendingReviewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              </Button>
+            </div>
+            {pendingReviewOrders.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">{pendingReviewLoading ? "Loading..." : "No orders pending review."}</div>
+            ) : (
+              <div className="space-y-4">
+                {pendingReviewOrders.map((order: any) => (
+                  <div key={order.id} className="bg-white rounded-xl border shadow-sm p-4" style={{ borderColor: CARD_BORDER }}>
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 mb-3 flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      <span className="text-sm font-bold text-amber-800">⚠️ Call customer before dispatch — no exceptions</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                      <div><p className="text-xs text-gray-400">Order #</p><p className="font-bold" style={{ color: BRAND_NAVY }}>{order.order_number || "—"}</p></div>
+                      <div><p className="text-xs text-gray-400">Customer</p><p>{order.customer_name}</p></div>
+                      <div><p className="text-xs text-gray-400">Phone</p><p>{order.customer_phone}</p></div>
+                      <div><p className="text-xs text-gray-400">Price</p><p className="font-bold" style={{ color: BRAND_GOLD }}>${order.price}</p></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3">
+                      <div className="p-2 rounded border">
+                        <p className="text-xs text-gray-400 mb-1">Delivery Address</p>
+                        <p className="font-medium">{order.delivery_address}</p>
+                      </div>
+                      <div className={`p-2 rounded border ${order.billing_matches_delivery === false ? "border-red-300 bg-red-50" : ""}`}>
+                        <p className="text-xs text-gray-400 mb-1">Billing Address</p>
+                        <p className="font-medium">{order.billing_address || "—"}</p>
+                        {order.billing_matches_delivery === false && <p className="text-xs text-red-600 font-bold mt-1">❌ ZIP MISMATCH</p>}
+                      </div>
+                    </div>
+                    {order.fraud_signals && Array.isArray(order.fraud_signals) && order.fraud_signals.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {order.fraud_signals.map((s: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">{s}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleVerifyCall(order.id)} disabled={verifyingCall === order.id} style={{ backgroundColor: "#22C55E", color: "white" }}>
+                        {verifyingCall === order.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />} Call Verified
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleCancelFraudOrder(order.id)} disabled={verifyingCall === order.id} className="border-red-300 text-red-600">
+                        Cancel & Refund
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        );
+
       case "waitlist": {
         const cityGroups = waitlistData.reduce((acc: Record<string, any[]>, lead: any) => {
           const key = lead.city_name || lead.city_slug;
