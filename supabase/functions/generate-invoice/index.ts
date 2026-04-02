@@ -484,29 +484,26 @@ serve(async (req) => {
       y = 20;
     }
 
-    // ─── Clean "DUE AT DELIVERY" two-column text (no box) ───
+    // ─── Clean "DUE AT DELIVERY" — pinned to fixed Y position ───
     if (hasCODBox) {
-      // Left column: label + disclaimer
+      // Always draw on the last page at the fixed pinnedCodY position
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("DUE AT DELIVERY", mx, y + 4);
+      doc.text("DUE AT DELIVERY", mx, pinnedCodY + 4);
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Cash or check payment due at the time of delivery.", mx, y + 9);
+      doc.text("Cash or check payment due at the time of delivery.", mx, pinnedCodY + 9);
 
-      // Right column: amount + disclaimer
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text(fmt(order.price), pw - mx, y + 4, { align: "right" });
+      doc.text(fmt(order.price), pw - mx, pinnedCodY + 4, { align: "right" });
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Exact amount required — driver carries no change", pw - mx, y + 9, { align: "right" });
-
-      y += 14;
+      doc.text("Exact amount required — driver carries no change", pw - mx, pinnedCodY + 9, { align: "right" });
     }
 
     // Delivery terms
