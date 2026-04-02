@@ -580,10 +580,12 @@ serve(async (req) => {
       }
 
       let existingPit: any = null;
+      let existingPitStatus: string | null = null;
       if (pit.id) {
         const { data: ep } = await supabase
-          .from("pits").select("base_price, free_miles, price_per_extra_mile").eq("id", pit.id).maybeSingle();
+          .from("pits").select("base_price, free_miles, price_per_extra_mile, status").eq("id", pit.id).maybeSingle();
         existingPit = ep;
+        existingPitStatus = ep?.status || null;
       }
 
       const pitData = {
