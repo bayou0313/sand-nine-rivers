@@ -841,7 +841,12 @@ serve(async (req) => {
     const { data: settingsData } = await sb
       .from("global_settings")
       .select("key, value")
-      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to", "card_processing_fee_percent", "card_processing_fee_fixed"]);
+      .in("key", [
+        "email_dispatch", "email_from", "email_from_name", "email_reply_to",
+        "card_processing_fee_percent", "card_processing_fee_fixed",
+        "legal_name", "site_name", "phone", "website",
+        "support_email", "tagline", "copyright_year",
+      ]);
 
     const emailCfg: Record<string, string> = {};
     for (const row of settingsData || []) {
@@ -854,6 +859,13 @@ serve(async (req) => {
     const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
     const FEE_PERCENT = parseFloat(emailCfg.card_processing_fee_percent || "3.5");
     const FEE_FIXED = parseFloat(emailCfg.card_processing_fee_fixed || "0.30");
+    const PHONE = emailCfg.phone || DEFAULT_PHONE;
+    const WEBSITE = emailCfg.website?.replace(/^https?:\/\//, "") || DEFAULT_WEBSITE;
+    const LEGAL_NAME = emailCfg.legal_name || DEFAULT_LEGAL_NAME;
+    const SUPPORT_EMAIL = emailCfg.support_email || DEFAULT_SUPPORT_EMAIL;
+    const SITE_NAME = emailCfg.site_name || DEFAULT_SITE_NAME;
+    const COPYRIGHT_YEAR = emailCfg.copyright_year || "2026";
+    const TAGLINE = emailCfg.tagline || DEFAULT_TAGLINE;
 
     console.log("[send-email] Email config — dispatch:", DISPATCH_EMAIL, "from:", FROM);
 
