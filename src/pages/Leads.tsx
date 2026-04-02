@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
@@ -311,6 +311,11 @@ const Leads = () => {
   const [liveLoading, setLiveLoading] = useState(false);
   const [funnelData, setFunnelData] = useState<Record<string, number> | null>(null);
 
+  // Notifications state
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const notifPanelRef = useRef<HTMLDivElement>(null);
 
   const [cashOrders, setCashOrders] = useState<any[]>([]);
   const [cashLoading, setCashLoading] = useState(false);
@@ -654,6 +659,32 @@ const Leads = () => {
     }
   }, []);
 
+  // Fetch notifications
+  const fetchNotifications = useCallback(async (pw: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "get_notifications" },
+      });
+      if (data?.notifications) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.notifications.filter((n: any) => !n.read).length);
+      }
+    } catch (err) { console.error("[notifications] Fetch error:", err); }
+  }, []);
+
+  // Mark notifications as read
+  const markNotificationsRead = useCallback(async () => {
+    const pw = storedPassword();
+    if (!pw) return;
+    try {
+      await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "mark_notifications_read" },
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) { console.error("[notifications] Mark read error:", err); }
+  }, []);
+
 
   useEffect(() => {
     const saved = storedPassword();
@@ -661,14 +692,63 @@ const Leads = () => {
       fetchLeads(saved);
       fetchSettings(saved);
       fetchPits(saved);
+      fetchNotifications(saved);
     }
-  }, [fetchLeads, fetchSettings, fetchPits]);
+  }, [fetchLeads, fetchSettings, fetchPits, fetchNotifications]);
+
+  // Realtime subscription for notifications
+  useEffect(() => {
+    if (!authenticated) return;
+    const channel = supabase
+      .channel('notifications-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload: any) => {
+          const newNotif = payload.new;
+          setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+          setUnreadCount(prev => prev + 1);
+          // Show toast
+          toast({ title: newNotif.title, description: newNotif.message });
+          // Auto-refresh relevant section
+          const pw = storedPassword();
+          if (!pw) return;
+          if (newNotif.entity_type === "lead" || newNotif.type === "fraud_flagged") {
+            fetchLeads(pw);
+          } else if (newNotif.entity_type === "order") {
+            fetchCashOrders();
+            fetchPendingReview();
+          } else if (newNotif.entity_type === "contact") {
+            // refresh overview metrics on next visit
+          } else if (newNotif.entity_type === "waitlist") {
+            if (activePage === "waitlist") {
+              supabase.functions.invoke("leads-auth", { body: { password: pw, action: "list_waitlist" } })
+                .then(({ data }) => { if (data?.waitlist) setWaitlistData(data.waitlist); })
+                .catch(() => {});
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [authenticated, activePage, fetchLeads, toast]);
+
+  // Close notification panel on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifPanelRef.current && !notifPanelRef.current.contains(e.target as Node)) {
+        setShowNotifPanel(false);
+      }
+    };
+    if (showNotifPanel) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showNotifPanel]);
 
   const handleLogin = async () => {
     setError("");
     await fetchLeads(password);
     if (sessionStorage.getItem("leads_pw")) {
-      await Promise.all([fetchSettings(password), fetchPits(password)]);
+      await Promise.all([fetchSettings(password), fetchPits(password), fetchNotifications(password)]);
     }
   };
 
@@ -677,6 +757,8 @@ const Leads = () => {
     setAuthenticated(false);
     setLeads([]);
     setPassword("");
+    setNotifications([]);
+    setUnreadCount(0);
   };
 
   const saveGlobalSettings = async () => {
@@ -4579,6 +4661,70 @@ const Leads = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Notification bell */}
+            <div className="relative" ref={notifPanelRef}>
+              <button
+                onClick={() => {
+                  setShowNotifPanel(prev => !prev);
+                  if (!showNotifPanel && unreadCount > 0) markNotificationsRead();
+                }}
+                className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Bell className="w-5 h-5" style={{ color: BRAND_NAVY }} />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ backgroundColor: BRAND_GOLD }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification panel */}
+              {showNotifPanel && (
+                <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border z-50" style={{ borderColor: CARD_BORDER }}>
+                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
+                    <h3 className="text-sm font-bold" style={{ color: BRAND_NAVY }}>Notifications</h3>
+                    <button onClick={() => setShowNotifPanel(false)} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-gray-400">No notifications</div>
+                  ) : (
+                    notifications.slice(0, 20).map((n: any) => (
+                      <div
+                        key={n.id}
+                        className="px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors cursor-default"
+                        style={{ borderColor: CARD_BORDER, backgroundColor: n.read ? "transparent" : "#FFFDF5" }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold" style={{ color: BRAND_NAVY }}>{n.title}</p>
+                          <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                            {(() => {
+                              try {
+                                const d = new Date(n.created_at);
+                                const now = new Date();
+                                const diffMs = now.getTime() - d.getTime();
+                                const diffMin = Math.floor(diffMs / 60000);
+                                if (diffMin < 1) return "just now";
+                                if (diffMin < 60) return `${diffMin}m ago`;
+                                const diffHrs = Math.floor(diffMin / 60);
+                                if (diffHrs < 24) return `${diffHrs}h ago`;
+                                return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                              } catch { return ""; }
+                            })()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
             {(activePage === "overview" || activePage === "all") && (
               <Button onClick={exportCSV} variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-1" /> Export CSV

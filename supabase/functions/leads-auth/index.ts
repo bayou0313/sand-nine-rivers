@@ -300,6 +300,17 @@ serve(async (req) => {
 
       await sb.from("waitlist_leads").insert({ city_slug, city_name: city_name || city_slug, customer_name, customer_email, customer_phone });
 
+      // Insert waitlist notification
+      try {
+        await sb.from("notifications").insert({
+          type: "waitlist_signup",
+          title: "Waitlist Signup",
+          message: `${customer_email} joined waitlist for ${city_name || city_slug}`,
+          entity_type: "waitlist",
+          entity_id: null,
+        });
+      } catch (notifErr) { console.error("[join_waitlist] Notification insert error:", notifErr); }
+
       // Send waitlist confirmation email
       try {
         await fetch(`${supabaseUrl}/functions/v1/send-email`, {
@@ -428,6 +439,27 @@ serve(async (req) => {
       if (insertErr) throw insertErr;
 
       console.log(`[create_out_of_area_lead] Created lead ${inserted.lead_number}, fraud_score: ${fraudScore}, risk: ${riskLevel}`);
+
+      // Insert new_lead notification
+      try {
+        await sb.from("notifications").insert({
+          type: "new_lead",
+          title: "New Lead",
+          message: `${customer_name} submitted a request for ${leadAddress}`,
+          entity_type: "lead",
+          entity_id: inserted.id,
+        });
+        // Fraud notification if high risk
+        if (fraudScore >= 80) {
+          await sb.from("notifications").insert({
+            type: "fraud_flagged",
+            title: "⚠️ High Risk Lead",
+            message: `High fraud score (${fraudScore}) on lead from ${serverIp || "unknown"}`,
+            entity_type: "lead",
+            entity_id: inserted.id,
+          });
+        }
+      } catch (notifErr) { console.error("[create_out_of_area_lead] Notification insert error:", notifErr); }
 
       // Send admin notification email (fire-and-forget)
       const ownerEmail = Deno.env.get("GMAIL_USER") || "cmo@haulogix.com";
@@ -3077,6 +3109,55 @@ serve(async (req) => {
         JSON.stringify({ success: true, processed, remaining: count || 0, message: `Processed ${processed} pages. ${count || 0} remaining.` }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ── NOTIFY NEW ORDER (no password required — public, fire-and-forget from frontend) ──
+    if (action === "notify_new_order") {
+      const { customer_name: notifName, payment_method: notifPM, delivery_address: notifAddr, order_id: notifOrderId } = body;
+      if (!notifName || !notifAddr || !notifOrderId) {
+        return new Response(JSON.stringify({ error: "Missing required fields" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+      await sb.from("notifications").insert({
+        type: "new_order",
+        title: "New Order",
+        message: `${notifName} placed a ${notifPM || "COD"} order for ${notifAddr}`,
+        entity_type: "order",
+        entity_id: notifOrderId,
+      });
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── GET NOTIFICATIONS (password required) ──
+    if (action === "get_notifications") {
+      // Delete old notifications (>7 days)
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from("notifications").delete().lt("created_at", sevenDaysAgo);
+      const { data: notifs, error: notifErr } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (notifErr) throw notifErr;
+      return new Response(JSON.stringify({ success: true, notifications: notifs }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── MARK NOTIFICATIONS READ (password required) ──
+    if (action === "mark_notifications_read") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      await supabase.from("notifications").update({ read: true } as any).eq("read", false);
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(
