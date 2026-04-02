@@ -24,6 +24,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
+const cleanCityName = (name: string): string =>
+  name.replace(/\s*,?\s*[Ll][Aa]$/, '').trim();
+
 const slugToTitle = (slug: string): string => {
   return slug
     .split("-")
@@ -188,6 +191,7 @@ const CityPage = () => {
         return;
       }
 
+      data.city_name = cleanCityName(data.city_name);
       setCityPage(data);
       setIsWaitlist(data.status === "waitlist");
 
