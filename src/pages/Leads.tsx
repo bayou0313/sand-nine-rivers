@@ -1557,7 +1557,15 @@ const Leads = () => {
     return <span className="text-xs px-2 py-0.5 rounded-full font-bold inline-block" style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.text}` }}>{status.charAt(0).toUpperCase() + status.slice(1)}</span>;
   };
 
-  const openDetail = (l: ParsedLead) => { setSelectedLead(l); setDetailStage(l.stage); setDetailNote(""); };
+  const openDetail = (l: ParsedLead) => {
+    setSelectedLead(l);
+    setDetailStage(l.stage);
+    setDetailNote("");
+    setOfferPitId(l.nearest_pit_id || "");
+    setOfferPrice(l.calculated_price ? String(l.calculated_price) : "");
+    setOfferResult(null);
+    setFraudReason("");
+  };
 
   const saveDetail = async () => {
     if (!selectedLead) return;
