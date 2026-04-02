@@ -46,7 +46,27 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
-function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, footerLogoB64: string | null) {
+interface BizSettings {
+  legal_name: string;
+  site_name: string;
+  phone: string;
+  website: string;
+  footer_address: string;
+  ein_number: string;
+  support_email: string;
+}
+
+const DEFAULT_BIZ: BizSettings = {
+  legal_name: "WAYS® Materials LLC",
+  site_name: "River Sand",
+  phone: "1-855-GOT-WAYS",
+  website: "riversand.net",
+  footer_address: "202 Larosa Dr, Long Beach, MS",
+  ein_number: "",
+  support_email: "",
+};
+
+function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, footerLogoB64: string | null, biz: BizSettings) {
   const footerY = ph - 24;
 
   // Gold divider line above footer
@@ -64,17 +84,28 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
     } catch { /* skip */ }
   }
 
-  // Text right-aligned — 40% brighter
+  // Build footer line dynamically
+  const footerParts = [biz.legal_name, biz.website, biz.phone].filter(Boolean);
+  const footerLine1 = footerParts.join("  |  ");
+
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(180, 180, 180);
-  doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw - mx, textY, { align: "right" });
-  doc.setFontSize(7);
-  doc.setTextColor(180, 180, 180);
-  doc.text("202 Larosa Dr, Long Beach, MS", pw - mx, textY + 4, { align: "right" });
+  doc.text(footerLine1, pw - mx, textY, { align: "right" });
+
+  let footerLineY = textY + 4;
+  if (biz.footer_address) {
+    doc.text(biz.footer_address, pw - mx, footerLineY, { align: "right" });
+    footerLineY += 4;
+  }
+  if (biz.ein_number) {
+    doc.text(`EIN: ${biz.ein_number}`, pw - mx, footerLineY, { align: "right" });
+    footerLineY += 4;
+  }
+
   doc.setFontSize(6);
   doc.setTextColor(200, 200, 200);
-  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 8, { align: "right" });
+  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, footerLineY, { align: "right" });
 }
 
 serve(async (req) => {
@@ -109,6 +140,30 @@ serve(async (req) => {
       });
     }
 
+    // ─── Fetch business settings from global_settings ───
+    const { data: settingsRows } = await supabase
+      .from("global_settings")
+      .select("key, value")
+      .in("key", [
+        "legal_name", "site_name", "phone", "website",
+        "footer_address", "ein_number", "support_email",
+        "base_price", "free_miles", "price_per_extra_mile",
+        "card_processing_fee_percent", "card_processing_fee_fixed",
+      ]);
+
+    const settings: Record<string, string> = {};
+    (settingsRows || []).forEach((r: { key: string; value: string }) => { settings[r.key] = r.value; });
+
+    const biz: BizSettings = {
+      legal_name: settings.legal_name || DEFAULT_BIZ.legal_name,
+      site_name: settings.site_name || DEFAULT_BIZ.site_name,
+      phone: settings.phone || DEFAULT_BIZ.phone,
+      website: settings.website || DEFAULT_BIZ.website,
+      footer_address: settings.footer_address || DEFAULT_BIZ.footer_address,
+      ein_number: settings.ein_number || DEFAULT_BIZ.ein_number,
+      support_email: settings.support_email || DEFAULT_BIZ.support_email,
+    };
+
     const HEADER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png";
     const FOOTER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
     const [headerLogoB64, footerLogoB64] = await Promise.all([
@@ -127,19 +182,19 @@ serve(async (req) => {
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
     const isPaid = order.payment_status === "paid";
     const isCard = order.payment_method === "stripe-link" || order.payment_method === "card";
-    const basePrice = 195;
-    const baseMiles = 15;
-    const perMileExtra = 5.5;
+    const basePrice = Number(settings.base_price) || 195;
+    const baseMiles = Number(settings.free_miles) || 15;
+    const perMileExtra = Number(settings.price_per_extra_mile) || 5.5;
 
     // ─── HEADER ───
     y = 18;
 
     if (headerLogoB64) {
       try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 0); } catch {
-        doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
+        doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(biz.site_name.toUpperCase(), mx, 18);
       }
     } else {
-      doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
+      doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(biz.site_name.toUpperCase(), mx, 18);
     }
 
     doc.setFontSize(9);
@@ -230,7 +285,7 @@ serve(async (req) => {
     doc.setFontSize(9);
     doc.setTextColor(...BLACK);
     doc.setFont("helvetica", "normal");
-    doc.text(`River Sand — 9 cu/yd  ×  ${order.quantity} load${order.quantity > 1 ? "s" : ""}`, mx, y);
+    doc.text(`${biz.site_name} — 9 cu/yd  ×  ${order.quantity} load${order.quantity > 1 ? "s" : ""}`, mx, y);
     y += 5;
     if (order.notes) {
       doc.setFontSize(8);
@@ -334,7 +389,7 @@ serve(async (req) => {
 
     interface PriceLine { desc: string; amt: string }
     const priceLines: PriceLine[] = [];
-    priceLines.push({ desc: `River Sand — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
+    priceLines.push({ desc: `${biz.site_name} — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
     if (distanceFee > 0) priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
     if (satSurcharge > 0) priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
     if (taxAmount > 0) {
@@ -464,7 +519,7 @@ serve(async (req) => {
     });
 
     // ─── FOOTER on last page, pinned to bottom ───
-    drawFooter(doc, pw, ph, mx, cw, footerLogoB64);
+    drawFooter(doc, pw, ph, mx, cw, footerLogoB64, biz);
 
     const pdfOutput = doc.output("arraybuffer");
 

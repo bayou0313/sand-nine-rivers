@@ -4146,14 +4146,18 @@ const Leads = () => {
               </div>
             </div>
 
-            {/* Legal */}
+            {/* Legal & Tax */}
             <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Legal Information</h3>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Legal & Tax Information</h3>
               <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Legal entity</label>
                   <Input className="h-9" value={profileSettings.legal_name || ""} onChange={e => setProfileSettings({ ...profileSettings, legal_name: e.target.value })} placeholder="Ways Materials, LLC" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">EIN / Tax ID</label>
+                  <Input className="h-9" value={profileSettings.ein_number || ""} onChange={e => setProfileSettings({ ...profileSettings, ein_number: e.target.value })} placeholder="XX-XXXXXXX" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">State of incorporation</label>
@@ -4163,10 +4167,31 @@ const Leads = () => {
                   <label className="text-xs text-gray-500 block mb-1">Copyright year</label>
                   <Input className="h-9" value={profileSettings.copyright_year || "2026"} onChange={e => setProfileSettings({ ...profileSettings, copyright_year: e.target.value })} />
                 </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Footer address (invoices)</label>
+                  <Input className="h-9" value={profileSettings.footer_address || ""} onChange={e => setProfileSettings({ ...profileSettings, footer_address: e.target.value })} placeholder="202 Larosa Dr, Long Beach, MS" />
+                </div>
               </div>
               <div className="mt-4">
                 <label className="text-xs text-gray-500 block mb-1">Invoice footer text</label>
                 <Textarea rows={3} value={profileSettings.invoice_footer || ""} onChange={e => setProfileSettings({ ...profileSettings, invoice_footer: e.target.value })} placeholder="This invoice is issued by Ways Materials, LLC..." />
+              </div>
+            </div>
+
+            {/* Additional Contact */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Additional Contact Channels</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">WhatsApp number</label>
+                  <Input className="h-9" value={profileSettings.whatsapp_number || ""} onChange={e => setProfileSettings({ ...profileSettings, whatsapp_number: e.target.value })} placeholder="+15551234567" />
+                  <p className="text-xs text-gray-400 mt-1">International format with country code</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Support / orders email</label>
+                  <Input className="h-9" value={profileSettings.support_email || ""} onChange={e => setProfileSettings({ ...profileSettings, support_email: e.target.value })} placeholder="orders@riversand.net" />
+                </div>
               </div>
             </div>
 
