@@ -176,8 +176,7 @@ serve(async (req) => {
     const ph = 279.4;
     const mx = 16;
     const cw = pw - 2 * mx;
-    const pinnedCodY = ph - 44;
-    const maxContentY = pinnedCodY - 6;
+    // Pinned zone Y positions calculated dynamically in bottom section
     let y = 0;
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
