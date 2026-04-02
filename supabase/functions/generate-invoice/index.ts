@@ -176,7 +176,8 @@ serve(async (req) => {
     const ph = 279.4;
     const mx = 16;
     const cw = pw - 2 * mx;
-    const maxContentY = ph - 32;
+    const pinnedCodY = ph - 44;
+    const maxContentY = pinnedCodY - 6;
     let y = 0;
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
