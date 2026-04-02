@@ -7,6 +7,7 @@ import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp,
 import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -186,35 +187,75 @@ const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8
 
 const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: any }[] }[] = [
   {
-    section: "OPERATIONS",
+    section: "LIVE OPERATIONS",
     items: [
       { id: "overview", label: "Overview", icon: BarChart3 },
-      { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
-      { id: "pipeline", label: "Pipeline", icon: List },
-      { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
+      { id: "live" as NavPage, label: "Live Visitors", icon: Users },
       { id: "cash_orders", label: "Orders", icon: DollarSign },
       { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
-      { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
-      { id: "live" as NavPage, label: "Live", icon: Users },
+      { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
+    ],
+  },
+  {
+    section: "MARKETING",
+    items: [
+      { id: "pipeline", label: "Pipeline", icon: List },
+      { id: "all", label: "All Leads", icon: Users },
+      { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
+      { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
     ],
   },
   {
     section: "EXPANSION",
     items: [
-      { id: "pit", label: "PIT", icon: Zap },
       { id: "city_pages", label: "City Pages", icon: MapIcon },
+      { id: "pit", label: "PITs", icon: Zap },
       { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
-      { id: "all", label: "All Leads", icon: Users },
     ],
   },
   {
     section: "SETTINGS",
     items: [
-      { id: "profile", label: "Business Profile", icon: Building2 },
       { id: "settings", label: "Global Settings", icon: Settings },
+      { id: "profile", label: "Business Profile", icon: Building2 },
     ],
   },
 ];
+
+/* ── Sidebar Accordion Section ── */
+const SidebarAccordion = ({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:opacity-80 transition-opacity"
+        style={{ color: SECTION_LABEL }}
+      >
+        <span>{title}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className="w-3 h-3" />
+        </motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const Leads = () => {
   const { toast } = useToast();
@@ -1809,8 +1850,8 @@ const Leads = () => {
         <div className="bg-white rounded-2xl p-8 shadow-2xl w-full max-w-sm">
           <div className="text-center mb-6">
             <Lock className="w-10 h-10 mx-auto mb-3" style={{ color: BRAND_GOLD }} />
-            <h1 className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>DELIVERY LEADS</h1>
-            <p className="text-sm text-gray-500 mt-1">Enter password to access</p>
+            <h1 className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>LANDER MARKETING TOOLS</h1>
+            <p className="text-sm text-gray-500 mt-1">Enter password to access LMT</p>
           </div>
           <Input
             type="password"
@@ -1822,7 +1863,7 @@ const Leads = () => {
           />
           {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
           <Button onClick={handleLogin} disabled={loading} className="w-full" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ACCESS LEADS"}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ACCESS LMT"}
           </Button>
         </div>
       </div>
@@ -4578,7 +4619,7 @@ const Leads = () => {
         style={{ width: 220, minWidth: 220, backgroundColor: BRAND_NAVY }}
       >
         <div className="px-4 py-4">
-          <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>DELIVERY LEADS</h2>
+          <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>LMT</h2>
           <p className="text-xs mt-0.5" style={{ color: SECTION_LABEL }}>Live: {livePricing}</p>
           {globalSettings.site_mode === 'maintenance' && (
             <div className="text-xs font-bold px-2 py-1 rounded mt-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B' }}>
@@ -4593,42 +4634,46 @@ const Leads = () => {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2">
-          {NAV_ITEMS.map(section => (
-            <div key={section.section} className="mb-3">
-              <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: SECTION_LABEL }}>
-                {section.section}
-              </p>
-              {section.items.map(item => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
-                    style={{
-                      height: 40,
-                      fontSize: 13,
-                      color: isActive ? BRAND_GOLD : "white",
-                      backgroundColor: isActive ? SIDEBAR_HOVER : "transparent",
-                      borderLeft: isActive ? `3px solid ${BRAND_GOLD}` : "3px solid transparent",
-                    }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
-                  >
-                    <Icon className="w-[18px] h-[18px]" />
-                    <span>{item.label}</span>
-                    {item.id === "live" && (
-                      <span className="relative flex h-2 w-2 ml-auto">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+          {NAV_ITEMS.map(section => {
+            const sectionHasActive = section.items.some(i => i.id === activePage);
+            return (
+              <SidebarAccordion
+                key={section.section}
+                title={section.section}
+                defaultOpen={sectionHasActive}
+              >
+                {section.items.map(item => {
+                  const Icon = item.icon;
+                  const isActive = activePage === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
+                      style={{
+                        height: 36,
+                        fontSize: 13,
+                        color: isActive ? BRAND_GOLD : "white",
+                        backgroundColor: isActive ? SIDEBAR_HOVER : "transparent",
+                        borderLeft: isActive ? `3px solid ${BRAND_GOLD}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                    >
+                      <Icon className="w-[16px] h-[16px]" />
+                      <span>{item.label}</span>
+                      {item.id === "live" && (
+                        <span className="relative flex h-2 w-2 ml-auto">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </SidebarAccordion>
+            );
+          })}
         </nav>
 
         {/* Logout + Footer */}

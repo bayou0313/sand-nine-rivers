@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Loader2, Download, ChevronDown } from "lucide-react";
+import { Loader2, Download, ChevronDown, MessageCircle, Mail, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -146,7 +146,6 @@ export interface OrderConfirmationProps {
   taxInfo: { rate: number; parish: string };
   basePricePerLoad: number;
   distanceFee: number;
-  onPrint: () => void;
   onDownloadInvoice: () => void;
   downloadingInvoice: boolean;
   canDownload: boolean;
@@ -160,7 +159,9 @@ export default function OrderConfirmation({
   paymentMethod,
   codSubOption,
   stripePaymentId,
+  customerName,
   customerEmail,
+  customerPhone,
   confirmedTotals: dt,
   totalPrice,
   totalWithProcessingFee,
@@ -170,7 +171,6 @@ export default function OrderConfirmation({
   taxInfo,
   basePricePerLoad,
   distanceFee: fallbackDistanceFee,
-  onPrint,
   onDownloadInvoice,
   downloadingInvoice,
   canDownload,
@@ -545,26 +545,54 @@ export default function OrderConfirmation({
       {/* ── ACTION BUTTONS ── */}
       <FadeIn delay={0.6} className="print-hide">
         <div className="px-6 pb-6 max-w-[680px] mx-auto space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button
+            onClick={onDownloadInvoice}
+            disabled={downloadingInvoice || !canDownload}
+            variant="outline"
+            className="w-full h-12 rounded-xl font-display tracking-wider"
+          >
+            {downloadingInvoice ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Download Invoice
+          </Button>
+
+          {/* Share buttons */}
+          <div className="grid grid-cols-3 gap-3">
             <Button
-              onClick={onPrint}
               variant="outline"
-              className="h-12 rounded-xl font-display tracking-wider"
+              className="h-11 rounded-xl font-display tracking-wider text-xs"
+              onClick={() => {
+                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                const body = `Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} of River Sand to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
+                const smsUrl = isIOS ? `sms:&body=${encodeURIComponent(body)}` : `sms:?body=${encodeURIComponent(body)}`;
+                window.open(smsUrl);
+              }}
             >
-              <Download className="w-4 h-4 mr-2" /> Download PDF
+              <MessageCircle className="w-4 h-4 mr-1" /> Text
             </Button>
             <Button
-              onClick={onDownloadInvoice}
-              disabled={downloadingInvoice || !canDownload}
               variant="outline"
-              className="h-12 rounded-xl font-display tracking-wider"
+              className="h-11 rounded-xl font-display tracking-wider text-xs"
+              onClick={() => {
+                const subject = `River Sand Order ${orderNumber || ""}`;
+                const body = `Order: ${orderNumber || "N/A"}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\n\nQuestions? Call 1-855-GOT-WAYS`;
+                window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+              }}
             >
-              {downloadingInvoice ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-2" />
-              )}
-              Download Invoice
+              <Mail className="w-4 h-4 mr-1" /> Email
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 rounded-xl font-display tracking-wider text-xs"
+              onClick={() => {
+                const text = `River Sand Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+              }}
+            >
+              <Share2 className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
           </div>
 

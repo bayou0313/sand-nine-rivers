@@ -1172,8 +1172,8 @@ const Order = () => {
   // --- Receipt row helper ---
   const ReceiptRow = ({ label, value, accent, destructive, bold, small }: { label: string; value: string; accent?: boolean; destructive?: boolean; bold?: boolean; small?: boolean }) => (
     <div className="flex justify-between items-center py-2.5">
-      <span className={`font-body ${small ? "text-xs" : "text-sm"} ${destructive ? "text-destructive" : small ? "text-muted-foreground/70" : "text-muted-foreground"}`}>{label}</span>
-      <span className={`${bold ? "font-display text-base" : small ? "font-body text-xs text-muted-foreground/70" : "font-display text-sm"} ${destructive ? "text-destructive" : accent ? "text-primary" : bold ? "text-primary" : "text-foreground"}`}>{value}</span>
+      <span className={`font-body ${small ? "text-sm" : "text-base"} ${destructive ? "text-destructive" : small ? "text-muted-foreground/70" : "text-muted-foreground"} leading-relaxed`}>{label}</span>
+      <span className={`${bold ? "font-display text-lg" : small ? "font-body text-sm text-muted-foreground/70" : "font-display text-base"} ${destructive ? "text-destructive" : accent ? "text-primary" : bold ? "text-primary" : "text-foreground"}`}>{value}</span>
     </div>
   );
 
@@ -1458,20 +1458,20 @@ const Order = () => {
                     <SectionHeading icon={User} title="YOUR INFORMATION" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label htmlFor="order-name" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
-                        <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-11 rounded-lg" />
+                        <label htmlFor="order-name" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Full Name *</label>
+                        <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div>
-                        <label htmlFor="order-phone" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone *</label>
-                        <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-11 rounded-lg" />
+                        <label htmlFor="order-phone" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Phone *</label>
+                        <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div>
-                        <label htmlFor="order-email" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-11 rounded-lg" />
+                        <label htmlFor="order-email" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Email *</label>
+                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div className="sm:col-span-2">
-                        <label htmlFor="order-notes" className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Notes (optional)</label>
-                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={1000} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg" />
+                        <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Notes (optional)</label>
+                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={1000} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
                       </div>
                     </div>
                   </div>
@@ -1595,9 +1595,9 @@ const Order = () => {
                           </motion.div>
                         )}
                         <CreditCard className={`w-6 h-6 mb-2 ${paymentMethod === "stripe-link" ? "text-accent" : "text-muted-foreground"}`} />
-                        <p className="font-display text-sm text-foreground tracking-wider">PAY NOW</p>
-                        <p className="font-body text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                          <Lock className="w-2.5 h-2.5" /> Secure Stripe Checkout
+                        <p className="font-display text-base text-foreground tracking-wider">PAY NOW</p>
+                        <p className="font-body text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Secure Stripe Checkout
                         </p>
                       </button>
 
@@ -1617,61 +1617,92 @@ const Order = () => {
                             </motion.div>
                           )}
                           <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-sm text-foreground tracking-wider">AT DELIVERY</p>
-                          <p className="font-body text-[10px] text-muted-foreground mt-1">Cash or Check — no fee</p>
+                          <p className="font-display text-base text-foreground tracking-wider">AT DELIVERY</p>
+                          <p className="font-body text-xs text-muted-foreground mt-1">Cash or Check — no processing fee</p>
                         </button>
                       )}
                     </div>
 
                     {isWeekendDate && (
-                      <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                      <p className="font-body text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-4 flex items-center gap-1.5 leading-relaxed">
+                        <CalendarDays className="w-4 h-4 shrink-0" />
                         Weekend deliveries require card payment.
                       </p>
                     )}
 
+                    {/* Policy notice: PAY NOW */}
+                    <AnimatePresence mode="wait">
                     {paymentMethod === "stripe-link" && (
-                      <div className="space-y-3">
-                        <div className="bg-card border border-border rounded-lg p-3 space-y-1.5">
-                          <div className="flex justify-between text-sm">
+                      <motion.div
+                        key="stripe-policy"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
+                      >
+                        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                          <div className="flex justify-between text-base">
                             <span className="font-body text-muted-foreground">Order Total</span>
                             <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="font-body text-muted-foreground">Processing Fee (3.5%)</span>
+                          <div className="flex justify-between text-base">
+                            <span className="font-body text-muted-foreground">Processing Fee (3.5% + $0.30)</span>
                             <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
                           </div>
                           <Separator className="my-1" />
                           <div className="flex justify-between">
-                            <span className="font-display text-sm text-foreground">TOTAL CHARGE</span>
-                            <span className="font-display text-lg text-primary">{formatCurrency(totalWithProcessingFee)}</span>
+                            <span className="font-display text-base text-foreground">TOTAL CHARGE</span>
+                            <span className="font-display text-xl text-primary">{formatCurrency(totalWithProcessingFee)}</span>
                           </div>
                         </div>
-                        <p className="font-body text-[10px] text-muted-foreground text-center">
-                          3.5% processing fee applies. Pay at delivery to avoid.
-                        </p>
-                      </div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1.5">
+                          <p className="font-body text-sm text-blue-900 leading-relaxed flex items-start gap-2">
+                            <CreditCard className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
+                            Processing fee ({formatCurrency(processingFee)}) is <strong>non-refundable</strong> if order is cancelled
+                          </p>
+                        </div>
+                      </motion.div>
                     )}
 
+                    {/* Policy notice: AT DELIVERY */}
                     {(paymentMethod === "cash" || paymentMethod === "check") && (
-                      <RadioGroup
-                        value={codSubOption}
-                        onValueChange={(v) => {
-                          setCodSubOption(v as "cash" | "check");
-                          setPaymentMethod(v as "cash" | "check");
-                        }}
-                        className="flex gap-6"
+                      <motion.div
+                        key="cod-policy"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
                       >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="cash" id="cash" />
-                          <label htmlFor="cash" className="font-body text-sm text-foreground cursor-pointer">Cash</label>
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-1.5">
+                          <p className="font-body text-sm text-green-900 leading-relaxed flex items-start gap-2">
+                            <Banknote className="w-4 h-4 mt-0.5 shrink-0 text-green-600" />
+                            Cash or check accepted at delivery — no processing fee
+                          </p>
+                          <p className="font-body text-sm text-green-800 leading-relaxed pl-6">No cancellation fee for COD orders</p>
+                          <p className="font-body text-sm text-green-800 leading-relaxed pl-6">Driver will collect payment on arrival</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="check" id="check" />
-                          <label htmlFor="check" className="font-body text-sm text-foreground cursor-pointer">Check</label>
-                        </div>
-                      </RadioGroup>
+                        <RadioGroup
+                          value={codSubOption}
+                          onValueChange={(v) => {
+                            setCodSubOption(v as "cash" | "check");
+                            setPaymentMethod(v as "cash" | "check");
+                          }}
+                          className="flex gap-6"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="cash" id="cash" />
+                            <label htmlFor="cash" className="font-body text-base text-foreground cursor-pointer">Cash</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="check" id="check" />
+                            <label htmlFor="check" className="font-body text-base text-foreground cursor-pointer">Check</label>
+                          </div>
+                        </RadioGroup>
+                      </motion.div>
                     )}
+                    </AnimatePresence>
 
                     {!paymentMethod && (
                       <p className="font-body text-xs text-muted-foreground text-center">Select a payment method to continue.</p>
@@ -1916,7 +1947,6 @@ const Order = () => {
                   taxInfo={taxInfo}
                   basePricePerLoad={effectivePricing.base_price}
                   distanceFee={result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0}
-                  onPrint={handleDownloadInvoice}
                   onDownloadInvoice={handleDownloadInvoice}
                   downloadingInvoice={downloadingInvoice}
                   canDownload={!!confirmedOrderId}
