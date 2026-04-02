@@ -2474,12 +2474,26 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      const { data: pages } = await supabase
+      const { data: nullPages } = await supabase
         .from("city_pages")
         .select("id, city_name, lat, lng, region")
         .not("lat", "is", null)
         .not("lng", "is", null)
-        .or("region.is.null,region.eq.");
+        .is("region", null);
+
+      const { data: emptyPages } = await supabase
+        .from("city_pages")
+        .select("id, city_name, lat, lng, region")
+        .not("lat", "is", null)
+        .not("lng", "is", null)
+        .eq("region", "");
+
+      const seen = new Set<string>();
+      const pages = [...(nullPages || []), ...(emptyPages || [])].filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
 
       if (!pages?.length) {
         return new Response(JSON.stringify({ success: true, updated: 0, message: "All city pages already have regions" }),
