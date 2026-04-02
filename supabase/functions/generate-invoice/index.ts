@@ -8,11 +8,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const NAVY = [13, 33, 55] as const;
-const GOLD = [192, 122, 0] as const;
-const WHITE = [255, 255, 255] as const;
+const BLACK = [0, 0, 0] as const;
 const DARK = [51, 51, 51] as const;
-const BORDER = [221, 221, 221] as const;
+const GRAY = [120, 120, 120] as const;
+const LIGHT_GRAY = [200, 200, 200] as const;
+const GOLD = [200, 164, 74] as const;
 const GREEN = [22, 163, 74] as const;
 const AMBER = [217, 119, 6] as const;
 
@@ -79,19 +79,19 @@ serve(async (req) => {
       });
     }
 
-    // Fetch logos in parallel
-    const RIVERSAND_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
-    const WAYS_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
-    const [rsLogoB64, waysLogoB64] = await Promise.all([
-      fetchImageAsBase64(RIVERSAND_LOGO_URL),
-      fetchImageAsBase64(WAYS_LOGO_URL),
+    // Fetch logos in parallel — dark versions for white background
+    const HEADER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png";
+    const FOOTER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
+    const [headerLogoB64, footerLogoB64] = await Promise.all([
+      fetchImageAsBase64(HEADER_LOGO_URL),
+      fetchImageAsBase64(FOOTER_LOGO_URL),
     ]);
 
-    // Build compact single-page PDF (letter: 215.9 × 279.4 mm)
+    // Build clean single-page PDF (letter: 215.9 × 279.4 mm)
     const doc = new jsPDF({ unit: "mm", format: "letter" });
     const pw = 215.9;
     const ph = 279.4;
-    const mx = 14;
+    const mx = 16;
     const cw = pw - 2 * mx;
     let y = 0;
 
@@ -102,50 +102,47 @@ serve(async (req) => {
     const baseMiles = 15;
     const perMileExtra = 5.5;
 
-    // ─── HEADER (24mm) ───
-    doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pw, 22, "F");
+    // ─── HEADER (white background, logo left, order# right) ───
+    y = 18;
 
-    // Add logos
-    if (rsLogoB64) {
-      try { doc.addImage(`data:image/png;base64,${rsLogoB64}`, "PNG", mx, 3, 55, 16); } catch { /* fallback text */ doc.setTextColor(...WHITE); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 13); }
+    if (headerLogoB64) {
+      try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 16); } catch {
+        doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
+      }
     } else {
-      doc.setTextColor(...WHITE); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 13);
-    }
-    if (waysLogoB64) {
-      try { doc.addImage(`data:image/png;base64,${waysLogoB64}`, "PNG", pw - mx - 30, 4, 30, 14); } catch { doc.setTextColor(...WHITE); doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("WAYS", pw - mx, 13, { align: "right" }); }
-    } else {
-      doc.setTextColor(...WHITE); doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("WAYS", pw - mx, 13, { align: "right" });
+      doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
     }
 
-    // Gold divider
-    doc.setFillColor(...GOLD);
-    doc.rect(0, 22, pw, 1.5, "F");
-    y = 27;
-
-    // ─── TITLE ───
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...NAVY);
-    doc.text("DELIVERY CONFIRMATION", mx, y);
-    doc.setFontSize(8);
+    // Order number right-aligned
+    doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(120, 120, 120);
-    doc.text("riversand.net  |  1-855-GOT-WAYS", pw - mx, y, { align: "right" });
-    y += 6;
+    doc.setTextColor(...GRAY);
+    doc.text("DELIVERY CONFIRMATION", pw - mx, 12, { align: "right" });
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLACK);
+    doc.text(invoiceNum, pw - mx, 18, { align: "right" });
+
+    // Thin gold divider
+    y = 28;
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.5);
+    doc.line(mx, y, pw - mx, y);
+    doc.setLineWidth(0.2);
+    y += 8;
 
     // ─── TWO COLUMN: ORDER INFO + CUSTOMER ───
     const colLeft = mx;
-    const colRight = pw / 2 + 5;
+    const colRight = pw / 2 + 8;
 
     // Left: ORDER INFO
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("ORDER INFORMATION", colLeft, y);
-    y += 4;
+    y += 5;
     const yOrderStart = y;
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     const orderRows = [
       ["Order #:", invoiceNum],
       ["Date:", fmtShortDate(order.created_at)],
@@ -154,86 +151,90 @@ serve(async (req) => {
     ];
     orderRows.forEach(([label, val]) => {
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...NAVY);
+      doc.setTextColor(...DARK);
       doc.text(label, colLeft, y);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...DARK);
-      doc.text(val, colLeft + 22, y);
-      y += 4;
+      doc.setTextColor(...BLACK);
+      doc.text(val, colLeft + 24, y);
+      y += 5;
     });
 
     // Right: CUSTOMER
-    let yR = yOrderStart - 4;
+    let yR = yOrderStart - 5;
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("CUSTOMER", colRight, yR);
-    yR += 4;
-    doc.setFontSize(8);
+    yR += 5;
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...DARK);
-    doc.text(order.customer_name, colRight, yR); yR += 4;
+    doc.setTextColor(...BLACK);
+    doc.text(order.customer_name, colRight, yR); yR += 5;
     doc.setFont("helvetica", "normal");
-    if (order.customer_phone) { doc.text(order.customer_phone, colRight, yR); yR += 4; }
-    if (order.customer_email) { doc.text(order.customer_email, colRight, yR); yR += 4; }
+    doc.setTextColor(...DARK);
+    if (order.customer_phone) { doc.text(order.customer_phone, colRight, yR); yR += 5; }
+    if (order.customer_email) { doc.text(order.customer_email, colRight, yR); yR += 5; }
 
-    y = Math.max(y, yR) + 2;
+    y = Math.max(y, yR) + 4;
 
-    // Separator
-    doc.setDrawColor(...BORDER);
+    // Thin separator
+    doc.setDrawColor(...LIGHT_GRAY);
     doc.line(mx, y, pw - mx, y);
-    y += 4;
+    y += 6;
 
-    // ─── DELIVERY ADDRESS (single line) ───
+    // ─── DELIVERY ADDRESS ───
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("DELIVERY ADDRESS", mx, y);
-    y += 4;
+    y += 5;
     doc.setFontSize(10);
-    doc.setTextColor(...NAVY);
-    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLACK);
+    doc.setFont("helvetica", "normal");
     const addrLines = doc.splitTextToSize(order.delivery_address, cw);
-    addrLines.forEach((line: string) => { doc.text(line, mx, y); y += 4.5; });
-    y += 2;
+    addrLines.forEach((line: string) => { doc.text(line, mx, y); y += 5; });
+    y += 3;
 
-    // Separator
-    doc.setDrawColor(...BORDER);
+    // Thin separator
+    doc.setDrawColor(...LIGHT_GRAY);
     doc.line(mx, y, pw - mx, y);
-    y += 4;
+    y += 6;
 
-    // ─── ORDER + PRODUCT (inline) ───
+    // ─── ORDER DETAILS ───
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("ORDER DETAILS", mx, y);
-    y += 4;
-    doc.setFontSize(8);
-    doc.setTextColor(...DARK);
+    y += 5;
+    doc.setFontSize(9);
+    doc.setTextColor(...BLACK);
     doc.setFont("helvetica", "normal");
     doc.text(`River Sand — 9 cu/yd  ×  ${order.quantity} load${order.quantity > 1 ? "s" : ""}`, mx, y);
-    y += 4;
+    y += 5;
     if (order.notes) {
-      doc.setFontSize(7);
+      doc.setFontSize(8);
+      doc.setTextColor(...GRAY);
       const noteLines = doc.splitTextToSize(`Notes: ${order.notes}`, cw);
-      noteLines.slice(0, 2).forEach((line: string) => { doc.text(line, mx, y); y += 3.5; });
+      noteLines.slice(0, 2).forEach((line: string) => { doc.text(line, mx, y); y += 4; });
     }
-    y += 2;
+    y += 4;
 
-    // ─── PRICING TABLE (compact 7mm rows) ───
+    // ─── PRICING TABLE ───
     const tableX = mx;
-    const labelW = cw * 0.7;
-    const rowH = 6;
+    const labelW = cw * 0.72;
+    const rowH = 7;
 
-    // Header
-    doc.setFillColor(...NAVY);
-    doc.rect(tableX, y, cw, rowH, "F");
-    doc.setTextColor(...WHITE);
+    // Header row
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.line(tableX, y, tableX + cw, y);
+    y += 0.5;
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
-    doc.text("DESCRIPTION", tableX + 2, y + 4);
-    doc.text("AMOUNT", tableX + labelW + 2, y + 4);
+    doc.setTextColor(...GRAY);
+    doc.text("DESCRIPTION", tableX, y + 4);
+    doc.text("AMOUNT", tableX + labelW, y + 4);
     y += rowH;
+    doc.line(tableX, y, tableX + cw, y);
 
     // Calculate pricing line items
     const qty = order.quantity || 1;
@@ -243,7 +244,6 @@ serve(async (req) => {
     const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
     const taxAmount = Number(order.tax_amount || 0);
     const taxRate = (Number(order.tax_rate || 0) * 100).toFixed(2);
-    // Try to extract parish from delivery address
     const parishMatch = order.delivery_address?.match(/,\s*([^,]+?)\s+Parish/i);
     const parish = parishMatch ? parishMatch[1] : "";
     const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + taxAmount;
@@ -263,100 +263,95 @@ serve(async (req) => {
       priceLines.push({ desc: taxLabel, amt: fmt(taxAmount) });
     }
     if (isCard && processingFee > 0.01) {
-      priceLines.push({ desc: "Processing Fee (3.5%)", amt: fmt(processingFee) });
+      priceLines.push({ desc: "Processing Fee", amt: fmt(processingFee) });
     }
 
     // Rows
-    doc.setFontSize(8);
-    priceLines.forEach((line, i) => {
-      doc.setFillColor(i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248);
-      doc.rect(tableX, y, cw, rowH, "F");
-      doc.setDrawColor(...BORDER);
-      doc.line(tableX, y + rowH, tableX + cw, y + rowH);
-      doc.setTextColor(...DARK);
+    doc.setFontSize(9);
+    priceLines.forEach((line) => {
+      y += 1;
+      doc.setTextColor(...BLACK);
       doc.setFont("helvetica", "normal");
-      doc.text(line.desc, tableX + 2, y + 4);
+      doc.text(line.desc, tableX, y + 4);
       doc.setFont("helvetica", "bold");
-      doc.text(line.amt, tableX + labelW + 2, y + 4);
+      doc.text(line.amt, tableX + labelW, y + 4);
       y += rowH;
+      doc.setDrawColor(235, 235, 235);
+      doc.line(tableX, y, tableX + cw, y);
     });
 
-    // Gold separator
+    // Gold separator before total
+    y += 1;
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.5);
     doc.line(tableX, y, tableX + cw, y);
     doc.setLineWidth(0.2);
+    y += 2;
 
-    // TOTAL
-    doc.setFillColor(...GOLD);
-    doc.rect(tableX, y, cw, 8, "F");
-    doc.setTextColor(...NAVY);
-    doc.setFontSize(10);
+    // TOTAL row
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text(isPaid ? "TOTAL CHARGED" : "TOTAL DUE AT DELIVERY", tableX + 2, y + 5.5);
-    doc.text(fmt(order.price), tableX + labelW + 2, y + 5.5);
-    y += 10;
+    doc.setTextColor(...BLACK);
+    doc.text(isPaid ? "TOTAL CHARGED" : "TOTAL DUE AT DELIVERY", tableX, y + 5);
+    doc.text(fmt(order.price), tableX + labelW, y + 5);
+    y += 12;
 
-    // ─── PAYMENT STATUS (compact) ───
+    // ─── PAYMENT STATUS ───
     if (isPaid) {
-      doc.setFillColor(240, 253, 244);
-      doc.rect(mx, y, cw, 14, "F");
       doc.setDrawColor(187, 247, 208);
-      doc.rect(mx, y, cw, 14, "S");
+      doc.setLineWidth(0.3);
+      doc.roundedRect(mx, y, cw, 14, 2, 2, "S");
+      doc.setLineWidth(0.2);
       doc.setFontSize(11);
       doc.setTextColor(...GREEN);
       doc.setFont("helvetica", "bold");
       doc.text("PAID IN FULL", mx + cw / 2, y + 5, { align: "center" });
-      doc.setFontSize(7);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY);
       doc.text("Credit Card  |  Nothing due at delivery", mx + cw / 2, y + 10, { align: "center" });
       if (order.stripe_payment_id) {
-        doc.setFontSize(6);
-        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(7);
         doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
       }
-      y += 16;
+      y += 18;
     } else {
-      doc.setFillColor(255, 251, 235);
-      doc.rect(mx, y, cw, 14, "F");
       doc.setDrawColor(253, 230, 138);
-      doc.rect(mx, y, cw, 14, "S");
+      doc.setLineWidth(0.3);
+      doc.roundedRect(mx, y, cw, 14, 2, 2, "S");
+      doc.setLineWidth(0.2);
       doc.setFontSize(10);
       doc.setTextColor(...AMBER);
       doc.setFont("helvetica", "bold");
       doc.text("DUE AT DELIVERY", mx + cw / 2, y + 5, { align: "center" });
-      doc.setFontSize(12);
+      doc.setFontSize(13);
       doc.setTextColor(194, 31, 50);
       doc.text(fmt(order.price), mx + cw / 2, y + 10.5, { align: "center" });
-      doc.setFontSize(6);
+      doc.setFontSize(7);
       doc.setTextColor(...AMBER);
       doc.setFont("helvetica", "normal");
       doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
-      y += 16;
+      y += 18;
 
-      // COD payment policy note
-      const cashTotal = Number(order.price).toFixed(2);
-      const cardTotal = (Number(order.price) * 1.035).toFixed(2);
+      // COD payment policy
       doc.setFontSize(7);
-      doc.setTextColor(146, 64, 14); // #92400E
+      doc.setTextColor(146, 64, 14);
       doc.setFont("helvetica", "bold");
       doc.text("PAYMENT DUE AT DELIVERY", mx, y);
-      y += 3.5;
+      y += 4;
       doc.setFont("helvetica", "normal");
-      doc.text("Cash or check payment is due at the time of delivery.", mx, y);
-      y += 3.5;
-      doc.text("If payment cannot be collected, we will contact you to arrange card payment.", mx, y);
-      y += 3.5;
-      doc.text(`Cash/Check total: $${cashTotal} · Card total if needed: $${cardTotal} (includes 3.5% fee)`, mx, y);
-      y += 5;
+      doc.text("Cash payment is due at the time of delivery.", mx, y);
+      y += 4;
+      doc.text("If payment cannot be collected, a card payment link will be sent.", mx, y);
+      y += 6;
     }
 
-    // ─── DELIVERY TERMS (bullet points only) ───
+    // ─── DELIVERY TERMS ───
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
     doc.text("DELIVERY TERMS", mx, y);
-    y += 4;
+    y += 5;
 
     const bullets = [
       "Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.",
@@ -364,36 +359,38 @@ serve(async (req) => {
       "WAYS® Materials LLC not liable for damage to driveways, landscaping, or property.",
       "Customer or representative must be present at delivery.",
       "Same-day orders subject to dispatch confirmation within 30 minutes.",
-      "Cancellation Policy: Orders canceled more than 2 hours before delivery are fully refunded. Processing fees (3.5%) are non-refundable.",
+      "Cancellation Policy: Orders canceled more than 2 hours before delivery are fully refunded. Processing fees are non-refundable.",
     ];
 
-    doc.setFontSize(6.5);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(...GRAY);
     bullets.forEach((b) => {
       const bLines = doc.splitTextToSize(`• ${b}`, cw);
-      bLines.forEach((line: string) => { doc.text(line, mx, y); y += 3; });
+      bLines.forEach((line: string) => { doc.text(line, mx, y); y += 3.5; });
       y += 0.5;
     });
 
-    y += 2;
+    y += 4;
 
-    // ─── GOLD LINE + FOOTER ───
-    doc.setFillColor(...GOLD);
-    doc.rect(0, y, pw, 1, "F");
-    y += 1;
+    // ─── FOOTER ───
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.line(mx, y, pw - mx, y);
+    y += 6;
 
-    const footerH = Math.max(ph - y, 16);
-    doc.setFillColor(...NAVY);
-    doc.rect(0, y, pw, footerH, "F");
+    // WAYS logo centered
+    if (footerLogoB64) {
+      try { doc.addImage(`data:image/png;base64,${footerLogoB64}`, "PNG", pw / 2 - 15, y, 30, 12); y += 16; } catch { y += 2; }
+    }
 
-    doc.setTextColor(180, 180, 180);
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text("WAYS\u00AE Materials LLC  |  Bridge City, LA  |  1-855-GOT-WAYS  |  orders@riversand.net", pw / 2, y + 6, { align: "center" });
+    doc.setTextColor(...GRAY);
+    doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw / 2, y, { align: "center" });
+    y += 4;
     doc.setFontSize(6);
-    doc.setTextColor(130, 130, 130);
-    doc.text("This document serves as your official delivery confirmation and receipt.", pw / 2, y + 10, { align: "center" });
+    doc.setTextColor(160, 160, 160);
+    doc.text("This document serves as your official delivery confirmation and receipt.", pw / 2, y, { align: "center" });
 
     // Generate PDF buffer
     const pdfOutput = doc.output("arraybuffer");
