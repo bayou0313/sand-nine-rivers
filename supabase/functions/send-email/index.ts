@@ -135,6 +135,7 @@ function orderCustomerEmail(order: any): string {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
     <body style="margin:0;padding:0;background-color:#F0EDE5;font-family:'DM Sans',Arial,Helvetica,sans-serif;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0EDE5;">
