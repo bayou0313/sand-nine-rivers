@@ -1838,7 +1838,7 @@ const Order = () => {
                 {/* Action buttons */}
                 <div className="space-y-3">
                   <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setDeliveryTermsAccepted(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
+                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setDeliveryTermsAccepted(false); setCodPaymentConfirmed(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
                       <ArrowLeft className="w-4 h-4 mr-1" /> BACK
                     </Button>
                     <Button
