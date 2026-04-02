@@ -525,7 +525,7 @@ const Order = () => {
         if (pit) setMatchedPit(pit);
       } else if (paramPitId && paramPitName) {
         // Pits not loaded yet — set a stub that will be replaced when allPits loads
-        setMatchedPit({ id: paramPitId, name: decodeURIComponent(paramPitName), lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null, saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null, same_day_cutoff: paramSameDayCutoff || null } as PitData);
+        setMatchedPit({ id: paramPitId, name: decodeURIComponent(paramPitName), lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null, saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null, same_day_cutoff: paramSameDayCutoff || null, sunday_surcharge: null } as PitData);
       }
 
       setStep(prev => prev === "address" ? "details" : prev);
