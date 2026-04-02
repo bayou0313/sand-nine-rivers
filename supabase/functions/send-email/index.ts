@@ -1204,6 +1204,58 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
       await sendMail(resend, data.customer_email, "About your river sand delivery request — riversand.net", leadDeclineHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Lead decline sent to:", data.customer_email);
 
+    } else if (type === "capture_failed") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const orderNum = data.order_number || "N/A";
+      const rescheduleUrl = data.reschedule_url || "https://riversand.net/order";
+      const captureFailedHtml = brandedEmailWrapper({
+        content: `
+          <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+          <p style="font-size:15px;color:#555;line-height:1.6">We tried to process the payment for your river sand delivery (Order <strong>${orderNum}</strong>), but the charge didn't go through.</p>
+          <p style="font-size:15px;color:#555;line-height:1.6">Don't worry — your delivery slot is held for you. To keep your order active, please update your payment and select a new delivery date using the link below.</p>
+          <div style="background:#FEF9C3;border:1px solid #FDE68A;padding:16px;border-radius:8px;margin:20px 0;">
+            <p style="margin:0;font-size:13px;color:#78350F;line-height:1.6;">If you don't reschedule within 48 hours, your order will be canceled and any hold on your card will be released.</p>
+          </div>
+          <p style="font-size:14px;color:#555;line-height:1.8">Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a> — we're happy to help.</p>
+        `,
+        ctaText: "RESCHEDULE & PAY",
+        ctaUrl: rescheduleUrl,
+      });
+      if (!data.customer_email) {
+        return new Response(JSON.stringify({ error: "No customer email" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      await sendMail(resend, data.customer_email, `Action Required — Payment for Order ${orderNum}`, captureFailedHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Capture failed email sent to:", data.customer_email);
+
+    } else if (type === "capture_summary") {
+      const captured = data.captured_count || 0;
+      const failed = data.failed_count || 0;
+      const capturedOrders = (data.captured_orders || []).map((o: string) => `<li style="font-size:13px;color:#555;padding:2px 0;">${o}</li>`).join("");
+      const failedOrders = (data.failed_orders || []).map((o: string) => `<li style="font-size:13px;color:#C21F32;padding:2px 0;">${o}</li>`).join("");
+      const summaryHtml = brandedEmailWrapper({
+        content: `
+          <h2 style="color:${BRAND_COLOR};margin:0 0 16px;font-size:20px;">2am Capture Summary</h2>
+          <p style="font-size:15px;color:#555;line-height:1.6;">Nightly payment capture completed at ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} Central.</p>
+          <div style="display:flex;gap:16px;margin:20px 0;">
+            <div style="flex:1;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px;text-align:center;">
+              <p style="margin:0;font-size:28px;font-weight:700;color:#166534;">${captured}</p>
+              <p style="margin:4px 0 0;font-size:12px;color:#15803D;text-transform:uppercase;letter-spacing:1px;">Captured</p>
+            </div>
+            <div style="flex:1;background:${failed > 0 ? '#FEF2F2' : '#F9FAFB'};border:1px solid ${failed > 0 ? '#FECACA' : '#E5E7EB'};border-radius:8px;padding:16px;text-align:center;">
+              <p style="margin:0;font-size:28px;font-weight:700;color:${failed > 0 ? '#991B1B' : '#6B7280'};">${failed}</p>
+              <p style="margin:4px 0 0;font-size:12px;color:${failed > 0 ? '#B91C1C' : '#9CA3AF'};text-transform:uppercase;letter-spacing:1px;">Failed</p>
+            </div>
+          </div>
+          ${capturedOrders ? `<p style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">Captured Orders</p><ul style="margin:0;padding-left:20px;">${capturedOrders}</ul>` : ''}
+          ${failedOrders ? `<p style="font-size:12px;font-weight:700;color:#C21F32;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">Failed Orders</p><ul style="margin:0;padding-left:20px;">${failedOrders}</ul>` : ''}
+        `,
+        ctaText: "OPEN DASHBOARD",
+        ctaUrl: "https://riversand.net/leads",
+      });
+      await sendMail(resend, ownerEmail, `Capture Summary — ${captured} captured, ${failed} failed`, summaryHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Capture summary sent to:", ownerEmail);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),
