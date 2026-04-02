@@ -74,6 +74,9 @@ interface Pit {
   operating_days: number[] | null;
   saturday_surcharge_override: number | null;
   same_day_cutoff: string | null;
+  sunday_surcharge: number | null;
+  saturday_load_limit: number | null;
+  sunday_load_limit: number | null;
 }
 
 interface GlobalSettings {
