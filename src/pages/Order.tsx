@@ -159,6 +159,7 @@ const Order = () => {
 
   const [form, setForm] = useState({
     name: "",
+    companyName: "",
     phone: "",
     email: "",
     notes: "",
