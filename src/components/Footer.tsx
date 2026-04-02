@@ -81,7 +81,8 @@ const Footer = () => {
               src={WAYS_LOGO_DARK}
               alt="WAYS"
               className="object-contain"
-              style={{ width: 115 }}
+              width={115}
+              height={40}
               loading="lazy"
             />
           </a>
