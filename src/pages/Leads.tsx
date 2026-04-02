@@ -486,6 +486,99 @@ const Leads = () => {
     finally { setAbandonedLoading(false); }
   }, []);
 
+  const fetchPendingReview = useCallback(async () => {
+    setPendingReviewLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "get_pending_review_orders" },
+      });
+      if (!fnError && data?.orders) setPendingReviewOrders(data.orders);
+    } catch (err) { console.warn("Failed to fetch pending review:", err); }
+    finally { setPendingReviewLoading(false); }
+  }, []);
+
+  const handleSendOffer = useCallback(async () => {
+    if (!selectedLead || !offerPitId || !offerPrice) return;
+    setSendingOffer(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "send_offer", lead_id: selectedLead.id, pit_id: offerPitId, calculated_price: parseFloat(offerPrice) },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      setOfferResult({ payment_url: data.payment_url, order_number: data.order_number });
+      toast({ title: "Offer sent", description: `Order ${data.order_number} created. Payment link ready.` });
+      fetchLeads(storedPassword());
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setSendingOffer(false); }
+  }, [selectedLead, offerPitId, offerPrice, toast]);
+
+  const handleDeclineLead = useCallback(async () => {
+    if (!selectedLead) return;
+    setDecliningLead(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "decline_lead", lead_id: selectedLead.id },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Lead declined", description: "Customer added to waitlist and notified." });
+      setSelectedLead(null);
+      fetchLeads(storedPassword());
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setDecliningLead(false); }
+  }, [selectedLead, toast]);
+
+  const handleFlagFraud = useCallback(async () => {
+    if (!selectedLead) return;
+    setFlaggingFraud(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "flag_fraud", lead_id: selectedLead.id, reason: fraudReason || "Manually flagged" },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Flagged as fraud", description: "IP blocked and lead marked." });
+      setSelectedLead(null);
+      setFraudReason("");
+      fetchLeads(storedPassword());
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setFlaggingFraud(false); }
+  }, [selectedLead, fraudReason, toast]);
+
+  const handleVerifyCall = useCallback(async (orderId: string) => {
+    setVerifyingCall(orderId);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "verify_call", order_id: orderId, verified_by: "admin" },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Call verified", description: "Order confirmed and dispatch notified." });
+      fetchPendingReview();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setVerifyingCall(null); }
+  }, [toast, fetchPendingReview]);
+
+  const handleCancelFraudOrder = useCallback(async (orderId: string) => {
+    setVerifyingCall(orderId);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "flag_fraud", order_id: orderId, reason: "Billing mismatch - cancelled by admin" },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Order cancelled", description: "Refund initiated and IP blocked." });
+      fetchPendingReview();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setVerifyingCall(null); }
+  }, [toast, fetchPendingReview]);
+
   const runEmailCheck = useCallback(async () => {
     setRunningEmailCheck(true);
     try {
