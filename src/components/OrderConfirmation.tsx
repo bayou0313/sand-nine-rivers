@@ -705,36 +705,6 @@ export default function OrderConfirmation({
         </div>
       </FadeIn>
 
-      {/* ── AREAS WE SERVE ── */}
-      <FadeIn delay={0.65} className="print-hide">
-        <div className="px-6 py-8 text-center" style={{ backgroundColor: "#FAFAF8" }}>
-          <p
-            className="text-[10px] font-bold tracking-[0.25em] uppercase mb-4 font-display"
-            style={{ color: "#C07A00" }}
-          >
-            Same-Day Delivery Available In
-          </p>
-          <div className="flex flex-wrap justify-center gap-x-1 gap-y-1 max-w-[600px] mx-auto">
-            {SERVED_CITIES.map((city, i) => (
-              <span key={city.slug}>
-                <Link
-                  to={`/${city.slug}/river-sand-delivery`}
-                  className="text-sm font-body hover:underline transition-colors"
-                  style={{ color: "#6B7280" }}
-                >
-                  {city.name}
-                </Link>
-                {i < SERVED_CITIES.length - 1 && (
-                  <span className="mx-1" style={{ color: "#D1D5DB" }}>
-                    ·
-                  </span>
-                )}
-              </span>
-            ))}
-          </div>
-        </div>
-      </FadeIn>
-
       {/* ── FOOTER ── */}
       <FadeIn delay={0.7} className="print-hide">
         <div
@@ -766,19 +736,25 @@ export default function OrderConfirmation({
             className="text-xs mb-1 font-body"
             style={{ color: "rgba(255,255,255,0.3)" }}
           >
-            © 2026 Ways Materials LLC
+            © {biz.copyright_year} {biz.legal_name}
           </p>
           <p
             className="text-xs mb-1 font-body"
             style={{ color: "rgba(255,255,255,0.25)" }}
           >
-            orders@riversand.net · 1-855-GOT-WAYS
+            {biz.footer_address}
+          </p>
+          <p
+            className="text-xs mb-1 font-body"
+            style={{ color: "rgba(255,255,255,0.25)" }}
+          >
+            {biz.support_email} · {biz.phone}
           </p>
           <p
             className="text-xs font-body"
             style={{ color: "rgba(255,255,255,0.2)" }}
           >
-            River Sand — Real Sand. Real People.
+            {biz.site_name} — {biz.tagline}
           </p>
         </div>
       </FadeIn>
