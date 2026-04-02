@@ -652,11 +652,19 @@ function brandedEmailWrapper(options: {
   accentColor?: string;
   ctaText?: string;
   ctaUrl?: string;
+  bizPhone?: string;
+  bizEmail?: string;
+  bizWebsite?: string;
+  bizLegalName?: string;
 }) {
   const logo = options.productLogoUrl || RIVERSAND_WHITE_LOGO;
   const primary = options.primaryColor || BRAND_COLOR;
   const accent = options.accentColor || "#C8A44A";
   const WAYS_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
+  const phone = options.bizPhone || DEFAULT_PHONE;
+  const email = options.bizEmail || DEFAULT_SUPPORT_EMAIL;
+  const website = options.bizWebsite || DEFAULT_WEBSITE;
+  const legalName = options.bizLegalName || DEFAULT_LEGAL_NAME;
 
   const ctaBlock = options.ctaText && options.ctaUrl ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
@@ -674,7 +682,7 @@ function brandedEmailWrapper(options: {
 
   <!-- HEADER -->
   <tr><td style="background-color:${primary};padding:28px 32px;text-align:center;">
-    <img src="${logo}" alt="River Sand" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto;">
+    <img src="${logo}" alt="${legalName}" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto;">
   </td></tr>
 
   <!-- GOLD DIVIDER -->
@@ -689,13 +697,13 @@ function brandedEmailWrapper(options: {
   <!-- FOOTER -->
   <tr><td style="background-color:#F5F5F5;padding:24px 32px;text-align:center;border-top:1px solid #E8E5DD;">
     <img src="${WAYS_LOGO}" alt="WAYS" width="80" style="display:block;margin:0 auto 10px;width:80px;height:auto;opacity:0.6;">
-    <p style="margin:0 0 4px;color:#999;font-size:11px;font-weight:600;letter-spacing:1px;">WAYS&reg; Materials LLC</p>
+    <p style="margin:0 0 4px;color:#999;font-size:11px;font-weight:600;letter-spacing:1px;">${legalName}</p>
     <p style="margin:0 0 4px;color:#999;font-size:11px;">
-      <a href="tel:+18554689297" style="color:#666;text-decoration:none;">${PHONE}</a> &bull;
-      <a href="mailto:orders@riversand.net" style="color:#666;text-decoration:none;">orders@riversand.net</a>
+      <a href="tel:${phone.replace(/\D/g, "")}" style="color:#666;text-decoration:none;">${phone}</a> &bull;
+      <a href="mailto:${email}" style="color:#666;text-decoration:none;">${email}</a>
     </p>
     <p style="margin:0;color:#BBB;font-size:10px;">
-      <a href="https://riversand.net" style="color:#999;text-decoration:none;">riversand.net</a>
+      <a href="https://${website}" style="color:#999;text-decoration:none;">${website}</a>
     </p>
   </td></tr>
 
