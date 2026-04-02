@@ -335,18 +335,36 @@ const Order = () => {
               duration: "",
             });
           }
-        } else if (totalPrice > 0 && address) {
-          setConfirmedTotals({
-            totalPrice,
-            totalWithProcessingFee,
-            processingFee,
-            taxAmount,
-            subtotal,
-            saturdaySurchargeTotal,
-            sundaySurchargeTotal,
-            distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
-            taxInfo,
-          });
+        } else if (returnedOrderNumber) {
+          // Live state was wiped by Stripe redirect — fetch order from DB
+          (async () => {
+            try {
+              const { data: fallbackOrder } = await supabase
+                .from("orders")
+                .select("*")
+                .eq("order_number", returnedOrderNumber)
+                .single();
+              if (fallbackOrder && fallbackOrder.price > 0) {
+                setConfirmedOrderId(fallbackOrder.id);
+                showSuccess(fallbackOrder);
+                return;
+              }
+            } catch {}
+            // Final fallback — use live state if available
+            if (totalPrice > 0 && address) {
+              setConfirmedTotals({
+                totalPrice,
+                totalWithProcessingFee,
+                processingFee,
+                taxAmount,
+                subtotal,
+                saturdaySurchargeTotal,
+                sundaySurchargeTotal,
+                distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
+                taxInfo,
+              });
+            }
+          })();
         }
         toast({
           title: "Payment successful",
