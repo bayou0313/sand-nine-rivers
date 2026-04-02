@@ -72,6 +72,7 @@ const Order = () => {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
   const { loaded: apiLoaded } = useGoogleMaps();
@@ -194,6 +195,29 @@ const Order = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  // Helper: verify Stripe payment via get-order-status before showing success
+  const verifyStripePayment = useCallback(async (orderId: string, token: string): Promise<boolean> => {
+    const MAX_ATTEMPTS = 8;
+    const POLL_INTERVAL = 2500;
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-order-status", {
+          body: { order_id: orderId, lookup_token: token },
+        });
+        if (!error && data?.payment_status === "paid") {
+          return true;
+        }
+        console.log(`[Order] Payment verification attempt ${i + 1}/${MAX_ATTEMPTS}: status=${data?.payment_status || "unknown"}`);
+      } catch (err) {
+        console.warn(`[Order] Payment verification attempt ${i + 1} error:`, err);
+      }
+      if (i < MAX_ATTEMPTS - 1) {
+        await new Promise(r => setTimeout(r, POLL_INTERVAL));
+      }
+    }
+    return false;
+  }, []);
+
   // Handle Stripe return via URL params
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
@@ -201,6 +225,7 @@ const Order = () => {
 
     const returnedOrderNumber = searchParams.get("order_number");
     const returnedSessionId = searchParams.get("session_id");
+    const returnedOrderId = searchParams.get("order_id");
     const returnMode = searchParams.get("return_mode");
 
     if (returnMode === "popup") {
@@ -209,6 +234,7 @@ const Order = () => {
         type: "stripe-payment-result",
         status: paymentStatus,
         order_number: returnedOrderNumber || "",
+        order_id: returnedOrderId || "",
         session_id: returnedSessionId || "",
         timestamp: Date.now(),
       });
@@ -223,22 +249,152 @@ const Order = () => {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
       if (returnedSessionId) setStripePaymentId(returnedSessionId);
 
-      // If we have in-memory state, use it
-      if (totalPrice > 0 && address) {
-        setConfirmedTotals({
-          totalPrice,
-          totalWithProcessingFee,
-          processingFee,
-          taxAmount,
-          subtotal,
-          saturdaySurchargeTotal,
-          sundaySurchargeTotal,
-          distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
-          taxInfo,
+      // Try to get order_id and lookup_token for verification
+      let verifyOrderId = returnedOrderId || pendingOrderId || null;
+      let verifyToken = lookupToken || null;
+
+      // Check sessionStorage snapshot for lookup_token if not in memory
+      if (!verifyToken || !verifyOrderId) {
+        try {
+          const raw = sessionStorage.getItem("pending_order_snapshot");
+          if (raw) {
+            const snap = JSON.parse(raw);
+            if (!verifyOrderId) verifyOrderId = snap.pendingOrderId || null;
+            if (!verifyToken) verifyToken = snap.lookupToken || null;
+          }
+        } catch {}
+      }
+
+      // Show verifying state while we confirm with backend
+      setVerifyingPayment(true);
+      setStep("success");
+
+      const showSuccess = (orderData?: any) => {
+        setVerifyingPayment(false);
+        if (orderData) {
+          setAddress(orderData.delivery_address || address);
+          setForm(prev => ({
+            ...prev,
+            name: orderData.customer_name || prev.name,
+            phone: orderData.customer_phone || prev.phone,
+            email: orderData.customer_email || prev.email,
+          }));
+          setQuantity(orderData.quantity || 1);
+          if (orderData.delivery_date) {
+            const d = new Date(orderData.delivery_date + "T00:00:00");
+            const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+            const shortDays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+            setSelectedDeliveryDate({
+              date: d,
+              label: shortDays[d.getDay()],
+              dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+              fullLabel: d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
+              iso: orderData.delivery_date,
+              dayOfWeek: orderData.delivery_day_of_week || dayNames[d.getDay()],
+              isSaturday: orderData.saturday_surcharge || false,
+              isSunday: orderData.sunday_surcharge || false,
+              isSameDay: orderData.same_day_requested || false,
+            });
+          }
+          setPaymentMethod((orderData.payment_method as PaymentMethodType) || "stripe-link");
+          const orderTaxRate = orderData.tax_rate || 0;
+          const orderTaxAmount = orderData.tax_amount || 0;
+          const orderSatSurcharge = orderData.saturday_surcharge_amount || 0;
+          const isStripe = orderData.payment_method === "stripe-link";
+          const orderProcessingFee = isStripe
+            ? parseFloat((orderData.price / 1.035 * 0.035).toFixed(2))
+            : 0;
+          const orderTotalWithFee = orderData.price;
+          const orderTotalWithoutFee = isStripe
+            ? parseFloat((orderData.price - orderProcessingFee).toFixed(2))
+            : orderData.price;
+          const orderSubtotal = orderTotalWithoutFee - orderTaxAmount;
+          setConfirmedTotals({
+            totalPrice: orderTotalWithoutFee,
+            totalWithProcessingFee: orderTotalWithFee,
+            processingFee: orderProcessingFee,
+            taxAmount: orderTaxAmount,
+            subtotal: orderSubtotal,
+            saturdaySurchargeTotal: orderSatSurcharge,
+            sundaySurchargeTotal: orderData.sunday_surcharge_amount || 0,
+            distanceFee: 0,
+            taxInfo: { rate: orderTaxRate, parish: "" },
+          });
+          if (orderData.distance_miles) {
+            setResult({
+              distance: orderData.distance_miles,
+              price: orderTotalWithoutFee / (orderData.quantity || 1),
+              address: `${orderData.distance_miles.toFixed(1)} miles away`,
+              duration: "",
+            });
+          }
+        } else if (totalPrice > 0 && address) {
+          setConfirmedTotals({
+            totalPrice,
+            totalWithProcessingFee,
+            processingFee,
+            taxAmount,
+            subtotal,
+            saturdaySurchargeTotal,
+            sundaySurchargeTotal,
+            distanceFee: result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0,
+            taxInfo,
+          });
+        }
+        toast({
+          title: "Payment successful",
+          description: returnedOrderNumber
+            ? `Order ${returnedOrderNumber} is confirmed.`
+            : "Your payment was completed successfully.",
         });
-        setStep("success");
+      };
+
+      // Verify payment with backend
+      if (verifyOrderId && verifyToken) {
+        verifyStripePayment(verifyOrderId, verifyToken).then(async (verified) => {
+          if (verified) {
+            // Payment confirmed — fetch full order data for display
+            if (returnedOrderNumber) {
+              try {
+                const { data: order } = await supabase
+                  .from("orders")
+                  .select("*")
+                  .eq("order_number", returnedOrderNumber)
+                  .single();
+                if (order) {
+                  setConfirmedOrderId(order.id);
+                  showSuccess(order);
+                  return;
+                }
+              } catch {}
+            }
+            showSuccess();
+          } else {
+            // Verification timed out — show cautious success with warning
+            console.warn("[Order] Payment verification timed out — showing success with caveat");
+            if (returnedOrderNumber) {
+              try {
+                const { data: order } = await supabase
+                  .from("orders")
+                  .select("*")
+                  .eq("order_number", returnedOrderNumber)
+                  .single();
+                if (order) {
+                  setConfirmedOrderId(order.id);
+                  showSuccess(order);
+                  return;
+                }
+              } catch {}
+            }
+            showSuccess();
+            toast({
+              title: "Payment processing",
+              description: "Your payment is being processed. You'll receive a confirmation email shortly.",
+            });
+          }
+        });
       } else if (returnedOrderNumber) {
-        // Page reloaded from Stripe redirect — fetch order from DB
+        // No lookup token available — fetch order directly (legacy fallback)
         (async () => {
           try {
             const { data: order } = await supabase
@@ -247,80 +403,19 @@ const Order = () => {
               .eq("order_number", returnedOrderNumber)
               .single();
             if (order) {
-              setAddress(order.delivery_address || "");
-              setForm(prev => ({
-                ...prev,
-                name: order.customer_name || prev.name,
-                phone: order.customer_phone || prev.phone,
-                email: order.customer_email || prev.email,
-              }));
-              setQuantity(order.quantity || 1);
-              if (order.delivery_date) {
-                const d = new Date(order.delivery_date + "T00:00:00");
-                const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-                const shortDays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-                setSelectedDeliveryDate({
-                  date: d,
-                  label: shortDays[d.getDay()],
-                  dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-                  fullLabel: d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
-                  iso: order.delivery_date,
-                  dayOfWeek: order.delivery_day_of_week || dayNames[d.getDay()],
-                  isSaturday: order.saturday_surcharge || false,
-                  isSunday: order.sunday_surcharge || false,
-                  isSameDay: order.same_day_requested || false,
-                });
-              }
-              setPaymentMethod((order.payment_method as PaymentMethodType) || "stripe-link");
-              const orderTaxRate = order.tax_rate || 0;
-              const orderTaxAmount = order.tax_amount || 0;
-              const orderSatSurcharge = order.saturday_surcharge_amount || 0;
-              const isStripe = order.payment_method === "stripe-link";
-              // For Stripe orders, order.price includes the processing fee
-              const orderProcessingFee = isStripe
-                ? parseFloat((order.price / 1.035 * 0.035).toFixed(2))
-                : 0;
-              const orderTotalWithFee = order.price;
-              const orderTotalWithoutFee = isStripe
-                ? parseFloat((order.price - orderProcessingFee).toFixed(2))
-                : order.price;
-              const orderSubtotal = orderTotalWithoutFee - orderTaxAmount;
-              setConfirmedTotals({
-                totalPrice: orderTotalWithoutFee,
-                totalWithProcessingFee: orderTotalWithFee,
-                processingFee: orderProcessingFee,
-                taxAmount: orderTaxAmount,
-                subtotal: orderSubtotal,
-                saturdaySurchargeTotal: orderSatSurcharge,
-                sundaySurchargeTotal: order.sunday_surcharge_amount || 0,
-                distanceFee: 0,
-                taxInfo: { rate: orderTaxRate, parish: "" },
-              });
-              if (order.distance_miles) {
-                setResult({
-                  distance: order.distance_miles,
-                  price: orderTotalWithoutFee / (order.quantity || 1),
-                  address: `${order.distance_miles.toFixed(1)} miles away`,
-                  duration: "",
-                });
-              }
-              setStep("success");
+              setConfirmedOrderId(order.id);
+              showSuccess(order);
+            } else {
+              showSuccess();
             }
           } catch (err) {
             console.error("[Order] Failed to fetch order for confirmation:", err);
-            setStep("success"); // Still show success — payment went through
+            showSuccess();
           }
         })();
       } else {
-        setStep("success");
+        showSuccess();
       }
-
-      toast({
-        title: "Payment successful",
-        description: returnedOrderNumber
-          ? `Order ${returnedOrderNumber} is confirmed.`
-          : "Your payment was completed successfully.",
-      });
       return;
     }
 
@@ -342,6 +437,7 @@ const Order = () => {
             setQuantity(snap.quantity || 1);
             setPendingOrderId(snap.pendingOrderId || null);
             setOrderNumber(snap.orderNumber || null);
+            setLookupToken(snap.lookupToken || null);
             setPaymentMethod(snap.paymentMethod || "stripe-link");
             if (snap.selectedDeliveryDate) {
               setSelectedDeliveryDate(snap.selectedDeliveryDate);
@@ -366,7 +462,7 @@ const Order = () => {
         variant: "destructive",
       });
     }
-  }, [searchParams, toast]);
+  }, [searchParams, toast, verifyStripePayment]);
 
   // Listen for cross-tab Stripe payment signals (from popup return tab)
   useEffect(() => {
@@ -381,7 +477,6 @@ const Order = () => {
           const snap = pricingSnapshotRef.current;
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
-          if (snap.pendingOrderId) setConfirmedOrderId(snap.pendingOrderId);
           setPendingOrderId(null);
           setAddress(snap.address);
           setSelectedDeliveryDate(snap.selectedDeliveryDate);
@@ -398,20 +493,54 @@ const Order = () => {
             distanceFee: snap.result ? Math.max(0, (snap.result.distance - snap.effectivePricing.free_miles) * snap.effectivePricing.extra_per_mile * snap.quantity) : 0,
             taxInfo: snap.taxInfo,
           });
+
+          // Show verifying state, then verify payment
+          setVerifyingPayment(true);
           setStep("success");
-          updateSession({
-            stage: "completed_order",
-            order_id: signal.order_number || null,
-            order_number: signal.order_number || null,
-          });
-          // Send confirmation email for Stripe payment
-          sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
-          toast({
-            title: "Payment successful",
-            description: signal.order_number
-              ? `Order ${signal.order_number} is confirmed.`
-              : "Your payment was completed successfully.",
-          });
+
+          const verifyOrderId = snap.pendingOrderId || signal.order_id || null;
+          const verifyToken = snap.lookupToken || null;
+
+          if (verifyOrderId && verifyToken) {
+            verifyStripePayment(verifyOrderId, verifyToken).then((verified) => {
+              setVerifyingPayment(false);
+              if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
+              updateSession({
+                stage: "completed_order",
+                order_id: signal.order_number || null,
+                order_number: signal.order_number || null,
+              });
+              if (verified) {
+                toast({
+                  title: "Payment successful",
+                  description: signal.order_number
+                    ? `Order ${signal.order_number} is confirmed.`
+                    : "Your payment was completed successfully.",
+                });
+              } else {
+                toast({
+                  title: "Payment processing",
+                  description: "Your payment is being processed. You'll receive a confirmation email shortly.",
+                });
+              }
+            });
+          } else {
+            // No verification possible — show success (legacy path)
+            setVerifyingPayment(false);
+            if (snap.pendingOrderId) setConfirmedOrderId(snap.pendingOrderId);
+            updateSession({
+              stage: "completed_order",
+              order_id: signal.order_number || null,
+              order_number: signal.order_number || null,
+            });
+            sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
+            toast({
+              title: "Payment successful",
+              description: signal.order_number
+                ? `Order ${signal.order_number} is confirmed.`
+                : "Your payment was completed successfully.",
+            });
+          }
         } else if (signal.status === "canceled") {
           setStep("confirm");
           toast({
@@ -444,7 +573,7 @@ const Order = () => {
       window.removeEventListener("storage", handleStorageEvent);
       clearInterval(pollInterval);
     };
-  }, [toast]);
+  }, [toast, verifyStripePayment]);
 
   // Helper: send order confirmation email
   const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null, totalsOverride?: any) => {
@@ -500,13 +629,13 @@ const Order = () => {
   const pricingSnapshotRef = useRef({
     totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
     saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
-    address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+    address, selectedDeliveryDate, form, paymentMethod, pendingOrderId, lookupToken,
   });
   useEffect(() => {
     pricingSnapshotRef.current = {
       totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
       saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
-      address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+      address, selectedDeliveryDate, form, paymentMethod, pendingOrderId, lookupToken,
     };
   });
 
@@ -945,6 +1074,7 @@ const Order = () => {
           paymentMethod: "stripe-link",
           pendingOrderId: insertedOrder?.id || null,
           orderNumber: insertedOrder?.order_number || null,
+          lookupToken: insertedOrder?.lookup_token || null,
           result,
           totalPrice,
           totalWithProcessingFee,
@@ -1717,6 +1847,15 @@ const Order = () => {
             {/* SUCCESS — Full Confirmation Page */}
             {step === "success" && (
               <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+                {verifyingPayment ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                    <h2 className="text-xl font-semibold text-foreground">Confirming your payment...</h2>
+                    <p className="text-muted-foreground text-sm text-center max-w-md">
+                      We're verifying your payment with our processor. This usually takes just a few seconds.
+                    </p>
+                  </div>
+                ) : (
                 <OrderConfirmation
                   orderNumber={orderNumber}
                   address={address}
@@ -1742,6 +1881,7 @@ const Order = () => {
                   downloadingInvoice={downloadingInvoice}
                   canDownload={!!confirmedOrderId}
                 />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
