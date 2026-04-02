@@ -477,7 +477,6 @@ const Order = () => {
           const snap = pricingSnapshotRef.current;
           if (signal.order_number) setOrderNumber(signal.order_number);
           if (signal.session_id) setStripePaymentId(signal.session_id);
-          if (snap.pendingOrderId) setConfirmedOrderId(snap.pendingOrderId);
           setPendingOrderId(null);
           setAddress(snap.address);
           setSelectedDeliveryDate(snap.selectedDeliveryDate);
@@ -494,20 +493,54 @@ const Order = () => {
             distanceFee: snap.result ? Math.max(0, (snap.result.distance - snap.effectivePricing.free_miles) * snap.effectivePricing.extra_per_mile * snap.quantity) : 0,
             taxInfo: snap.taxInfo,
           });
+
+          // Show verifying state, then verify payment
+          setVerifyingPayment(true);
           setStep("success");
-          updateSession({
-            stage: "completed_order",
-            order_id: signal.order_number || null,
-            order_number: signal.order_number || null,
-          });
-          // Send confirmation email for Stripe payment
-          sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
-          toast({
-            title: "Payment successful",
-            description: signal.order_number
-              ? `Order ${signal.order_number} is confirmed.`
-              : "Your payment was completed successfully.",
-          });
+
+          const verifyOrderId = snap.pendingOrderId || signal.order_id || null;
+          const verifyToken = snap.lookupToken || null;
+
+          if (verifyOrderId && verifyToken) {
+            verifyStripePayment(verifyOrderId, verifyToken).then((verified) => {
+              setVerifyingPayment(false);
+              if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
+              updateSession({
+                stage: "completed_order",
+                order_id: signal.order_number || null,
+                order_number: signal.order_number || null,
+              });
+              if (verified) {
+                toast({
+                  title: "Payment successful",
+                  description: signal.order_number
+                    ? `Order ${signal.order_number} is confirmed.`
+                    : "Your payment was completed successfully.",
+                });
+              } else {
+                toast({
+                  title: "Payment processing",
+                  description: "Your payment is being processed. You'll receive a confirmation email shortly.",
+                });
+              }
+            });
+          } else {
+            // No verification possible — show success (legacy path)
+            setVerifyingPayment(false);
+            if (snap.pendingOrderId) setConfirmedOrderId(snap.pendingOrderId);
+            updateSession({
+              stage: "completed_order",
+              order_id: signal.order_number || null,
+              order_number: signal.order_number || null,
+            });
+            sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
+            toast({
+              title: "Payment successful",
+              description: signal.order_number
+                ? `Order ${signal.order_number} is confirmed.`
+                : "Your payment was completed successfully.",
+            });
+          }
         } else if (signal.status === "canceled") {
           setStep("confirm");
           toast({
@@ -540,7 +573,7 @@ const Order = () => {
       window.removeEventListener("storage", handleStorageEvent);
       clearInterval(pollInterval);
     };
-  }, [toast]);
+  }, [toast, verifyStripePayment]);
 
   // Helper: send order confirmation email
   const sendOrderEmail = useCallback((orderNum: string | null, pMethod: string, pStatus: string, sPaymentId: string | null, totalsOverride?: any) => {
