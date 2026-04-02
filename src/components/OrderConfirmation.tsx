@@ -5,6 +5,7 @@ import { Loader2, Download, ChevronDown, MessageCircle, Mail, Share2 } from "luc
 import { Button } from "@/components/ui/button";
 import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import {
   Accordion,
   AccordionContent,
