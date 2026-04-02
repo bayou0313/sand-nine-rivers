@@ -1106,16 +1106,22 @@ const Leads = () => {
       const pagesRegen = data?.pages_regenerated || 0;
       const pagesReassigned = data?.deactivation_reassigned || 0;
       const pagesWaitlisted = data?.deactivation_waitlisted || 0;
+      const reactReassigned = data?.reactivation_reassigned || 0;
+      const reactUnwaitlisted = data?.reactivation_unwaitlisted || 0;
       if (pricesUpdated > 0) parts.push(`${pricesUpdated} city page prices updated`);
-      if (pagesRegen > 0) parts.push(`${pagesRegen} pages regenerated`);
+      if (pagesRegen > 0) parts.push(`${pagesRegen} pages queued for regen`);
       if (pagesReassigned > 0) parts.push(`${pagesReassigned} pages reassigned to other PITs`);
       if (pagesWaitlisted > 0) parts.push(`${pagesWaitlisted} pages moved to waitlist`);
+      if (reactReassigned > 0) parts.push(`${reactReassigned} pages reassigned to reactivated PIT`);
+      if (reactUnwaitlisted > 0) parts.push(`${reactUnwaitlisted} pages restored from waitlist`);
       if (parts.length > 0) {
         toast({ title: "PIT saved", description: parts.join(". ") + "." });
-        fetchCityPages();
       } else {
         toast({ title: "PIT updated" });
       }
+      // Always refresh city pages after save + delayed refresh for queue-processed flags
+      fetchCityPages();
+      setTimeout(() => fetchCityPages(), 15000);
 
       setEditingPitId(null);
       setEditPitData({});

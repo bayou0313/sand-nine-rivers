@@ -663,20 +663,11 @@ serve(async (req) => {
                 base_price: newPrice,
                 price_changed: true,
                 regen_reason: 'price_changed',
+                needs_regen: true,
                 updated_at: new Date().toISOString()
               }).eq("id", page.id);
               prices_updated++;
-
-              // Auto-regen content
-              await fetch(regenUrl, {
-                method: "POST",
-                headers: regenHeaders,
-                body: JSON.stringify({ city_page_id: page.id, force: true }),
-              });
-              console.log(`[save_pit] Regenerated: ${page.city_name}`);
-              pages_regenerated++;
-
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              console.log(`[save_pit] Flagged for regen: ${page.city_name}`);
             } catch (err: any) {
               console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
             }
@@ -694,21 +685,14 @@ serve(async (req) => {
           .in("status", ["active", "draft"]);
 
         if (regenPages && regenPages.length > 0) {
-          console.log(`[save_pit] Non-pricing edit — regenerating ${regenPages.length} city pages for pit ${savedPit.name}`);
-          for (const page of regenPages) {
-            try {
-              await fetch(regenUrl, {
-                method: "POST",
-                headers: regenHeaders,
-                body: JSON.stringify({ city_page_id: page.id, force: true }),
-              });
-              console.log(`[save_pit] Regenerated: ${page.city_name}`);
-              pages_regenerated++;
-              await new Promise(resolve => setTimeout(resolve, 2000));
-            } catch (err: any) {
-              console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
-            }
-          }
+          console.log(`[save_pit] Non-pricing edit — flagging ${regenPages.length} city pages for regen`);
+          const regenIds = regenPages.map((p: any) => p.id);
+          await supabase.from("city_pages").update({
+            needs_regen: true,
+            regen_reason: 'pit_updated',
+            updated_at: new Date().toISOString()
+          }).in("id", regenIds);
+          pages_regenerated = regenPages.length;
           regenTriggered = true;
         }
       }
@@ -783,19 +767,12 @@ serve(async (req) => {
                   base_price: newPrice,
                   pit_reassigned: true,
                   regen_reason: "pit_reassigned",
+                  needs_regen: true,
                   updated_at: new Date().toISOString(),
                 }).eq("id", page.id);
 
-                // Trigger regeneration
-                await fetch(regenUrl, {
-                  method: "POST",
-                  headers: regenHeaders,
-                  body: JSON.stringify({ city_page_id: page.id, force: true }),
-                });
-
                 deactivation_reassigned++;
                 console.log(`[save_pit] Reassigned: ${page.city_name} → ${bestPit.name} (${bestDist.toFixed(1)}mi, $${newPrice})`);
-                await new Promise(resolve => setTimeout(resolve, 2000));
               } else {
                 // No valid PIT — waitlist
                 await supabase.from("city_pages").update({
@@ -812,6 +789,90 @@ serve(async (req) => {
           }
         }
         console.log(`[save_pit] Deactivation complete: ${deactivation_reassigned} reassigned, ${deactivation_waitlisted} waitlisted`);
+      }
+
+      // ── PART 2b: PIT reactivation — reassign closer pages ──
+      let reactivation_reassigned = 0;
+      let reactivation_unwaitlisted = 0;
+      if (!isNewPit && existingPitStatus !== "active" && savedPit.status === "active") {
+        console.log(`[save_pit] PIT reactivated: ${savedPit.name} — checking for closer assignments`);
+
+        // Get ALL city pages with coordinates
+        const { data: allPages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, city_slug, lat, lng, distance_from_pit, pit_id, status, base_price")
+          .not("lat", "is", null)
+          .not("lng", "is", null);
+
+        if (allPages && allPages.length > 0) {
+          // Fetch global settings for pricing
+          const { data: gsReact } = await supabase.from("global_settings").select("key, value");
+          const gMapReact: Record<string, string> = {};
+          for (const r of gsReact || []) gMapReact[r.key] = r.value;
+
+          const reactMaxDist = savedPit.max_distance || parseFloat(gMapReact.default_max_distance || "30");
+          const effBP = savedPit.base_price ?? parseFloat(gMapReact.default_base_price || "195");
+          const effFM = savedPit.free_miles ?? parseFloat(gMapReact.default_free_miles || "15");
+          const effEPM = savedPit.price_per_extra_mile ?? parseFloat(gMapReact.default_extra_per_mile || "5");
+
+          // Calculate driving distances from reactivated PIT to all city pages
+          const destinations = allPages.map(p => ({ lat: Number(p.lat), lng: Number(p.lng) }));
+          const drivingDists = await getDrivingDistances(
+            Number(savedPit.lat), Number(savedPit.lon),
+            destinations, apiKey
+          );
+
+          for (let i = 0; i < allPages.length; i++) {
+            const page = allPages[i];
+            const newDist = drivingDists[i];
+            if (newDist == null || newDist > reactMaxDist) continue;
+
+            try {
+              if (page.status === "waitlist") {
+                // Waitlisted page — reassign if within range
+                const extraMiles = Math.max(0, newDist - effFM);
+                const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+                await supabase.from("city_pages").update({
+                  pit_id: savedPit.id,
+                  distance_from_pit: Math.round(newDist * 10) / 10,
+                  base_price: newPrice,
+                  status: "active",
+                  status_reason: null,
+                  pit_reassigned: true,
+                  regen_reason: "pit_reactivated",
+                  needs_regen: true,
+                  updated_at: new Date().toISOString(),
+                }).eq("id", page.id);
+                reactivation_unwaitlisted++;
+                console.log(`[save_pit] Un-waitlisted: ${page.city_name} → ${savedPit.name} (${newDist.toFixed(1)}mi, $${newPrice})`);
+              } else if (page.pit_id !== savedPit.id) {
+                // Already assigned to another PIT — only reassign if ≥3 miles closer
+                const currentDist = page.distance_from_pit || 999;
+                const improvement = currentDist - newDist;
+                if (improvement >= 3) {
+                  const extraMiles = Math.max(0, newDist - effFM);
+                  const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+                  await supabase.from("city_pages").update({
+                    pit_id: savedPit.id,
+                    distance_from_pit: Math.round(newDist * 10) / 10,
+                    base_price: newPrice,
+                    pit_reassigned: true,
+                    regen_reason: "pit_reactivated",
+                    needs_regen: true,
+                    updated_at: new Date().toISOString(),
+                  }).eq("id", page.id);
+                  reactivation_reassigned++;
+                  console.log(`[save_pit] Reactivation reassigned: ${page.city_name} → ${savedPit.name} (${newDist.toFixed(1)}mi vs ${currentDist.toFixed(1)}mi, improvement: ${improvement.toFixed(1)}mi)`);
+                }
+              }
+            } catch (err: any) {
+              console.error(`[save_pit] Reactivation error for ${page.city_name}:`, err.message);
+            }
+          }
+        }
+        console.log(`[save_pit] Reactivation complete: ${reactivation_reassigned} reassigned, ${reactivation_unwaitlisted} un-waitlisted`);
       }
 
       // ── PART 3: Auto-discover cities when new pit is created ──
@@ -1023,7 +1084,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned, pages_created: pages_created_count, deactivation_reassigned, deactivation_waitlisted }),
+        JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned, pages_created: pages_created_count, deactivation_reassigned, deactivation_waitlisted, reactivation_reassigned, reactivation_unwaitlisted }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
