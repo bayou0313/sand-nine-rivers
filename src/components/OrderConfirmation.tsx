@@ -623,42 +623,14 @@ export default function OrderConfirmation({
             View Order Details
           </Button>
 
-          {/* Forward by Email */}
-          <Button
-            variant="outline"
-            className="w-full h-11 rounded-xl font-display tracking-wider text-sm"
-            onClick={handleForwardByEmail}
-          >
-            <Mail className="w-4 h-4 mr-2" /> Forward Invoice by Email
-          </Button>
-
-          {/* Share buttons */}
-          <div className="grid grid-cols-3 gap-3 relative">
+          {/* WhatsApp share */}
+          <div className="relative">
             <Button
               variant="outline"
-              className="h-11 rounded-xl font-display tracking-wider text-xs"
-              onClick={() => {
-                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-                const body = shareText;
-                const smsUrl = isIOS ? `sms:&body=${encodeURIComponent(body)}` : `sms:?body=${encodeURIComponent(body)}`;
-                window.open(smsUrl);
-              }}
-            >
-              <MessageCircle className="w-4 h-4 mr-1" /> Text
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl font-display tracking-wider text-xs"
-              onClick={handleMailtoClick}
-            >
-              <Mail className="w-4 h-4 mr-1" /> Email
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl font-display tracking-wider text-xs"
+              className="w-full h-11 rounded-xl font-display tracking-wider text-sm"
               onClick={handleWhatsApp}
             >
-              <Share2 className="w-4 h-4 mr-1" /> WhatsApp
+              <Share2 className="w-4 h-4 mr-2" /> WhatsApp
             </Button>
 
             {/* WhatsApp choice modal */}

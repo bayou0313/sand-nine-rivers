@@ -57,20 +57,20 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
 
   const textY = footerY + 10;
 
-  // WAYS logo on the left
+  // WAYS logo on the left — 40% larger
   if (footerLogoB64) {
     try {
-      doc.addImage(`data:image/png;base64,${footerLogoB64}`, "PNG", mx, footerY + 3, 24, 0);
+      doc.addImage(`data:image/png;base64,${footerLogoB64}`, "PNG", mx, footerY + 2, 33.6, 0);
     } catch { /* skip */ }
   }
 
-  // Text right-aligned
+  // Text right-aligned — 40% brighter
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...GRAY);
+  doc.setTextColor(180, 180, 180);
   doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw - mx, textY, { align: "right" });
   doc.setFontSize(6);
-  doc.setTextColor(160, 160, 160);
+  doc.setTextColor(200, 200, 200);
   doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 4, { align: "right" });
 }
 
@@ -375,12 +375,12 @@ serve(async (req) => {
     ];
 
     const hasCODBox = !isPaid;
-    const amberBoxH = 16;
+    const codBlockH = 16;
 
     // Measure terms height to position just above footer
     let termsHeight = 0;
     if (hasCODBox) {
-      termsHeight += amberBoxH + 6; // amber box + gap
+      termsHeight += codBlockH + 4; // text block + gap
     }
     termsHeight += 5; // DELIVERY TERMS header
     bullets.forEach((b) => {
@@ -399,37 +399,29 @@ serve(async (req) => {
       y = termsStartY;
     }
 
-    // ─── Redesigned amber "DUE AT DELIVERY" two-column box ───
+    // ─── Clean "DUE AT DELIVERY" two-column text (no box) ───
     if (hasCODBox) {
-      const AMBER = [146, 64, 14] as const;
-      const AMBER_BORDER = [217, 119, 6] as const;
-      const boxPx = 6;
-      doc.setDrawColor(...AMBER_BORDER);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(mx, y, cw, amberBoxH, 2, 2, "S");
-      doc.setLineWidth(0.2);
-
       // Left column: label + disclaimer
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...AMBER);
-      doc.text("DUE AT DELIVERY", mx + boxPx, y + 6);
+      doc.setTextColor(...DARK);
+      doc.text("DUE AT DELIVERY", mx, y + 4);
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Cash or check payment due at the time of delivery.", mx + boxPx, y + 11);
+      doc.text("Cash or check payment due at the time of delivery.", mx, y + 9);
 
       // Right column: amount + disclaimer
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...AMBER);
-      doc.text(fmt(order.price), mx + cw - boxPx, y + 6, { align: "right" });
+      doc.setTextColor(...DARK);
+      doc.text(fmt(order.price), pw - mx, y + 4, { align: "right" });
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Exact amount required — driver carries no change", mx + cw - boxPx, y + 11, { align: "right" });
+      doc.text("Exact amount required — driver carries no change", pw - mx, y + 9, { align: "right" });
 
-      y += amberBoxH + 4;
+      y += 16;
     }
 
     // Delivery terms
