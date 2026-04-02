@@ -639,33 +639,69 @@ function orderDispatchEmail(data: any): string {
 }
 
 // Keep existing helper functions for other email types
-function emailWrapper(body: string) {
+function brandedEmailWrapper(options: {
+  content: string;
+  productLogoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}) {
+  const logo = options.productLogoUrl || RIVERSAND_WHITE_LOGO;
+  const primary = options.primaryColor || BRAND_COLOR;
+  const accent = options.accentColor || "#C8A44A";
+  const WAYS_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
+
+  const ctaBlock = options.ctaText && options.ctaUrl ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td align="center">
+        <a href="${options.ctaUrl}" style="display:inline-block;background:${accent};color:#FFFFFF!important;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">${options.ctaText}</a>
+      </td></tr>
+    </table>` : "";
+
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif}
-  .container{max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden}
-  .header{background:${BRAND_COLOR};padding:24px;text-align:center}
-  .header h1{color:${BRAND_GOLD};margin:0;font-size:24px;letter-spacing:2px}
-  .body{padding:32px 24px}
-  .body h2{color:${BRAND_COLOR};margin:0 0 16px}
-  .body p,.body td{color:#555;font-size:15px;line-height:1.6}
-  .info-table{width:100%;border-collapse:collapse;margin:16px 0}
-  .info-table td{padding:8px 0;border-bottom:1px solid #eee}
-  .info-table td:first-child{font-weight:600;color:${BRAND_COLOR};width:40%}
-  .footer{background:#f9f9f9;padding:20px 24px;text-align:center;font-size:13px;color:#999}
-  .footer a{color:${BRAND_COLOR};text-decoration:none}
-  .cta{display:inline-block;background:${BRAND_GOLD};color:${BRAND_COLOR}!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0}
-</style></head><body>
-<div class="container">
-  <div class="header"><h1>WAYS River Sand</h1></div>
-  <div class="body">${body}</div>
-  <div class="footer">
-    <p>© 2026 WAYS® Materials LLC</p>
-    <p><a href="tel:+18554689297">${PHONE}</a> &bull; <a href="mailto:no_reply@riversand.net">no_reply@riversand.net</a></p>
-    <p><a href="https://riversand.net">riversand.net</a></p>
-  </div>
-</div></body></html>`;
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#F0EDE5;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0EDE5;">
+<tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+  <!-- HEADER -->
+  <tr><td style="background-color:${primary};padding:28px 32px;text-align:center;">
+    <img src="${logo}" alt="River Sand" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto;">
+  </td></tr>
+
+  <!-- GOLD DIVIDER -->
+  <tr><td style="height:3px;background-color:${accent};"></td></tr>
+
+  <!-- BODY -->
+  <tr><td style="background-color:#FFFFFF;padding:32px;">
+    ${options.content}
+    ${ctaBlock}
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="background-color:#F5F5F5;padding:24px 32px;text-align:center;border-top:1px solid #E8E5DD;">
+    <img src="${WAYS_LOGO}" alt="WAYS" width="80" style="display:block;margin:0 auto 10px;width:80px;height:auto;opacity:0.6;">
+    <p style="margin:0 0 4px;color:#999;font-size:11px;font-weight:600;letter-spacing:1px;">WAYS&reg; Materials LLC</p>
+    <p style="margin:0 0 4px;color:#999;font-size:11px;">
+      <a href="tel:+18554689297" style="color:#666;text-decoration:none;">${PHONE}</a> &bull;
+      <a href="mailto:orders@riversand.net" style="color:#666;text-decoration:none;">orders@riversand.net</a>
+    </p>
+    <p style="margin:0;color:#BBB;font-size:10px;">
+      <a href="https://riversand.net" style="color:#999;text-decoration:none;">riversand.net</a>
+    </p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
+// Keep old emailWrapper as alias for backward compat
+function emailWrapper(body: string) {
+  return brandedEmailWrapper({ content: body });
 }
 
 function orderInternalEmail(order: any) {
