@@ -172,12 +172,20 @@ type LoadCounts = {
   max_daily_limit: number | null;
 };
 
+type WeekendPitInfo = {
+  pit: { id: string; name: string };
+  satSurcharge: number;
+  sunSurcharge: number;
+};
+
 type Props = {
   selectedDate: DeliveryDate | null;
   onSelect: (d: DeliveryDate) => void;
   pitSchedule?: PitSchedule | null;
   globalSaturdaySurcharge?: number;
   pitId?: string | null;
+  weekendPitMap?: Partial<Record<0 | 6, WeekendPitInfo>>;
+  weekdayPitName?: string;
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturdaySurcharge, pitId }: Props) => {
