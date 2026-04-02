@@ -386,7 +386,7 @@ serve(async (req) => {
     });
 
     // Position terms: either after content or pushed to fill space above footer
-    const termsStartY = Math.max(y + 4, maxContentY - termsHeight - 4);
+    const termsStartY = Math.max(y + 2, maxContentY - termsHeight - 2);
 
     // Check if terms fit on current page, otherwise add page
     if (termsStartY + termsHeight > maxContentY) {
