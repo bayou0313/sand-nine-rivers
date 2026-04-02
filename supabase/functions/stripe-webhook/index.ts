@@ -56,6 +56,8 @@ serve(async (req) => {
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
+  console.log(`[stripe-webhook] Event received: ${event.type} (${event.id})`);
+
   // Idempotency check
   const { data: existingEvent } = await supabase
     .from("payment_events")
@@ -64,6 +66,7 @@ serve(async (req) => {
     .maybeSingle();
 
   if (existingEvent) {
+    console.log(`[stripe-webhook] Duplicate event ${event.id}, skipping`);
     return new Response(JSON.stringify({ received: true, duplicate: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -97,10 +100,17 @@ serve(async (req) => {
       paymentStatus = session.payment_status === "paid" ? "paid" : "pending";
 
       console.log("[stripe-webhook] checkout.session.completed — order_id from metadata:", orderId);
+      console.log("[stripe-webhook] client_reference_id:", session.client_reference_id);
       console.log("[stripe-webhook] payment_intent:", stripePaymentId);
       console.log("[stripe-webhook] payment_status:", paymentStatus);
 
-      // If no order_id in metadata, try matching by order_number
+      // Fallback 1: client_reference_id
+      if (!orderId && session.client_reference_id) {
+        orderId = session.client_reference_id;
+        console.log("[stripe-webhook] Using client_reference_id as order_id:", orderId);
+      }
+
+      // Fallback 2: order_number from metadata
       if (!orderId && session.metadata?.order_number) {
         console.log("[stripe-webhook] No order_id, trying order_number:", session.metadata.order_number);
         const { data: matchByNumber } = await supabase
@@ -122,7 +132,8 @@ serve(async (req) => {
           .eq("id", orderId);
       }
 
-      if (!orderId && stripePaymentId && stripeCustomerId) {
+      // Fallback 3: match by stripe_payment_id
+      if (!orderId && stripePaymentId) {
         const { data: matchedOrder } = await supabase
           .from("orders")
           .select("id")
@@ -131,10 +142,12 @@ serve(async (req) => {
         if (matchedOrder) {
           orderId = matchedOrder.id;
           console.log("[stripe-webhook] Matched order by stripe_payment_id:", orderId);
-          await supabase
-            .from("orders")
-            .update({ stripe_customer_id: stripeCustomerId })
-            .eq("id", matchedOrder.id);
+          if (stripeCustomerId) {
+            await supabase
+              .from("orders")
+              .update({ stripe_customer_id: stripeCustomerId })
+              .eq("id", matchedOrder.id);
+          }
         }
       }
     } else if (event.type === "charge.refunded") {
@@ -142,8 +155,26 @@ serve(async (req) => {
       stripePaymentId = (charge.payment_intent as string) || null;
       paymentStatus = "refunded";
     } else {
+      // payment_intent.succeeded / payment_failed / canceled
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       stripePaymentId = paymentIntent.id;
+
+      // Try to resolve order from payment_intent metadata first
+      if (paymentIntent.metadata?.order_id) {
+        orderId = paymentIntent.metadata.order_id;
+        console.log("[stripe-webhook] Resolved order_id from payment_intent metadata:", orderId);
+      } else if (paymentIntent.metadata?.order_number) {
+        const { data: matchByNumber } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("order_number", paymentIntent.metadata.order_number)
+          .maybeSingle();
+        if (matchByNumber) {
+          orderId = matchByNumber.id;
+          console.log("[stripe-webhook] Resolved order by payment_intent metadata order_number:", orderId);
+        }
+      }
+
       switch (event.type) {
         case "payment_intent.succeeded":
           paymentStatus = "paid";
@@ -157,6 +188,7 @@ serve(async (req) => {
       }
     }
 
+    // Final fallback: match by stripe_payment_id in orders table
     if (!orderId && stripePaymentId) {
       const { data: order } = await supabase
         .from("orders")
@@ -164,9 +196,12 @@ serve(async (req) => {
         .eq("stripe_payment_id", stripePaymentId)
         .maybeSingle();
       orderId = order?.id || null;
+      if (orderId) {
+        console.log("[stripe-webhook] Final fallback matched order by stripe_payment_id:", orderId);
+      }
     }
 
-    console.log("[stripe-webhook] Looking for order:", orderId, "paymentStatus:", paymentStatus);
+    console.log("[stripe-webhook] Resolved order:", orderId, "paymentStatus:", paymentStatus, "stripePaymentId:", stripePaymentId);
 
     if (orderId && paymentStatus) {
       const updateData: Record<string, string> = {
@@ -185,6 +220,28 @@ serve(async (req) => {
           updateData.status = "confirmed";
         }
 
+        // Update order FIRST, then send email
+        console.log("[stripe-webhook] Updating order:", orderId, "with:", updateData);
+        const { error: updateError, data: updateResult } = await supabase
+          .from("orders")
+          .update(updateData)
+          .eq("id", orderId)
+          .select("id, order_number, payment_status, status");
+
+        console.log("[stripe-webhook] Order update result:", updateResult, "error:", updateError);
+
+        if (updateError) {
+          console.error("[stripe-webhook] Failed to update order:", updateError);
+          await supabase.from("payment_events").insert({
+            order_id: orderId,
+            stripe_payment_id: stripePaymentId,
+            event_type: event.type,
+            event_id: event.id,
+          });
+          return new Response("Database update failed", { status: 500 });
+        }
+
+        // Now send email after successful DB update
         if (currentOrder) {
           try {
             console.log("[stripe-webhook] Sending order email for order:", orderId, "order_number:", currentOrder.order_number);
@@ -207,26 +264,30 @@ serve(async (req) => {
             console.error("[stripe-webhook] Failed to send order email:", emailErr);
           }
         }
-      }
-      console.log("[stripe-webhook] Updating order:", orderId, "with:", updateData);
-      const { error: updateError, data: updateResult } = await supabase
-        .from("orders")
-        .update(updateData)
-        .eq("id", orderId)
-        .select("id, order_number, payment_status, status");
+      } else {
+        // Non-paid status updates (failed, canceled, refunded)
+        console.log("[stripe-webhook] Updating order:", orderId, "with:", updateData);
+        const { error: updateError, data: updateResult } = await supabase
+          .from("orders")
+          .update(updateData)
+          .eq("id", orderId)
+          .select("id, order_number, payment_status, status");
 
-      console.log("[stripe-webhook] Order update result:", updateResult, "error:", updateError);
+        console.log("[stripe-webhook] Order update result:", updateResult, "error:", updateError);
 
-      if (updateError) {
-        console.error("[stripe-webhook] Failed to update order:", updateError);
-        await supabase.from("payment_events").insert({
-          order_id: orderId,
-          stripe_payment_id: stripePaymentId,
-          event_type: event.type,
-          event_id: event.id,
-        });
-        return new Response("Database update failed", { status: 500 });
+        if (updateError) {
+          console.error("[stripe-webhook] Failed to update order:", updateError);
+          await supabase.from("payment_events").insert({
+            order_id: orderId,
+            stripe_payment_id: stripePaymentId,
+            event_type: event.type,
+            event_id: event.id,
+          });
+          return new Response("Database update failed", { status: 500 });
+        }
       }
+    } else if (!orderId) {
+      console.error("[stripe-webhook] Could not resolve order for event:", event.type, "stripePaymentId:", stripePaymentId);
     }
 
     await supabase.from("payment_events").insert({
@@ -241,9 +302,10 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Webhook processing error:", error);
-    return new Response(JSON.stringify({ received: true }), {
-      status: 200,
+    console.error("[stripe-webhook] Processing error:", error);
+    // Return 500 so Stripe retries — do NOT swallow real failures
+    return new Response(JSON.stringify({ error: "Processing failed" }), {
+      status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
