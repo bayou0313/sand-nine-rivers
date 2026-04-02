@@ -34,6 +34,8 @@ export interface GlobalPricing {
   extra_per_mile: number;
   max_distance: number;
   saturday_surcharge: number;
+  card_processing_fee_percent: number;
+  card_processing_fee_fixed: number;
 }
 
 export interface EffectivePricing {
