@@ -4948,16 +4948,19 @@ const Leads = () => {
                     ? "No schedule set — all days currently available"
                     : "Check the days this PIT is open. Leave all unchecked to allow all days."}
                 </p>
+                {(() => { console.log("[EditPIT] editPitData.operating_days:", editPitData.operating_days); return null; })()}
                 <div className="flex flex-wrap gap-2 mb-3">
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
-                    const days = (editPitData.operating_days as number[] | null) || [];
+                    const rawDays = (editPitData.operating_days as (number | string)[] | null) || [];
+                    const days = rawDays.map(Number);
                     const checked = days.includes(idx);
                     return (
                       <label key={idx} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
                         <input type="checkbox" checked={checked} onChange={e => {
-                          const newDays = [...days];
-                          if (e.target.checked) { if (!newDays.includes(idx)) newDays.push(idx); }
-                          else { const i = newDays.indexOf(idx); if (i >= 0) newDays.splice(i, 1); }
+                          const currentDays = ((editPitData.operating_days as (number | string)[] | null) || []).map(Number);
+                          let newDays: number[];
+                          if (e.target.checked) { newDays = currentDays.includes(idx) ? currentDays : [...currentDays, idx]; }
+                          else { newDays = currentDays.filter(d => d !== idx); }
                           setEditPitData({ ...editPitData, operating_days: newDays.length > 0 ? newDays : null });
                         }} className="w-4 h-4 rounded" />
                         {label}
