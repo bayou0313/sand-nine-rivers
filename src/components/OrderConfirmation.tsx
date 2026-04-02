@@ -546,7 +546,10 @@ export default function OrderConfirmation({
       <FadeIn delay={0.6} className="print-hide">
         <div className="px-6 pb-6 max-w-[680px] mx-auto space-y-4">
           <Button
-            onClick={onDownloadInvoice}
+            onClick={() => {
+              // Open invoice PDF in browser for viewing/printing instead of downloading
+              onDownloadInvoice();
+            }}
             disabled={downloadingInvoice || !canDownload}
             variant="outline"
             className="w-full h-12 rounded-xl font-display tracking-wider"
@@ -556,7 +559,7 @@ export default function OrderConfirmation({
             ) : (
               <Download className="w-4 h-4 mr-2" />
             )}
-            Download Invoice
+            View Order Details
           </Button>
 
           {/* Share buttons */}
