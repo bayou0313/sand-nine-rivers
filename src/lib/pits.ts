@@ -127,7 +127,7 @@ export async function findBestPitDriving(
   supabaseClient?: any,
   deliveryDayOfWeek?: number // 0=Sun..6=Sat — filter pits by operating_days
 ): Promise<FindBestPitResult | null> {
-  let activePits = pits.filter(p => p.status === "active");
+  let activePits = pits.filter(p => p.status === "active" && !p.is_pickup_only);
 
   // Filter by operating days if a specific delivery day is requested
   if (deliveryDayOfWeek !== undefined) {

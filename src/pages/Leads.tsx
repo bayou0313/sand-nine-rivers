@@ -1083,6 +1083,7 @@ const Leads = () => {
         sunday_surcharge: editPitData.sunday_surcharge ?? null,
         saturday_load_limit: editPitData.saturday_load_limit ?? null,
         sunday_load_limit: editPitData.sunday_load_limit ?? null,
+        is_pickup_only: editPitData.is_pickup_only || false,
       };
 
       // Save directly — price rollover handled server-side
