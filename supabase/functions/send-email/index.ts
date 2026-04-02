@@ -875,7 +875,11 @@ serve(async (req) => {
     const COPYRIGHT_YEAR = emailCfg.copyright_year || "2026";
     const TAGLINE = emailCfg.tagline || DEFAULT_TAGLINE;
 
-    console.log("[send-email] Email config — dispatch:", DISPATCH_EMAIL, "from:", FROM);
+    // Biz overrides for email wrappers — passed to all emailWrapper/brandedEmailWrapper calls
+    const bizOverrides = { bizPhone: PHONE, bizEmail: SUPPORT_EMAIL, bizWebsite: WEBSITE, bizLegalName: LEGAL_NAME };
+    // Convenience: wrap content with biz settings
+    const wrapEmail = (body: string) => emailWrapper(body, bizOverrides);
+
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
     console.log("[send-email] RESEND_API_KEY set:", !!resendKey);
