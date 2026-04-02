@@ -122,6 +122,7 @@ const Order = () => {
     taxAmount: number;
     subtotal: number;
     saturdaySurchargeTotal: number;
+    sundaySurchargeTotal: number;
     distanceFee: number;
     taxInfo: { rate: number; parish: string };
   } | null>(null);
