@@ -636,7 +636,7 @@ function orderDispatchEmail(data: any): string {
       opacity:0.45;" />
     <p style="color:rgba(255,255,255,0.25);
       font-size:9px;margin:0;letter-spacing:1px;">
-      © 2026 WAYS® Materials LLC
+      © ${COPYRIGHT_YEAR} ${LEGAL_NAME}
     </p>
   </td></tr>
 
