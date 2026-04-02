@@ -159,6 +159,7 @@ const Order = () => {
 
   const [form, setForm] = useState({
     name: "",
+    companyName: "",
     phone: "",
     email: "",
     notes: "",
@@ -949,6 +950,7 @@ const Order = () => {
     delivery_terms_timestamp: new Date().toISOString(),
     card_authorization_accepted: cardAuthAccepted,
     card_authorization_timestamp: cardAuthAccepted ? new Date().toISOString() : null,
+    company_name: form.companyName.trim() || null,
     ...(leadReference ? { lead_reference: leadReference } : {}),
   });
 
@@ -1460,6 +1462,10 @@ const Order = () => {
                         <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div>
+                        <label htmlFor="order-company" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Company Name</label>
+                        <Input id="order-company" name="companyName" autoComplete="organization" placeholder="Optional" maxLength={100} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="h-[52px] rounded-lg text-base" />
+                      </div>
+                      <div>
                         <label htmlFor="order-phone" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Phone *</label>
                         <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-[52px] rounded-lg text-base" />
                       </div>
@@ -1960,6 +1966,7 @@ const Order = () => {
                   customerName={form.name}
                   customerEmail={form.email}
                   customerPhone={form.phone}
+                  companyName={form.companyName}
                   confirmedTotals={confirmedTotals}
                   totalPrice={totalPrice}
                   totalWithProcessingFee={totalWithProcessingFee}

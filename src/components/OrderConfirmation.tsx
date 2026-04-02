@@ -130,6 +130,7 @@ export interface OrderConfirmationProps {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  companyName?: string;
   confirmedTotals: {
     totalPrice: number;
     totalWithProcessingFee: number;
@@ -165,6 +166,7 @@ export default function OrderConfirmation({
   customerName,
   customerEmail,
   customerPhone,
+  companyName,
   confirmedTotals: dt,
   totalPrice,
   totalWithProcessingFee,
@@ -440,6 +442,35 @@ export default function OrderConfirmation({
           </div>
         </div>
       </FadeIn>
+
+      {/* ── CUSTOMER INFO ── */}
+      {(companyName || customerName) && (
+        <FadeIn delay={0.35}>
+          <div className="bg-white px-6 pb-4 max-w-[680px] mx-auto">
+            <div className="rounded-xl p-5" style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
+              <p
+                className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4 font-display"
+                style={{ color: "#0D2137" }}
+              >
+                CUSTOMER
+              </p>
+              <div className="space-y-1">
+                {companyName && (
+                  <p className="text-sm font-bold font-body" style={{ color: "#111827" }}>
+                    {companyName}
+                  </p>
+                )}
+                <p
+                  className="text-sm font-body"
+                  style={{ color: companyName ? "#6B7280" : "#111827" }}
+                >
+                  {customerName}
+                </p>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+      )}
 
       {/* ── PRICING SUMMARY ── */}
       <FadeIn delay={0.4}>

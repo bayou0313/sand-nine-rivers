@@ -176,7 +176,8 @@ serve(async (req) => {
     const ph = 279.4;
     const mx = 16;
     const cw = pw - 2 * mx;
-    const maxContentY = ph - 32;
+    const pinnedCodY = ph - 44;
+    const maxContentY = pinnedCodY - 6;
     let y = 0;
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
@@ -248,9 +249,18 @@ serve(async (req) => {
     doc.text("CUSTOMER", colRight, yR);
     yR += 5;
     doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...BLACK);
-    doc.text(order.customer_name, colRight, yR); yR += 5;
+    if (order.company_name) {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...BLACK);
+      doc.text(order.company_name, colRight, yR); yR += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...DARK);
+      doc.text(order.customer_name, colRight, yR); yR += 5;
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...BLACK);
+      doc.text(order.customer_name, colRight, yR); yR += 5;
+    }
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...DARK);
     if (order.customer_phone) { doc.text(order.customer_phone, colRight, yR); yR += 5; }
@@ -474,29 +484,26 @@ serve(async (req) => {
       y = 20;
     }
 
-    // ─── Clean "DUE AT DELIVERY" two-column text (no box) ───
+    // ─── Clean "DUE AT DELIVERY" — pinned to fixed Y position ───
     if (hasCODBox) {
-      // Left column: label + disclaimer
+      // Always draw on the last page at the fixed pinnedCodY position
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("DUE AT DELIVERY", mx, y + 4);
+      doc.text("DUE AT DELIVERY", mx, pinnedCodY + 4);
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Cash or check payment due at the time of delivery.", mx, y + 9);
+      doc.text("Cash or check payment due at the time of delivery.", mx, pinnedCodY + 9);
 
-      // Right column: amount + disclaimer
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text(fmt(order.price), pw - mx, y + 4, { align: "right" });
+      doc.text(fmt(order.price), pw - mx, pinnedCodY + 4, { align: "right" });
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Exact amount required — driver carries no change", pw - mx, y + 9, { align: "right" });
-
-      y += 14;
+      doc.text("Exact amount required — driver carries no change", pw - mx, pinnedCodY + 9, { align: "right" });
     }
 
     // Delivery terms
