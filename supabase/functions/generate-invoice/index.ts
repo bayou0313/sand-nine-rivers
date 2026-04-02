@@ -13,7 +13,7 @@ const DARK = [51, 51, 51] as const;
 const GRAY = [120, 120, 120] as const;
 const GOLD = [200, 164, 74] as const;
 const GREEN = [22, 163, 74] as const;
-const AMBER = [217, 119, 6] as const;
+const LIGHT_GRAY = [200, 200, 200] as const;
 
 function fmt(n: number): string {
   return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -118,7 +118,6 @@ serve(async (req) => {
     const ph = 279.4;
     const mx = 16;
     const cw = pw - 2 * mx;
-    // Reserve space for footer — content must not go below this
     const maxContentY = ph - 32;
     let y = 0;
 
@@ -202,21 +201,21 @@ serve(async (req) => {
     y = Math.max(y, yR) + 4;
 
     // ─── Single grey divider between order info and delivery address ───
-    doc.setDrawColor(200, 200, 200);
+    doc.setDrawColor(...LIGHT_GRAY);
     doc.line(mx, y, pw - mx, y);
     y += 8;
 
-    // ─── DELIVERY ADDRESS (with spacious padding) ───
+    // ─── DELIVERY ADDRESS (left-aligned header and content) ───
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
-    doc.text("DELIVERY ADDRESS", mx + 4, y);
+    doc.text("DELIVERY ADDRESS", mx, y);
     y += 6;
     doc.setFontSize(10);
     doc.setTextColor(...BLACK);
     doc.setFont("helvetica", "normal");
-    const addrLines = doc.splitTextToSize(order.delivery_address, cw - 8);
-    addrLines.forEach((line: string) => { doc.text(line, mx + 4, y); y += 5; });
+    const addrLines = doc.splitTextToSize(order.delivery_address, cw);
+    addrLines.forEach((line: string) => { doc.text(line, mx, y); y += 5; });
     y += 6;
 
     // ─── ORDER DETAILS ───
@@ -234,31 +233,28 @@ serve(async (req) => {
       doc.setFontSize(8);
       doc.setTextColor(...GRAY);
       const noteLines = doc.splitTextToSize(`Notes: ${order.notes}`, cw);
-      noteLines.slice(0, 2).forEach((line: string) => { doc.text(line, mx, y); y += 4; });
+      noteLines.slice(0, 3).forEach((line: string) => { doc.text(line, mx, y); y += 4; });
     }
     y += 4;
 
     // ─── PRICING TABLE ───
     const tableX = mx;
-    const labelW = cw * 0.72;
+    const amtX = pw - mx; // right edge for right-aligned amounts
     const rowH = 7;
 
-    // Header row with gold lines
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.3);
-    doc.line(tableX, y, tableX + cw, y);
-    doc.setLineWidth(0.2);
+    // Grey header line
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.line(tableX, y, pw - mx, y);
     y += 0.5;
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...GRAY);
     doc.text("DESCRIPTION", tableX, y + 4);
-    doc.text("AMOUNT", tableX + labelW, y + 4);
+    doc.text("AMOUNT", amtX, y + 4, { align: "right" });
     y += rowH;
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.3);
-    doc.line(tableX, y, tableX + cw, y);
-    doc.setLineWidth(0.2);
+    // Grey line under header
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.line(tableX, y, pw - mx, y);
 
     // Calculate pricing
     const qty = order.quantity || 1;
@@ -291,27 +287,25 @@ serve(async (req) => {
       doc.setFont("helvetica", "normal");
       doc.text(line.desc, tableX, y + 4);
       doc.setFont("helvetica", "bold");
-      doc.text(line.amt, tableX + labelW, y + 4);
+      doc.text(line.amt, amtX, y + 4, { align: "right" });
       y += rowH;
     });
 
-    // Gold separator before total
+    // Grey separator before total
     y += 1;
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.5);
-    doc.line(tableX, y, tableX + cw, y);
-    doc.setLineWidth(0.2);
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.line(tableX, y, pw - mx, y);
     y += 2;
 
-    // TOTAL row
+    // TOTAL row — left label, right-aligned amount
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BLACK);
     doc.text(isPaid ? "TOTAL CHARGED" : "TOTAL DUE AT DELIVERY", tableX, y + 5);
-    doc.text(fmt(order.price), tableX + labelW, y + 5);
+    doc.text(fmt(order.price), amtX, y + 5, { align: "right" });
     y += 12;
 
-    // ─── PAYMENT STATUS ───
+    // ─── PAYMENT STATUS (card only — green paid box) ───
     if (isPaid) {
       doc.setDrawColor(187, 247, 208);
       doc.setLineWidth(0.3);
@@ -330,47 +324,11 @@ serve(async (req) => {
         doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
       }
       y += 18;
-    } else {
-      const boxH = 11;
-      const boxPx = 6; // horizontal padding
-      doc.setDrawColor(253, 230, 138);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(mx, y, cw, boxH, 2, 2, "S");
-      doc.setLineWidth(0.2);
-      doc.setFontSize(9);
-      doc.setTextColor(...AMBER);
-      doc.setFont("helvetica", "bold");
-      doc.text("DUE AT DELIVERY", mx + boxPx, y + 4.5);
-      doc.setFontSize(12);
-      doc.setTextColor(194, 31, 50);
-      doc.setFont("helvetica", "bold");
-      doc.text(fmt(order.price), mx + cw - boxPx, y + 4.5, { align: "right" });
-      doc.setFontSize(6.5);
-      doc.setTextColor(...AMBER);
-      doc.setFont("helvetica", "normal");
-      doc.text("Exact amount required — driver carries no change", mx + boxPx, y + 8.5);
-      y += boxH + 4;
-
-      y += 6;
-      doc.setFontSize(7);
-      doc.setTextColor(146, 64, 14);
-      doc.setFont("helvetica", "bold");
-      doc.text("PAYMENT DUE AT DELIVERY", mx, y);
-      y += 5;
-      doc.setFont("helvetica", "normal");
-      doc.text("Cash or check payment is due at the time of delivery.", mx, y);
-      y += 4;
-      doc.text("If payment cannot be collected, a card payment link will be sent.", mx, y);
-      y += 8;
     }
+    // No amber "DUE AT DELIVERY" box — info is covered by total line and terms below
 
-    // ─── DELIVERY TERMS ───
-    doc.setFontSize(7);
-    doc.setTextColor(...GOLD);
-    doc.setFont("helvetica", "bold");
-    doc.text("DELIVERY TERMS", mx, y);
-    y += 5;
-
+    // ─── TERMS BLOCK (pushed to just above footer) ───
+    // Calculate how much space the terms block needs
     const bullets = [
       "Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.",
       "Customer must ensure clear, accessible delivery area before arrival.",
@@ -380,11 +338,60 @@ serve(async (req) => {
       "Cancellation Policy: Orders canceled a day before scheduled delivery are fully refunded. Processing fees are non-refundable.",
     ];
 
+    // For COD orders, add payment due text before terms
+    const hasCODBlock = !isPaid;
+    const codLines = hasCODBlock ? [
+      "Cash or check payment is due at the time of delivery.",
+      "If payment cannot be collected, a card payment link will be sent.",
+    ] : [];
+
+    // Measure terms height to position just above footer
+    let termsHeight = 0;
+    if (hasCODBlock) {
+      termsHeight += 5 + codLines.length * 4 + 4; // header + lines + gap
+    }
+    termsHeight += 5; // DELIVERY TERMS header
+    bullets.forEach((b) => {
+      const bLines = doc.splitTextToSize(`• ${b}`, cw);
+      termsHeight += bLines.length * 3.5 + 0.5;
+    });
+
+    // Position terms: either after content or pushed to fill space above footer
+    const termsStartY = Math.max(y + 4, maxContentY - termsHeight - 4);
+
+    // Check if terms fit on current page, otherwise add page
+    if (termsStartY + termsHeight > maxContentY) {
+      doc.addPage();
+      y = 20;
+    } else {
+      y = termsStartY;
+    }
+
+    // COD payment info
+    if (hasCODBlock) {
+      doc.setFontSize(7);
+      doc.setTextColor(146, 64, 14);
+      doc.setFont("helvetica", "bold");
+      doc.text("PAYMENT DUE AT DELIVERY", mx, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      codLines.forEach((line) => {
+        doc.text(line, mx, y);
+        y += 4;
+      });
+      y += 4;
+    }
+
+    // Delivery terms
     doc.setFontSize(7);
+    doc.setTextColor(...GOLD);
+    doc.setFont("helvetica", "bold");
+    doc.text("DELIVERY TERMS", mx, y);
+    y += 5;
+
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...GRAY);
     bullets.forEach((b) => {
-      // Check if we need a new page before the bullet
       if (y > maxContentY) {
         doc.addPage();
         y = 20;
