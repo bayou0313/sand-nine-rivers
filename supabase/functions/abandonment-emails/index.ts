@@ -184,7 +184,7 @@ serve(async (req: Request) => {
             </table>
             <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW — $${discountedPrice.toFixed(2)} DELIVERED</a></p>
             <p style="font-size:13px;color:#999">Offer expires 7 days from this email.</p>
-            <p style="margin-top:24px">— Silas Caldeira<br>River Sand | ${PHONE}</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
           `),
         });
 
