@@ -25,6 +25,7 @@ export interface PitData {
   saturday_surcharge_override: number | null;
   same_day_cutoff: string | null;
   sunday_surcharge: number | null;
+  is_pickup_only?: boolean;
 }
 
 export interface GlobalPricing {
@@ -126,7 +127,7 @@ export async function findBestPitDriving(
   supabaseClient?: any,
   deliveryDayOfWeek?: number // 0=Sun..6=Sat — filter pits by operating_days
 ): Promise<FindBestPitResult | null> {
-  let activePits = pits.filter(p => p.status === "active");
+  let activePits = pits.filter(p => p.status === "active" && !p.is_pickup_only);
 
   // Filter by operating days if a specific delivery day is requested
   if (deliveryDayOfWeek !== undefined) {

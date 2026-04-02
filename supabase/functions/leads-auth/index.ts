@@ -655,6 +655,7 @@ serve(async (req) => {
         sunday_surcharge: pit.sunday_surcharge ?? null,
         saturday_load_limit: pit.saturday_load_limit ?? null,
         sunday_load_limit: pit.sunday_load_limit ?? null,
+        is_pickup_only: pit.is_pickup_only || false,
       };
 
       let savedPit: any;

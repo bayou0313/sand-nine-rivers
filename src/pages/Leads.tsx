@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
 
@@ -77,6 +78,7 @@ interface Pit {
   sunday_surcharge: number | null;
   saturday_load_limit: number | null;
   sunday_load_limit: number | null;
+  is_pickup_only?: boolean;
 }
 
 interface GlobalSettings {
@@ -232,7 +234,7 @@ const Leads = () => {
 
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "", sunday_surcharge: null as number | null, saturday_load_limit: null as number | null, sunday_load_limit: null as number | null });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "", sunday_surcharge: null as number | null, saturday_load_limit: null as number | null, sunday_load_limit: null as number | null, is_pickup_only: false });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number; location_type?: string; formatted_address?: string }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
@@ -913,7 +915,7 @@ const Leads = () => {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit, is_pickup_only: newPit.is_pickup_only },
         },
       });
       if (fnError) throw fnError;
@@ -923,7 +925,7 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
-      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -1081,6 +1083,7 @@ const Leads = () => {
         sunday_surcharge: editPitData.sunday_surcharge ?? null,
         saturday_load_limit: editPitData.saturday_load_limit ?? null,
         sunday_load_limit: editPitData.sunday_load_limit ?? null,
+        is_pickup_only: editPitData.is_pickup_only || false,
       };
 
       // Save directly — price rollover handled server-side
@@ -1830,6 +1833,7 @@ const Leads = () => {
                       <p className="text-xs text-gray-500">{p.address}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <StatusBadge status={p.status} />
+                        {p.is_pickup_only && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Pickup Only</span>}
                       </div>
                       <p className="text-xs mt-2" style={{ color: hasOverride ? BRAND_GOLD : "#999" }}>
                         Effective: ${eff.base_price} base · {eff.free_miles}mi free · ${eff.extra_per_mile}/mi · {eff.max_distance}mi max
@@ -4610,6 +4614,13 @@ const Leads = () => {
                       <option value="inactive">Inactive</option>
                     </select>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-xs block" style={{ color: "#666" }}>Pickup Only</label>
+                      <p className="text-[10px]" style={{ color: "#999" }}>Excluded from delivery routing</p>
+                    </div>
+                    <Switch checked={newPit.is_pickup_only} onCheckedChange={v => setNewPit({ ...newPit, is_pickup_only: v })} />
+                  </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Notes (optional)</label>
                     <Textarea placeholder="Internal notes" rows={3} value={newPit.notes} onChange={e => setNewPit({ ...newPit, notes: e.target.value })} />
@@ -4902,6 +4913,13 @@ const Leads = () => {
                       <option value="planning">Planning</option>
                       <option value="inactive">Inactive</option>
                     </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-xs block" style={{ color: "#666" }}>Pickup Only</label>
+                      <p className="text-[10px]" style={{ color: "#999" }}>Excluded from delivery routing</p>
+                    </div>
+                    <Switch checked={editPitData.is_pickup_only || false} onCheckedChange={v => setEditPitData({ ...editPitData, is_pickup_only: v })} />
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Notes</label>
