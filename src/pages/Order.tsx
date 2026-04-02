@@ -950,6 +950,7 @@ const Order = () => {
     delivery_terms_timestamp: new Date().toISOString(),
     card_authorization_accepted: cardAuthAccepted,
     card_authorization_timestamp: cardAuthAccepted ? new Date().toISOString() : null,
+    company_name: form.companyName.trim() || null,
     ...(leadReference ? { lead_reference: leadReference } : {}),
   });
 
