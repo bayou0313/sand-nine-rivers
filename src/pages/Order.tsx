@@ -1648,7 +1648,7 @@ const Order = () => {
                             <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
                           </div>
                           <div className="flex justify-between text-base">
-                            <span className="font-body text-muted-foreground">Processing Fee (3.5% + $0.30)</span>
+                            <span className="font-body text-muted-foreground">Processing Fee ({globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)})</span>
                             <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
                           </div>
                           <Separator className="my-1" />
