@@ -767,19 +767,12 @@ serve(async (req) => {
                   base_price: newPrice,
                   pit_reassigned: true,
                   regen_reason: "pit_reassigned",
+                  needs_regen: true,
                   updated_at: new Date().toISOString(),
                 }).eq("id", page.id);
 
-                // Trigger regeneration
-                await fetch(regenUrl, {
-                  method: "POST",
-                  headers: regenHeaders,
-                  body: JSON.stringify({ city_page_id: page.id, force: true }),
-                });
-
                 deactivation_reassigned++;
                 console.log(`[save_pit] Reassigned: ${page.city_name} → ${bestPit.name} (${bestDist.toFixed(1)}mi, $${newPrice})`);
-                await new Promise(resolve => setTimeout(resolve, 2000));
               } else {
                 // No valid PIT — waitlist
                 await supabase.from("city_pages").update({
