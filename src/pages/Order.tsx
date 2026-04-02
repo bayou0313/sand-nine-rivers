@@ -946,6 +946,7 @@ const Order = () => {
           paymentMethod: "stripe-link",
           pendingOrderId: insertedOrder?.id || null,
           orderNumber: insertedOrder?.order_number || null,
+          lookupToken: insertedOrder?.lookup_token || null,
           result,
           totalPrice,
           totalWithProcessingFee,
