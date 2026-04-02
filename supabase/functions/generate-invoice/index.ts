@@ -263,11 +263,47 @@ serve(async (req) => {
     const distanceFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * qty : 0;
     const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
     const taxAmount = Number(order.tax_amount || 0);
-    const taxRate = (Number(order.tax_rate || 0) * 100).toFixed(2);
-    const parishMatch = order.delivery_address?.match(/,\s*([^,]+?)\s+Parish/i);
-    const parish = parishMatch ? parishMatch[1] : "";
+    const combinedRate = Number(order.tax_rate || 0);
     const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + taxAmount;
     const processingFee = isCard ? Math.max(0, Number(order.price) - subtotalBeforeFee) : 0;
+
+    // Parish detection for tax breakdown
+    const PARISH_TAX_RATES: Record<string, number> = {
+      "jefferson": 0.0530, "orleans": 0.0555, "st. bernard": 0.0555,
+      "st. charles": 0.0555, "st. tammany": 0.0480, "plaquemines": 0.0530,
+      "st. john the baptist": 0.0580, "st. james": 0.0405, "lafourche": 0.0525,
+      "tangipahoa": 0.0500,
+    };
+    const LA_STATE_RATE = 0.0445;
+
+    // Try to detect parish from address
+    const addrLower = (order.delivery_address || "").toLowerCase();
+    let parishName = "";
+    let parishLocalRate = 0;
+    // Check for "Parish" in address first
+    const parishMatch = addrLower.match(/,\s*([^,]+?)\s+parish/i);
+    if (parishMatch) {
+      const key = parishMatch[1].trim().toLowerCase();
+      if (PARISH_TAX_RATES[key] !== undefined) {
+        parishName = key.replace(/\b\w/g, c => c.toUpperCase());
+        parishLocalRate = PARISH_TAX_RATES[key];
+      }
+    }
+    // Fallback: check if parish name appears anywhere in address
+    if (!parishName) {
+      const orderedKeys = Object.keys(PARISH_TAX_RATES).sort((a, b) => b.length - a.length);
+      for (const k of orderedKeys) {
+        if (addrLower.includes(k)) {
+          parishName = k.replace(/\b\w/g, c => c.toUpperCase());
+          parishLocalRate = PARISH_TAX_RATES[k];
+          break;
+        }
+      }
+    }
+    // Fallback: derive parish rate from combined rate
+    if (!parishName && combinedRate > 0) {
+      parishLocalRate = Math.max(0, combinedRate - LA_STATE_RATE);
+    }
 
     interface PriceLine { desc: string; amt: string }
     const priceLines: PriceLine[] = [];
@@ -275,8 +311,16 @@ serve(async (req) => {
     if (distanceFee > 0) priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
     if (satSurcharge > 0) priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
     if (taxAmount > 0) {
-      const taxLabel = parish ? `Tax — ${parish} Parish (${taxRate}%)` : `Tax (${taxRate}%)`;
-      priceLines.push({ desc: taxLabel, amt: fmt(taxAmount) });
+      // Split tax into state + parish lines
+      const taxableBase = taxAmount / (combinedRate || 1); // reverse-calc taxable amount
+      const stateAmt = Math.round(taxableBase * LA_STATE_RATE * 100) / 100;
+      const parishAmt = Math.round((taxAmount - stateAmt) * 100) / 100;
+      const stateRatePct = (LA_STATE_RATE * 100).toFixed(2);
+      const parishRatePct = (parishLocalRate * 100).toFixed(2);
+
+      priceLines.push({ desc: `Louisiana State Tax (${stateRatePct}%)`, amt: fmt(stateAmt) });
+      const parishLabel = parishName ? `${parishName} Parish Tax (${parishRatePct}%)` : `Local Parish Tax (${parishRatePct}%)`;
+      priceLines.push({ desc: parishLabel, amt: fmt(parishAmt) });
     }
     if (isCard && processingFee > 0.01) priceLines.push({ desc: "Processing Fee", amt: fmt(processingFee) });
 
