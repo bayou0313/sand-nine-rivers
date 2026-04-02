@@ -186,32 +186,37 @@ const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8
 
 const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: any }[] }[] = [
   {
-    section: "OPERATIONS",
+    section: "LIVE OPERATIONS",
     items: [
       { id: "overview", label: "Overview", icon: BarChart3 },
-      { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
-      { id: "pipeline", label: "Pipeline", icon: List },
-      { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
+      { id: "live" as NavPage, label: "Live Visitors", icon: Users },
       { id: "cash_orders", label: "Orders", icon: DollarSign },
       { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
-      { id: "abandoned", label: "Abandoned", icon: AlertTriangle },
-      { id: "live" as NavPage, label: "Live", icon: Users },
+      { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
+    ],
+  },
+  {
+    section: "MARKETING",
+    items: [
+      { id: "pipeline", label: "Pipeline", icon: List },
+      { id: "all", label: "All Leads", icon: Users },
+      { id: "zip", label: "ZIP Intelligence", icon: MapIcon },
+      { id: "revenue", label: "Revenue Forecast", icon: DollarSign },
     ],
   },
   {
     section: "EXPANSION",
     items: [
-      { id: "pit", label: "PIT", icon: Zap },
       { id: "city_pages", label: "City Pages", icon: MapIcon },
+      { id: "pit", label: "PITs", icon: Zap },
       { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
-      { id: "all", label: "All Leads", icon: Users },
     ],
   },
   {
     section: "SETTINGS",
     items: [
-      { id: "profile", label: "Business Profile", icon: Building2 },
       { id: "settings", label: "Global Settings", icon: Settings },
+      { id: "profile", label: "Business Profile", icon: Building2 },
     ],
   },
 ];
