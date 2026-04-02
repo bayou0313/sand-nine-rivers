@@ -46,7 +46,27 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
-function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, footerLogoB64: string | null) {
+interface BizSettings {
+  legal_name: string;
+  site_name: string;
+  phone: string;
+  website: string;
+  footer_address: string;
+  ein_number: string;
+  support_email: string;
+}
+
+const DEFAULT_BIZ: BizSettings = {
+  legal_name: "WAYS® Materials LLC",
+  site_name: "River Sand",
+  phone: "1-855-GOT-WAYS",
+  website: "riversand.net",
+  footer_address: "202 Larosa Dr, Long Beach, MS",
+  ein_number: "",
+  support_email: "",
+};
+
+function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, footerLogoB64: string | null, biz: BizSettings) {
   const footerY = ph - 24;
 
   // Gold divider line above footer
@@ -64,17 +84,28 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
     } catch { /* skip */ }
   }
 
-  // Text right-aligned — 40% brighter
+  // Build footer line dynamically
+  const footerParts = [biz.legal_name, biz.website, biz.phone].filter(Boolean);
+  const footerLine1 = footerParts.join("  |  ");
+
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(180, 180, 180);
-  doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw - mx, textY, { align: "right" });
-  doc.setFontSize(7);
-  doc.setTextColor(180, 180, 180);
-  doc.text("202 Larosa Dr, Long Beach, MS", pw - mx, textY + 4, { align: "right" });
+  doc.text(footerLine1, pw - mx, textY, { align: "right" });
+
+  let footerLineY = textY + 4;
+  if (biz.footer_address) {
+    doc.text(biz.footer_address, pw - mx, footerLineY, { align: "right" });
+    footerLineY += 4;
+  }
+  if (biz.ein_number) {
+    doc.text(`EIN: ${biz.ein_number}`, pw - mx, footerLineY, { align: "right" });
+    footerLineY += 4;
+  }
+
   doc.setFontSize(6);
   doc.setTextColor(200, 200, 200);
-  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 8, { align: "right" });
+  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, footerLineY, { align: "right" });
 }
 
 serve(async (req) => {
