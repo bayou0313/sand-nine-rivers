@@ -1558,10 +1558,23 @@ const Order = () => {
                             <span className="font-display text-foreground">+{formatCurrency(sundaySurchargeTotal)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-sm">
-                          <span className="font-body text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
-                          <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
-                        </div>
+                        {(() => {
+                          const stateTaxAmt = Math.round((taxAmount / (taxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
+                          const parishTaxAmt = Math.round((taxAmount - stateTaxAmt) * 100) / 100;
+                          const parishLocalRate = taxInfo.rate - LA_STATE_TAX_RATE;
+                          return (
+                            <>
+                              <div className="flex justify-between text-sm">
+                                <span className="font-body text-muted-foreground">Louisiana State Tax ({(LA_STATE_TAX_RATE * 100).toFixed(2)}%)</span>
+                                <span className="font-display text-foreground">+{formatCurrency(stateTaxAmt)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="font-body text-muted-foreground">{taxInfo.parish} Tax ({(parishLocalRate * 100).toFixed(2)}%)</span>
+                                <span className="font-display text-foreground">+{formatCurrency(parishTaxAmt)}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
                         <Separator className="my-1" />
                         <div className="flex justify-between items-center">
                           <span className="font-display text-lg text-foreground">TOTAL DUE</span>
