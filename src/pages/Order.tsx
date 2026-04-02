@@ -1859,7 +1859,7 @@ const Order = () => {
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
                     <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAYMENT DUE AT DELIVERY</p>
                     <p className="font-body text-sm text-amber-800 leading-relaxed mb-2">
-                      Cash payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
+                      Cash or check payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
                     </p>
                     <p className="font-body text-xs text-amber-700">
                       Cash total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(parseFloat((totalPrice * (1 + globalPricing.card_processing_fee_percent / 100) + globalPricing.card_processing_fee_fixed).toFixed(2)))}</strong> (includes {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} fee)
