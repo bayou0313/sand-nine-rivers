@@ -257,7 +257,10 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
   const isFullyBooked = (d: DeliveryDate & { blocked?: boolean }) => {
     if (!loadData || d.blocked) return false;
     const count = loadData.counts[d.iso] || 0;
-    if (loadData.max_daily_limit != null && count >= loadData.max_daily_limit) return true;
+    const globalCount = loadData.global_counts[d.iso] || 0;
+    // Global limit uses cross-PIT count
+    if (loadData.max_daily_limit != null && globalCount >= loadData.max_daily_limit) return true;
+    // PIT-specific weekend limits use per-PIT count
     if (d.isSaturday && loadData.saturday_load_limit != null && count >= loadData.saturday_load_limit) return true;
     if (d.isSunday && loadData.sunday_load_limit != null && count >= loadData.sunday_load_limit) return true;
     return false;
