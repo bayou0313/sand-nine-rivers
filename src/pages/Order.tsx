@@ -84,6 +84,12 @@ const Order = () => {
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [recalculating, setRecalculating] = useState(false);
 
+  // Weekend PIT resolution state
+  const [weekendPitMap, setWeekendPitMap] = useState<WeekendPitMap>({});
+  const [weekdayPit, setWeekdayPit] = useState<PitData | null>(null);
+  const [weekdayResult, setWeekdayResult] = useState<EstimateResult | null>(null);
+  const [weekdayPitSchedule, setWeekdayPitSchedule] = useState<PitSchedule | null>(null);
+
   // Derived pricing from matched PIT (or global fallback)
   const effectivePricing = useMemo(() => {
     if (matchedPit) return getEffectivePrice(matchedPit, globalPricing);
