@@ -1815,7 +1815,17 @@ const Order = () => {
                       {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
                         <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} destructive />
                       )}
-                      <ReceiptRow label={`Sales tax — ${taxInfo.parish} (${(taxInfo.rate * 100).toFixed(2)}%)`} value={`+${formatCurrency(taxAmount)}`} />
+                      {(() => {
+                        const stateTaxAmt = Math.round((taxAmount / (taxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
+                        const parishTaxAmt = Math.round((taxAmount - stateTaxAmt) * 100) / 100;
+                        const parishLocalRate = taxInfo.rate - LA_STATE_TAX_RATE;
+                        return (
+                          <>
+                            <ReceiptRow label={`Louisiana State Tax (${(LA_STATE_TAX_RATE * 100).toFixed(2)}%)`} value={`+${formatCurrency(stateTaxAmt)}`} />
+                            <ReceiptRow label={`${taxInfo.parish} Tax (${(parishLocalRate * 100).toFixed(2)}%)`} value={`+${formatCurrency(parishTaxAmt)}`} />
+                          </>
+                        );
+                      })()}
 
                       {paymentMethod === "stripe-link" && (
                         <>
