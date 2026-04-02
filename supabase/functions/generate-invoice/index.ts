@@ -333,17 +333,18 @@ serve(async (req) => {
       doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
       y += 18;
 
-      // COD payment policy
+      // COD payment policy — with proper spacing
+      y += 6;
       doc.setFontSize(7);
       doc.setTextColor(146, 64, 14);
       doc.setFont("helvetica", "bold");
       doc.text("PAYMENT DUE AT DELIVERY", mx, y);
-      y += 4;
+      y += 5;
       doc.setFont("helvetica", "normal");
-      doc.text("Cash payment is due at the time of delivery.", mx, y);
+      doc.text("Cash or check payment is due at the time of delivery.", mx, y);
       y += 4;
       doc.text("If payment cannot be collected, a card payment link will be sent.", mx, y);
-      y += 6;
+      y += 8;
     }
 
     // ─── DELIVERY TERMS ───
