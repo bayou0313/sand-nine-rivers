@@ -1618,8 +1618,8 @@ const Order = () => {
                             </motion.div>
                           )}
                           <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-base text-foreground tracking-wider">AT DELIVERY</p>
-                          <p className="font-body text-xs text-muted-foreground mt-1">Cash or Check — no processing fee</p>
+                          <p className="font-display text-base text-foreground tracking-wider">PAY AT DELIVERY</p>
+                          <p className="font-body text-xs text-muted-foreground mt-1">No card processing fee</p>
                         </button>
                       )}
                     </div>
