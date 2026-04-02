@@ -453,6 +453,27 @@ serve(async (req) => {
         }),
       }).catch((err: any) => console.error("[lead-email] Admin notification error:", err));
 
+      // Fetch business hours for confirmation email
+      let responseTimeHours = "2";
+      let businessHours = "7:00 AM – 5:00 PM";
+      let businessDays = "Monday–Saturday";
+      try {
+        const { data: bizSettings } = await sb
+          .from("global_settings")
+          .select("key, value")
+          .in("key", ["response_time_hours", "business_hours_start", "business_hours_end", "business_days"]);
+        if (bizSettings) {
+          for (const s of bizSettings) {
+            if (s.key === "response_time_hours") responseTimeHours = s.value;
+            if (s.key === "business_days") businessDays = s.value;
+            if (s.key === "business_hours_start") {
+              const end = bizSettings.find((x: any) => x.key === "business_hours_end")?.value || "17:00";
+              businessHours = `${s.value} – ${end}`;
+            }
+          }
+        }
+      } catch (e) { console.error("[lead] Failed to fetch business hours:", e); }
+
       // Send customer auto-confirmation email (fire-and-forget)
       if (customer_email) {
         fetch(`${supabaseUrl}/functions/v1/send-email`, {
@@ -463,7 +484,10 @@ serve(async (req) => {
             data: {
               customer_name,
               customer_email,
-              address: leadAddress,
+              delivery_address: leadAddress,
+              response_time_hours: responseTimeHours,
+              business_hours: businessHours,
+              business_days: businessDays,
             },
           }),
         }).catch((err: any) => console.error("[lead-email] Customer confirmation error:", err));
