@@ -659,6 +659,32 @@ const Leads = () => {
     }
   }, []);
 
+  // Fetch notifications
+  const fetchNotifications = useCallback(async (pw: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "get_notifications" },
+      });
+      if (data?.notifications) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.notifications.filter((n: any) => !n.read).length);
+      }
+    } catch (err) { console.error("[notifications] Fetch error:", err); }
+  }, []);
+
+  // Mark notifications as read
+  const markNotificationsRead = useCallback(async () => {
+    const pw = storedPassword();
+    if (!pw) return;
+    try {
+      await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "mark_notifications_read" },
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) { console.error("[notifications] Mark read error:", err); }
+  }, []);
+
 
   useEffect(() => {
     const saved = storedPassword();
@@ -666,14 +692,63 @@ const Leads = () => {
       fetchLeads(saved);
       fetchSettings(saved);
       fetchPits(saved);
+      fetchNotifications(saved);
     }
-  }, [fetchLeads, fetchSettings, fetchPits]);
+  }, [fetchLeads, fetchSettings, fetchPits, fetchNotifications]);
+
+  // Realtime subscription for notifications
+  useEffect(() => {
+    if (!authenticated) return;
+    const channel = supabase
+      .channel('notifications-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload: any) => {
+          const newNotif = payload.new;
+          setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+          setUnreadCount(prev => prev + 1);
+          // Show toast
+          toast({ title: newNotif.title, description: newNotif.message });
+          // Auto-refresh relevant section
+          const pw = storedPassword();
+          if (!pw) return;
+          if (newNotif.entity_type === "lead" || newNotif.type === "fraud_flagged") {
+            fetchLeads(pw);
+          } else if (newNotif.entity_type === "order") {
+            fetchCashOrders();
+            fetchPendingReview();
+          } else if (newNotif.entity_type === "contact") {
+            // refresh overview metrics on next visit
+          } else if (newNotif.entity_type === "waitlist") {
+            if (activePage === "waitlist") {
+              supabase.functions.invoke("leads-auth", { body: { password: pw, action: "list_waitlist" } })
+                .then(({ data }) => { if (data?.waitlist) setWaitlistData(data.waitlist); })
+                .catch(() => {});
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [authenticated, activePage, fetchLeads, toast]);
+
+  // Close notification panel on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifPanelRef.current && !notifPanelRef.current.contains(e.target as Node)) {
+        setShowNotifPanel(false);
+      }
+    };
+    if (showNotifPanel) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showNotifPanel]);
 
   const handleLogin = async () => {
     setError("");
     await fetchLeads(password);
     if (sessionStorage.getItem("leads_pw")) {
-      await Promise.all([fetchSettings(password), fetchPits(password)]);
+      await Promise.all([fetchSettings(password), fetchPits(password), fetchNotifications(password)]);
     }
   };
 
@@ -682,6 +757,8 @@ const Leads = () => {
     setAuthenticated(false);
     setLeads([]);
     setPassword("");
+    setNotifications([]);
+    setUnreadCount(0);
   };
 
   const saveGlobalSettings = async () => {
