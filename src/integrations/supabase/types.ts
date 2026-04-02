@@ -389,6 +389,7 @@ export type Database = {
           free_miles: number | null
           id: string
           is_default: boolean
+          is_pickup_only: boolean
           lat: number
           lon: number
           max_distance: number | null
@@ -412,6 +413,7 @@ export type Database = {
           free_miles?: number | null
           id?: string
           is_default?: boolean
+          is_pickup_only?: boolean
           lat: number
           lon: number
           max_distance?: number | null
@@ -435,6 +437,7 @@ export type Database = {
           free_miles?: number | null
           id?: string
           is_default?: boolean
+          is_pickup_only?: boolean
           lat?: number
           lon?: number
           max_distance?: number | null

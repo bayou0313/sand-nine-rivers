@@ -1,0 +1,1 @@
+ALTER TABLE public.pits ADD COLUMN is_pickup_only boolean NOT NULL DEFAULT false;
