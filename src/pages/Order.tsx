@@ -1203,8 +1203,8 @@ const Order = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
-      <Navbar solid />
+    <div className={`min-h-screen ${step === "success" ? "bg-[#F9FAFB]" : "bg-gradient-to-b from-background via-muted/30 to-background"}`}>
+      {step !== "success" && <Navbar solid />}
 
       <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 md:pb-12">
         {/* Proposal banner for leads coming from email */}
