@@ -663,20 +663,11 @@ serve(async (req) => {
                 base_price: newPrice,
                 price_changed: true,
                 regen_reason: 'price_changed',
+                needs_regen: true,
                 updated_at: new Date().toISOString()
               }).eq("id", page.id);
               prices_updated++;
-
-              // Auto-regen content
-              await fetch(regenUrl, {
-                method: "POST",
-                headers: regenHeaders,
-                body: JSON.stringify({ city_page_id: page.id, force: true }),
-              });
-              console.log(`[save_pit] Regenerated: ${page.city_name}`);
-              pages_regenerated++;
-
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              console.log(`[save_pit] Flagged for regen: ${page.city_name}`);
             } catch (err: any) {
               console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
             }
