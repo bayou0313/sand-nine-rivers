@@ -133,9 +133,9 @@ const Footer = () => {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+              <div className="columns-2 md:columns-3 lg:columns-4 gap-x-6">
                 {regionKeys.map((region) => (
-                  <div key={region}>
+                  <div key={region} className="break-inside-avoid mb-5">
                     <p
                       className="text-xs font-semibold uppercase tracking-wide mb-2"
                       style={{ color: "#999999" }}
