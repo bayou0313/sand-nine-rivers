@@ -857,6 +857,7 @@ serve(async (req) => {
         "card_processing_fee_percent", "card_processing_fee_fixed",
         "legal_name", "site_name", "phone", "website",
         "support_email", "tagline", "copyright_year",
+        "sender_name", "sender_title",
       ]);
 
     const emailCfg: Record<string, string> = {};

@@ -4178,6 +4178,23 @@ const Leads = () => {
               </div>
             </div>
 
+            {/* Email Sender Identity */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Email Sender Identity</h3>
+              <p className="text-xs text-gray-400 mb-4">Name and title shown in outbound email signatures</p>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Sender name</label>
+                  <Input className="h-9" value={profileSettings.sender_name || ""} onChange={e => setProfileSettings({ ...profileSettings, sender_name: e.target.value })} placeholder="Silas Caldeira" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Sender title</label>
+                  <Input className="h-9" value={profileSettings.sender_title || ""} onChange={e => setProfileSettings({ ...profileSettings, sender_title: e.target.value })} placeholder="Founder & CEO" />
+                </div>
+              </div>
+            </div>
+
             {/* Additional Contact */}
             <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
               <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Additional Contact Channels</h3>
