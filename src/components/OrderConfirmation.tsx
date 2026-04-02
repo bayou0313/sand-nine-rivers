@@ -166,6 +166,7 @@ export default function OrderConfirmation({
   customerName,
   customerEmail,
   customerPhone,
+  companyName,
   confirmedTotals: dt,
   totalPrice,
   totalWithProcessingFee,
