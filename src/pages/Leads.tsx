@@ -4948,16 +4948,19 @@ const Leads = () => {
                     ? "No schedule set — all days currently available"
                     : "Check the days this PIT is open. Leave all unchecked to allow all days."}
                 </p>
+                {(() => { console.log("[EditPIT] editPitData.operating_days:", editPitData.operating_days); return null; })()}
                 <div className="flex flex-wrap gap-2 mb-3">
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
-                    const days = (editPitData.operating_days as number[] | null) || [];
+                    const rawDays = (editPitData.operating_days as (number | string)[] | null) || [];
+                    const days = rawDays.map(Number);
                     const checked = days.includes(idx);
                     return (
                       <label key={idx} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
                         <input type="checkbox" checked={checked} onChange={e => {
-                          const newDays = [...days];
-                          if (e.target.checked) { if (!newDays.includes(idx)) newDays.push(idx); }
-                          else { const i = newDays.indexOf(idx); if (i >= 0) newDays.splice(i, 1); }
+                          const currentDays = ((editPitData.operating_days as (number | string)[] | null) || []).map(Number);
+                          let newDays: number[];
+                          if (e.target.checked) { newDays = currentDays.includes(idx) ? currentDays : [...currentDays, idx]; }
+                          else { newDays = currentDays.filter(d => d !== idx); }
                           setEditPitData({ ...editPitData, operating_days: newDays.length > 0 ? newDays : null });
                         }} className="w-4 h-4 rounded" />
                         {label}
@@ -4965,28 +4968,28 @@ const Leads = () => {
                     );
                   })}
                 </div>
-                {(editPitData.operating_days as number[] | null)?.includes(6) && (
+                {((editPitData.operating_days as (number | string)[] | null) || []).map(Number).includes(6) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday surcharge for this PIT</label>
                     <Input placeholder="e.g. 35.00" value={editPitData.saturday_surcharge_override ?? ""} onChange={e => setEditPitData({ ...editPitData, saturday_surcharge_override: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank to use global default</p>
                   </div>
                 )}
-                {(editPitData.operating_days as number[] | null)?.includes(0) && (
+                {((editPitData.operating_days as (number | string)[] | null) || []).map(Number).includes(0) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Surcharge ($)</label>
                     <Input placeholder="e.g. 50.00" value={(editPitData as any).sunday_surcharge ?? ""} onChange={e => setEditPitData({ ...editPitData, sunday_surcharge: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
                   </div>
                 )}
-                {(editPitData.operating_days as number[] | null)?.includes(6) && (
+                {((editPitData.operating_days as (number | string)[] | null) || []).map(Number).includes(6) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Saturday Load Limit (confirmed orders)</label>
                     <Input placeholder="e.g. 3" value={(editPitData as any).saturday_load_limit ?? ""} onChange={e => setEditPitData({ ...editPitData, saturday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
                     <p className="text-[10px] text-gray-400 mt-1">Leave blank for no limit.</p>
                   </div>
                 )}
-                {(editPitData.operating_days as number[] | null)?.includes(0) && (
+                {((editPitData.operating_days as (number | string)[] | null) || []).map(Number).includes(0) && (
                   <div className="mb-3">
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Sunday Load Limit (confirmed orders)</label>
                     <Input placeholder="e.g. 2" value={(editPitData as any).sunday_load_limit ?? ""} onChange={e => setEditPitData({ ...editPitData, sunday_load_limit: e.target.value ? parseInt(e.target.value) : null })} type="number" className="h-9 text-sm w-40" />
