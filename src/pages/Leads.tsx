@@ -3195,6 +3195,11 @@ const Leads = () => {
                         <Input className="pl-6 h-9" value={editSettings.saturday_surcharge || ""} onChange={e => setEditSettings({ ...editSettings, saturday_surcharge: e.target.value })} />
                       </div>
                     </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Max Daily Delivery Limit (all PITs combined)</label>
+                      <Input className="h-9" type="number" value={editSettings.max_daily_limit || ""} onChange={e => setEditSettings({ ...editSettings, max_daily_limit: e.target.value })} placeholder="e.g. 10" />
+                      <p className="text-[10px] text-gray-400 mt-1">Leave blank for no global limit</p>
+                    </div>
                   </div>
                   <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
