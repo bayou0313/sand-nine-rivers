@@ -89,13 +89,13 @@ const Footer = () => {
             />
           </a>
           <p style={{ color: "#888888", fontSize: 11 }}>
-            © 2015-2026 WAYS® Materials LLC
+            © 2015-{biz.copyright_year} {biz.legal_name}
           </p>
           <p style={{ color: "#AAAAAA", fontSize: 11 }}>
-            orders@riversand.net · 1-855-GOT-WAYS
+            {biz.support_email} · {biz.phone}
           </p>
           <p style={{ color: "#BBBBBB", fontSize: 10, fontStyle: "italic" }}>
-            River Sand.  Real Sand. Real People.
+            {biz.site_name}.  {biz.tagline}
           </p>
         </div>
       </div>
