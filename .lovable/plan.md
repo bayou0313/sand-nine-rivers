@@ -1,62 +1,77 @@
 
 
-## Plan: PIT Management Enhancements
+## Plan: Fix PIT Save Regen + Reactivation Logic
 
-### Overview
-Five changes across two files: `src/pages/Leads.tsx` (UI) and `supabase/functions/leads-auth/index.ts` (backend).
+### Critical Discovery
 
----
+The regen calls in save_pit PART 1 and PART 1b are **broken** — they send `{ city_page_id, force: true }` to `generate-city-page`, but that function requires `password`, `city_name`, `state`, `region`, `pit_name`, etc. Without `password`, they return 401 silently. This is why flags never clear.
 
-### 1. Rename "Free Delivery Radius" → "Free Delivery Distance"
+The `process_regen_queue` action (line 2319) does it correctly — sends all required fields and clears flags on success. The background poller in the UI calls this every 30 seconds.
 
-**Leads.tsx** — Change label text only at 3 locations (global settings, add PIT form, edit PIT form). No field/column changes.
-
----
-
-### 2. Same-day cutoff time picker (12h format, stores HH:MM 24h)
-
-Replace the plain `<Input>` for `same_day_cutoff` in both Add and Edit PIT forms with three `<select>` dropdowns: Hour (1–12), Minute (00/15/30/45), AM/PM. Convert to/from 24-hour `HH:MM` for storage. No backend changes.
+**Root cause fix**: Replace broken direct `generate-city-page` calls with `needs_regen = true` flags, letting the existing background queue handle regeneration properly.
 
 ---
 
-### 3. Fix modal closing on text selection
+### Changes
 
-The Edit PIT modal uses a custom `<div>` overlay. Replace the backdrop `onClick` with a `useRef`-based mousedown/mouseup tracking pattern — only close if both mousedown and mouseup occurred on the backdrop element itself, preventing accidental closes during text selection drag.
+#### File 1: `supabase/functions/leads-auth/index.ts`
 
----
+**Fix 1 — PART 1 (pricing change, lines 662-679):**
+- Keep the price update (`base_price`, `price_changed`, `regen_reason`)
+- Add `needs_regen: true` to the update
+- Remove the broken direct `fetch(regenUrl, ...)` call and the 2-second delay
+- The background queue will pick these up, regen properly, and clear all flags
 
-### 4. Auto-regenerate city pages on PIT save (deduplicated)
+**Fix 2 — PART 1b (always-regen, lines 696-712):**
+- Replace the broken direct `fetch(regenUrl, ...)` calls with a single bulk update: set `needs_regen = true`, `regen_reason = 'pit_updated'` on all linked city pages
+- Remove per-page loop with delays
 
-**leads-auth/index.ts** — After the existing pricing-change regeneration block, add an "always-regen" block for all city pages linked to the saved PIT. To prevent double-regeneration, introduce a single boolean flag `regenTriggered`:
+**Fix 3 — Deactivation block (lines 789-794):**
+- After reassigning a page to a new PIT, set `needs_regen = true` instead of calling `fetch(regenUrl, ...)` directly
+- Remove the 2-second delay per page
 
-1. Initialize `let regenTriggered = false;` before the pricing-change block
-2. After the pricing-change block fires regeneration, set `regenTriggered = true;`
-3. The always-regen block checks `if (!regenTriggered && !isNewPit)` before running
-4. Only one regeneration path ever executes per save
+**Fix 4 — Reactivation block (NEW, after line 815):**
+Add a new block detecting `inactive → active` status change:
 
-Both blocks query `city_pages` where `pit_id = savedPit.id` and call `generate-city-page` with a delay between calls.
+```
+if (!isNewPit && existingPitStatus !== "active" && savedPit.status === "active")
+```
 
----
+Logic:
+1. Query ALL city pages with coordinates (any status)
+2. Get all active pits (including reactivated one)
+3. Calculate driving distance from reactivated PIT to each city page
+4. For pages currently assigned to another PIT: reassign only if reactivated PIT is **≥3 miles closer** than current `distance_from_pit`
+5. For waitlisted pages: reassign if reactivated PIT is within its `max_distance`
+6. Set `needs_regen = true` on reassigned pages (queue handles regen)
+7. Track `reactivation_reassigned` and `reactivation_unwaitlisted` counts
+8. Add counts to response JSON
 
-### 5. PIT deactivation — reassign or waitlist
+#### File 2: `src/pages/Leads.tsx`
 
-**leads-auth/index.ts** — Expand the existing `existingPit` fetch to include `status`. After save, detect when status changed to `inactive`:
-
-1. Query all `city_pages` where `pit_id` matches the deactivated PIT
-2. For each page, find the nearest active PIT using driving distance logic
-3. If a valid active PIT is within range: reassign `pit_id`, update distance/price, trigger regeneration
-4. If no valid PIT found: set page status to `waitlist`
-5. Return `pages_reassigned` and `pages_waitlisted` counts in the response
-
-**Leads.tsx** — Update `executePitSave` to display reassignment/waitlist results in the toast message.
+**Fix 5 — Always refresh + show reactivation counts (lines 1103-1118):**
+- Always call `fetchCityPages()` after PIT save (move outside the `if (parts.length > 0)` block)
+- Add `reactivation_reassigned` and `reactivation_unwaitlisted` to toast parts
+- Schedule a delayed second `fetchCityPages()` call (e.g. 15 seconds) to pick up queue-processed flag clears
 
 ---
 
 ### Technical Details
 
-**Files modified:**
-- `src/pages/Leads.tsx` — Label renames (3 locations), time picker (2 locations), modal mousedown fix, toast enhancement
-- `supabase/functions/leads-auth/index.ts` — `regenTriggered` flag for deduplicated regen, deactivation reassignment logic, expanded existingPit fetch
+**Why `needs_regen` instead of direct calls:** The `process_regen_queue` action already:
+- Sends all required fields (password, city_name, state, region, pit_name, etc.)
+- Clears `price_changed`, `pit_reassigned`, `regen_reason`, `needs_regen` on success
+- Sets status to `active`
+- Runs with proper 3-second delays for rate limiting
 
-No database schema changes. No other files touched.
+The background poller in the UI triggers this every 30 seconds. This is the correct, working path.
+
+**3-mile threshold logic:**
+```
+const currentDist = page.distance_from_pit || 999;
+const improvement = currentDist - newDist;
+if (improvement >= 3) { /* reassign */ }
+```
+
+**No database schema changes. No other files touched.**
 
