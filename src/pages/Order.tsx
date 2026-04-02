@@ -618,6 +618,43 @@ const Order = () => {
     }
   }, []);
 
+  // URL params flow: geocode address to get coords for weekend PIT resolution (Risk Area 2)
+  const weekendResolvedRef = useRef(false);
+  useEffect(() => {
+    if (weekendResolvedRef.current) return;
+    if (allPits.length === 0 || !address || !result || !matchedPit) return;
+    if (customerCoords) {
+      // Coords already available (manual entry flow), resolve weekends if not done
+      if (Object.keys(weekendPitMap).length === 0 && !weekdayPit) {
+        weekendResolvedRef.current = true;
+        setWeekdayPit(matchedPit);
+        setWeekdayResult(result);
+        setWeekdayPitSchedule(matchedPitSchedule);
+        resolveWeekendPits(allPits, customerCoords.lat, customerCoords.lng, globalPricing)
+          .then(wMap => setWeekendPitMap(wMap))
+          .catch(() => setWeekendPitMap({}));
+      }
+      return;
+    }
+    // URL params flow — no coords, need to geocode
+    if (!window.google?.maps?.Geocoder) return;
+    weekendResolvedRef.current = true;
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address }, (results: any, status: any) => {
+      if (status === "OK" && results?.[0]?.geometry?.location) {
+        const lat = results[0].geometry.location.lat();
+        const lng = results[0].geometry.location.lng();
+        setCustomerCoords({ lat, lng });
+        setWeekdayPit(matchedPit);
+        setWeekdayResult(result);
+        setWeekdayPitSchedule(matchedPitSchedule);
+        resolveWeekendPits(allPits, lat, lng, globalPricing)
+          .then(wMap => setWeekendPitMap(wMap))
+          .catch(() => setWeekendPitMap({}));
+      }
+    });
+  }, [allPits, address, result, matchedPit, customerCoords, apiLoaded]);
+
   const calculateDistance = useCallback(async () => {
     console.log("[calculateDistance] starting, address:", address);
     console.log("[calculateDistance] customerCoords:", customerCoords);
