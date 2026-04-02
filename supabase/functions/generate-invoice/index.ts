@@ -418,7 +418,7 @@ serve(async (req) => {
       doc.setTextColor(...GRAY);
       doc.text("Exact amount required — driver carries no change", pw - mx, y + 9, { align: "right" });
 
-      y += 16;
+      y += 14;
     }
 
     // Delivery terms
