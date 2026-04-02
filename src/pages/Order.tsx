@@ -674,13 +674,32 @@ const Order = () => {
       }
 
       // Store matched PIT for pricing and schedule
-      setMatchedPit(bestResult.pit);
-      setMatchedPitSchedule({
+      const weekdaySchedule: PitSchedule = {
         operating_days: bestResult.pit.operating_days,
         saturday_surcharge_override: bestResult.pit.saturday_surcharge_override != null ? Number(bestResult.pit.saturday_surcharge_override) : null,
-        sunday_surcharge: (bestResult.pit as any).sunday_surcharge != null ? Number((bestResult.pit as any).sunday_surcharge) : null,
+        sunday_surcharge: bestResult.pit.sunday_surcharge != null ? Number(bestResult.pit.sunday_surcharge) : null,
         same_day_cutoff: bestResult.pit.same_day_cutoff,
-      });
+      };
+      setMatchedPit(bestResult.pit);
+      setMatchedPitSchedule(weekdaySchedule);
+
+      // Stash weekday values for restore when switching back from weekend
+      const weekdayResultObj: EstimateResult = {
+        distance: parseFloat(bestResult.distance.toFixed(1)),
+        price: bestResult.price,
+        address: `${bestResult.distance.toFixed(1)} mi away`,
+        duration: "~30 min",
+      };
+      setWeekdayPit(bestResult.pit);
+      setWeekdayResult(weekdayResultObj);
+      setWeekdayPitSchedule(weekdaySchedule);
+
+      // Resolve weekend PITs independently
+      if (custLat != null && custLng != null) {
+        resolveWeekendPits(allPits, custLat, custLng, globalPricing)
+          .then(wMap => setWeekendPitMap(wMap))
+          .catch(() => setWeekendPitMap({}));
+      }
 
       setResult({
         distance: parseFloat(bestResult.distance.toFixed(1)),
