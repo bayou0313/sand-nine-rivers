@@ -21,7 +21,7 @@ import Navbar from "@/components/Navbar";
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge, getEffectiveSundaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
-import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
+import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -42,6 +42,16 @@ type EstimateResult = {
 };
 
 type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
+
+export type WeekendPitEntry = {
+  pit: PitData;
+  distance: number;
+  price: number;
+  schedule: PitSchedule;
+  satSurcharge: number;
+  sunSurcharge: number;
+};
+export type WeekendPitMap = Partial<Record<0 | 6, WeekendPitEntry>>;
 
 const CountdownBar = () => {
   const { timeLeft, label } = useCountdown();
@@ -73,6 +83,12 @@ const Order = () => {
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+
+  // Weekend PIT resolution state
+  const [weekendPitMap, setWeekendPitMap] = useState<WeekendPitMap>({});
+  const [weekdayPit, setWeekdayPit] = useState<PitData | null>(null);
+  const [weekdayResult, setWeekdayResult] = useState<EstimateResult | null>(null);
+  const [weekdayPitSchedule, setWeekdayPitSchedule] = useState<PitSchedule | null>(null);
 
   // Derived pricing from matched PIT (or global fallback)
   const effectivePricing = useMemo(() => {
@@ -562,6 +578,36 @@ const Order = () => {
     }
   }, [searchParams]);
 
+  // --- Weekend PIT resolution helper ---
+  const resolveWeekendPits = useCallback(async (
+    pits: PitData[], lat: number, lng: number, gp: GlobalPricing
+  ): Promise<WeekendPitMap> => {
+    const buildEntry = async (dayOfWeek: 0 | 6): Promise<WeekendPitEntry | null> => {
+      const res = await findBestPitDriving(pits, lat, lng, gp, supabase, dayOfWeek);
+      if (!res || !res.serviceable) return null;
+      const effective = getEffectivePrice(res.pit, gp);
+      const satSurcharge = res.pit.saturday_surcharge_override ?? gp.saturday_surcharge;
+      const sunSurcharge = res.pit.sunday_surcharge ?? 0;
+      return {
+        pit: res.pit,
+        distance: parseFloat(res.distance.toFixed(1)),
+        price: calcPitPrice(effective, res.distance, 1),
+        schedule: {
+          operating_days: res.pit.operating_days,
+          saturday_surcharge_override: res.pit.saturday_surcharge_override != null ? Number(res.pit.saturday_surcharge_override) : null,
+          sunday_surcharge: res.pit.sunday_surcharge != null ? Number(res.pit.sunday_surcharge) : null,
+          same_day_cutoff: res.pit.same_day_cutoff,
+        },
+        satSurcharge,
+        sunSurcharge,
+      };
+    };
+    const [sat, sun] = await Promise.all([buildEntry(6), buildEntry(0)]);
+    const map: WeekendPitMap = {};
+    if (sat) map[6] = sat;
+    if (sun) map[0] = sun;
+    return map;
+  }, []);
 
   const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
     setAddress(result.formattedAddress);
@@ -571,6 +617,43 @@ const Order = () => {
       setDetectedParish(parish);
     }
   }, []);
+
+  // URL params flow: geocode address to get coords for weekend PIT resolution (Risk Area 2)
+  const weekendResolvedRef = useRef(false);
+  useEffect(() => {
+    if (weekendResolvedRef.current) return;
+    if (allPits.length === 0 || !address || !result || !matchedPit) return;
+    if (customerCoords) {
+      // Coords already available (manual entry flow), resolve weekends if not done
+      if (Object.keys(weekendPitMap).length === 0 && !weekdayPit) {
+        weekendResolvedRef.current = true;
+        setWeekdayPit(matchedPit);
+        setWeekdayResult(result);
+        setWeekdayPitSchedule(matchedPitSchedule);
+        resolveWeekendPits(allPits, customerCoords.lat, customerCoords.lng, globalPricing)
+          .then(wMap => setWeekendPitMap(wMap))
+          .catch(() => setWeekendPitMap({}));
+      }
+      return;
+    }
+    // URL params flow — no coords, need to geocode
+    if (!window.google?.maps?.Geocoder) return;
+    weekendResolvedRef.current = true;
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address }, (results: any, status: any) => {
+      if (status === "OK" && results?.[0]?.geometry?.location) {
+        const lat = results[0].geometry.location.lat();
+        const lng = results[0].geometry.location.lng();
+        setCustomerCoords({ lat, lng });
+        setWeekdayPit(matchedPit);
+        setWeekdayResult(result);
+        setWeekdayPitSchedule(matchedPitSchedule);
+        resolveWeekendPits(allPits, lat, lng, globalPricing)
+          .then(wMap => setWeekendPitMap(wMap))
+          .catch(() => setWeekendPitMap({}));
+      }
+    });
+  }, [allPits, address, result, matchedPit, customerCoords, apiLoaded]);
 
   const calculateDistance = useCallback(async () => {
     console.log("[calculateDistance] starting, address:", address);
@@ -628,13 +711,32 @@ const Order = () => {
       }
 
       // Store matched PIT for pricing and schedule
-      setMatchedPit(bestResult.pit);
-      setMatchedPitSchedule({
+      const weekdaySchedule: PitSchedule = {
         operating_days: bestResult.pit.operating_days,
         saturday_surcharge_override: bestResult.pit.saturday_surcharge_override != null ? Number(bestResult.pit.saturday_surcharge_override) : null,
-        sunday_surcharge: (bestResult.pit as any).sunday_surcharge != null ? Number((bestResult.pit as any).sunday_surcharge) : null,
+        sunday_surcharge: bestResult.pit.sunday_surcharge != null ? Number(bestResult.pit.sunday_surcharge) : null,
         same_day_cutoff: bestResult.pit.same_day_cutoff,
-      });
+      };
+      setMatchedPit(bestResult.pit);
+      setMatchedPitSchedule(weekdaySchedule);
+
+      // Stash weekday values for restore when switching back from weekend
+      const weekdayResultObj: EstimateResult = {
+        distance: parseFloat(bestResult.distance.toFixed(1)),
+        price: bestResult.price,
+        address: `${bestResult.distance.toFixed(1)} mi away`,
+        duration: "~30 min",
+      };
+      setWeekdayPit(bestResult.pit);
+      setWeekdayResult(weekdayResultObj);
+      setWeekdayPitSchedule(weekdaySchedule);
+
+      // Resolve weekend PITs independently
+      if (custLat != null && custLng != null) {
+        resolveWeekendPits(allPits, custLat, custLng, globalPricing)
+          .then(wMap => setWeekendPitMap(wMap))
+          .catch(() => setWeekendPitMap({}));
+      }
 
       setResult({
         distance: parseFloat(bestResult.distance.toFixed(1)),
@@ -1146,35 +1248,41 @@ const Order = () => {
                     <SectionHeading icon={CalendarDays} title="DELIVERY DATE" />
                     <DeliveryDatePicker
                       selectedDate={selectedDeliveryDate}
-                      onSelect={async (d) => {
+                      onSelect={(d) => {
                         setSelectedDeliveryDate(d);
                         setDateError("");
 
-                        // Check if current pit is open on the selected day
-                        if (matchedPit && d && customerCoords && allPits.length > 1) {
-                          const dayOfWeek = d.date.getDay();
-                          const currentPitOpen = !matchedPit.operating_days || matchedPit.operating_days.length === 0 || matchedPit.operating_days.includes(dayOfWeek);
-                          if (!currentPitOpen) {
-                            setRecalculating(true);
-                            try {
-                              const newResult = await findBestPitDriving(allPits, customerCoords.lat, customerCoords.lng, globalPricing, supabase, dayOfWeek);
-                              if (newResult && newResult.serviceable) {
-                                setMatchedPit(newResult.pit);
-                                setMatchedPitSchedule({ operating_days: newResult.pit.operating_days, saturday_surcharge_override: newResult.pit.saturday_surcharge_override != null ? Number(newResult.pit.saturday_surcharge_override) : null, sunday_surcharge: (newResult.pit as any).sunday_surcharge != null ? Number((newResult.pit as any).sunday_surcharge) : null, same_day_cutoff: newResult.pit.same_day_cutoff });
-                                setResult(prev => prev ? { ...prev, distance: parseFloat(newResult.distance.toFixed(1)), price: newResult.price, address: `${newResult.distance.toFixed(1)} miles away` } : prev);
-                                toast({ title: "Price updated", description: `Delivery on ${d.fullLabel} will be from a different location. Price updated to ${formatCurrency(newResult.price)}.` });
-                              } else {
-                                toast({ title: "No delivery available", description: `We don't have delivery available on ${d.fullLabel}. Please select another date.`, variant: "destructive" });
-                                setSelectedDeliveryDate(null);
-                              }
-                            } catch { /* keep current selection */ }
-                            finally { setRecalculating(false); }
+                        const dayOfWeek = d.date.getDay();
+                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+                        if (isWeekend) {
+                          const dayKey = dayOfWeek as 0 | 6;
+                          const weekendEntry = weekendPitMap[dayKey];
+                          if (weekendEntry) {
+                            setMatchedPit(weekendEntry.pit);
+                            setMatchedPitSchedule(weekendEntry.schedule);
+                            setResult(prev => prev ? {
+                              ...prev,
+                              distance: weekendEntry.distance,
+                              price: weekendEntry.price,
+                              address: `${weekendEntry.distance.toFixed(1)} mi away`,
+                            } : prev);
+                            if (weekdayPit && weekendEntry.pit.id !== weekdayPit.id) {
+                              toast({ title: "Price updated", description: `${d.fullLabel} delivery from ${weekendEntry.pit.name}. Price: ${formatCurrency(weekendEntry.price)}/load.` });
+                            }
                           }
+                        } else {
+                          // Restore weekday PIT
+                          if (weekdayPit) setMatchedPit(weekdayPit);
+                          if (weekdayPitSchedule) setMatchedPitSchedule(weekdayPitSchedule);
+                          if (weekdayResult) setResult(weekdayResult);
                         }
                       }}
                       pitSchedule={matchedPitSchedule}
                       globalSaturdaySurcharge={globalSaturdaySurcharge}
                       pitId={matchedPit?.id}
+                      weekendPitMap={weekendPitMap}
+                      weekdayPitName={weekdayPit?.name || matchedPit?.name}
                     />
                     {recalculating && (
                       <div className="mt-3 flex items-center gap-2 text-muted-foreground">

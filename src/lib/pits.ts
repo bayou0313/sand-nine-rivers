@@ -24,6 +24,7 @@ export interface PitData {
   operating_days: number[] | null;
   saturday_surcharge_override: number | null;
   same_day_cutoff: string | null;
+  sunday_surcharge: number | null;
 }
 
 export interface GlobalPricing {
