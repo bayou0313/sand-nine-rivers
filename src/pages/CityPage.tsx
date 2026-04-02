@@ -191,6 +191,7 @@ const CityPage = () => {
         return;
       }
 
+      data.city_name = cleanCityName(data.city_name);
       setCityPage(data);
       setIsWaitlist(data.status === "waitlist");
 
