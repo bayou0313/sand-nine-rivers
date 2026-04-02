@@ -1708,6 +1708,7 @@ serve(async (req) => {
           city_name: city.name,
           city_slug: slug,
           state: city.state || "US",
+          region: city.region || "",
           lat: city.lat,
           lng: city.lng,
           distance: Math.round(closestDistance * 10) / 10,
