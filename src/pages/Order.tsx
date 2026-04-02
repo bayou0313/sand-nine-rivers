@@ -1837,7 +1837,7 @@ const Order = () => {
                     <p className="font-body text-xs text-muted-foreground">• Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
                     <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
                     <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
-                    <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled more than 2 hours before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
+                    <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
                   </div>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
