@@ -91,6 +91,7 @@ CITY DATA:
 - City: ${city_name}
 - State: ${state} (Louisiana = uses "Parish" not "County")
 - Parish/County: ${effectiveRegion}
+Reference ${effectiveRegion} by name naturally in the content — Louisiana locals identify strongly with their parish and it builds trust and local relevance.
 - Distance from pit: ${distance} miles
 - Delivery price: $${price}
 - PIT name: ${pit_name}

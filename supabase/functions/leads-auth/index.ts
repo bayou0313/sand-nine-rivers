@@ -1592,7 +1592,7 @@ serve(async (req) => {
       }
       console.log(`Sampling ${samplePoints.length} points for reverse geocoding`);
 
-      const cityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
+      const cityMap = new Map<string, { name: string; state: string; lat: number; lng: number; region: string }>();
 
       const BATCH_SIZE = 10;
       for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
@@ -1625,6 +1625,8 @@ serve(async (req) => {
             }
             const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
             if (stateComp) stateCode = stateComp.short_name;
+            const regionComp = components.find((c: any) => c.types?.includes("administrative_area_level_2"));
+            const regionName = regionComp ? regionComp.long_name : "";
 
             if (!cityName) continue;
             cityName = cleanCityName(cityName);
@@ -1634,7 +1636,7 @@ serve(async (req) => {
             if (!cityMap.has(key)) {
               const loc = result.geometry?.location;
               if (loc) {
-                cityMap.set(key, { name: cityName, state: stateCode, lat: loc.lat, lng: loc.lng });
+                cityMap.set(key, { name: cityName, state: stateCode, lat: loc.lat, lng: loc.lng, region: regionName });
               }
             }
           }
@@ -1706,6 +1708,7 @@ serve(async (req) => {
           city_name: city.name,
           city_slug: slug,
           state: city.state || "US",
+          region: city.region || "",
           lat: city.lat,
           lng: city.lng,
           distance: Math.round(closestDistance * 10) / 10,
@@ -1850,6 +1853,7 @@ serve(async (req) => {
             city_name: city.city_name,
             city_slug: normalizedSlug,
             state: city.state || "LA",
+            region: city.region || null,
             lat: city.lat, lng: city.lng,
             distance_from_pit: Math.round(closestDistance * 10) / 10,
             base_price: price,
@@ -2462,6 +2466,63 @@ serve(async (req) => {
     }
 
     // ── PROCESS REGEN QUEUE ──
+    // ── BACKFILL REGIONS (geocode city pages with null region) ──
+    if (action === "backfill_regions") {
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "GOOGLE_MAPS_SERVER_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { data: pages } = await supabase
+        .from("city_pages")
+        .select("id, city_name, lat, lng, region")
+        .not("lat", "is", null)
+        .not("lng", "is", null)
+        .or("region.is.null,region.eq.");
+
+      if (!pages?.length) {
+        return new Response(JSON.stringify({ success: true, updated: 0, message: "All city pages already have regions" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      console.log(`[backfill_regions] Found ${pages.length} pages without region`);
+      let updated = 0;
+
+      for (const page of pages) {
+        try {
+          const resp = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${page.lat},${page.lng}&result_type=administrative_area_level_2&key=${apiKey}`
+          );
+          const data = await resp.json();
+          const result = data.results?.[0];
+          if (result) {
+            const comp = (result.address_components || []).find(
+              (c: any) => c.types?.includes("administrative_area_level_2")
+            );
+            if (comp) {
+              await supabase.from("city_pages").update({
+                region: comp.long_name,
+                updated_at: new Date().toISOString(),
+              }).eq("id", page.id);
+              console.log(`[backfill_regions] ${page.city_name} → ${comp.long_name}`);
+              updated++;
+            } else {
+              console.warn(`[backfill_regions] No admin_area_level_2 for ${page.city_name}`);
+            }
+          }
+          // 100ms delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err: any) {
+          console.error(`[backfill_regions] Error for ${page.city_name}:`, err.message);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, updated, total: pages.length, message: `Updated ${updated} of ${pages.length} city pages with region data` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     if (action === "process_regen_queue") {
       const { data: pendingPages } = await supabase
         .from("city_pages")

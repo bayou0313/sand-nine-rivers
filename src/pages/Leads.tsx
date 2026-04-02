@@ -2257,8 +2257,29 @@ const Leads = () => {
                 className="text-xs"
                 style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
               >
-                <RefreshCw className="w-3 h-3 mr-1" />
+               <RefreshCw className="w-3 h-3 mr-1" />
                 Regen All to v3.1
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                      body: { password: storedPassword(), action: "backfill_regions" },
+                    });
+                    if (fnError) throw fnError;
+                    if (data?.error) throw new Error(data.error);
+                    toast({ title: "Regions Backfilled", description: data.message });
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Backfill Regions
               </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
