@@ -4654,7 +4654,35 @@ const Leads = () => {
                 )}
                 <div>
                   <label className="text-xs mb-1 block" style={{ color: "#666" }}>Same-day order cutoff</label>
-                  <Input placeholder="e.g. 10:00" value={newPit.same_day_cutoff} onChange={e => setNewPit({ ...newPit, same_day_cutoff: e.target.value })} className="h-9 text-sm w-40" />
+                  {(() => {
+                    const val = newPit.same_day_cutoff || "";
+                    const match = val.match(/^(\d{1,2}):(\d{2})$/);
+                    let h24 = match ? parseInt(match[1]) : 10;
+                    let m = match ? parseInt(match[2]) : 0;
+                    const isPM = h24 >= 12;
+                    const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+                    const updateCutoff = (hour12: number, minute: number, pm: boolean) => {
+                      let h = hour12 === 12 ? 0 : hour12;
+                      if (pm) h += 12;
+                      const v = `${String(h).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+                      setNewPit({ ...newPit, same_day_cutoff: v });
+                    };
+                    return (
+                      <div className="flex gap-1.5 items-center">
+                        <select value={h12} onChange={e => updateCutoff(parseInt(e.target.value), m, isPM)} className="h-9 px-2 rounded-md border text-sm w-16">
+                          {[1,2,3,4,5,6,7,8,9,10,11,12].map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                        <span className="text-sm">:</span>
+                        <select value={m} onChange={e => updateCutoff(h12, parseInt(e.target.value), isPM)} className="h-9 px-2 rounded-md border text-sm w-16">
+                          {[0,15,30,45].map(mi => <option key={mi} value={mi}>{String(mi).padStart(2, "0")}</option>)}
+                        </select>
+                        <select value={isPM ? "PM" : "AM"} onChange={e => updateCutoff(h12, m, e.target.value === "PM")} className="h-9 px-2 rounded-md border text-sm w-16">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                      </div>
+                    );
+                  })()}
                   <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
                 </div>
               </div>
