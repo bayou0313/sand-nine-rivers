@@ -196,7 +196,7 @@ export default function OrderConfirmation({
   });
 
   return (
-    <div className="print-confirmation">
+    <div className="print-confirmation max-w-[720px] mx-auto my-6 rounded-2xl shadow-lg border border-border/40 overflow-hidden" style={{ backgroundColor: "#FFFFFF" }}>
       {/* ── HEADER ── */}
       <FadeIn delay={0}>
         <Link
@@ -440,7 +440,7 @@ export default function OrderConfirmation({
       {!isStripePaid && (
         <FadeIn delay={0.45}>
           <div className="px-6 pb-6 max-w-[680px] mx-auto">
-            <div style={{ background: "#FEF9C3", border: "1px solid #FDE68A", borderRadius: "8px", padding: "16px" }}>
+            <div style={{ background: "#FEF9C3", border: "1px solid #FDE68A", borderRadius: "8px", padding: "20px 24px", marginTop: "8px", marginBottom: "8px" }}>
               <p style={{ fontSize: "11px", fontWeight: "bold", color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
                 Payment Due at Delivery
               </p>
