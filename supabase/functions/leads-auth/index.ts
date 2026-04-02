@@ -312,6 +312,55 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: "Added to waitlist" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    // ── GET DATE LOAD COUNTS (no password required — called from frontend) ──
+    if (action === "get_date_load_counts") {
+      const { pit_id: loadPitId, dates: loadDates } = body;
+      if (!loadPitId || !loadDates?.length) {
+        return new Response(JSON.stringify({ error: "Missing pit_id or dates" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+
+      // Count confirmed paid orders per date for this PIT
+      const { data: orderRows, error: orderErr } = await sb
+        .from("orders")
+        .select("delivery_date")
+        .eq("pit_id", loadPitId)
+        .in("delivery_date", loadDates)
+        .eq("payment_status", "paid")
+        .eq("status", "confirmed");
+      if (orderErr) throw orderErr;
+
+      const counts: Record<string, number> = {};
+      for (const row of orderRows || []) {
+        const d = row.delivery_date;
+        if (d) counts[d] = (counts[d] || 0) + 1;
+      }
+
+      // Get PIT limits
+      const { data: pitRow } = await sb
+        .from("pits")
+        .select("saturday_load_limit, sunday_load_limit")
+        .eq("id", loadPitId)
+        .single();
+
+      // Get global max daily limit
+      const { data: globalRow } = await sb
+        .from("global_settings")
+        .select("value")
+        .eq("key", "max_daily_limit")
+        .single();
+
+      return new Response(JSON.stringify({
+        counts,
+        saturday_load_limit: pitRow?.saturday_load_limit ?? null,
+        sunday_load_limit: pitRow?.sunday_load_limit ?? null,
+        max_daily_limit: globalRow?.value ? parseInt(globalRow.value) : null,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
       return new Response(
