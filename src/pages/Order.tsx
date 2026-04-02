@@ -620,6 +620,7 @@ const Order = () => {
       setMatchedPitSchedule({
         operating_days: bestResult.pit.operating_days,
         saturday_surcharge_override: bestResult.pit.saturday_surcharge_override != null ? Number(bestResult.pit.saturday_surcharge_override) : null,
+        sunday_surcharge: (bestResult.pit as any).sunday_surcharge != null ? Number((bestResult.pit as any).sunday_surcharge) : null,
         same_day_cutoff: bestResult.pit.same_day_cutoff,
       });
 
