@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { Phone, Mail, MapPin, Send, CheckCircle2 } from "lucide-react";
+import { Phone, Mail, MapPin, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPhone } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
+import BrandedConfirmation from "@/components/BrandedConfirmation";
 
 const ContactForm = () => {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
-
   const [sending, setSending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,12 +18,21 @@ const ContactForm = () => {
     setSending(true);
     setSubmitted(true);
 
-    // Send contact form emails (fire-and-forget, don't block success UI)
     supabase.functions.invoke("send-email", {
       body: { type: "contact", data: form },
     }).catch((err) => console.error("Contact email failed:", err))
       .finally(() => setSending(false));
   };
+
+  if (submitted) {
+    return (
+      <BrandedConfirmation
+        title="Message Sent!"
+        subtitle="Thank you for reaching out. We'll get back to you as soon as possible."
+        detail="Typical response time: within 2 hours during business hours"
+      />
+    );
+  }
 
   return (
     <section id="contact" className="py-24 bg-muted/50">
@@ -70,37 +79,29 @@ const ContactForm = () => {
           </div>
 
           <div className="bg-background rounded-2xl p-8 border border-border shadow-2xl">
-            {submitted ? (
-              <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-12">
-                <CheckCircle2 className="w-16 h-16 text-primary" />
-                <h3 className="font-display text-3xl text-foreground">MESSAGE SENT!</h3>
-                <p className="font-body text-muted-foreground">We'll get back to you shortly.</p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <h3 className="font-display text-2xl text-foreground tracking-wider mb-4">SEND US A MESSAGE</h3>
+              <div>
+                <label htmlFor="contact-name" className="sr-only">Your Name</label>
+                <Input id="contact-name" name="name" autoComplete="name" placeholder="Your Name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <h3 className="font-display text-2xl text-foreground tracking-wider mb-4">SEND US A MESSAGE</h3>
-                <div>
-                  <label htmlFor="contact-name" className="sr-only">Your Name</label>
-                  <Input id="contact-name" name="name" autoComplete="name" placeholder="Your Name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" />
-                </div>
-                <div>
-                  <label htmlFor="contact-email" className="sr-only">Email</label>
-                  <EmailInput id="contact-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-12 rounded-xl" />
-                </div>
-                <div>
-                  <label htmlFor="contact-phone" className="sr-only">Phone Number</label>
-                  <Input id="contact-phone" name="phone" type="tel" autoComplete="tel" placeholder="Phone Number" maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
-                </div>
-                <div>
-                  <label htmlFor="contact-message" className="sr-only">Message</label>
-                  <Textarea id="contact-message" name="message" placeholder="How can we help?" required maxLength={1000} rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="rounded-xl" />
-                </div>
-                <Button type="submit" className="w-full h-12 font-display tracking-wider text-lg rounded-xl shadow-md shadow-primary/20">
-                  <Send className="w-5 h-5 mr-2" />
-                  SEND MESSAGE
-                </Button>
-              </form>
-            )}
+              <div>
+                <label htmlFor="contact-email" className="sr-only">Email</label>
+                <EmailInput id="contact-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-12 rounded-xl" />
+              </div>
+              <div>
+                <label htmlFor="contact-phone" className="sr-only">Phone Number</label>
+                <Input id="contact-phone" name="phone" type="tel" autoComplete="tel" placeholder="Phone Number" maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
+              </div>
+              <div>
+                <label htmlFor="contact-message" className="sr-only">Message</label>
+                <Textarea id="contact-message" name="message" placeholder="How can we help?" required maxLength={1000} rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="rounded-xl" />
+              </div>
+              <Button type="submit" disabled={sending} className="w-full h-12 font-display tracking-wider text-lg rounded-xl shadow-md shadow-primary/20">
+                <Send className="w-5 h-5 mr-2" />
+                SEND MESSAGE
+              </Button>
+            </form>
           </div>
         </div>
       </div>
