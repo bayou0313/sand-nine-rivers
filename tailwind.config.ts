@@ -63,8 +63,8 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Bebas Neue"', 'sans-serif'],
-        body: ['"Inter"', 'sans-serif'],
+        display: ['"DM Sans"', 'sans-serif'],
+        body: ['"DM Sans"', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
