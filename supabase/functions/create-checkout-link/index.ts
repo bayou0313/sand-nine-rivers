@@ -50,6 +50,26 @@ serve(async (req) => {
     const encodedOrderId = encodeURIComponent(order_id || "");
     const encodedOrderNumber = encodeURIComponent(order_number || "");
 
+    // Payment attempt tracking
+    if (order_id) {
+      const { data: orderRow } = await supabase
+        .from("orders")
+        .select("payment_attempts")
+        .eq("id", order_id)
+        .maybeSingle();
+      const currentAttempts = orderRow?.payment_attempts || 0;
+      if (currentAttempts >= 3) {
+        return new Response(
+          JSON.stringify({ error: "Maximum payment attempts reached. Please contact support." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      await supabase
+        .from("orders")
+        .update({ payment_attempts: currentAttempts + 1 })
+        .eq("id", order_id);
+    }
+
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -67,6 +87,12 @@ serve(async (req) => {
       customer_email: customer_email || undefined,
       customer_creation: "always",
       client_reference_id: order_id || undefined,
+      billing_address_collection: "required",
+      payment_method_options: {
+        card: {
+          request_three_d_secure: "automatic",
+        },
+      },
       payment_intent_data: {
         setup_future_usage: "off_session",
         metadata: {
