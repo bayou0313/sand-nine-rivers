@@ -582,7 +582,7 @@ export default function OrderConfirmation({
               onClick={() => {
                 const subject = `River Sand Order ${orderNumber || ""}`;
                 const body = `Order: ${orderNumber || "N/A"}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\n\nQuestions? Call 1-855-GOT-WAYS`;
-                window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
               }}
             >
               <Mail className="w-4 h-4 mr-1" /> Email
@@ -592,7 +592,14 @@ export default function OrderConfirmation({
               className="h-11 rounded-xl font-display tracking-wider text-xs"
               onClick={() => {
                 const text = `River Sand Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
-                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+                const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                // Try opening WhatsApp; provide copy fallback for desktop
+                const win = window.open(waUrl, "_blank");
+                if (!win) {
+                  navigator.clipboard.writeText(text).then(() => {
+                    alert("Order details copied to clipboard!");
+                  }).catch(() => {});
+                }
               }}
             >
               <Share2 className="w-4 h-4 mr-1" /> WhatsApp
