@@ -321,6 +321,7 @@ export type Database = {
           cash_collected: boolean | null
           cash_collected_at: string | null
           cash_collected_by: string | null
+          company_name: string | null
           confirmation_token: string
           created_at: string
           customer_email: string | null
@@ -374,6 +375,7 @@ export type Database = {
           cash_collected?: boolean | null
           cash_collected_at?: string | null
           cash_collected_by?: string | null
+          company_name?: string | null
           confirmation_token?: string
           created_at?: string
           customer_email?: string | null
@@ -427,6 +429,7 @@ export type Database = {
           cash_collected?: boolean | null
           cash_collected_at?: string | null
           cash_collected_by?: string | null
+          company_name?: string | null
           confirmation_token?: string
           created_at?: string
           customer_email?: string | null
