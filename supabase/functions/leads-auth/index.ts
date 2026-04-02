@@ -300,6 +300,17 @@ serve(async (req) => {
 
       await sb.from("waitlist_leads").insert({ city_slug, city_name: city_name || city_slug, customer_name, customer_email, customer_phone });
 
+      // Insert waitlist notification
+      try {
+        await sb.from("notifications").insert({
+          type: "waitlist_signup",
+          title: "Waitlist Signup",
+          message: `${customer_email} joined waitlist for ${city_name || city_slug}`,
+          entity_type: "waitlist",
+          entity_id: null,
+        });
+      } catch (notifErr) { console.error("[join_waitlist] Notification insert error:", notifErr); }
+
       // Send waitlist confirmation email
       try {
         await fetch(`${supabaseUrl}/functions/v1/send-email`, {
