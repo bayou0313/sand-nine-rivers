@@ -1885,7 +1885,7 @@ const Order = () => {
                     <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
                     <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
                     <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
-                    <p className="font-body text-xs text-muted-foreground">• Ways Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
+                    <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
                     <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
                     <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
                     <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
