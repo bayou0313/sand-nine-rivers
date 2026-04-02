@@ -652,6 +652,9 @@ serve(async (req) => {
         operating_days: pit.operating_days ?? null,
         saturday_surcharge_override: pit.saturday_surcharge_override ?? null,
         same_day_cutoff: pit.same_day_cutoff ?? null,
+        sunday_surcharge: pit.sunday_surcharge ?? null,
+        saturday_load_limit: pit.saturday_load_limit ?? null,
+        sunday_load_limit: pit.sunday_load_limit ?? null,
       };
 
       let savedPit: any;
