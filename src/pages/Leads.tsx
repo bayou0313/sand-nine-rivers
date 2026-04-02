@@ -4609,7 +4609,7 @@ const Leads = () => {
                     <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery radius (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles)</label>
                     <Input placeholder="e.g. 15" value={newPit.free_miles ?? ""} onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
