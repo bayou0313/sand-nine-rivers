@@ -94,11 +94,11 @@ function orderCustomerEmail(order: any): string {
                       </td>
                     </tr>` : "";
 
-  // Processing fee row (stripe only)
+  // Processing fee row (stripe only) — uses dynamic fee settings
   const feeRow = isStripePaid && processingFeeAmt > 0.01 ? `
                     <tr>
                       <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
-                        Processing Fee (3.5%)
+                        Processing Fee
                       </td>
                       <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
                         $${processingFee}
