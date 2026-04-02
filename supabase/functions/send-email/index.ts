@@ -384,7 +384,7 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                   <tr>
                     <td style="text-align:center;">
-                      <a href="https://riversand.net" style="display:inline-block;background-color:${BRAND_GOLD};color:#FFFFFF;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">
+                      <a href="https://${WEBSITE}" style="display:inline-block;background-color:${BRAND_GOLD};color:#FFFFFF;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">
                         VIEW ORDER DETAILS
                       </a>
                     </td>
