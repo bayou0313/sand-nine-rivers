@@ -1038,7 +1038,7 @@ Phone: ${data.customer_phone || "Not provided"}
 
 Submitted: ${data.created_at ? new Date(data.created_at).toLocaleString("en-US") : "N/A"}
 ─────────────────────────────
-riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
+${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
 
       await sendMail(
         resend,
