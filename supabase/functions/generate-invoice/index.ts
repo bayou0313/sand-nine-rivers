@@ -249,9 +249,18 @@ serve(async (req) => {
     doc.text("CUSTOMER", colRight, yR);
     yR += 5;
     doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...BLACK);
-    doc.text(order.customer_name, colRight, yR); yR += 5;
+    if (order.company_name) {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...BLACK);
+      doc.text(order.company_name, colRight, yR); yR += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...DARK);
+      doc.text(order.customer_name, colRight, yR); yR += 5;
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...BLACK);
+      doc.text(order.customer_name, colRight, yR); yR += 5;
+    }
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...DARK);
     if (order.customer_phone) { doc.text(order.customer_phone, colRight, yR); yR += 5; }
