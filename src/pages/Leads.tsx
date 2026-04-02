@@ -4913,6 +4913,13 @@ const Leads = () => {
                       <option value="inactive">Inactive</option>
                     </select>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-xs block" style={{ color: "#666" }}>Pickup Only</label>
+                      <p className="text-[10px]" style={{ color: "#999" }}>Excluded from delivery routing</p>
+                    </div>
+                    <Switch checked={editPitData.is_pickup_only || false} onCheckedChange={v => setEditPitData({ ...editPitData, is_pickup_only: v })} />
+                  </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Notes</label>
                     <Textarea rows={3} value={editPitData.notes || ""} onChange={e => setEditPitData({ ...editPitData, notes: e.target.value })} placeholder="Internal notes" />
