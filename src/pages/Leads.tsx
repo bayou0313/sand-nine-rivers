@@ -2615,6 +2615,7 @@ const Leads = () => {
                         { label: "Status", key: "status" },
                         { label: "Content", key: null },
                         { label: "Views", key: "page_views" },
+                        { label: "Ver", key: null },
                         { label: "Actions", key: null },
                       ].map(h => (
                         <th
