@@ -1814,8 +1814,8 @@ const Leads = () => {
         <div className="bg-white rounded-2xl p-8 shadow-2xl w-full max-w-sm">
           <div className="text-center mb-6">
             <Lock className="w-10 h-10 mx-auto mb-3" style={{ color: BRAND_GOLD }} />
-            <h1 className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>DELIVERY LEADS</h1>
-            <p className="text-sm text-gray-500 mt-1">Enter password to access</p>
+            <h1 className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>LANDER MARKETING TOOLS</h1>
+            <p className="text-sm text-gray-500 mt-1">Enter password to access LMT</p>
           </div>
           <Input
             type="password"
