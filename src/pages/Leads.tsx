@@ -2615,6 +2615,7 @@ const Leads = () => {
                         { label: "Status", key: "status" },
                         { label: "Content", key: null },
                         { label: "Views", key: "page_views" },
+                        { label: "Ver", key: null },
                         { label: "Actions", key: null },
                       ].map(h => (
                         <th
@@ -2699,6 +2700,7 @@ const Leads = () => {
                           })()}
                         </td>
                         <td className="px-3 py-2 text-xs">{cp.page_views || 0}</td>
+                        <td className="px-3 py-2 text-xs text-gray-400">{cp.prompt_version || "—"}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
                             <button onClick={() => window.open(`https://riversand.net/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}>View</button>
@@ -2714,7 +2716,7 @@ const Leads = () => {
                       </tr>
                     ))}
                     {filteredCityPages.length === 0 && (
-                      <tr><td colSpan={12} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
+                      <tr><td colSpan={13} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
                     )}
                   </tbody>
                 </table>
