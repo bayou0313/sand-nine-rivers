@@ -165,6 +165,14 @@ const Order = () => {
   const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE).toFixed(2));
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
 
+  // Auto-switch to card-only on weekend dates
+  const isWeekendDate = selectedDeliveryDate?.isSaturday || selectedDeliveryDate?.isSunday;
+  useEffect(() => {
+    if (isWeekendDate && paymentMethod !== "stripe-link") {
+      setPaymentMethod("stripe-link");
+    }
+  }, [isWeekendDate]);
+
   // Scroll to top on step change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
