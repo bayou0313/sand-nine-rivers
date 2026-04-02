@@ -836,7 +836,7 @@ serve(async (req) => {
     const { data: settingsData } = await sb
       .from("global_settings")
       .select("key, value")
-      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to"]);
+      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to", "card_processing_fee_percent", "card_processing_fee_fixed"]);
 
     const emailCfg: Record<string, string> = {};
     for (const row of settingsData || []) {
