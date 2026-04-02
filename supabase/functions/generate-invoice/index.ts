@@ -11,7 +11,6 @@ const corsHeaders = {
 const BLACK = [0, 0, 0] as const;
 const DARK = [51, 51, 51] as const;
 const GRAY = [120, 120, 120] as const;
-const LIGHT_GRAY = [200, 200, 200] as const;
 const GOLD = [200, 164, 74] as const;
 const GREEN = [22, 163, 74] as const;
 const AMBER = [217, 119, 6] as const;
@@ -47,6 +46,34 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
+function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, footerLogoB64: string | null) {
+  const footerY = ph - 24;
+
+  // Gold divider line above footer
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.5);
+  doc.line(mx, footerY, pw - mx, footerY);
+  doc.setLineWidth(0.2);
+
+  const textY = footerY + 10;
+
+  // WAYS logo on the left
+  if (footerLogoB64) {
+    try {
+      doc.addImage(`data:image/png;base64,${footerLogoB64}`, "PNG", mx, footerY + 3, 24, 0);
+    } catch { /* skip */ }
+  }
+
+  // Text right-aligned
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...GRAY);
+  doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw - mx, textY, { align: "right" });
+  doc.setFontSize(6);
+  doc.setTextColor(160, 160, 160);
+  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 4, { align: "right" });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -79,7 +106,6 @@ serve(async (req) => {
       });
     }
 
-    // Fetch logos in parallel — dark versions for white background
     const HEADER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png";
     const FOOTER_LOGO_URL = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
     const [headerLogoB64, footerLogoB64] = await Promise.all([
@@ -87,12 +113,13 @@ serve(async (req) => {
       fetchImageAsBase64(FOOTER_LOGO_URL),
     ]);
 
-    // Build clean single-page PDF (letter: 215.9 × 279.4 mm)
     const doc = new jsPDF({ unit: "mm", format: "letter" });
     const pw = 215.9;
     const ph = 279.4;
     const mx = 16;
     const cw = pw - 2 * mx;
+    // Reserve space for footer — content must not go below this
+    const maxContentY = ph - 32;
     let y = 0;
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
@@ -102,28 +129,27 @@ serve(async (req) => {
     const baseMiles = 15;
     const perMileExtra = 5.5;
 
-    // ─── HEADER (white background, logo left, order# right) ───
+    // ─── HEADER ───
     y = 18;
 
     if (headerLogoB64) {
-      try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 0, undefined, undefined, undefined); } catch {
+      try { doc.addImage(`data:image/png;base64,${headerLogoB64}`, "PNG", mx, 8, 55, 0); } catch {
         doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
       }
     } else {
       doc.setTextColor(...BLACK); doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text("RIVER SAND", mx, 18);
     }
 
-    // Order number right-aligned
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...GRAY);
-    doc.text("DELIVERY CONFIRMATION", pw - mx, 12, { align: "right" });
+    doc.text("ORDER CONFIRMATION", pw - mx, 12, { align: "right" });
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BLACK);
     doc.text(invoiceNum, pw - mx, 18, { align: "right" });
 
-    // Thin gold divider
+    // Gold divider under header
     y = 28;
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.5);
@@ -135,7 +161,6 @@ serve(async (req) => {
     const colLeft = mx;
     const colRight = pw / 2 + 8;
 
-    // Left: ORDER INFO
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
@@ -159,7 +184,6 @@ serve(async (req) => {
       y += 5;
     });
 
-    // Right: CUSTOMER
     let yR = yOrderStart - 5;
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
@@ -177,27 +201,22 @@ serve(async (req) => {
 
     y = Math.max(y, yR) + 4;
 
-    // Thin separator
-    doc.setDrawColor(...LIGHT_GRAY);
+    // ─── Single grey divider between order info and delivery address ───
+    doc.setDrawColor(200, 200, 200);
     doc.line(mx, y, pw - mx, y);
-    y += 6;
+    y += 8;
 
-    // ─── DELIVERY ADDRESS ───
+    // ─── DELIVERY ADDRESS (with spacious padding) ───
     doc.setFontSize(7);
     doc.setTextColor(...GOLD);
     doc.setFont("helvetica", "bold");
-    doc.text("DELIVERY ADDRESS", mx, y);
-    y += 5;
+    doc.text("DELIVERY ADDRESS", mx + 4, y);
+    y += 6;
     doc.setFontSize(10);
     doc.setTextColor(...BLACK);
     doc.setFont("helvetica", "normal");
-    const addrLines = doc.splitTextToSize(order.delivery_address, cw);
-    addrLines.forEach((line: string) => { doc.text(line, mx, y); y += 5; });
-    y += 3;
-
-    // Thin separator
-    doc.setDrawColor(...LIGHT_GRAY);
-    doc.line(mx, y, pw - mx, y);
+    const addrLines = doc.splitTextToSize(order.delivery_address, cw - 8);
+    addrLines.forEach((line: string) => { doc.text(line, mx + 4, y); y += 5; });
     y += 6;
 
     // ─── ORDER DETAILS ───
@@ -224,9 +243,11 @@ serve(async (req) => {
     const labelW = cw * 0.72;
     const rowH = 7;
 
-    // Header row
-    doc.setDrawColor(...LIGHT_GRAY);
+    // Header row with gold lines
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.3);
     doc.line(tableX, y, tableX + cw, y);
+    doc.setLineWidth(0.2);
     y += 0.5;
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
@@ -234,9 +255,12 @@ serve(async (req) => {
     doc.text("DESCRIPTION", tableX, y + 4);
     doc.text("AMOUNT", tableX + labelW, y + 4);
     y += rowH;
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.3);
     doc.line(tableX, y, tableX + cw, y);
+    doc.setLineWidth(0.2);
 
-    // Calculate pricing line items
+    // Calculate pricing
     const qty = order.quantity || 1;
     const baseLine = basePrice * qty;
     const dist = Number(order.distance_miles || 0);
@@ -252,21 +276,14 @@ serve(async (req) => {
     interface PriceLine { desc: string; amt: string }
     const priceLines: PriceLine[] = [];
     priceLines.push({ desc: `River Sand — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
-    if (distanceFee > 0) {
-      priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
-    }
-    if (satSurcharge > 0) {
-      priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
-    }
+    if (distanceFee > 0) priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
+    if (satSurcharge > 0) priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
     if (taxAmount > 0) {
       const taxLabel = parish ? `Tax — ${parish} Parish (${taxRate}%)` : `Tax (${taxRate}%)`;
       priceLines.push({ desc: taxLabel, amt: fmt(taxAmount) });
     }
-    if (isCard && processingFee > 0.01) {
-      priceLines.push({ desc: "Processing Fee", amt: fmt(processingFee) });
-    }
+    if (isCard && processingFee > 0.01) priceLines.push({ desc: "Processing Fee", amt: fmt(processingFee) });
 
-    // Rows
     doc.setFontSize(9);
     priceLines.forEach((line) => {
       y += 1;
@@ -276,8 +293,6 @@ serve(async (req) => {
       doc.setFont("helvetica", "bold");
       doc.text(line.amt, tableX + labelW, y + 4);
       y += rowH;
-      doc.setDrawColor(235, 235, 235);
-      doc.line(tableX, y, tableX + cw, y);
     });
 
     // Gold separator before total
@@ -333,7 +348,6 @@ serve(async (req) => {
       doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
       y += 18;
 
-      // COD payment policy — with proper spacing
       y += 6;
       doc.setFontSize(7);
       doc.setTextColor(146, 64, 14);
@@ -367,33 +381,19 @@ serve(async (req) => {
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...GRAY);
     bullets.forEach((b) => {
+      // Check if we need a new page before the bullet
+      if (y > maxContentY) {
+        doc.addPage();
+        y = 20;
+      }
       const bLines = doc.splitTextToSize(`• ${b}`, cw);
       bLines.forEach((line: string) => { doc.text(line, mx, y); y += 3.5; });
       y += 0.5;
     });
 
-    y += 4;
+    // ─── FOOTER on last page, pinned to bottom ───
+    drawFooter(doc, pw, ph, mx, cw, footerLogoB64);
 
-    // ─── FOOTER ───
-    doc.setDrawColor(...LIGHT_GRAY);
-    doc.line(mx, y, pw - mx, y);
-    y += 6;
-
-    // WAYS logo centered
-    if (footerLogoB64) {
-      try { doc.addImage(`data:image/png;base64,${footerLogoB64}`, "PNG", pw / 2 - 15, y, 30, 12); y += 16; } catch { y += 2; }
-    }
-
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...GRAY);
-    doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw / 2, y, { align: "center" });
-    y += 4;
-    doc.setFontSize(6);
-    doc.setTextColor(160, 160, 160);
-    doc.text("This document serves as your official delivery confirmation and receipt.", pw / 2, y, { align: "center" });
-
-    // Generate PDF buffer
     const pdfOutput = doc.output("arraybuffer");
 
     return new Response(pdfOutput, {
