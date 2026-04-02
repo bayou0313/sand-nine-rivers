@@ -578,8 +578,38 @@ const Order = () => {
     }
   }, [searchParams]);
 
+  // --- Weekend PIT resolution helper ---
+  const resolveWeekendPits = useCallback(async (
+    pits: PitData[], lat: number, lng: number, gp: GlobalPricing
+  ): Promise<WeekendPitMap> => {
+    const buildEntry = async (dayOfWeek: 0 | 6): Promise<WeekendPitEntry | null> => {
+      const res = await findBestPitDriving(pits, lat, lng, gp, supabase, dayOfWeek);
+      if (!res || !res.serviceable) return null;
+      const effective = getEffectivePrice(res.pit, gp);
+      const satSurcharge = res.pit.saturday_surcharge_override ?? gp.saturday_surcharge;
+      const sunSurcharge = res.pit.sunday_surcharge ?? 0;
+      return {
+        pit: res.pit,
+        distance: parseFloat(res.distance.toFixed(1)),
+        price: calcPitPrice(effective, res.distance, 1),
+        schedule: {
+          operating_days: res.pit.operating_days,
+          saturday_surcharge_override: res.pit.saturday_surcharge_override != null ? Number(res.pit.saturday_surcharge_override) : null,
+          sunday_surcharge: res.pit.sunday_surcharge != null ? Number(res.pit.sunday_surcharge) : null,
+          same_day_cutoff: res.pit.same_day_cutoff,
+        },
+        satSurcharge,
+        sunSurcharge,
+      };
+    };
+    const [sat, sun] = await Promise.all([buildEntry(6), buildEntry(0)]);
+    const map: WeekendPitMap = {};
+    if (sat) map[6] = sat;
+    if (sun) map[0] = sun;
+    return map;
+  }, []);
 
-  const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
+
     setAddress(result.formattedAddress);
     setCustomerCoords({ lat: result.lat, lng: result.lng });
     if (result.addressComponents) {
