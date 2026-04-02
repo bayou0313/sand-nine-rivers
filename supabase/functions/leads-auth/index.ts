@@ -685,21 +685,14 @@ serve(async (req) => {
           .in("status", ["active", "draft"]);
 
         if (regenPages && regenPages.length > 0) {
-          console.log(`[save_pit] Non-pricing edit — regenerating ${regenPages.length} city pages for pit ${savedPit.name}`);
-          for (const page of regenPages) {
-            try {
-              await fetch(regenUrl, {
-                method: "POST",
-                headers: regenHeaders,
-                body: JSON.stringify({ city_page_id: page.id, force: true }),
-              });
-              console.log(`[save_pit] Regenerated: ${page.city_name}`);
-              pages_regenerated++;
-              await new Promise(resolve => setTimeout(resolve, 2000));
-            } catch (err: any) {
-              console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
-            }
-          }
+          console.log(`[save_pit] Non-pricing edit — flagging ${regenPages.length} city pages for regen`);
+          const regenIds = regenPages.map((p: any) => p.id);
+          await supabase.from("city_pages").update({
+            needs_regen: true,
+            regen_reason: 'pit_updated',
+            updated_at: new Date().toISOString()
+          }).in("id", regenIds);
+          pages_regenerated = regenPages.length;
           regenTriggered = true;
         }
       }
