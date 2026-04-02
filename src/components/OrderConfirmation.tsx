@@ -149,8 +149,6 @@ export interface OrderConfirmationProps {
   onDownloadInvoice: () => void;
   downloadingInvoice: boolean;
   canDownload: boolean;
-  customerName: string;
-  customerPhone: string;
 }
 
 export default function OrderConfirmation({
