@@ -7,6 +7,7 @@ import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp,
 import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
