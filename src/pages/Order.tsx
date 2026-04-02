@@ -1618,8 +1618,8 @@ const Order = () => {
                             </motion.div>
                           )}
                           <Banknote className={`w-6 h-6 mb-2 ${paymentMethod === "cash" || paymentMethod === "check" ? "text-accent" : "text-muted-foreground"}`} />
-                          <p className="font-display text-base text-foreground tracking-wider">AT DELIVERY</p>
-                          <p className="font-body text-xs text-muted-foreground mt-1">Cash or Check — no processing fee</p>
+                          <p className="font-display text-base text-foreground tracking-wider">PAY AT DELIVERY</p>
+                          <p className="font-body text-xs text-muted-foreground mt-1">No card processing fee</p>
                         </button>
                       )}
                     </div>
@@ -1666,7 +1666,7 @@ const Order = () => {
                       </motion.div>
                     )}
 
-                    {/* Policy notice: AT DELIVERY */}
+                    {/* Policy notice: PAY AT DELIVERY */}
                     {(paymentMethod === "cash" || paymentMethod === "check") && (
                       <motion.div
                         key="cod-policy"
@@ -1674,33 +1674,32 @@ const Order = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-3"
                       >
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-1.5">
-                          <p className="font-body text-sm text-green-900 leading-relaxed flex items-start gap-2">
-                            <Banknote className="w-4 h-4 mt-0.5 shrink-0 text-green-600" />
-                            Cash or check accepted at delivery — no processing fee
-                          </p>
-                          <p className="font-body text-sm text-green-800 leading-relaxed pl-6">No cancellation fee for COD orders</p>
-                          <p className="font-body text-sm text-green-800 leading-relaxed pl-6">Driver will collect payment on arrival</p>
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+                          <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAY AT DELIVERY — what to expect:</p>
+                          <ul className="space-y-1.5">
+                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
+                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
+                              Payment is due at the time of delivery
+                            </li>
+                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
+                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
+                              Cash is accepted on arrival
+                            </li>
+                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
+                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
+                              If payment cannot be collected at delivery, a secure card payment link will be sent automatically
+                            </li>
+                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
+                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
+                              The card payment link includes a {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee
+                            </li>
+                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
+                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
+                              By selecting this option you agree to pay at delivery or via the payment link if required
+                            </li>
+                          </ul>
                         </div>
-                        <RadioGroup
-                          value={codSubOption}
-                          onValueChange={(v) => {
-                            setCodSubOption(v as "cash" | "check");
-                            setPaymentMethod(v as "cash" | "check");
-                          }}
-                          className="flex gap-6"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="cash" id="cash" />
-                            <label htmlFor="cash" className="font-body text-base text-foreground cursor-pointer">Cash</label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="check" id="check" />
-                            <label htmlFor="check" className="font-body text-base text-foreground cursor-pointer">Check</label>
-                          </div>
-                        </RadioGroup>
                       </motion.div>
                     )}
                     </AnimatePresence>
@@ -1857,17 +1856,13 @@ const Order = () => {
                 {/* Payment Policy — COD orders */}
                 {(paymentMethod === "cash" || paymentMethod === "check" ||
                   codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
-                  <div style={{ background: "#FEF9C3", border: "1px solid #FDE68A", borderRadius: "8px", padding: "16px", marginTop: "16px" }}>
-                    <p style={{ fontSize: "11px", fontWeight: "bold", color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
-                      Payment Due at Delivery
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
+                    <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAYMENT DUE AT DELIVERY</p>
+                    <p className="font-body text-sm text-amber-800 leading-relaxed mb-2">
+                      Cash payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
                     </p>
-                    <p style={{ fontSize: "13px", color: "#78350F", lineHeight: "1.6", margin: 0 }}>
-                      Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.
-                    </p>
-                    <p style={{ fontSize: "12px", color: "#92400E", marginTop: "8px", marginBottom: 0 }}>
-                      Note: Card payments include a 3.5% processing fee.
-                      <br />
-                      Cash/Check total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(totalPrice * 1.035)}</strong>
+                    <p className="font-body text-xs text-amber-700">
+                      Cash total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(parseFloat((totalPrice * (1 + globalPricing.card_processing_fee_percent / 100) + globalPricing.card_processing_fee_fixed).toFixed(2)))}</strong> (includes {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} fee)
                     </p>
                   </div>
                 )}

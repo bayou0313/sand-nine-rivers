@@ -94,11 +94,11 @@ function orderCustomerEmail(order: any): string {
                       </td>
                     </tr>` : "";
 
-  // Processing fee row (stripe only)
+  // Processing fee row (stripe only) — uses dynamic fee settings
   const feeRow = isStripePaid && processingFeeAmt > 0.01 ? `
                     <tr>
                       <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
-                        Processing Fee (3.5%)
+                        Processing Fee
                       </td>
                       <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
                         $${processingFee}
@@ -298,8 +298,8 @@ function orderCustomerEmail(order: any): string {
                   <tr>
                     <td style="background-color:#FEF9C3;border:1px solid #FDE68A;padding:12px 16px;border-radius:8px;">
                       <p style="margin:0 0 6px 0;font-size:11px;font-weight:bold;color:#92400E;text-transform:uppercase;letter-spacing:1px;">Payment Due at Delivery</p>
-                      <p style="margin:0 0 8px 0;font-size:13px;color:#78350F;line-height:1.6;">Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.</p>
-                      <p style="margin:0;font-size:12px;color:#92400E;">Note: Card payments include a 3.5% processing fee.<br/>Cash/Check total: <strong>$${fmt(Number(order.price))}</strong> · Card total if needed: <strong>$${fmt(Number(order.price) * 1.035)}</strong></p>
+                      <p style="margin:0 0 8px 0;font-size:13px;color:#78350F;line-height:1.6;">Cash payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.</p>
+                      <p style="margin:0;font-size:12px;color:#92400E;">Cash total: <strong>$${fmt(Number(order.price))}</strong> · Card total if needed includes processing fee</p>
                     </td>
                   </tr>
                 </table>
@@ -639,33 +639,69 @@ function orderDispatchEmail(data: any): string {
 }
 
 // Keep existing helper functions for other email types
-function emailWrapper(body: string) {
+function brandedEmailWrapper(options: {
+  content: string;
+  productLogoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}) {
+  const logo = options.productLogoUrl || RIVERSAND_WHITE_LOGO;
+  const primary = options.primaryColor || BRAND_COLOR;
+  const accent = options.accentColor || "#C8A44A";
+  const WAYS_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
+
+  const ctaBlock = options.ctaText && options.ctaUrl ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td align="center">
+        <a href="${options.ctaUrl}" style="display:inline-block;background:${accent};color:#FFFFFF!important;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">${options.ctaText}</a>
+      </td></tr>
+    </table>` : "";
+
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif}
-  .container{max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden}
-  .header{background:${BRAND_COLOR};padding:24px;text-align:center}
-  .header h1{color:${BRAND_GOLD};margin:0;font-size:24px;letter-spacing:2px}
-  .body{padding:32px 24px}
-  .body h2{color:${BRAND_COLOR};margin:0 0 16px}
-  .body p,.body td{color:#555;font-size:15px;line-height:1.6}
-  .info-table{width:100%;border-collapse:collapse;margin:16px 0}
-  .info-table td{padding:8px 0;border-bottom:1px solid #eee}
-  .info-table td:first-child{font-weight:600;color:${BRAND_COLOR};width:40%}
-  .footer{background:#f9f9f9;padding:20px 24px;text-align:center;font-size:13px;color:#999}
-  .footer a{color:${BRAND_COLOR};text-decoration:none}
-  .cta{display:inline-block;background:${BRAND_GOLD};color:${BRAND_COLOR}!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0}
-</style></head><body>
-<div class="container">
-  <div class="header"><h1>WAYS River Sand</h1></div>
-  <div class="body">${body}</div>
-  <div class="footer">
-    <p>© 2026 WAYS® Materials LLC</p>
-    <p><a href="tel:+18554689297">${PHONE}</a> &bull; <a href="mailto:no_reply@riversand.net">no_reply@riversand.net</a></p>
-    <p><a href="https://riversand.net">riversand.net</a></p>
-  </div>
-</div></body></html>`;
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#F0EDE5;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0EDE5;">
+<tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+  <!-- HEADER -->
+  <tr><td style="background-color:${primary};padding:28px 32px;text-align:center;">
+    <img src="${logo}" alt="River Sand" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto;">
+  </td></tr>
+
+  <!-- GOLD DIVIDER -->
+  <tr><td style="height:3px;background-color:${accent};"></td></tr>
+
+  <!-- BODY -->
+  <tr><td style="background-color:#FFFFFF;padding:32px;">
+    ${options.content}
+    ${ctaBlock}
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="background-color:#F5F5F5;padding:24px 32px;text-align:center;border-top:1px solid #E8E5DD;">
+    <img src="${WAYS_LOGO}" alt="WAYS" width="80" style="display:block;margin:0 auto 10px;width:80px;height:auto;opacity:0.6;">
+    <p style="margin:0 0 4px;color:#999;font-size:11px;font-weight:600;letter-spacing:1px;">WAYS&reg; Materials LLC</p>
+    <p style="margin:0 0 4px;color:#999;font-size:11px;">
+      <a href="tel:+18554689297" style="color:#666;text-decoration:none;">${PHONE}</a> &bull;
+      <a href="mailto:orders@riversand.net" style="color:#666;text-decoration:none;">orders@riversand.net</a>
+    </p>
+    <p style="margin:0;color:#BBB;font-size:10px;">
+      <a href="https://riversand.net" style="color:#999;text-decoration:none;">riversand.net</a>
+    </p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
+// Keep old emailWrapper as alias for backward compat
+function emailWrapper(body: string) {
+  return brandedEmailWrapper({ content: body });
 }
 
 function orderInternalEmail(order: any) {
@@ -1167,6 +1203,58 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
       `);
       await sendMail(resend, data.customer_email, "About your river sand delivery request — riversand.net", leadDeclineHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Lead decline sent to:", data.customer_email);
+
+    } else if (type === "capture_failed") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const orderNum = data.order_number || "N/A";
+      const rescheduleUrl = data.reschedule_url || "https://riversand.net/order";
+      const captureFailedHtml = brandedEmailWrapper({
+        content: `
+          <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+          <p style="font-size:15px;color:#555;line-height:1.6">We tried to process the payment for your river sand delivery (Order <strong>${orderNum}</strong>), but the charge didn't go through.</p>
+          <p style="font-size:15px;color:#555;line-height:1.6">Don't worry — your delivery slot is held for you. To keep your order active, please update your payment and select a new delivery date using the link below.</p>
+          <div style="background:#FEF9C3;border:1px solid #FDE68A;padding:16px;border-radius:8px;margin:20px 0;">
+            <p style="margin:0;font-size:13px;color:#78350F;line-height:1.6;">If you don't reschedule within 48 hours, your order will be canceled and any hold on your card will be released.</p>
+          </div>
+          <p style="font-size:14px;color:#555;line-height:1.8">Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a> — we're happy to help.</p>
+        `,
+        ctaText: "RESCHEDULE & PAY",
+        ctaUrl: rescheduleUrl,
+      });
+      if (!data.customer_email) {
+        return new Response(JSON.stringify({ error: "No customer email" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      await sendMail(resend, data.customer_email, `Action Required — Payment for Order ${orderNum}`, captureFailedHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Capture failed email sent to:", data.customer_email);
+
+    } else if (type === "capture_summary") {
+      const captured = data.captured_count || 0;
+      const failed = data.failed_count || 0;
+      const capturedOrders = (data.captured_orders || []).map((o: string) => `<li style="font-size:13px;color:#555;padding:2px 0;">${o}</li>`).join("");
+      const failedOrders = (data.failed_orders || []).map((o: string) => `<li style="font-size:13px;color:#C21F32;padding:2px 0;">${o}</li>`).join("");
+      const summaryHtml = brandedEmailWrapper({
+        content: `
+          <h2 style="color:${BRAND_COLOR};margin:0 0 16px;font-size:20px;">2am Capture Summary</h2>
+          <p style="font-size:15px;color:#555;line-height:1.6;">Nightly payment capture completed at ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} Central.</p>
+          <div style="display:flex;gap:16px;margin:20px 0;">
+            <div style="flex:1;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px;text-align:center;">
+              <p style="margin:0;font-size:28px;font-weight:700;color:#166534;">${captured}</p>
+              <p style="margin:4px 0 0;font-size:12px;color:#15803D;text-transform:uppercase;letter-spacing:1px;">Captured</p>
+            </div>
+            <div style="flex:1;background:${failed > 0 ? '#FEF2F2' : '#F9FAFB'};border:1px solid ${failed > 0 ? '#FECACA' : '#E5E7EB'};border-radius:8px;padding:16px;text-align:center;">
+              <p style="margin:0;font-size:28px;font-weight:700;color:${failed > 0 ? '#991B1B' : '#6B7280'};">${failed}</p>
+              <p style="margin:4px 0 0;font-size:12px;color:${failed > 0 ? '#B91C1C' : '#9CA3AF'};text-transform:uppercase;letter-spacing:1px;">Failed</p>
+            </div>
+          </div>
+          ${capturedOrders ? `<p style="font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">Captured Orders</p><ul style="margin:0;padding-left:20px;">${capturedOrders}</ul>` : ''}
+          ${failedOrders ? `<p style="font-size:12px;font-weight:700;color:#C21F32;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">Failed Orders</p><ul style="margin:0;padding-left:20px;">${failedOrders}</ul>` : ''}
+        `,
+        ctaText: "OPEN DASHBOARD",
+        ctaUrl: "https://riversand.net/leads",
+      });
+      await sendMail(resend, ownerEmail, `Capture Summary — ${captured} captured, ${failed} failed`, summaryHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Capture summary sent to:", ownerEmail);
 
     } else {
       return new Response(
