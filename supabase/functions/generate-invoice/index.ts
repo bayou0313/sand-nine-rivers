@@ -69,9 +69,12 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
   doc.setFont("helvetica", "normal");
   doc.setTextColor(180, 180, 180);
   doc.text("WAYS® Materials LLC  |  riversand.net  |  1-855-GOT-WAYS", pw - mx, textY, { align: "right" });
+  doc.setFontSize(7);
+  doc.setTextColor(180, 180, 180);
+  doc.text("202 Larosa Dr, Long Beach, MS", pw - mx, textY + 4, { align: "right" });
   doc.setFontSize(6);
   doc.setTextColor(200, 200, 200);
-  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 4, { align: "right" });
+  doc.text("This document serves as your official order confirmation and receipt.", pw - mx, textY + 8, { align: "right" });
 }
 
 serve(async (req) => {
