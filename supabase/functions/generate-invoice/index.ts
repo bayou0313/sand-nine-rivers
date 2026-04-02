@@ -176,8 +176,7 @@ serve(async (req) => {
     const ph = 279.4;
     const mx = 16;
     const cw = pw - 2 * mx;
-    const pinnedCodY = ph - 44;
-    const maxContentY = pinnedCodY - 6;
+    // Pinned zone Y positions calculated dynamically in bottom section
     let y = 0;
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
@@ -430,9 +429,8 @@ serve(async (req) => {
     // Tight spacing after last line item
     y += 3;
 
-    // ─── PAYMENT STATUS BOX ───
+    // ─── PAYMENT STATUS BOX (card only — flows inline after pricing) ───
     if (isPaid) {
-      // Green "PAID IN FULL" box for card orders
       doc.setDrawColor(187, 247, 208);
       doc.setLineWidth(0.3);
       doc.roundedRect(mx, y, cw, 14, 2, 2, "S");
@@ -451,9 +449,8 @@ serve(async (req) => {
       }
       y += 18;
     }
-    // Amber box is drawn below in the terms area for COD orders
 
-    // ─── TERMS BLOCK (pushed to just above footer) ───
+    // ─── PINNED BOTTOM ZONE (absolute Y positions, never move) ───
     const bullets = [
       "Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.",
       "Customer must ensure clear, accessible delivery area before arrival.",
@@ -464,66 +461,63 @@ serve(async (req) => {
     ];
 
     const hasCODBox = !isPaid;
-    const codBlockH = 14;
+    const codBlockH = hasCODBox ? 14 : 0;
+    const footerGoldY = ph - 24;
+    const codGap = 6;
 
-    // Measure terms height to position just above footer
-    let termsHeight = 0;
-    if (hasCODBox) {
-      termsHeight += codBlockH + 2; // text block + tight gap
-    }
-    termsHeight += 5; // DELIVERY TERMS header
+    // Measure delivery terms height
+    let termsH = 5;
     bullets.forEach((b) => {
       const bLines = doc.splitTextToSize(`• ${b}`, cw);
-      termsHeight += bLines.length * 3.5 + 0.5;
+      termsH += bLines.length * 3.5 + 0.5;
     });
 
-    // Position terms: flow naturally after content, no push-down
-    // Only add a new page if content won't fit
-    if (y + termsHeight > maxContentY) {
+    // Fixed Y positions (bottom → up)
+    const codTopY = footerGoldY - codGap - codBlockH;
+    const termsGap = hasCODBox ? 2 : 0;
+    const termsTopY = codTopY - termsGap - termsH;
+    const safeContentMaxY = termsTopY - 4;
+
+    // Paginate if content intrudes into pinned zone
+    if (y > safeContentMaxY) {
       doc.addPage();
-      y = 20;
     }
 
-    // ─── Clean "DUE AT DELIVERY" — pinned to fixed Y position ───
+    // Draw Delivery Terms at fixed Y
+    let tY = termsTopY;
+    doc.setFontSize(7);
+    doc.setTextColor(...GOLD);
+    doc.setFont("helvetica", "bold");
+    doc.text("DELIVERY TERMS", mx, tY);
+    tY += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...GRAY);
+    bullets.forEach((b) => {
+      const bLines = doc.splitTextToSize(`• ${b}`, cw);
+      bLines.forEach((line: string) => { doc.text(line, mx, tY); tY += 3.5; });
+      tY += 0.5;
+    });
+
+    // Draw Due at Delivery at fixed Y (COD only)
     if (hasCODBox) {
-      // Always draw on the last page at the fixed pinnedCodY position
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("DUE AT DELIVERY", mx, pinnedCodY + 4);
+      doc.text("DUE AT DELIVERY", mx, codTopY + 4);
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Cash or check payment due at the time of delivery.", mx, pinnedCodY + 9);
+      doc.text("Cash or check payment due at the time of delivery.", mx, codTopY + 9);
 
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text(fmt(order.price), pw - mx, pinnedCodY + 4, { align: "right" });
+      doc.text(fmt(order.price), pw - mx, codTopY + 4, { align: "right" });
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Exact amount required — driver carries no change", pw - mx, pinnedCodY + 9, { align: "right" });
+      doc.text("Exact amount required — driver carries no change", pw - mx, codTopY + 9, { align: "right" });
     }
-
-    // Delivery terms
-    doc.setFontSize(7);
-    doc.setTextColor(...GOLD);
-    doc.setFont("helvetica", "bold");
-    doc.text("DELIVERY TERMS", mx, y);
-    y += 5;
-
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...GRAY);
-    bullets.forEach((b) => {
-      if (y > maxContentY) {
-        doc.addPage();
-        y = 20;
-      }
-      const bLines = doc.splitTextToSize(`• ${b}`, cw);
-      bLines.forEach((line: string) => { doc.text(line, mx, y); y += 3.5; });
-      y += 0.5;
-    });
 
     // ─── FOOTER on last page, pinned to bottom ───
     drawFooter(doc, pw, ph, mx, cw, footerLogoB64, biz);
