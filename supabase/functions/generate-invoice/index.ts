@@ -519,7 +519,7 @@ serve(async (req) => {
     });
 
     // ─── FOOTER on last page, pinned to bottom ───
-    drawFooter(doc, pw, ph, mx, cw, footerLogoB64);
+    drawFooter(doc, pw, ph, mx, cw, footerLogoB64, biz);
 
     const pdfOutput = doc.output("arraybuffer");
 
