@@ -857,6 +857,7 @@ serve(async (req) => {
         "card_processing_fee_percent", "card_processing_fee_fixed",
         "legal_name", "site_name", "phone", "website",
         "support_email", "tagline", "copyright_year",
+        "sender_name", "sender_title",
       ]);
 
     const emailCfg: Record<string, string> = {};
@@ -878,6 +879,8 @@ serve(async (req) => {
     SITE_NAME = emailCfg.site_name || "River Sand";
     COPYRIGHT_YEAR = emailCfg.copyright_year || "2026";
     TAGLINE = emailCfg.tagline || "Real Sand. Real People.";
+    const SENDER_NAME = emailCfg.sender_name || "Silas Caldeira";
+    const SENDER_TITLE = emailCfg.sender_title || "Founder & CEO";
 
     // Biz overrides for brandedEmailWrapper calls
     const bizOverrides = { bizPhone: PHONE, bizEmail: SUPPORT_EMAIL, bizWebsite: WEBSITE, bizLegalName: LEGAL_NAME };
@@ -1078,8 +1081,8 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <p style="font-size:14px;color:#555;line-height:1.8">Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a> — we're real people and happy to help.</p>
 
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
-          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">${SENDER_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${SENDER_TITLE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
           <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">New Orleans, Louisiana</p>
@@ -1119,8 +1122,8 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <p style="font-size:15px;color:#555;line-height:1.6">Your order is complete. We appreciate your business and look forward to serving you again.</p>
 
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
-          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">${SENDER_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${SENDER_TITLE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
           <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>
@@ -1182,8 +1185,8 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <p style="font-size:15px;color:#555;line-height:1.6">Our delivery manager is reviewing your request and will get back to you within <strong>${responseTime} hours</strong> during business hours (${bizDays}, ${bizHours}).</p>
         <p style="font-size:15px;color:#555;line-height:1.6">If you have any questions in the meantime, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
-          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">${SENDER_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${SENDER_TITLE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
           <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>
@@ -1209,10 +1212,10 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <p style="font-size:13px;color:#999;text-align:center">This payment link will expire. Please complete your order promptly.</p>
         <p style="font-size:14px;color:#555;line-height:1.8">Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a> — we're real people and happy to help.</p>
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
-          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
-          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">${SENDER_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${SENDER_TITLE}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>
       `);
       await sendMail(resend, data.customer_email, "Your river sand delivery quote — riversand.net", leadOfferHtml, undefined, FROM, REPLY_TO);
@@ -1230,8 +1233,8 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         </div>
         <p style="font-size:14px;color:#555;line-height:1.8">In the meantime, feel free to check back — our coverage area is growing. Questions? Call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
-          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
+          <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">${SENDER_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${SENDER_TITLE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
           <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>

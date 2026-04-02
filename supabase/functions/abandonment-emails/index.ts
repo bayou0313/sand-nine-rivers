@@ -60,6 +60,17 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const resend = new Resend(resendKey);
 
+    // Fetch sender identity from global_settings
+    const { data: settingsRows } = await supabase
+      .from("global_settings")
+      .select("key, value")
+      .in("key", ["sender_name", "sender_title", "site_name"]);
+    const cfg: Record<string, string> = {};
+    (settingsRows || []).forEach((r: any) => { cfg[r.key] = r.value; });
+    const SENDER_NAME = cfg.sender_name || "Silas Caldeira";
+    const SENDER_TITLE = cfg.sender_title || "Founder & CEO";
+    const SITE = cfg.site_name || "River Sand";
+
     const results = { email_1hr: 0, email_24hr: 0, email_72hr: 0, errors: [] as string[] };
 
     // Email 1: 1 hour after abandonment
@@ -86,7 +97,7 @@ serve(async (req: Request) => {
             <p>You were so close! Your River Sand delivery to <strong>${s.delivery_address || "your address"}</strong> is still available.</p>
             <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW</a></p>
             <p>Same-day delivery still available if you order before 10 AM.</p>
-            <p style="margin-top:24px">— Silas Caldeira<br>River Sand | ${PHONE}</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
           `),
         });
 
@@ -126,7 +137,7 @@ serve(async (req: Request) => {
             <p>We noticed you didn't complete your order. Your delivery details are saved.</p>
             <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW</a></p>
             <p>Questions? Call us at <a href="tel:+18554689297">${PHONE}</a> — we're real people and happy to help.</p>
-            <p style="margin-top:24px">— Silas Caldeira<br>River Sand | ${PHONE}</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
           `),
         });
 
@@ -173,7 +184,7 @@ serve(async (req: Request) => {
             </table>
             <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW — $${discountedPrice.toFixed(2)} DELIVERED</a></p>
             <p style="font-size:13px;color:#999">Offer expires 7 days from this email.</p>
-            <p style="margin-top:24px">— Silas Caldeira<br>River Sand | ${PHONE}</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
           `),
         });
 
