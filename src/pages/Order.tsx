@@ -1221,7 +1221,8 @@ const Order = () => {
             <button onClick={() => setShowProposalBanner(false)} className="ml-4 text-lg font-bold" style={{ color: "#0D2137" }}>×</button>
           </motion.div>
         )}
-        {/* Sticky countdown + progress */}
+        {/* Sticky countdown + progress — hidden on success */}
+        {step !== "success" && (
         <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-border/30 -mx-4 px-4 mb-6 shadow-sm">
           <CountdownBar />
           {/* Progress steps */}
@@ -1273,6 +1274,7 @@ const Order = () => {
             })}
           </motion.div>
         </div>
+        )}
 
         <div className="max-w-2xl mx-auto">
           <AnimatePresence mode="wait">
