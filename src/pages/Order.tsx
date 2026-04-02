@@ -511,9 +511,11 @@ const Order = () => {
       const paramPitId = searchParams.get("pit_id");
       const paramPitName = searchParams.get("pit_name");
       if (paramOpDays || paramSatSurcharge || paramSameDayCutoff) {
+        const paramSunSurcharge = searchParams.get("sun_surcharge");
         setMatchedPitSchedule({
           operating_days: paramOpDays ? paramOpDays.split(",").map(Number) : null,
           saturday_surcharge_override: paramSatSurcharge != null ? Number(paramSatSurcharge) : null,
+          sunday_surcharge: paramSunSurcharge != null ? Number(paramSunSurcharge) : null,
           same_day_cutoff: paramSameDayCutoff || null,
         });
       }
