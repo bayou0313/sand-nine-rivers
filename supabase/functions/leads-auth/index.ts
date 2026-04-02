@@ -628,6 +628,7 @@ serve(async (req) => {
 
       let prices_updated = 0;
       let pages_regenerated = 0;
+      let regenTriggered = false;
 
       // ── PART 1: Auto-update prices & regen when existing pit pricing changes ──
       if (existingPit && !isNewPit) {
@@ -680,7 +681,137 @@ serve(async (req) => {
               console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
             }
           }
+          regenTriggered = true;
         }
+      }
+
+      // ── PART 1b: Always-regen for non-pricing edits (deduplicated) ──
+      if (!regenTriggered && !isNewPit) {
+        const { data: regenPages } = await supabase
+          .from("city_pages")
+          .select("id, city_name")
+          .eq("pit_id", savedPit.id)
+          .in("status", ["active", "draft"]);
+
+        if (regenPages && regenPages.length > 0) {
+          console.log(`[save_pit] Non-pricing edit — regenerating ${regenPages.length} city pages for pit ${savedPit.name}`);
+          for (const page of regenPages) {
+            try {
+              await fetch(regenUrl, {
+                method: "POST",
+                headers: regenHeaders,
+                body: JSON.stringify({ city_page_id: page.id, force: true }),
+              });
+              console.log(`[save_pit] Regenerated: ${page.city_name}`);
+              pages_regenerated++;
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (err: any) {
+              console.error(`[save_pit] Failed to regen ${page.city_name}:`, err.message);
+            }
+          }
+          regenTriggered = true;
+        }
+      }
+
+      // ── PART 2: PIT deactivation — reassign or waitlist ──
+      let deactivation_reassigned = 0;
+      let deactivation_waitlisted = 0;
+      if (!isNewPit && existingPitStatus === "active" && savedPit.status === "inactive") {
+        console.log(`[save_pit] PIT deactivated: ${savedPit.name} — reassigning city pages`);
+
+        const { data: deactivatedPages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, city_slug, lat, lng, distance_from_pit, status")
+          .eq("pit_id", savedPit.id)
+          .neq("status", "waitlist");
+
+        if (deactivatedPages && deactivatedPages.length > 0) {
+          // Get all OTHER active pits
+          const { data: otherActivePits } = await supabase
+            .from("pits").select("*").eq("status", "active").neq("id", savedPit.id);
+
+          // Fetch global settings for pricing
+          const { data: gsDeact } = await supabase.from("global_settings").select("key, value");
+          const gMapDeact: Record<string, string> = {};
+          for (const r of gsDeact || []) gMapDeact[r.key] = r.value;
+
+          for (const page of deactivatedPages) {
+            try {
+              if (!page.lat || !page.lng || !otherActivePits || otherActivePits.length === 0) {
+                // No active pits available — waitlist
+                await supabase.from("city_pages").update({
+                  status: "waitlist",
+                  status_reason: "PIT deactivated, no alternative PIT available",
+                  updated_at: new Date().toISOString(),
+                }).eq("id", page.id);
+                deactivation_waitlisted++;
+                console.log(`[save_pit] Waitlisted: ${page.city_name} (no active PITs)`);
+                continue;
+              }
+
+              // Calculate driving distances from this city to all other active pits
+              const distances = await getDrivingDistances(
+                Number(page.lat), Number(page.lng),
+                otherActivePits.map(p => ({ lat: Number(p.lat), lng: Number(p.lon) })),
+                apiKey
+              );
+
+              // Find nearest pit within its max_distance
+              let bestPit: any = null;
+              let bestDist = Infinity;
+              for (let i = 0; i < otherActivePits.length; i++) {
+                const d = distances[i];
+                if (d == null) continue;
+                const pitMax = otherActivePits[i].max_distance || parseFloat(gMapDeact.default_max_distance || "30");
+                if (d <= pitMax && d < bestDist) {
+                  bestDist = d;
+                  bestPit = otherActivePits[i];
+                }
+              }
+
+              if (bestPit) {
+                // Reassign to new PIT
+                const effBP = bestPit.base_price ?? parseFloat(gMapDeact.default_base_price || "195");
+                const effFM = bestPit.free_miles ?? parseFloat(gMapDeact.default_free_miles || "15");
+                const effEPM = bestPit.price_per_extra_mile ?? parseFloat(gMapDeact.default_extra_per_mile || "5");
+                const extraMiles = Math.max(0, bestDist - effFM);
+                const newPrice = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
+
+                await supabase.from("city_pages").update({
+                  pit_id: bestPit.id,
+                  distance_from_pit: Math.round(bestDist * 10) / 10,
+                  base_price: newPrice,
+                  pit_reassigned: true,
+                  regen_reason: "pit_reassigned",
+                  updated_at: new Date().toISOString(),
+                }).eq("id", page.id);
+
+                // Trigger regeneration
+                await fetch(regenUrl, {
+                  method: "POST",
+                  headers: regenHeaders,
+                  body: JSON.stringify({ city_page_id: page.id, force: true }),
+                });
+
+                deactivation_reassigned++;
+                console.log(`[save_pit] Reassigned: ${page.city_name} → ${bestPit.name} (${bestDist.toFixed(1)}mi, $${newPrice})`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              } else {
+                // No valid PIT — waitlist
+                await supabase.from("city_pages").update({
+                  status: "waitlist",
+                  status_reason: "PIT deactivated, no alternative PIT within range",
+                  updated_at: new Date().toISOString(),
+                }).eq("id", page.id);
+                deactivation_waitlisted++;
+                console.log(`[save_pit] Waitlisted: ${page.city_name} (no PIT within range)`);
+              }
+            } catch (err: any) {
+              console.error(`[save_pit] Deactivation error for ${page.city_name}:`, err.message);
+            }
+          }
+        }
+        console.log(`[save_pit] Deactivation complete: ${deactivation_reassigned} reassigned, ${deactivation_waitlisted} waitlisted`);
       }
 
       // ── PART 3: Auto-discover cities when new pit is created ──
@@ -892,7 +1023,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned, pages_created: pages_created_count }),
+        JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned, pages_created: pages_created_count, deactivation_reassigned, deactivation_waitlisted }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
