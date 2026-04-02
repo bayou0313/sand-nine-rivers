@@ -375,7 +375,7 @@ serve(async (req) => {
     ];
 
     const hasCODBox = !isPaid;
-    const amberBoxH = 16;
+    const codBlockH = 16;
 
     // Measure terms height to position just above footer
     let termsHeight = 0;
