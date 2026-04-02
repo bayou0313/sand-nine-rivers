@@ -312,6 +312,167 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: "Added to waitlist" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    // ── CREATE OUT-OF-AREA LEAD (no password required — public) ──
+    if (action === "create_out_of_area_lead") {
+      const { customer_name, customer_email, customer_phone, address: leadAddress, distance_miles: leadDist, notes: leadNotes, ip_address: clientIp, user_agent: clientUA, browser_geolat, browser_geolng, calculated_price: leadPrice, nearest_pit_id: leadPitId, nearest_pit_name: leadPitName, nearest_pit_distance: leadPitDist } = body;
+      if (!customer_name || !leadAddress) {
+        return new Response(JSON.stringify({ error: "Missing required fields" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
+
+      // Server-side IP (more reliable than client-reported)
+      const serverIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || clientIp
+        || null;
+
+      // ── Fraud scoring ──
+      let fraudScore = 0;
+      const fraudSignals: string[] = [];
+
+      // Signal 1: IP rate limiting
+      if (serverIp) {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: recentLeads } = await sb
+          .from("delivery_leads")
+          .select("id")
+          .eq("ip_address", serverIp)
+          .gte("created_at", twentyFourHoursAgo);
+        const ipCount = recentLeads?.length || 0;
+        if (ipCount > 5) { fraudScore += 60; fraudSignals.push("ip_flood"); }
+        else if (ipCount > 2) { fraudScore += 40; fraudSignals.push("repeated_ip"); }
+      }
+
+      // Signal 2: Check blocked_ips
+      if (serverIp) {
+        const { data: blocked } = await sb
+          .from("blocked_ips")
+          .select("id")
+          .eq("ip_address", serverIp)
+          .limit(1);
+        if (blocked && blocked.length > 0) {
+          // Silent block — return success but don't insert
+          console.log("[create_out_of_area_lead] Blocked IP:", serverIp);
+          return new Response(JSON.stringify({ success: true }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
+      // Signal 3: Geolocation mismatch (haversine is fine — browser vs address comparison)
+      if (browser_geolat != null && browser_geolng != null) {
+        // Extract lat/lng from address if available, or use a rough check with nearest pit
+        if (leadPitId) {
+          const { data: pitData } = await sb.from("pits").select("lat, lon").eq("id", leadPitId).single();
+          if (pitData) {
+            const R = 3958.8; // Earth radius in miles
+            const dLat = (browser_geolat - pitData.lat) * Math.PI / 180;
+            const dLon = (browser_geolng - pitData.lon) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(browser_geolat * Math.PI / 180) * Math.cos(pitData.lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            const browserToPitMiles = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            // If browser is very far from the nearest PIT (proxy for address area)
+            if (browserToPitMiles > 200) { fraudScore += 50; fraudSignals.push("severe_geo_mismatch"); }
+            else if (browserToPitMiles > 50) { fraudScore += 30; fraudSignals.push("geo_mismatch"); }
+          }
+        }
+      }
+
+      // Signal 4: Disposable email
+      const disposableDomains = ["mailinator.com","guerrillamail.com","tempmail.com","throwaway.email","fakeinbox.com","yopmail.com","maildrop.cc","dispostable.com","trashmail.com","10minutemail.com","guerrillamail.info","sharklasers.com","grr.la","guerrillamail.net","guerrillamail.org"];
+      if (customer_email) {
+        const emailDomain = customer_email.split("@")[1]?.toLowerCase();
+        if (emailDomain && disposableDomains.includes(emailDomain)) {
+          fraudScore += 40; fraudSignals.push("disposable_email");
+        }
+      }
+
+      // Signal 5: Missing contact info
+      if (!customer_phone && !customer_email) {
+        fraudScore += 20; fraudSignals.push("no_contact");
+      }
+
+      const riskLevel = fraudScore >= 80 ? "high" : fraudScore >= 40 ? "medium" : "low";
+
+      // Count submission from same IP for submission_count
+      let submissionCount = 1;
+      if (serverIp) {
+        const { data: allFromIp } = await sb.from("delivery_leads").select("id").eq("ip_address", serverIp);
+        submissionCount = (allFromIp?.length || 0) + 1;
+      }
+
+      // Insert lead
+      const insertData: Record<string, any> = {
+        address: leadAddress,
+        distance_miles: leadDist ?? null,
+        customer_name,
+        customer_email: customer_email || null,
+        customer_phone: customer_phone || null,
+        notes: leadNotes || null,
+        ip_address: serverIp,
+        user_agent: clientUA || null,
+        browser_geolat: browser_geolat ?? null,
+        browser_geolng: browser_geolng ?? null,
+        calculated_price: leadPrice ?? null,
+        nearest_pit_id: leadPitId || null,
+        nearest_pit_name: leadPitName || null,
+        nearest_pit_distance: leadPitDist ?? null,
+        fraud_score: fraudScore,
+        fraud_signals: fraudSignals.length > 0 ? fraudSignals : null,
+        submission_count: submissionCount,
+        geo_matches_address: browser_geolat != null ? !fraudSignals.includes("geo_mismatch") && !fraudSignals.includes("severe_geo_mismatch") : null,
+      };
+
+      const { data: inserted, error: insertErr } = await sb.from("delivery_leads").insert(insertData as any).select("id, lead_number").single();
+      if (insertErr) throw insertErr;
+
+      console.log(`[create_out_of_area_lead] Created lead ${inserted.lead_number}, fraud_score: ${fraudScore}, risk: ${riskLevel}`);
+
+      // Send admin notification email (fire-and-forget)
+      const ownerEmail = Deno.env.get("GMAIL_USER") || "cmo@haulogix.com";
+      fetch(`${supabaseUrl}/functions/v1/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+        body: JSON.stringify({
+          type: "out_of_area_lead",
+          data: {
+            lead_number: inserted.lead_number,
+            address: leadAddress,
+            distance_miles: leadDist?.toFixed?.(1) || "Unknown",
+            customer_name,
+            customer_email: customer_email || "Not provided",
+            customer_phone: customer_phone || "Not provided",
+            notes: leadNotes || "",
+            fraud_score: fraudScore,
+            risk_level: riskLevel,
+            fraud_signals: fraudSignals.join(", ") || "None",
+            ip_address: serverIp || "Unknown",
+            created_at: new Date().toISOString(),
+          },
+        }),
+      }).catch((err: any) => console.error("[lead-email] Admin notification error:", err));
+
+      // Send customer auto-confirmation email (fire-and-forget)
+      if (customer_email) {
+        fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+          body: JSON.stringify({
+            type: "lead_confirmation",
+            data: {
+              customer_name,
+              customer_email,
+              address: leadAddress,
+            },
+          }),
+        }).catch((err: any) => console.error("[lead-email] Customer confirmation error:", err));
+      }
+
+      return new Response(JSON.stringify({ success: true, lead_id: inserted.id }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── GET DATE LOAD COUNTS (no password required — called from frontend) ──
     if (action === "get_date_load_counts") {
       const { pit_id: loadPitId, dates: loadDates } = body;
