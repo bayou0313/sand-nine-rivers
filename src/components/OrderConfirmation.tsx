@@ -652,17 +652,6 @@ export default function OrderConfirmation({
                   💻 WhatsApp Web
                 </button>
                 <button
-                  onClick={() => {
-                    setShowWhatsAppChoice(false);
-                    navigator.clipboard.writeText(shareText).then(() => {
-                      toast({ title: "Copied to clipboard", description: "Order details copied — paste into WhatsApp." });
-                    }).catch(() => {});
-                  }}
-                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  📋 Copy to Clipboard
-                </button>
-                <button
                   onClick={() => setShowWhatsAppChoice(false)}
                   className="w-full text-center text-xs font-body text-muted-foreground mt-1 py-1"
                 >
