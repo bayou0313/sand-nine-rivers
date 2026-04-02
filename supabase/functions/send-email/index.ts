@@ -44,7 +44,7 @@ function fmt(n: number): string {
   return n.toFixed(2);
 }
 
-function orderCustomerEmail(order: any): string {
+function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): string {
   const customerName = order.customer_name || "there";
   const orderNumber = order.order_number || "N/A";
   const deliveryAddress = order.delivery_address || "";
