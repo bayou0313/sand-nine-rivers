@@ -164,6 +164,7 @@ export default function OrderConfirmation({
   canDownload,
 }: OrderConfirmationProps) {
   const { toast } = useToast();
+  const biz = useBusinessSettings();
   const [showWhatsAppChoice, setShowWhatsAppChoice] = useState(false);
 
   const isStripePaid =
