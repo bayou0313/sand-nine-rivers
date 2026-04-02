@@ -4598,42 +4598,46 @@ const Leads = () => {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2">
-          {NAV_ITEMS.map(section => (
-            <div key={section.section} className="mb-3">
-              <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: SECTION_LABEL }}>
-                {section.section}
-              </p>
-              {section.items.map(item => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
-                    style={{
-                      height: 40,
-                      fontSize: 13,
-                      color: isActive ? BRAND_GOLD : "white",
-                      backgroundColor: isActive ? SIDEBAR_HOVER : "transparent",
-                      borderLeft: isActive ? `3px solid ${BRAND_GOLD}` : "3px solid transparent",
-                    }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
-                  >
-                    <Icon className="w-[18px] h-[18px]" />
-                    <span>{item.label}</span>
-                    {item.id === "live" && (
-                      <span className="relative flex h-2 w-2 ml-auto">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+          {NAV_ITEMS.map(section => {
+            const sectionHasActive = section.items.some(i => i.id === activePage);
+            return (
+              <SidebarAccordion
+                key={section.section}
+                title={section.section}
+                defaultOpen={sectionHasActive}
+              >
+                {section.items.map(item => {
+                  const Icon = item.icon;
+                  const isActive = activePage === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
+                      style={{
+                        height: 36,
+                        fontSize: 13,
+                        color: isActive ? BRAND_GOLD : "white",
+                        backgroundColor: isActive ? SIDEBAR_HOVER : "transparent",
+                        borderLeft: isActive ? `3px solid ${BRAND_GOLD}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                    >
+                      <Icon className="w-[16px] h-[16px]" />
+                      <span>{item.label}</span>
+                      {item.id === "live" && (
+                        <span className="relative flex h-2 w-2 ml-auto">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </SidebarAccordion>
+            );
+          })}
         </nav>
 
         {/* Logout + Footer */}
