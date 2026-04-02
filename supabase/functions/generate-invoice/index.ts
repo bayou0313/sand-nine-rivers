@@ -380,7 +380,7 @@ serve(async (req) => {
     // Measure terms height to position just above footer
     let termsHeight = 0;
     if (hasCODBox) {
-      termsHeight += amberBoxH + 6; // amber box + gap
+      termsHeight += codBlockH + 4; // text block + gap
     }
     termsHeight += 5; // DELIVERY TERMS header
     bullets.forEach((b) => {
