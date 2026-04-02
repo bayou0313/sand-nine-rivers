@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
 const WAYS_LOGO =
@@ -71,6 +71,7 @@ export default function BrandedConfirmation({
   detail,
   children,
 }: BrandedConfirmationProps) {
+  const biz = useBusinessSettings();
   return (
     <div className="min-h-screen flex flex-col font-body" style={{ backgroundColor: "#F9FAFB" }}>
       {/* ── HEADER ── */}
@@ -134,14 +135,14 @@ export default function BrandedConfirmation({
             Questions? We're here to help.
           </p>
           <a
-            href="tel:18554689297"
+            href={`tel:${biz.phone_tel}`}
             className="font-display text-lg tracking-wider block"
             style={{ color: "#C07A00" }}
           >
-            1-855-GOT-WAYS
+            {biz.phone}
           </a>
           <p className="text-xs" style={{ color: "#9CA3AF" }}>
-            orders@riversand.net
+            {biz.support_email}
           </p>
         </div>
 
@@ -167,13 +168,13 @@ export default function BrandedConfirmation({
           />
 
           <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-            © 2026 Ways Materials LLC
+            © {biz.copyright_year} {biz.legal_name}
           </p>
           <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.25)" }}>
-            orders@riversand.net · 1-855-GOT-WAYS
+            {biz.support_email} · {biz.phone}
           </p>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-            River Sand — Real Sand. Real People.
+            {biz.site_name} — {biz.tagline}
           </p>
         </div>
 

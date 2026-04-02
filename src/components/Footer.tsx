@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 const WAYS_LOGO_DARK = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
 
@@ -38,6 +39,7 @@ function getCitiesSectionHeading(cities: CityLink[]): string {
 
 const Footer = () => {
   const [cityLinks, setCityLinks] = useState<CityLink[]>([]);
+  const biz = useBusinessSettings();
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -87,13 +89,13 @@ const Footer = () => {
             />
           </a>
           <p style={{ color: "#888888", fontSize: 11 }}>
-            © 2015-2026 WAYS® Materials LLC
+            © 2015-{biz.copyright_year} {biz.legal_name}
           </p>
           <p style={{ color: "#AAAAAA", fontSize: 11 }}>
-            orders@riversand.net · 1-855-GOT-WAYS
+            {biz.support_email} · {biz.phone}
           </p>
           <p style={{ color: "#BBBBBB", fontSize: 10, fontStyle: "italic" }}>
-            River Sand.  Real Sand. Real People.
+            {biz.site_name}.  {biz.tagline}
           </p>
         </div>
       </div>

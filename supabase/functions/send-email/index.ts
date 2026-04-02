@@ -11,7 +11,15 @@ const corsHeaders = {
 const BRAND_COLOR = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
-const PHONE = "1-855-GOT-WAYS";
+// Module-level defaults — used by template functions defined outside serve()
+// Runtime values from global_settings override these inside the serve handler
+let PHONE = "1-855-GOT-WAYS";
+let WEBSITE = "riversand.net";
+let LEGAL_NAME = "WAYS® Materials LLC";
+let SUPPORT_EMAIL = "orders@riversand.net";
+let SITE_NAME = "River Sand";
+let COPYRIGHT_YEAR = "2026";
+let TAGLINE = "Real Sand. Real People.";
 
 // Defaults — overridden by global_settings at runtime
 const DEFAULT_FROM_NAME = "River Sand";
@@ -352,7 +360,7 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
                         <tr><td style="padding:4px 0;font-size:13px;color:#555;">Someone must be present to receive delivery</td></tr>
                         <tr><td style="padding:4px 0;font-size:13px;color:#555;">Delivery is curbside — curb to sidewalk/driveway</td></tr>
                         <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">Driver will not enter backyard or gated areas</td></tr>
-                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">WAYS® Materials LLC not responsible for property damage</td></tr>
+                        <tr><td style="padding:4px 0;font-size:13px;color:#C21F32;">${LEGAL_NAME} not responsible for property damage</td></tr>
                       </table>
                     </td>
                   </tr>
@@ -376,7 +384,7 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                   <tr>
                     <td style="text-align:center;">
-                      <a href="https://riversand.net" style="display:inline-block;background-color:${BRAND_GOLD};color:#FFFFFF;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">
+                      <a href="https://${WEBSITE}" style="display:inline-block;background-color:${BRAND_GOLD};color:#FFFFFF;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">
                         VIEW ORDER DETAILS
                       </a>
                     </td>
@@ -393,8 +401,8 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
                   </a>
                 </p>
                 <p style="margin:0;text-align:center;">
-                  <a href="mailto:orders@riversand.net" style="color:#666;font-size:13px;text-decoration:none;">
-                    orders@riversand.net
+                  <a href="mailto:${SUPPORT_EMAIL}" style="color:#666;font-size:13px;text-decoration:none;">
+                    ${SUPPORT_EMAIL}
                   </a>
                 </p>
 
@@ -406,10 +414,10 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
               <td style="background-color:#060F1A;padding:24px 32px;text-align:center;">
                 <img src="${WAYS_WHITE_LOGO}" alt="WAYS" width="64" style="display:block;margin:0 auto 10px;width:64px;height:auto;opacity:0.45;">
                 <p style="margin:0 0 4px;color:rgba(255,255,255,0.25);font-size:9px;letter-spacing:1px;">
-                  © 2026 WAYS® Materials LLC
+                  © ${COPYRIGHT_YEAR} ${LEGAL_NAME}
                 </p>
                 <p style="margin:0;color:rgba(255,255,255,0.3);font-size:10px;">
-                  This email was sent to ${customerEmail} because you placed an order at riversand.net
+                  This email was sent to ${customerEmail} because you placed an order at ${WEBSITE}
                 </p>
               </td>
             </tr>
@@ -628,7 +636,7 @@ function orderDispatchEmail(data: any): string {
       opacity:0.45;" />
     <p style="color:rgba(255,255,255,0.25);
       font-size:9px;margin:0;letter-spacing:1px;">
-      © 2026 WAYS® Materials LLC
+      © ${COPYRIGHT_YEAR} ${LEGAL_NAME}
     </p>
   </td></tr>
 
@@ -647,11 +655,19 @@ function brandedEmailWrapper(options: {
   accentColor?: string;
   ctaText?: string;
   ctaUrl?: string;
+  bizPhone?: string;
+  bizEmail?: string;
+  bizWebsite?: string;
+  bizLegalName?: string;
 }) {
   const logo = options.productLogoUrl || RIVERSAND_WHITE_LOGO;
   const primary = options.primaryColor || BRAND_COLOR;
   const accent = options.accentColor || "#C8A44A";
   const WAYS_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
+  const phone = options.bizPhone || DEFAULT_PHONE;
+  const email = options.bizEmail || DEFAULT_SUPPORT_EMAIL;
+  const website = options.bizWebsite || DEFAULT_WEBSITE;
+  const legalName = options.bizLegalName || DEFAULT_LEGAL_NAME;
 
   const ctaBlock = options.ctaText && options.ctaUrl ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
@@ -669,7 +685,7 @@ function brandedEmailWrapper(options: {
 
   <!-- HEADER -->
   <tr><td style="background-color:${primary};padding:28px 32px;text-align:center;">
-    <img src="${logo}" alt="River Sand" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto;">
+    <img src="${logo}" alt="${legalName}" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto;">
   </td></tr>
 
   <!-- GOLD DIVIDER -->
@@ -684,13 +700,13 @@ function brandedEmailWrapper(options: {
   <!-- FOOTER -->
   <tr><td style="background-color:#F5F5F5;padding:24px 32px;text-align:center;border-top:1px solid #E8E5DD;">
     <img src="${WAYS_LOGO}" alt="WAYS" width="80" style="display:block;margin:0 auto 10px;width:80px;height:auto;opacity:0.6;">
-    <p style="margin:0 0 4px;color:#999;font-size:11px;font-weight:600;letter-spacing:1px;">WAYS&reg; Materials LLC</p>
+    <p style="margin:0 0 4px;color:#999;font-size:11px;font-weight:600;letter-spacing:1px;">${legalName}</p>
     <p style="margin:0 0 4px;color:#999;font-size:11px;">
-      <a href="tel:+18554689297" style="color:#666;text-decoration:none;">${PHONE}</a> &bull;
-      <a href="mailto:orders@riversand.net" style="color:#666;text-decoration:none;">orders@riversand.net</a>
+      <a href="tel:${phone.replace(/\D/g, "")}" style="color:#666;text-decoration:none;">${phone}</a> &bull;
+      <a href="mailto:${email}" style="color:#666;text-decoration:none;">${email}</a>
     </p>
     <p style="margin:0;color:#BBB;font-size:10px;">
-      <a href="https://riversand.net" style="color:#999;text-decoration:none;">riversand.net</a>
+      <a href="https://${website}" style="color:#999;text-decoration:none;">${website}</a>
     </p>
   </td></tr>
 
@@ -701,8 +717,8 @@ function brandedEmailWrapper(options: {
 }
 
 // Keep old emailWrapper as alias for backward compat
-function emailWrapper(body: string) {
-  return brandedEmailWrapper({ content: body });
+function emailWrapper(body: string, bizOverrides?: { bizPhone?: string; bizEmail?: string; bizWebsite?: string; bizLegalName?: string }) {
+  return brandedEmailWrapper({ content: body, ...bizOverrides });
 }
 
 function orderInternalEmail(order: any) {
@@ -836,7 +852,12 @@ serve(async (req) => {
     const { data: settingsData } = await sb
       .from("global_settings")
       .select("key, value")
-      .in("key", ["email_dispatch", "email_from", "email_from_name", "email_reply_to", "card_processing_fee_percent", "card_processing_fee_fixed"]);
+      .in("key", [
+        "email_dispatch", "email_from", "email_from_name", "email_reply_to",
+        "card_processing_fee_percent", "card_processing_fee_fixed",
+        "legal_name", "site_name", "phone", "website",
+        "support_email", "tagline", "copyright_year",
+      ]);
 
     const emailCfg: Record<string, string> = {};
     for (const row of settingsData || []) {
@@ -849,8 +870,19 @@ serve(async (req) => {
     const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
     const FEE_PERCENT = parseFloat(emailCfg.card_processing_fee_percent || "3.5");
     const FEE_FIXED = parseFloat(emailCfg.card_processing_fee_fixed || "0.30");
+    // Update module-level vars so template functions pick up runtime settings
+    PHONE = emailCfg.phone || "1-855-GOT-WAYS";
+    WEBSITE = emailCfg.website?.replace(/^https?:\/\//, "") || "riversand.net";
+    LEGAL_NAME = emailCfg.legal_name || "WAYS® Materials LLC";
+    SUPPORT_EMAIL = emailCfg.support_email || "orders@riversand.net";
+    SITE_NAME = emailCfg.site_name || "River Sand";
+    COPYRIGHT_YEAR = emailCfg.copyright_year || "2026";
+    TAGLINE = emailCfg.tagline || "Real Sand. Real People.";
 
-    console.log("[send-email] Email config — dispatch:", DISPATCH_EMAIL, "from:", FROM);
+    // Biz overrides for brandedEmailWrapper calls
+    const bizOverrides = { bizPhone: PHONE, bizEmail: SUPPORT_EMAIL, bizWebsite: WEBSITE, bizLegalName: LEGAL_NAME };
+    const wrapEmail = (body: string) => emailWrapper(body, bizOverrides);
+
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
     console.log("[send-email] RESEND_API_KEY set:", !!resendKey);
@@ -985,7 +1017,7 @@ serve(async (req) => {
     <p style="background:#fff3f3;padding:12px;border-radius:6px;border-left:4px solid ${BRAND_RED};color:${BRAND_RED};font-weight:600">Please call this customer back as soon as possible.</p>
   </div>
   <div class="footer">
-    <p>© 2026 WAYS® Materials LLC</p>
+    <p>© ${COPYRIGHT_YEAR} ${LEGAL_NAME}</p>
   </div>
 </div></body></html>`;
 
@@ -1006,7 +1038,7 @@ Phone: ${data.customer_phone || "Not provided"}
 
 Submitted: ${data.created_at ? new Date(data.created_at).toLocaleString("en-US") : "N/A"}
 ─────────────────────────────
-riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
+${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
 
       await sendMail(
         resend,
@@ -1048,8 +1080,8 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
           <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
-          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">New Orleans, Louisiana</p>
         </div>
       `);
@@ -1089,8 +1121,8 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
           <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
-          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>
       `);
 
@@ -1152,8 +1184,8 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
           <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
-          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>
       `);
       await sendMail(resend, data.customer_email, "We received your request — riversand.net", leadConfirmHtml, undefined, FROM, REPLY_TO);
@@ -1200,8 +1232,8 @@ riversand.net | ${PHONE} | WAYS® Materials LLC`.trim();
         <div style="border-top:1px solid #E0DDD5;padding-top:16px;margin-top:24px">
           <p style="margin:0;font-weight:500;color:${BRAND_COLOR}">Silas Caldeira</p>
           <p style="margin:4px 0 0;font-size:12px;color:#666">Founder & CEO</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#666">WAYS® Materials LLC</p>
-          <p style="margin:4px 0 0;font-size:12px"><a href="https://riversand.net" style="color:#1A6BB8;text-decoration:none">riversand.net</a> | ${PHONE}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#666">${LEGAL_NAME}</p>
+          <p style="margin:4px 0 0;font-size:12px"><a href="https://${WEBSITE}" style="color:#1A6BB8;text-decoration:none">${WEBSITE}</a> | ${PHONE}</p>
         </div>
       `);
       await sendMail(resend, data.customer_email, "About your river sand delivery request — riversand.net", leadDeclineHtml, undefined, FROM, REPLY_TO);
