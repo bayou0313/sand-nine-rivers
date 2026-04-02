@@ -168,13 +168,13 @@ export default function BrandedConfirmation({
           />
 
           <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-            © 2026 Ways Materials LLC
+            © {biz.copyright_year} {biz.legal_name}
           </p>
           <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.25)" }}>
-            orders@riversand.net · 1-855-GOT-WAYS
+            {biz.support_email} · {biz.phone}
           </p>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-            River Sand — Real Sand. Real People.
+            {biz.site_name} — {biz.tagline}
           </p>
         </div>
 
