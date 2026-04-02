@@ -91,7 +91,7 @@ function parseCutoffHour(cutoff: string | null | undefined): number {
   return CUTOFF_HOUR;
 }
 
-export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null): (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] {
+export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null, maxSlots: number = 7): (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] {
   const centralNow = getCentralTime();
   const centralHour = centralNow.getHours() + centralNow.getMinutes() / 60;
   const today = getCentralDate();
@@ -103,7 +103,7 @@ export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null): (De
 
   const dates: (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] = [];
 
-  for (let i = 0; dates.length < 7 && i < 14; i++) {
+  for (let i = 0; dates.length < maxSlots && i < (maxSlots * 3); i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const dayOfWeek = d.getDay();
@@ -167,6 +167,7 @@ export { SATURDAY_SURCHARGE };
 
 type LoadCounts = {
   counts: Record<string, number>;
+  global_counts: Record<string, number>;
   saturday_load_limit: number | null;
   sunday_load_limit: number | null;
   max_daily_limit: number | null;
@@ -211,36 +212,26 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
   }, [pitSchedule, weekendPitMap]);
   const [loadData, setLoadData] = useState<LoadCounts | null>(null);
 
-  // Fetch load counts — use weekend PIT IDs when available
+  // Fetch load counts for ALL visible dates (weekday + weekend)
   useEffect(() => {
     if (dates.length === 0) { setLoadData(null); return; }
-    const weekendDates = dates.filter(d => d.isSaturday || d.isSunday);
-    if (weekendDates.length === 0) { setLoadData(null); return; }
 
-    // Determine unique PIT IDs to query for weekend dates
+    // Build PIT-to-dates mapping for all visible dates
     const pitQueries: { pit_id: string; dates: string[] }[] = [];
-    const weekdayPitDates: string[] = [];
-    for (const d of weekendDates) {
+    for (const d of dates) {
+      const isWeekend = d.isSaturday || d.isSunday;
       const dayKey = d.isSaturday ? 6 : 0;
-      const wPit = weekendPitMap?.[dayKey as 0 | 6];
-      if (wPit) {
-        const existing = pitQueries.find(q => q.pit_id === wPit.pit.id);
-        if (existing) existing.dates.push(d.iso);
-        else pitQueries.push({ pit_id: wPit.pit.id, dates: [d.iso] });
-      } else if (pitId) {
-        weekdayPitDates.push(d.iso);
-      }
-    }
-    if (pitId && weekdayPitDates.length > 0) {
-      const existing = pitQueries.find(q => q.pit_id === pitId);
-      if (existing) existing.dates.push(...weekdayPitDates);
-      else pitQueries.push({ pit_id: pitId, dates: weekdayPitDates });
+      const wPit = isWeekend ? weekendPitMap?.[dayKey as 0 | 6] : null;
+      const effectivePitId = wPit ? wPit.pit.id : pitId;
+      if (!effectivePitId) continue;
+      const existing = pitQueries.find(q => q.pit_id === effectivePitId);
+      if (existing) existing.dates.push(d.iso);
+      else pitQueries.push({ pit_id: effectivePitId, dates: [d.iso] });
     }
     if (pitQueries.length === 0) { setLoadData(null); return; }
 
     (async () => {
       try {
-        // Fetch all pit queries in parallel and merge
         const results = await Promise.all(
           pitQueries.map(q =>
             supabase.functions.invoke("leads-auth", {
@@ -248,10 +239,11 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
             })
           )
         );
-        const merged: LoadCounts = { counts: {}, saturday_load_limit: null, sunday_load_limit: null, max_daily_limit: null };
+        const merged: LoadCounts = { counts: {}, global_counts: {}, saturday_load_limit: null, sunday_load_limit: null, max_daily_limit: null };
         for (const r of results) {
           if (!r.error && r.data) {
             Object.assign(merged.counts, r.data.counts || {});
+            Object.assign(merged.global_counts, r.data.global_counts || {});
             if (r.data.saturday_load_limit != null) merged.saturday_load_limit = r.data.saturday_load_limit;
             if (r.data.sunday_load_limit != null) merged.sunday_load_limit = r.data.sunday_load_limit;
             if (r.data.max_daily_limit != null) merged.max_daily_limit = r.data.max_daily_limit;
@@ -265,13 +257,56 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
   const isFullyBooked = (d: DeliveryDate & { blocked?: boolean }) => {
     if (!loadData || d.blocked) return false;
     const count = loadData.counts[d.iso] || 0;
-    if (loadData.max_daily_limit != null && count >= loadData.max_daily_limit) return true;
+    const globalCount = loadData.global_counts[d.iso] || 0;
+    // Global limit uses cross-PIT count
+    if (loadData.max_daily_limit != null && globalCount >= loadData.max_daily_limit) return true;
+    // PIT-specific weekend limits use per-PIT count
     if (d.isSaturday && loadData.saturday_load_limit != null && count >= loadData.saturday_load_limit) return true;
     if (d.isSunday && loadData.sunday_load_limit != null && count >= loadData.sunday_load_limit) return true;
     return false;
   };
 
   const allBlocked = useMemo(() => dates.length === 0 || dates.every(d => d.blocked || isFullyBooked(d)), [dates, loadData]);
+
+  // Find the next available date beyond the initial 7 when all are blocked
+  const [nextAvailable, setNextAvailable] = useState<DeliveryDate | null>(null);
+  useEffect(() => {
+    if (!allBlocked || !pitId) { setNextAvailable(null); return; }
+    // Scan up to 21 days out
+    const extended = getAvailableDeliveryDates(pitSchedule, 21);
+    // Filter to dates beyond the initial set
+    const lastShownIso = dates.length > 0 ? dates[dates.length - 1].iso : "";
+    const candidates = extended.filter(d => d.iso > lastShownIso && !d.blocked);
+    if (candidates.length === 0) { setNextAvailable(null); return; }
+
+    // Fetch load counts for candidates to check if they're booked
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("leads-auth", {
+          body: { action: "get_date_load_counts", pit_id: pitId, dates: candidates.map(c => c.iso) },
+        });
+        if (!data) { setNextAvailable(candidates[0]); return; }
+        const maxDaily = data.max_daily_limit;
+        const globalCts = data.global_counts || {};
+        const satLimit = data.saturday_load_limit;
+        const sunLimit = data.sunday_load_limit;
+        const cts = data.counts || {};
+        for (const c of candidates) {
+          const gc = globalCts[c.iso] || 0;
+          const pc = cts[c.iso] || 0;
+          if (maxDaily != null && gc >= maxDaily) continue;
+          if (c.isSaturday && satLimit != null && pc >= satLimit) continue;
+          if (c.isSunday && sunLimit != null && pc >= sunLimit) continue;
+          setNextAvailable(c);
+          return;
+        }
+        setNextAvailable(null);
+      } catch {
+        setNextAvailable(candidates[0]);
+      }
+    })();
+  }, [allBlocked, pitId, pitSchedule, dates]);
+
   const showCutoffWarning = useMemo(() => {
     if (!selectedDate?.isSameDay) return false;
     return getSameDayCutoffWarning(pitSchedule);
@@ -286,9 +321,20 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
           <p className="font-body text-sm text-amber-800 font-medium">
             No delivery dates available in the next 7 days from this location.
           </p>
-          <p className="font-body text-xs text-amber-600 mt-1">
-            Call 1-855-GOT-WAYS for scheduling.
-          </p>
+          {nextAvailable ? (
+            <button
+              type="button"
+              onClick={() => onSelect(nextAvailable)}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground font-display text-sm tracking-wider rounded-lg shadow-md hover:shadow-lg hover:bg-accent/90 transition-all"
+            >
+              <CalendarDays className="w-4 h-4" />
+              Next available: {nextAvailable.fullLabel}
+            </button>
+          ) : (
+            <p className="font-body text-xs text-amber-600 mt-1">
+              Call 1-855-GOT-WAYS for scheduling.
+            </p>
+          )}
         </div>
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">

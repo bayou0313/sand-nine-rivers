@@ -146,6 +146,7 @@ const Order = () => {
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [deliveryTermsAccepted, setDeliveryTermsAccepted] = useState(false);
+  const [codPaymentConfirmed, setCodPaymentConfirmed] = useState(false);
   const [cardAuthAccepted, setCardAuthAccepted] = useState(false);
 
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
@@ -1817,16 +1818,33 @@ const Order = () => {
                   </div>
                 )}
 
+                {/* COD Payment Confirmation Checkbox */}
+                {paymentMethod !== "stripe-link" && (
+                  <div className="mt-4">
+                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={codPaymentConfirmed}
+                        onChange={(e) => setCodPaymentConfirmed(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded accent-primary"
+                      />
+                      <span className="font-body text-xs text-foreground leading-relaxed font-medium">
+                        I confirm that payment is due at delivery.
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 {/* Action buttons */}
                 <div className="space-y-3">
                   <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setDeliveryTermsAccepted(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
+                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setDeliveryTermsAccepted(false); setCodPaymentConfirmed(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
                       <ArrowLeft className="w-4 h-4 mr-1" /> BACK
                     </Button>
                     <Button
                       onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
                       disabled={
-                        submitting || !deliveryTermsAccepted
+                        submitting || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)
                       }
                       className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
                     >

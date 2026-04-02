@@ -339,6 +339,21 @@ serve(async (req) => {
         if (d) counts[d] = (counts[d] || 0) + 1;
       }
 
+      // Count ALL orders across ALL PITs per date (for global max_daily_limit)
+      const { data: globalOrderRows, error: globalOrderErr } = await sb
+        .from("orders")
+        .select("delivery_date")
+        .in("delivery_date", loadDates)
+        .eq("payment_status", "paid")
+        .eq("status", "confirmed");
+      if (globalOrderErr) throw globalOrderErr;
+
+      const global_counts: Record<string, number> = {};
+      for (const row of globalOrderRows || []) {
+        const d = row.delivery_date;
+        if (d) global_counts[d] = (global_counts[d] || 0) + 1;
+      }
+
       // Get PIT limits
       const { data: pitRow } = await sb
         .from("pits")
@@ -355,6 +370,7 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({
         counts,
+        global_counts,
         saturday_load_limit: pitRow?.saturday_load_limit ?? null,
         sunday_load_limit: pitRow?.sunday_load_limit ?? null,
         max_daily_limit: globalRow?.value ? parseInt(globalRow.value) : null,
