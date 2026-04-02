@@ -1263,7 +1263,14 @@ const Order = () => {
                       {selectedDeliveryDate.isSaturday && (
                         <>
                           <div className="border-b border-dashed border-border" />
-                          <ReceiptRow label={`Saturday Surcharge ($35 × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                          <ReceiptRow label={`Saturday Surcharge ($${effectiveSatSurcharge} × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
+                        </>
+                      )}
+
+                      {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
+                        <>
+                          <div className="border-b border-dashed border-border" />
+                          <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} destructive />
                         </>
                       )}
 
