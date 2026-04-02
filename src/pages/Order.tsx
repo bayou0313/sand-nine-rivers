@@ -1293,6 +1293,12 @@ const Order = () => {
                             <span className="font-display text-foreground">+{formatCurrency(saturdaySurchargeTotal)}</span>
                           </div>
                         )}
+                        {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="font-body text-muted-foreground">Sunday delivery fee</span>
+                            <span className="font-display text-foreground">+{formatCurrency(sundaySurchargeTotal)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-sm">
                           <span className="font-body text-muted-foreground">Sales tax — {taxInfo.parish} ({(taxInfo.rate * 100).toFixed(2)}%)</span>
                           <span className="font-display text-foreground">+{formatCurrency(taxAmount)}</span>
