@@ -501,13 +501,13 @@ const Order = () => {
   const pricingSnapshotRef = useRef({
     totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
     saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
-    address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+    address, selectedDeliveryDate, form, paymentMethod, pendingOrderId, lookupToken,
   });
   useEffect(() => {
     pricingSnapshotRef.current = {
       totalPrice, totalWithProcessingFee, processingFee, taxAmount, subtotal,
       saturdaySurchargeTotal, taxInfo, result, effectivePricing, quantity,
-      address, selectedDeliveryDate, form, paymentMethod, pendingOrderId,
+      address, selectedDeliveryDate, form, paymentMethod, pendingOrderId, lookupToken,
     };
   });
 
