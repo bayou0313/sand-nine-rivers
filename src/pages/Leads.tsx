@@ -311,6 +311,11 @@ const Leads = () => {
   const [liveLoading, setLiveLoading] = useState(false);
   const [funnelData, setFunnelData] = useState<Record<string, number> | null>(null);
 
+  // Notifications state
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const notifPanelRef = useRef<HTMLDivElement>(null);
 
   const [cashOrders, setCashOrders] = useState<any[]>([]);
   const [cashLoading, setCashLoading] = useState(false);
