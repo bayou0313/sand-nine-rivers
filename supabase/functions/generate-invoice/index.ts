@@ -331,22 +331,25 @@ serve(async (req) => {
       }
       y += 18;
     } else {
+      const boxH = 11;
+      const boxPx = 6; // horizontal padding
       doc.setDrawColor(253, 230, 138);
       doc.setLineWidth(0.3);
-      doc.roundedRect(mx, y, cw, 14, 2, 2, "S");
+      doc.roundedRect(mx, y, cw, boxH, 2, 2, "S");
       doc.setLineWidth(0.2);
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(...AMBER);
       doc.setFont("helvetica", "bold");
-      doc.text("DUE AT DELIVERY", mx + cw / 2, y + 5, { align: "center" });
-      doc.setFontSize(13);
+      doc.text("DUE AT DELIVERY", mx + boxPx, y + 4.5);
+      doc.setFontSize(12);
       doc.setTextColor(194, 31, 50);
-      doc.text(fmt(order.price), mx + cw / 2, y + 10.5, { align: "center" });
-      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.text(fmt(order.price), mx + cw - boxPx, y + 4.5, { align: "right" });
+      doc.setFontSize(6.5);
       doc.setTextColor(...AMBER);
       doc.setFont("helvetica", "normal");
-      doc.text("Exact amount required — driver carries no change", mx + cw / 2, y + 13.5, { align: "center" });
-      y += 18;
+      doc.text("Exact amount required — driver carries no change", mx + boxPx, y + 8.5);
+      y += boxH + 4;
 
       y += 6;
       doc.setFontSize(7);
