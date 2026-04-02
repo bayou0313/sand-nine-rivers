@@ -5,7 +5,7 @@ import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { useCountdown } from "@/hooks/use-countdown";
-import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish } from "@/lib/format";
+import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
