@@ -39,6 +39,7 @@ function getCitiesSectionHeading(cities: CityLink[]): string {
 
 const Footer = () => {
   const [cityLinks, setCityLinks] = useState<CityLink[]>([]);
+  const biz = useBusinessSettings();
 
   useEffect(() => {
     const fetchCities = async () => {
