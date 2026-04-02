@@ -609,7 +609,7 @@ const Order = () => {
     return map;
   }, []);
 
-
+  const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
     setAddress(result.formattedAddress);
     setCustomerCoords({ lat: result.lat, lng: result.lng });
     if (result.addressComponents) {
