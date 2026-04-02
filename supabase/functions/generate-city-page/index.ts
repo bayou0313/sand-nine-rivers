@@ -115,8 +115,8 @@ Reference I-10, Chef Menteur Highway, or specific New Orleans East landmarks
 (NASA Michoud, Lake Forest Boulevard, Read Boulevard) in local content.
 ` : ""}
 CONTENT REQUIREMENTS:
-- meta_title: Max 60 chars. Must include city name and 'river sand delivery'. Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day | River Sand"
-- meta_description: Max 160 chars. Must include city name, same-day delivery${isMultiPit ? ", instant pricing" : `, price ($${price})`}, and payment options (cash or card). Written to maximize click-through from search results.
+- meta_title: Max 60 chars. Must include city name and "river sand delivery". ${isMultiPit ? `Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day"` : `Format: "River Sand Delivery in ${city_name}, ${state} | $${price}/Load"`}. Never include the brand name "River Sand" at the end if it pushes past 60 chars.
+- meta_description: Max 160 chars. Must be UNIQUE to this city — never reuse the same sentence structure across cities. ${isMultiPit ? `Must include: city name, "same-day", "instant pricing", and "cash or card". Example: "Same-day river sand delivery to ${city_name}, ${state}. Enter your address for instant pricing. Cash or card accepted."` : `Must include: city name, exact price ($${price}), "same-day", and "cash or card". Example: "Same-day river sand delivery to ${city_name}, ${state} — $${price} per load. No minimums. Cash or card. Order before ${effectiveCutoff} for today."`} Vary the opening word and sentence rhythm — do NOT start with "Same-day" on every page. Avoid generic AI filler words like "bustling", "vibrant", "thriving", or vague Louisiana descriptors. Write like a local business, not a travel blog.
 - h1_text: Max 70 chars. MUST start with "River Sand Delivery in". Format: "River Sand Delivery in ${city_name}, ${state} — Same-Day Service". NO pipe characters (|) — pipes are for meta_title only. Must read as a natural headline, not an SEO tag.
 - hero_intro: ONE sentence. Maximum 120 characters. Must contain "${city_name} river sand delivery" naturally. Lead with a specific local detail — a road, landmark, or project type. Never restate the H1. No period at the end. Example: "Serving Chalmette homeowners along St. Bernard Highway — same-day bulk river sand delivery"
 - why_choose_intro: ONE sentence. Maximum 200 characters. Must include the city name, the parish name, and the phrase "river sand" or "river sand delivery". Establishes local authority — reference a specific terrain challenge, drainage issue, or soil condition unique to this parish. No generic claims.
@@ -230,7 +230,7 @@ CONTENT REQUIREMENTS:
         meta_description: generated.meta_description,
         h1_text: generated.h1_text,
         content: fullContent,
-        prompt_version: "3.0",
+        prompt_version: "3.1",
         pit_reassigned: false,
         price_changed: false,
         regen_reason: null,
