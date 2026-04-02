@@ -1813,8 +1813,10 @@ const Order = () => {
                     {/* Delivery */}
                     <div>
                       <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">DELIVERY</p>
-                      <ReceiptRow label="Address" value="" />
-                      <p className="font-body text-sm text-foreground -mt-1 mb-2 text-right">{address}</p>
+                      <div className="flex justify-between items-start py-2.5 gap-4">
+                        <span className="font-body text-base text-muted-foreground leading-relaxed shrink-0">Address</span>
+                        <span className="font-display text-base text-foreground text-right break-words min-w-0">{address}</span>
+                      </div>
                       <ReceiptRow label="Date" value={selectedDeliveryDate.fullLabel} />
                       <ReceiptRow label="Window" value="8:00 AM – 5:00 PM" />
                     </div>
