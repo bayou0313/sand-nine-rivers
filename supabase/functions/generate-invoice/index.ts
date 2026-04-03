@@ -426,12 +426,11 @@ serve(async (req) => {
       y += rowH;
     });
 
-    // ─── TOTAL ROW (always shown) ───
+    // ─── SUBTOTAL / ACCOUNTING ROWS ───
     y += 2;
     doc.setDrawColor(...LIGHT_GRAY);
     doc.line(tableX, y, pw - mx, y);
     y += 1;
-    // Double line for total
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.5);
     doc.line(tableX, y, pw - mx, y);
@@ -440,9 +439,33 @@ serve(async (req) => {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BLACK);
-    doc.text("TOTAL", tableX, y);
+    doc.text("Subtotal", tableX, y);
     doc.text(fmt(order.price), amtX, y, { align: "right" });
-    y += 8;
+    y += 7;
+
+    if (isCard && isPaid) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY);
+      const refStr = order.stripe_payment_id ? `···${(order.stripe_payment_id || "").slice(-12)}` : "";
+      doc.text(`Credit Card  ${refStr}`, tableX, y);
+      doc.setFont("helvetica", "bold");
+      doc.text(`(${fmt(order.price)})`, amtX, y, { align: "right" });
+      y += 7;
+      doc.setDrawColor(...LIGHT_GRAY);
+      doc.line(tableX, y - 3, pw - mx, y - 3);
+      doc.setFontSize(10);
+      doc.setTextColor(...BLACK);
+      doc.text("Amount Due", tableX, y + 1);
+      doc.text("$0.00", amtX, y + 1, { align: "right" });
+      y += 8;
+    } else if (!isCard) {
+      // COD: show simple TOTAL row
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...BLACK);
+      // Already shown as Subtotal above — no extra row needed for COD
+    }
 
     // ─── PINNED BOTTOM ZONE (absolute Y positions, never move) ───
     const bullets = [
