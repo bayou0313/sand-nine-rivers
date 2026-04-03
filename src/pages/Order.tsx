@@ -379,41 +379,18 @@ const Order = () => {
 
       // Verify payment with backend
       if (verifyOrderId && verifyToken) {
-        verifyStripePayment(verifyOrderId, verifyToken).then(async (verified) => {
-          if (verified) {
-            // Payment confirmed — fetch full order data for display
-            if (returnedOrderNumber) {
-              try {
-                const { data: order } = await supabase
-                  .from("orders")
-                  .select("*")
-                  .eq("order_number", returnedOrderNumber)
-                  .single();
-                if (order) {
-                  setConfirmedOrderId(order.id);
-                  showSuccess(order);
-                  return;
-                }
-              } catch {}
+        verifyStripePayment(verifyOrderId, verifyToken).then(async (orderData) => {
+          if (orderData) {
+            // Payment confirmed — use the data returned from get-order-status
+            console.log("[Order] Payment verified, got order data from edge function:", orderData.order_number);
+            setConfirmedOrderId(orderData.id || verifyOrderId);
+            if (orderData.stripe_payment_id) {
+              setStripePaymentId(orderData.stripe_payment_id.slice(-12));
             }
-            showSuccess();
+            showSuccess(orderData);
           } else {
             // Verification timed out — show cautious success with warning
             console.warn("[Order] Payment verification timed out — showing success with caveat");
-            if (returnedOrderNumber) {
-              try {
-                const { data: order } = await supabase
-                  .from("orders")
-                  .select("*")
-                  .eq("order_number", returnedOrderNumber)
-                  .single();
-                if (order) {
-                  setConfirmedOrderId(order.id);
-                  showSuccess(order);
-                  return;
-                }
-              } catch {}
-            }
             showSuccess();
             toast({
               title: "Payment processing",
