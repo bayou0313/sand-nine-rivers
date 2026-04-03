@@ -15,10 +15,8 @@ import {
 
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
-const LOGO_BLACK =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png";
-const WAYS_LOGO =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
+const WAYS_LOGO_DARK =
+  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
 
 
 const DELIVERY_TERMS = [
@@ -300,19 +298,15 @@ export default function OrderConfirmation({
             {orderDate}
           </p>
 
-          {/* Status pill */}
-          <div
-            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold font-body"
-            style={
-              isStripePaid
-                ? { backgroundColor: "#DCFCE7", color: "#166534" }
-                : { backgroundColor: "#FEF3C7", color: "#92400E" }
-            }
-          >
-            {isStripePaid
-              ? `Paid in Full — ${formatCurrency(displayTotalWithFee)}`
-              : `${formatCurrency(displayTotal)} Due at Delivery`}
-          </div>
+          {/* Status pill — COD only */}
+          {!isStripePaid && (
+            <div
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold font-body"
+              style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
+            >
+              {formatCurrency(displayTotal)} Due at Delivery
+            </div>
+          )}
 
           {customerEmail && (
             <p className="mt-4 text-xs font-body" style={{ color: "#9CA3AF" }}>
@@ -566,11 +560,6 @@ export default function OrderConfirmation({
               <p className="font-body" style={{ fontSize: "13px", color: "#78350F", lineHeight: "1.6", margin: 0 }}>
                 Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.
               </p>
-              <p className="font-body" style={{ fontSize: "12px", color: "#92400E", marginTop: "8px", marginBottom: 0 }}>
-                Note: Card payments include a 3.5% processing fee.
-                <br />
-                Cash/Check total: <strong>{formatCurrency(displayTotal)}</strong> · Card total if needed: <strong>{formatCurrency(displayTotal * 1.035)}</strong>
-              </p>
             </div>
           </div>
         </FadeIn>
@@ -742,15 +731,14 @@ export default function OrderConfirmation({
         >
           <p
             className="text-[9px] tracking-[0.2em] uppercase mb-2 font-display"
-            style={{ color: "#9CA3AF" }}
+            style={{ color: "#000000" }}
           >
             Powered by
           </p>
           <img
-            src={LOGO_BLACK}
+            src={WAYS_LOGO_DARK}
             alt="WAYS"
             className="w-[80px] mb-4"
-            style={{ opacity: 0.6 }}
           />
 
           <div
@@ -762,16 +750,16 @@ export default function OrderConfirmation({
             }}
           />
 
-          <p className="text-xs mb-1 font-body" style={{ color: "#374151" }}>
+          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
+          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             {biz.footer_address}
           </p>
-          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
+          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             {biz.support_email} · {biz.phone}
           </p>
-          <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
+          <p className="text-xs font-body" style={{ color: "#000000" }}>
             {biz.site_name} — {biz.tagline}
           </p>
         </div>

@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
-const WAYS_LOGO =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
+const WAYS_LOGO_DARK =
+  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
 
 const FadeIn = ({
   children,
@@ -149,31 +149,31 @@ export default function BrandedConfirmation({
         {/* ── FOOTER ── */}
         <div
           className="py-10 px-6 flex flex-col items-center text-center"
-          style={{ backgroundColor: "#0D2137" }}
+          style={{ backgroundColor: "#FFFFFF", borderTop: "1px solid #E5E7EB" }}
         >
           <p
             className="text-[9px] tracking-[0.2em] uppercase mb-2"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "#000000" }}
           >
             Powered by
           </p>
           <img
-            src={WAYS_LOGO}
+            src={WAYS_LOGO_DARK}
             alt="WAYS"
-            className="w-[80px] opacity-40 mb-4"
+            className="w-[80px] mb-4"
           />
 
           <div
             style={{ width: 40, height: 1, backgroundColor: "#C07A00", marginBottom: 24 }}
           />
 
-          <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p className="text-xs mb-1" style={{ color: "#000000" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+          <p className="text-xs mb-1" style={{ color: "#000000" }}>
             {biz.support_email} · {biz.phone}
           </p>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
+          <p className="text-xs" style={{ color: "#000000" }}>
             {biz.site_name} — {biz.tagline}
           </p>
         </div>
