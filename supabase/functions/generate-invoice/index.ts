@@ -104,7 +104,7 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
   }
 
   doc.setFontSize(6);
-  doc.setTextColor(200, 200, 200);
+  doc.setTextColor(...BLACK);
   doc.text("This document serves as your official order confirmation and receipt.", pw - mx, footerLineY, { align: "right" });
 }
 
