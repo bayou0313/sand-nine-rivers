@@ -1987,6 +1987,8 @@ const Order = () => {
                   onDownloadInvoice={handleDownloadInvoice}
                   downloadingInvoice={downloadingInvoice}
                   canDownload={!!confirmedOrderId}
+                  confirmedOrderId={confirmedOrderId}
+                  lookupToken={lookupToken}
                 />
                 )}
               </motion.div>
