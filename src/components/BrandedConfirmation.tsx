@@ -153,7 +153,7 @@ export default function BrandedConfirmation({
         >
           <p
             className="text-[9px] tracking-[0.2em] uppercase mb-2"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "#000000" }}
           >
             Powered by
           </p>
