@@ -481,7 +481,7 @@ const Order = () => {
         if (signal.status === "success") {
           const snap = pricingSnapshotRef.current;
           if (signal.order_number) setOrderNumber(signal.order_number);
-          if (signal.session_id) setStripePaymentId(signal.session_id);
+          if (signal.session_id) setStripePaymentId(signal.session_id.slice(-12));
           setPendingOrderId(null);
           setAddress(snap.address);
           setSelectedDeliveryDate(snap.selectedDeliveryDate);
