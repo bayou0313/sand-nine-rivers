@@ -253,7 +253,7 @@ const Order = () => {
     // Normal same-tab return — state may be lost due to page reload
     if (paymentStatus === "success") {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
-      if (returnedSessionId) setStripePaymentId(returnedSessionId);
+      if (returnedSessionId) setStripePaymentId(returnedSessionId.slice(-12));
 
       // Try to get order_id and lookup_token for verification
       let verifyOrderId = returnedOrderId || pendingOrderId || null;
