@@ -736,10 +736,9 @@ export default function OrderConfirmation({
             Powered by
           </p>
           <img
-            src={LOGO_BLACK}
+            src={WAYS_LOGO_DARK}
             alt="WAYS"
             className="w-[80px] mb-4"
-            style={{ opacity: 0.6 }}
           />
 
           <div
