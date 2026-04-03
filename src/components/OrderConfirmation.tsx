@@ -526,6 +526,32 @@ export default function OrderConfirmation({
         </div>
       </FadeIn>
 
+      {/* ── CARD PAID IN FULL BLOCK ── */}
+      {isStripePaid && (
+        <FadeIn delay={0.45}>
+          <div className="px-6 pb-6 max-w-[680px] mx-auto">
+            <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "8px", padding: "20px 24px", marginTop: "8px", marginBottom: "8px" }}>
+              <div className="flex justify-between items-center">
+                <p className="font-display" style={{ fontSize: "13px", fontWeight: "bold", color: "#166534", textTransform: "uppercase", letterSpacing: "1px" }}>
+                  Paid in Full
+                </p>
+                <p className="font-display" style={{ fontSize: "16px", fontWeight: "bold", color: "#166534" }}>
+                  {formatCurrency(displayTotalWithFee)}
+                </p>
+              </div>
+              <div className="flex justify-between items-center mt-2">
+                <p className="font-body" style={{ fontSize: "12px", color: "#15803D" }}>
+                  Method: Credit Card
+                </p>
+                <p className="font-body" style={{ fontSize: "12px", color: "#15803D" }}>
+                  Reference: ...{stripePaymentId?.slice(-12) || "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+      )}
+
       {/* ── COD PAYMENT POLICY ── */}
       {!isStripePaid && (
         <FadeIn delay={0.45}>
