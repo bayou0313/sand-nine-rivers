@@ -426,29 +426,23 @@ serve(async (req) => {
       y += rowH;
     });
 
-    // Tight spacing after last line item
-    y += 3;
-
-    // ─── PAYMENT STATUS BOX (card only — flows inline after pricing) ───
-    if (isPaid) {
-      doc.setDrawColor(187, 247, 208);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(mx, y, cw, 14, 2, 2, "S");
-      doc.setLineWidth(0.2);
-      doc.setFontSize(11);
-      doc.setTextColor(...GREEN);
-      doc.setFont("helvetica", "bold");
-      doc.text("PAID IN FULL", mx + cw / 2, y + 5, { align: "center" });
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...GRAY);
-      doc.text("Credit Card  |  Nothing due at delivery", mx + cw / 2, y + 10, { align: "center" });
-      if (order.stripe_payment_id) {
-        doc.setFontSize(7);
-        doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
-      }
-      y += 18;
-    }
+    // ─── TOTAL ROW (always shown) ───
+    y += 2;
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.line(tableX, y, pw - mx, y);
+    y += 1;
+    // Double line for total
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.5);
+    doc.line(tableX, y, pw - mx, y);
+    doc.setLineWidth(0.2);
+    y += 5;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLACK);
+    doc.text("TOTAL", tableX, y);
+    doc.text(fmt(order.price), amtX, y, { align: "right" });
+    y += 8;
 
     // ─── PINNED BOTTOM ZONE (absolute Y positions, never move) ───
     const bullets = [
