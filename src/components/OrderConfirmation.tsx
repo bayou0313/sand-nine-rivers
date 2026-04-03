@@ -738,18 +738,19 @@ export default function OrderConfirmation({
       <FadeIn delay={0.7} className="print-hide">
         <div
           className="py-10 px-6 flex flex-col items-center text-center rounded-b-2xl"
-          style={{ backgroundColor: "#0D2137" }}
+          style={{ backgroundColor: "#FFFFFF", borderTop: "1px solid #E5E7EB" }}
         >
           <p
             className="text-[9px] tracking-[0.2em] uppercase mb-2 font-display"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "#9CA3AF" }}
           >
             Powered by
           </p>
           <img
-            src={WAYS_LOGO}
+            src={LOGO_BLACK}
             alt="WAYS"
-            className="w-[80px] opacity-40 mb-4"
+            className="w-[80px] mb-4"
+            style={{ opacity: 0.6 }}
           />
 
           <div
@@ -761,28 +762,16 @@ export default function OrderConfirmation({
             }}
           />
 
-          <p
-            className="text-xs mb-1 font-body"
-            style={{ color: "rgba(255,255,255,0.3)" }}
-          >
+          <p className="text-xs mb-1 font-body" style={{ color: "#374151" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p
-            className="text-xs mb-1 font-body"
-            style={{ color: "rgba(255,255,255,0.25)" }}
-          >
+          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
             {biz.footer_address}
           </p>
-          <p
-            className="text-xs mb-1 font-body"
-            style={{ color: "rgba(255,255,255,0.25)" }}
-          >
+          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
             {biz.support_email} · {biz.phone}
           </p>
-          <p
-            className="text-xs font-body"
-            style={{ color: "rgba(255,255,255,0.2)" }}
-          >
+          <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
             {biz.site_name} — {biz.tagline}
           </p>
         </div>

@@ -328,7 +328,7 @@ const Order = () => {
             saturdaySurchargeTotal: orderSatSurcharge,
             sundaySurchargeTotal: orderData.sunday_surcharge_amount || 0,
             distanceFee: 0,
-            taxInfo: { rate: orderTaxRate, parish: "" },
+            taxInfo: { rate: orderTaxRate, parish: orderData.delivery_address ? getTaxRateFromAddress(orderData.delivery_address).parish : "" },
           });
           if (orderData.distance_miles) {
             setResult({
