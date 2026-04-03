@@ -539,21 +539,24 @@ serve(async (req) => {
 
     // Draw PAID IN FULL at fixed Y (card only)
     if (hasPaidBox) {
-      doc.setDrawColor(187, 247, 208);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(mx, pinnedTopY, cw, 14, 2, 2, "S");
-      doc.setLineWidth(0.2);
-      doc.setFontSize(11);
-      doc.setTextColor(...GREEN);
+      doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.text("PAID IN FULL", mx + cw / 2, pinnedTopY + 5, { align: "center" });
-      doc.setFontSize(8);
+      doc.setTextColor(...DARK);
+      doc.text("PAID IN FULL", mx, pinnedTopY + 4);
+      doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Credit Card  |  Nothing due at delivery", mx + cw / 2, pinnedTopY + 10, { align: "center" });
+      doc.text("Nothing due at delivery — payment collected by Stripe", mx, pinnedTopY + 9);
+
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("$0.00", pw - mx, pinnedTopY + 4, { align: "right" });
       if (order.stripe_payment_id) {
-        doc.setFontSize(7);
-        doc.text(`Ref: ...${(order.stripe_payment_id || "").slice(-12)}`, mx + cw / 2, pinnedTopY + 13, { align: "center" });
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...GRAY);
+        doc.text(`Ref: ···${(order.stripe_payment_id || "").slice(-12)}`, pw - mx, pinnedTopY + 9, { align: "right" });
       }
     }
 
