@@ -163,6 +163,8 @@ export default function OrderConfirmation({
   onDownloadInvoice,
   downloadingInvoice,
   canDownload,
+  confirmedOrderId,
+  lookupToken,
 }: OrderConfirmationProps) {
   const { toast } = useToast();
   const biz = useBusinessSettings();
