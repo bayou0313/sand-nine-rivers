@@ -731,7 +731,7 @@ export default function OrderConfirmation({
         >
           <p
             className="text-[9px] tracking-[0.2em] uppercase mb-2 font-display"
-            style={{ color: "#9CA3AF" }}
+            style={{ color: "#000000" }}
           >
             Powered by
           </p>
