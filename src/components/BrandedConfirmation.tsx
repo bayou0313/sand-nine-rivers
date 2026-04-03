@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
-const WAYS_LOGO =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
+const WAYS_LOGO_DARK =
+  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
 
 const FadeIn = ({
   children,
