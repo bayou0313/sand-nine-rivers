@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Accordion,
   AccordionContent,
@@ -134,6 +135,8 @@ export interface OrderConfirmationProps {
   onDownloadInvoice: () => void;
   downloadingInvoice: boolean;
   canDownload: boolean;
+  confirmedOrderId?: string | null;
+  lookupToken?: string | null;
 }
 
 export default function OrderConfirmation({
@@ -160,6 +163,8 @@ export default function OrderConfirmation({
   onDownloadInvoice,
   downloadingInvoice,
   canDownload,
+  confirmedOrderId,
+  lookupToken,
 }: OrderConfirmationProps) {
   const { toast } = useToast();
   const biz = useBusinessSettings();
@@ -234,12 +239,35 @@ export default function OrderConfirmation({
     }
   };
 
-  const sendWhatsAppWeb = () => {
+  const sendWhatsAppWeb = async () => {
     setShowWhatsAppChoice(false);
+
+    // Try sharing the PDF file via Web Share API if order details are available
+    if (confirmedOrderId && lookupToken) {
+      toast({ title: "Generating PDF…", description: "Preparing your order for sharing." });
+      try {
+        const response = await supabase.functions.invoke("generate-invoice", {
+          body: { order_id: confirmedOrderId, lookup_token: lookupToken },
+        });
+        if (response.error) throw new Error("Failed to generate PDF");
+
+        const blob = new Blob([response.data], { type: "application/pdf" });
+        const file = new File([blob], `RiverSand-Order-${orderNumber || "details"}.pdf`, { type: "application/pdf" });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text: shareText });
+          return;
+        }
+      } catch (err: any) {
+        if (err?.name === "AbortError") return; // User cancelled share dialog
+        toast({ title: "Could not share PDF", description: "Falling back to text share.", variant: "destructive" });
+      }
+    }
+
+    // Fallback: text-only WhatsApp Web link
     const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
     const win = window.open(url, "_blank");
     if (!win) {
-      // Clipboard fallback
       navigator.clipboard.writeText(shareText).then(() => {
         toast({ title: "Copied to clipboard", description: "Order details copied — paste into WhatsApp." });
       }).catch(() => {});
