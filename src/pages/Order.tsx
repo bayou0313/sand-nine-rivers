@@ -1480,8 +1480,8 @@ const Order = () => {
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Notes (optional)</label>
-                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={150} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
-                        <p className="text-xs text-muted-foreground mt-1 text-right font-body">{form.notes.length}/150</p>
+                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
+                        <p className="text-xs text-muted-foreground mt-1 text-right font-body">{form.notes.length}/275</p>
                       </div>
                     </div>
                   </div>
