@@ -158,9 +158,9 @@ export default function BrandedConfirmation({
             Powered by
           </p>
           <img
-            src={WAYS_LOGO}
+            src={WAYS_LOGO_DARK}
             alt="WAYS"
-            className="w-[80px] opacity-40 mb-4"
+            className="w-[80px] mb-4"
           />
 
           <div
