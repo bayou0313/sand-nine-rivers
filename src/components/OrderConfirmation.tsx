@@ -806,7 +806,7 @@ function Row({
             {value}
           </span>
         ) : (
-          <p className="text-sm font-medium break-words font-body" style={{ color: "#111827" }}>
+          <p className="text-sm font-medium break-words font-body leading-snug" style={{ color: "#111827" }}>
             {value}
           </p>
         )}
