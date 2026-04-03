@@ -560,11 +560,6 @@ export default function OrderConfirmation({
               <p className="font-body" style={{ fontSize: "13px", color: "#78350F", lineHeight: "1.6", margin: 0 }}>
                 Cash or check payment is due at the time of delivery. If payment cannot be collected at delivery, we will contact you to arrange card payment.
               </p>
-              <p className="font-body" style={{ fontSize: "12px", color: "#92400E", marginTop: "8px", marginBottom: 0 }}>
-                Note: Card payments include a 3.5% processing fee.
-                <br />
-                Cash/Check total: <strong>{formatCurrency(displayTotal)}</strong> · Card total if needed: <strong>{formatCurrency(displayTotal * 1.035)}</strong>
-              </p>
             </div>
           </div>
         </FadeIn>
