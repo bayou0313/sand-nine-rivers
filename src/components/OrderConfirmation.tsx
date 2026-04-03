@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Accordion,
   AccordionContent,
