@@ -750,16 +750,16 @@ export default function OrderConfirmation({
             }}
           />
 
-          <p className="text-xs mb-1 font-body" style={{ color: "#374151" }}>
+          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
+          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             {biz.footer_address}
           </p>
-          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
+          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             {biz.support_email} · {biz.phone}
           </p>
-          <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
+          <p className="text-xs font-body" style={{ color: "#000000" }}>
             {biz.site_name} — {biz.tagline}
           </p>
         </div>

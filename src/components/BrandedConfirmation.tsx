@@ -167,13 +167,13 @@ export default function BrandedConfirmation({
             style={{ width: 40, height: 1, backgroundColor: "#C07A00", marginBottom: 24 }}
           />
 
-          <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p className="text-xs mb-1" style={{ color: "#000000" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+          <p className="text-xs mb-1" style={{ color: "#000000" }}>
             {biz.support_email} · {biz.phone}
           </p>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
+          <p className="text-xs" style={{ color: "#000000" }}>
             {biz.site_name} — {biz.tagline}
           </p>
         </div>
