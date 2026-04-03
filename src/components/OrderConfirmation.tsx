@@ -16,7 +16,7 @@ import {
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
 const WAYS_LOGO_DARK =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
+  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/Ways_Sitewide_Logo_Black.png";
 
 
 const DELIVERY_TERMS = [
@@ -806,7 +806,7 @@ function Row({
             {value}
           </span>
         ) : (
-          <p className="text-sm font-medium break-words font-body" style={{ color: "#111827" }}>
+          <p className="text-sm font-medium break-words font-body leading-snug" style={{ color: "#111827" }}>
             {value}
           </p>
         )}
