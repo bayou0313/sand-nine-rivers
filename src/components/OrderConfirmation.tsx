@@ -738,7 +738,7 @@ export default function OrderConfirmation({
           <img
             src={WAYS_LOGO_DARK}
             alt="WAYS"
-            className="w-[80px] mb-4"
+            className="w-[108px] mb-4"
           />
 
           <div

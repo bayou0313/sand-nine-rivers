@@ -143,7 +143,7 @@ const MaintenancePage = () => (
       src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png"
       alt="WAYS"
       style={{
-        width: '72px',
+        width: '97px',
         opacity: 0.4,
         marginBottom: '32px',
       }}
