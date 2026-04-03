@@ -149,7 +149,7 @@ export default function BrandedConfirmation({
         {/* ── FOOTER ── */}
         <div
           className="py-10 px-6 flex flex-col items-center text-center"
-          style={{ backgroundColor: "#0D2137" }}
+          style={{ backgroundColor: "#FFFFFF", borderTop: "1px solid #E5E7EB" }}
         >
           <p
             className="text-[9px] tracking-[0.2em] uppercase mb-2"
