@@ -386,7 +386,7 @@ export default function OrderConfirmation({
                           className="text-xs font-mono mt-0.5 break-all"
                           style={{ color: "#9CA3AF" }}
                         >
-                          {stripePaymentId}
+                          ...{stripePaymentId.slice(-12)}
                         </p>
                       </div>
                     )}
