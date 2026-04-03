@@ -328,7 +328,7 @@ const Order = () => {
             saturdaySurchargeTotal: orderSatSurcharge,
             sundaySurchargeTotal: orderData.sunday_surcharge_amount || 0,
             distanceFee: 0,
-            taxInfo: { rate: orderTaxRate, parish: "" },
+            taxInfo: { rate: orderTaxRate, parish: orderData.delivery_address ? getTaxRateFromAddress(orderData.delivery_address).parish : "" },
           });
           if (orderData.distance_miles) {
             setResult({
@@ -1480,7 +1480,8 @@ const Order = () => {
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Notes (optional)</label>
-                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={1000} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
+                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={150} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
+                        <p className="text-xs text-muted-foreground mt-1 text-right font-body">{form.notes.length}/150</p>
                       </div>
                     </div>
                   </div>

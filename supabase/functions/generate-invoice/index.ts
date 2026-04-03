@@ -90,7 +90,7 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
 
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(...BLACK);
   doc.text(footerLine1, pw - mx, textY, { align: "right" });
 
   let footerLineY = textY + 4;
@@ -104,7 +104,7 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
   }
 
   doc.setFontSize(6);
-  doc.setTextColor(200, 200, 200);
+  doc.setTextColor(...BLACK);
   doc.text("This document serves as your official order confirmation and receipt.", pw - mx, footerLineY, { align: "right" });
 }
 
@@ -426,12 +426,11 @@ serve(async (req) => {
       y += rowH;
     });
 
-    // ─── TOTAL ROW (always shown) ───
+    // ─── SUBTOTAL / ACCOUNTING ROWS ───
     y += 2;
     doc.setDrawColor(...LIGHT_GRAY);
     doc.line(tableX, y, pw - mx, y);
     y += 1;
-    // Double line for total
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.5);
     doc.line(tableX, y, pw - mx, y);
@@ -440,9 +439,33 @@ serve(async (req) => {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BLACK);
-    doc.text("TOTAL", tableX, y);
+    doc.text("Subtotal", tableX, y);
     doc.text(fmt(order.price), amtX, y, { align: "right" });
-    y += 8;
+    y += 7;
+
+    if (isCard && isPaid) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY);
+      const refStr = order.stripe_payment_id ? `···${(order.stripe_payment_id || "").slice(-12)}` : "";
+      doc.text(`Credit Card  ${refStr}`, tableX, y);
+      doc.setFont("helvetica", "bold");
+      doc.text(`(${fmt(order.price)})`, amtX, y, { align: "right" });
+      y += 7;
+      doc.setDrawColor(...LIGHT_GRAY);
+      doc.line(tableX, y - 3, pw - mx, y - 3);
+      doc.setFontSize(10);
+      doc.setTextColor(...BLACK);
+      doc.text("Amount Due", tableX, y + 1);
+      doc.text("$0.00", amtX, y + 1, { align: "right" });
+      y += 8;
+    } else if (!isCard) {
+      // COD: show simple TOTAL row
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...BLACK);
+      // Already shown as Subtotal above — no extra row needed for COD
+    }
 
     // ─── PINNED BOTTOM ZONE (absolute Y positions, never move) ───
     const bullets = [
@@ -516,21 +539,24 @@ serve(async (req) => {
 
     // Draw PAID IN FULL at fixed Y (card only)
     if (hasPaidBox) {
-      doc.setDrawColor(187, 247, 208);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(mx, pinnedTopY, cw, 14, 2, 2, "S");
-      doc.setLineWidth(0.2);
-      doc.setFontSize(11);
-      doc.setTextColor(...GREEN);
+      doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.text("PAID IN FULL", mx + cw / 2, pinnedTopY + 5, { align: "center" });
-      doc.setFontSize(8);
+      doc.setTextColor(...DARK);
+      doc.text("PAID IN FULL", mx, pinnedTopY + 4);
+      doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Credit Card  |  Nothing due at delivery", mx + cw / 2, pinnedTopY + 10, { align: "center" });
+      doc.text("Nothing due at delivery — payment collected by Stripe", mx, pinnedTopY + 9);
+
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...DARK);
+      doc.text("$0.00", pw - mx, pinnedTopY + 4, { align: "right" });
       if (order.stripe_payment_id) {
-        doc.setFontSize(7);
-        doc.text(`Ref: ...${(order.stripe_payment_id || "").slice(-12)}`, mx + cw / 2, pinnedTopY + 13, { align: "center" });
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...GRAY);
+        doc.text(`Ref: ···${(order.stripe_payment_id || "").slice(-12)}`, pw - mx, pinnedTopY + 9, { align: "right" });
       }
     }
 

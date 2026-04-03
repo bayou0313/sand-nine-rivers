@@ -506,48 +506,51 @@ export default function OrderConfirmation({
               />
             )}
           </div>
-          <div
-            className="flex justify-between items-center pt-4 mt-2"
-            style={{ borderTop: "2px solid #E5E7EB" }}
-          >
-            <span
-              className="font-display text-base tracking-wider"
-              style={{ color: "#0D2137" }}
-            >
-              TOTAL
-            </span>
-            <span
-              className="font-display text-2xl font-bold"
-              style={{ color: "#C07A00" }}
-            >
-              {formatCurrency(finalAmount)}
-            </span>
+          {/* Divider */}
+          <div style={{ borderTop: "1px solid #E5E7EB", marginTop: "4px" }} />
+          <div className="flex justify-between items-center py-3">
+            <span className="text-sm font-semibold font-body" style={{ color: "#111827" }}>Subtotal</span>
+            <span className="text-sm font-semibold font-body" style={{ color: "#111827" }}>{formatCurrency(finalAmount)}</span>
           </div>
+          {isStripePaid ? (
+            <>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-sm font-body" style={{ color: "#6B7280" }}>
+                  Credit Card{"  "}···{stripePaymentId?.slice(-12) || "—"}
+                </span>
+                <span className="text-sm font-body" style={{ color: "#111827" }}>
+                  ({formatCurrency(displayTotalWithFee)})
+                </span>
+              </div>
+              <div style={{ borderTop: "1px solid #E5E7EB" }} />
+              <div className="flex justify-between items-center py-3">
+                <span className="text-sm font-semibold font-body" style={{ color: "#111827" }}>Amount Due</span>
+                <span className="text-sm font-semibold font-body" style={{ color: "#111827" }}>$0.00</span>
+              </div>
+            </>
+          ) : (
+            <div
+              className="flex justify-between items-center pt-4 mt-2"
+              style={{ borderTop: "2px solid #E5E7EB" }}
+            >
+              <span className="font-display text-base tracking-wider" style={{ color: "#0D2137" }}>TOTAL</span>
+              <span className="font-display text-2xl font-bold" style={{ color: "#C07A00" }}>{formatCurrency(finalAmount)}</span>
+            </div>
+          )}
         </div>
       </FadeIn>
 
-      {/* ── CARD PAID IN FULL BLOCK ── */}
+      {/* ── CARD PAID IN FULL — plain pinned block ── */}
       {isStripePaid && (
         <FadeIn delay={0.45}>
-          <div className="px-6 pb-6 max-w-[680px] mx-auto">
-            <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "8px", padding: "20px 24px", marginTop: "8px", marginBottom: "8px" }}>
-              <div className="flex justify-between items-center">
-                <p className="font-display" style={{ fontSize: "13px", fontWeight: "bold", color: "#166534", textTransform: "uppercase", letterSpacing: "1px" }}>
-                  Paid in Full
-                </p>
-                <p className="font-display" style={{ fontSize: "16px", fontWeight: "bold", color: "#166534" }}>
-                  {formatCurrency(displayTotalWithFee)}
-                </p>
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <p className="font-body" style={{ fontSize: "12px", color: "#15803D" }}>
-                  Method: Credit Card
-                </p>
-                <p className="font-body" style={{ fontSize: "12px", color: "#15803D" }}>
-                  Reference: ...{stripePaymentId?.slice(-12) || "—"}
-                </p>
-              </div>
+          <div className="px-6 pb-6 max-w-[680px] mx-auto" style={{ marginTop: "8px" }}>
+            <div className="flex justify-between items-baseline">
+              <span className="font-display text-sm font-bold tracking-wider" style={{ color: "#111827" }}>PAID IN FULL</span>
+              <span className="font-display text-sm font-bold" style={{ color: "#111827" }}>$0.00</span>
             </div>
+            <p className="text-xs font-body mt-1" style={{ color: "#6B7280" }}>
+              Nothing due at delivery — payment collected by Stripe
+            </p>
           </div>
         </FadeIn>
       )}
@@ -735,18 +738,19 @@ export default function OrderConfirmation({
       <FadeIn delay={0.7} className="print-hide">
         <div
           className="py-10 px-6 flex flex-col items-center text-center rounded-b-2xl"
-          style={{ backgroundColor: "#0D2137" }}
+          style={{ backgroundColor: "#FFFFFF", borderTop: "1px solid #E5E7EB" }}
         >
           <p
             className="text-[9px] tracking-[0.2em] uppercase mb-2 font-display"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "#9CA3AF" }}
           >
             Powered by
           </p>
           <img
-            src={WAYS_LOGO}
+            src={LOGO_BLACK}
             alt="WAYS"
-            className="w-[80px] opacity-40 mb-4"
+            className="w-[80px] mb-4"
+            style={{ opacity: 0.6 }}
           />
 
           <div
@@ -758,28 +762,16 @@ export default function OrderConfirmation({
             }}
           />
 
-          <p
-            className="text-xs mb-1 font-body"
-            style={{ color: "rgba(255,255,255,0.3)" }}
-          >
+          <p className="text-xs mb-1 font-body" style={{ color: "#374151" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p
-            className="text-xs mb-1 font-body"
-            style={{ color: "rgba(255,255,255,0.25)" }}
-          >
+          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
             {biz.footer_address}
           </p>
-          <p
-            className="text-xs mb-1 font-body"
-            style={{ color: "rgba(255,255,255,0.25)" }}
-          >
+          <p className="text-xs mb-1 font-body" style={{ color: "#6B7280" }}>
             {biz.support_email} · {biz.phone}
           </p>
-          <p
-            className="text-xs font-body"
-            style={{ color: "rgba(255,255,255,0.2)" }}
-          >
+          <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
             {biz.site_name} — {biz.tagline}
           </p>
         </div>
