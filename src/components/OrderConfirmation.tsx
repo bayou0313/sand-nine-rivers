@@ -298,19 +298,15 @@ export default function OrderConfirmation({
             {orderDate}
           </p>
 
-          {/* Status pill */}
-          <div
-            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold font-body"
-            style={
-              isStripePaid
-                ? { backgroundColor: "#DCFCE7", color: "#166534" }
-                : { backgroundColor: "#FEF3C7", color: "#92400E" }
-            }
-          >
-            {isStripePaid
-              ? `Paid in Full — ${formatCurrency(displayTotalWithFee)}`
-              : `${formatCurrency(displayTotal)} Due at Delivery`}
-          </div>
+          {/* Status pill — COD only */}
+          {!isStripePaid && (
+            <div
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold font-body"
+              style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
+            >
+              {formatCurrency(displayTotal)} Due at Delivery
+            </div>
+          )}
 
           {customerEmail && (
             <p className="mt-4 text-xs font-body" style={{ color: "#9CA3AF" }}>
