@@ -199,16 +199,19 @@ const Order = () => {
   }, [step]);
 
   // Helper: verify Stripe payment via get-order-status before showing success
-  const verifyStripePayment = useCallback(async (orderId: string, token: string): Promise<boolean> => {
+  // Returns the full order data object on success, or null on failure
+  const verifyStripePayment = useCallback(async (orderId: string, token: string): Promise<any | null> => {
     const MAX_ATTEMPTS = 8;
     const POLL_INTERVAL = 2500;
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
       try {
+        console.log(`[Order] Payment verification attempt ${i + 1}/${MAX_ATTEMPTS} for order ${orderId}`);
         const { data, error } = await supabase.functions.invoke("get-order-status", {
           body: { order_id: orderId, lookup_token: token },
         });
+        console.log(`[Order] get-order-status response:`, { payment_status: data?.payment_status, has_address: !!data?.delivery_address, error });
         if (!error && data?.payment_status === "paid") {
-          return true;
+          return data; // Return the full order data
         }
         console.log(`[Order] Payment verification attempt ${i + 1}/${MAX_ATTEMPTS}: status=${data?.payment_status || "unknown"}`);
       } catch (err) {
@@ -218,7 +221,7 @@ const Order = () => {
         await new Promise(r => setTimeout(r, POLL_INTERVAL));
       }
     }
-    return false;
+    return null;
   }, []);
 
   // Handle Stripe return via URL params
