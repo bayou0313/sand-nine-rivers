@@ -90,7 +90,7 @@ function drawFooter(doc: jsPDF, pw: number, ph: number, mx: number, cw: number, 
 
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(...BLACK);
   doc.text(footerLine1, pw - mx, textY, { align: "right" });
 
   let footerLineY = textY + 4;
