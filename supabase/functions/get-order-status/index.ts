@@ -46,7 +46,7 @@ serve(async (req) => {
     // Look up order by ID + lookup_token, only if token hasn't been used
     const { data: order, error } = await supabase
       .from("orders")
-      .select("id, status, payment_status, order_number, delivery_date, quantity, price")
+      .select("id, status, payment_status, order_number, delivery_date, delivery_day_of_week, delivery_window, quantity, price, delivery_address, customer_name, customer_phone, customer_email, company_name, payment_method, distance_miles, tax_amount, tax_rate, saturday_surcharge, saturday_surcharge_amount, sunday_surcharge, sunday_surcharge_amount, same_day_requested, stripe_payment_id, discount_amount")
       .eq("id", order_id)
       .eq("lookup_token", lookup_token)
       .eq("lookup_token_used", false)
@@ -77,13 +77,32 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        id: order.id,
         order_id: order.id,
         status: order.status,
         payment_status: order.payment_status,
         order_number: order.order_number,
         delivery_date: order.delivery_date,
+        delivery_day_of_week: order.delivery_day_of_week,
+        delivery_window: order.delivery_window,
         quantity: order.quantity,
-        total: order.price,
+        price: order.price,
+        delivery_address: order.delivery_address,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        customer_email: order.customer_email,
+        company_name: order.company_name,
+        payment_method: order.payment_method,
+        distance_miles: order.distance_miles,
+        tax_amount: order.tax_amount,
+        tax_rate: order.tax_rate,
+        saturday_surcharge: order.saturday_surcharge,
+        saturday_surcharge_amount: order.saturday_surcharge_amount,
+        sunday_surcharge: order.sunday_surcharge,
+        sunday_surcharge_amount: order.sunday_surcharge_amount,
+        same_day_requested: order.same_day_requested,
+        stripe_payment_id: order.stripe_payment_id,
+        discount_amount: order.discount_amount,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

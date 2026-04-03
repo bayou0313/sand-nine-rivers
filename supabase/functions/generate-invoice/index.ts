@@ -426,29 +426,23 @@ serve(async (req) => {
       y += rowH;
     });
 
-    // Tight spacing after last line item
-    y += 3;
-
-    // ─── PAYMENT STATUS BOX (card only — flows inline after pricing) ───
-    if (isPaid) {
-      doc.setDrawColor(187, 247, 208);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(mx, y, cw, 14, 2, 2, "S");
-      doc.setLineWidth(0.2);
-      doc.setFontSize(11);
-      doc.setTextColor(...GREEN);
-      doc.setFont("helvetica", "bold");
-      doc.text("PAID IN FULL", mx + cw / 2, y + 5, { align: "center" });
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...GRAY);
-      doc.text("Credit Card  |  Nothing due at delivery", mx + cw / 2, y + 10, { align: "center" });
-      if (order.stripe_payment_id) {
-        doc.setFontSize(7);
-        doc.text(`Ref: ${order.stripe_payment_id}`, mx + cw / 2, y + 13, { align: "center" });
-      }
-      y += 18;
-    }
+    // ─── TOTAL ROW (always shown) ───
+    y += 2;
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.line(tableX, y, pw - mx, y);
+    y += 1;
+    // Double line for total
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.5);
+    doc.line(tableX, y, pw - mx, y);
+    doc.setLineWidth(0.2);
+    y += 5;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLACK);
+    doc.text("TOTAL", tableX, y);
+    doc.text(fmt(order.price), amtX, y, { align: "right" });
+    y += 8;
 
     // ─── PINNED BOTTOM ZONE (absolute Y positions, never move) ───
     const bullets = [
@@ -461,7 +455,8 @@ serve(async (req) => {
     ];
 
     const hasCODBox = !isPaid;
-    const codBlockH = hasCODBox ? 14 : 0;
+    const hasPaidBox = isPaid;
+    const pinnedBlockH = hasCODBox ? 14 : (hasPaidBox ? 14 : 0);
     const footerGoldY = ph - 24;
     const codGap = 6;
 
@@ -473,9 +468,9 @@ serve(async (req) => {
     });
 
     // Fixed Y positions (bottom → up)
-    const codTopY = footerGoldY - codGap - codBlockH;
-    const termsGap = hasCODBox ? 2 : 0;
-    const termsTopY = codTopY - termsGap - termsH;
+    const pinnedTopY = footerGoldY - codGap - pinnedBlockH;
+    const termsGap = (hasCODBox || hasPaidBox) ? 2 : 0;
+    const termsTopY = pinnedTopY - termsGap - termsH;
     const safeContentMaxY = termsTopY - 4;
 
     // Paginate if content intrudes into pinned zone
@@ -503,20 +498,40 @@ serve(async (req) => {
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("DUE AT DELIVERY", mx, codTopY + 4);
+      doc.text("DUE AT DELIVERY", mx, pinnedTopY + 4);
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Cash or check payment due at the time of delivery.", mx, codTopY + 9);
+      doc.text("Cash or check payment due at the time of delivery.", mx, pinnedTopY + 9);
 
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text(fmt(order.price), pw - mx, codTopY + 4, { align: "right" });
+      doc.text(fmt(order.price), pw - mx, pinnedTopY + 4, { align: "right" });
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Exact amount required — driver carries no change", pw - mx, codTopY + 9, { align: "right" });
+      doc.text("Exact amount required — driver carries no change", pw - mx, pinnedTopY + 9, { align: "right" });
+    }
+
+    // Draw PAID IN FULL at fixed Y (card only)
+    if (hasPaidBox) {
+      doc.setDrawColor(187, 247, 208);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(mx, pinnedTopY, cw, 14, 2, 2, "S");
+      doc.setLineWidth(0.2);
+      doc.setFontSize(11);
+      doc.setTextColor(...GREEN);
+      doc.setFont("helvetica", "bold");
+      doc.text("PAID IN FULL", mx + cw / 2, pinnedTopY + 5, { align: "center" });
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY);
+      doc.text("Credit Card  |  Nothing due at delivery", mx + cw / 2, pinnedTopY + 10, { align: "center" });
+      if (order.stripe_payment_id) {
+        doc.setFontSize(7);
+        doc.text(`Ref: ...${(order.stripe_payment_id || "").slice(-12)}`, mx + cw / 2, pinnedTopY + 13, { align: "center" });
+      }
     }
 
     // ─── FOOTER on last page, pinned to bottom ───

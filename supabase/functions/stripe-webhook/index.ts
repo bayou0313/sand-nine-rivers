@@ -336,7 +336,7 @@ serve(async (req) => {
               },
               body: JSON.stringify({
                 type: "order",
-                data: { ...currentOrder, payment_status: "paid" },
+                data: { ...currentOrder, ...updateData },
               }),
             });
             console.log("[stripe-webhook] Email response status:", emailResponse.status);

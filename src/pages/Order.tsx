@@ -199,16 +199,19 @@ const Order = () => {
   }, [step]);
 
   // Helper: verify Stripe payment via get-order-status before showing success
-  const verifyStripePayment = useCallback(async (orderId: string, token: string): Promise<boolean> => {
+  // Returns the full order data object on success, or null on failure
+  const verifyStripePayment = useCallback(async (orderId: string, token: string): Promise<any | null> => {
     const MAX_ATTEMPTS = 8;
     const POLL_INTERVAL = 2500;
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
       try {
+        console.log(`[Order] Payment verification attempt ${i + 1}/${MAX_ATTEMPTS} for order ${orderId}`);
         const { data, error } = await supabase.functions.invoke("get-order-status", {
           body: { order_id: orderId, lookup_token: token },
         });
+        console.log(`[Order] get-order-status response:`, { payment_status: data?.payment_status, has_address: !!data?.delivery_address, error });
         if (!error && data?.payment_status === "paid") {
-          return true;
+          return data; // Return the full order data
         }
         console.log(`[Order] Payment verification attempt ${i + 1}/${MAX_ATTEMPTS}: status=${data?.payment_status || "unknown"}`);
       } catch (err) {
@@ -218,7 +221,7 @@ const Order = () => {
         await new Promise(r => setTimeout(r, POLL_INTERVAL));
       }
     }
-    return false;
+    return null;
   }, []);
 
   // Handle Stripe return via URL params
@@ -250,7 +253,7 @@ const Order = () => {
     // Normal same-tab return — state may be lost due to page reload
     if (paymentStatus === "success") {
       if (returnedOrderNumber) setOrderNumber(returnedOrderNumber);
-      if (returnedSessionId) setStripePaymentId(returnedSessionId);
+      if (returnedSessionId) setStripePaymentId(returnedSessionId.slice(-12));
 
       // Try to get order_id and lookup_token for verification
       let verifyOrderId = returnedOrderId || pendingOrderId || null;
@@ -376,41 +379,18 @@ const Order = () => {
 
       // Verify payment with backend
       if (verifyOrderId && verifyToken) {
-        verifyStripePayment(verifyOrderId, verifyToken).then(async (verified) => {
-          if (verified) {
-            // Payment confirmed — fetch full order data for display
-            if (returnedOrderNumber) {
-              try {
-                const { data: order } = await supabase
-                  .from("orders")
-                  .select("*")
-                  .eq("order_number", returnedOrderNumber)
-                  .single();
-                if (order) {
-                  setConfirmedOrderId(order.id);
-                  showSuccess(order);
-                  return;
-                }
-              } catch {}
+        verifyStripePayment(verifyOrderId, verifyToken).then(async (orderData) => {
+          if (orderData) {
+            // Payment confirmed — use the data returned from get-order-status
+            console.log("[Order] Payment verified, got order data from edge function:", orderData.order_number);
+            setConfirmedOrderId(orderData.id || verifyOrderId);
+            if (orderData.stripe_payment_id) {
+              setStripePaymentId(orderData.stripe_payment_id.slice(-12));
             }
-            showSuccess();
+            showSuccess(orderData);
           } else {
             // Verification timed out — show cautious success with warning
             console.warn("[Order] Payment verification timed out — showing success with caveat");
-            if (returnedOrderNumber) {
-              try {
-                const { data: order } = await supabase
-                  .from("orders")
-                  .select("*")
-                  .eq("order_number", returnedOrderNumber)
-                  .single();
-                if (order) {
-                  setConfirmedOrderId(order.id);
-                  showSuccess(order);
-                  return;
-                }
-              } catch {}
-            }
             showSuccess();
             toast({
               title: "Payment processing",
@@ -501,7 +481,7 @@ const Order = () => {
         if (signal.status === "success") {
           const snap = pricingSnapshotRef.current;
           if (signal.order_number) setOrderNumber(signal.order_number);
-          if (signal.session_id) setStripePaymentId(signal.session_id);
+          if (signal.session_id) setStripePaymentId(signal.session_id.slice(-12));
           setPendingOrderId(null);
           setAddress(snap.address);
           setSelectedDeliveryDate(snap.selectedDeliveryDate);
