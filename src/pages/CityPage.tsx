@@ -182,10 +182,12 @@ const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
 const CityPage = () => {
   const { citySlug } = useParams<{ citySlug: string }>();
   const navigate = useNavigate();
+  const FALLBACK_PRODUCT_IMAGE = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg";
   const [cityPage, setCityPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [otherCities, setOtherCities] = useState<any[]>([]);
   const [isWaitlist, setIsWaitlist] = useState(false);
+  const [productImageUrl, setProductImageUrl] = useState(FALLBACK_PRODUCT_IMAGE);
 
   useEffect(() => {
     if (!citySlug) { navigate("/"); return; }
@@ -231,13 +233,21 @@ const CityPage = () => {
         } catch { /* ignore */ }
       }
 
-      const { data: others } = await supabase
-        .from("city_pages")
-        .select("city_name, city_slug, state")
-        .eq("status", "active")
-        .neq("city_slug", citySlug)
-        .limit(5);
+      const [{ data: others }, { data: imgSetting }] = await Promise.all([
+        supabase
+          .from("city_pages")
+          .select("city_name, city_slug, state")
+          .eq("status", "active")
+          .neq("city_slug", citySlug)
+          .limit(5),
+        supabase
+          .from("global_settings")
+          .select("value")
+          .eq("key", "product_image_url")
+          .maybeSingle(),
+      ]);
       if (others) setOtherCities(others);
+      if (imgSetting?.value) setProductImageUrl(imgSetting.value);
 
       setLoading(false);
     };
@@ -381,7 +391,7 @@ const CityPage = () => {
     description: `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}. 9 cubic yards per load.`,
     image: {
       "@type": "ImageObject",
-      url: "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg",
+      url: productImageUrl,
       description: `River sand delivery in ${cityPage.city_name}, Louisiana`,
     },
     brand: { "@type": "Brand", name: "River Sand" },
