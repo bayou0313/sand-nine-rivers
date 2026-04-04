@@ -1,22 +1,45 @@
 
 
-## Fix Button Visibility and Hover States
+## Status: Redirect code was never implemented
 
-### Single file change
+The `scripts/prerender-cities.mjs` file does **not** contain any redirect generation logic. There is no `LEGACY_REDIRECTS` array, no `buildRedirect()` function, and no redirect loop in `main()`. The previous planning conversations produced approved plans but the code was never actually written.
 
-**`src/components/ui/button.tsx`** — Update three variant definitions (lines 14–16):
+**Triggering a new build right now would change nothing** — the script would generate the same output as before.
 
-| Variant | Before | After |
-|---------|--------|-------|
-| `outline` | `border border-input bg-background hover:bg-muted hover:text-foreground` | `border border-border bg-background text-foreground hover:bg-secondary hover:border-foreground/20` |
-| `secondary` | unchanged | unchanged |
-| `ghost` | `hover:bg-muted hover:text-foreground` | `text-foreground hover:bg-secondary hover:text-foreground` |
+## What needs to happen
 
-### What this fixes
-- Outline buttons get visible navy text (`text-foreground`) and a stronger hover background (`bg-secondary` instead of nearly-invisible `bg-muted`)
-- Ghost buttons get explicit text color so they don't disappear on white containers
-- Hover states now produce a visible warm-sand shift instead of a near-invisible tint change
+**Single file change**: `scripts/prerender-cities.mjs`
+
+### 1. Add `LEGACY_REDIRECTS` array (after line 13)
+```javascript
+const LEGACY_REDIRECTS = [
+  { from: 'chalmette-la', to: 'chalmette' },
+  { from: 'bridge-city-la', to: 'bridge-city' },
+  { from: 'destrehan-la', to: 'destrehan' },
+  { from: 'kenner-la', to: 'kenner' },
+  { from: 'luling-la', to: 'luling' },
+  { from: 'meraux-la', to: 'meraux' },
+  { from: 'metairie-la', to: 'metairie' },
+  { from: 'new-orleans-la', to: 'new-orleans' },
+];
+```
+
+### 2. Add `buildRedirect(fromSlug, toSlug)` function
+Generates minimal HTML with:
+- `<link rel="canonical">` pointing to new URL
+- `<meta http-equiv="refresh" content="0; url=...">` for instant redirect
+- `<script>window.location.replace(...)</script>` JS backup
+- Visible `<a>` link fallback
+
+### 3. Add redirect loop in `main()` after the city page loop
+Iterates `LEGACY_REDIRECTS`, creates `dist/{fromSlug}/river-sand-delivery/index.html` for each, logs count.
 
 ### Files NOT touched
-Everything else — no page files, no edge functions, no database, no protected files.
+`src/App.tsx`, all edge functions, database, `pits.ts`, `google-maps.ts`, `CityPage.tsx`, `Order.tsx`, `Leads.tsx` — nothing else.
+
+### Risk
+None. Legacy slug directories don't exist in `dist/` today. Active city page generation is untouched.
+
+### After implementation
+The Lovable → GitHub sync will push the commit, triggering the Actions workflow automatically. After ~2-3 minutes, test `https://riversand.net/chalmette-la/river-sand-delivery`.
 
