@@ -195,7 +195,7 @@ const CityPage = () => {
       // Try active first, then waitlist
       const { data, error } = await supabase
         .from("city_pages")
-        .select("*")
+        .select("*, pits(name, address)")
         .eq("city_slug", citySlug)
         .in("status", ["active", "waitlist"])
         .maybeSingle();
