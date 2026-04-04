@@ -383,6 +383,7 @@ const CityPage = () => {
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbSchema }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: localBusinessSchema }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productSchema }} />
 
       <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} activeSections={["why-us", "about", "faq", "learn-more", "contact"]} />
       <Hero
