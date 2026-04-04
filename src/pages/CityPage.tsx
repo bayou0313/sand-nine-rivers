@@ -297,10 +297,13 @@ const CityPage = () => {
     ],
   });
 
+  const pitData = cityPage.pits as { name: string; address: string } | null;
+  const parsedAddr = pitData?.address ? parsePitAddress(pitData.address) : null;
+
   const localBusinessSchema = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    name: "River Sand",
+    name: `River Sand — ${cityPage.city_name}`,
     url: canonicalUrl,
     telephone: "+18554689297",
     description: cityPage.meta_description || `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}`,
@@ -309,12 +312,21 @@ const CityPage = () => {
     paymentAccepted: "Cash, Credit Card",
     currenciesAccepted: "USD",
     openingHours: "Mo-Sa 07:00-17:00",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: cityPage.city_name,
-      addressRegion: cityPage.state || "LA",
-      addressCountry: "US",
-    },
+    address: parsedAddr
+      ? {
+          "@type": "PostalAddress",
+          streetAddress: parsedAddr.streetAddress,
+          addressLocality: parsedAddr.addressLocality,
+          addressRegion: parsedAddr.addressRegion,
+          postalCode: parsedAddr.postalCode,
+          addressCountry: "US",
+        }
+      : {
+          "@type": "PostalAddress",
+          addressLocality: cityPage.city_name,
+          addressRegion: cityPage.state || "LA",
+          addressCountry: "US",
+        },
     areaServed: {
       "@type": "City",
       name: cityPage.city_name,
