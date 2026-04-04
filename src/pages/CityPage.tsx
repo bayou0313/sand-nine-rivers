@@ -182,10 +182,12 @@ const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
 const CityPage = () => {
   const { citySlug } = useParams<{ citySlug: string }>();
   const navigate = useNavigate();
+  const FALLBACK_PRODUCT_IMAGE = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg";
   const [cityPage, setCityPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [otherCities, setOtherCities] = useState<any[]>([]);
   const [isWaitlist, setIsWaitlist] = useState(false);
+  const [productImageUrl, setProductImageUrl] = useState(FALLBACK_PRODUCT_IMAGE);
 
   useEffect(() => {
     if (!citySlug) { navigate("/"); return; }
