@@ -391,7 +391,7 @@ const CityPage = () => {
     description: `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}. 9 cubic yards per load.`,
     image: {
       "@type": "ImageObject",
-      url: "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg",
+      url: productImageUrl,
       description: `River sand delivery in ${cityPage.city_name}, Louisiana`,
     },
     brand: { "@type": "Brand", name: "River Sand" },
