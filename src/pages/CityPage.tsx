@@ -348,6 +348,25 @@ const CityPage = () => {
     },
   });
 
+  const productSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: `River Sand Delivery in ${cityPage.city_name}`,
+    description: `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}. 9 cubic yards per load.`,
+    image: {
+      "@type": "ImageObject",
+      url: "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg",
+      description: `River sand delivery in ${cityPage.city_name}, Louisiana`,
+    },
+    brand: { "@type": "Brand", name: "River Sand" },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "USD",
+      ...(cityPage.base_price ? { price: Number(cityPage.base_price) } : {}),
+      availability: "https://schema.org/InStock",
+      areaServed: { "@type": "City", name: cityPage.city_name, addressRegion: cityPage.state || "LA" },
+    },
+  });
 
   return (
     <div className="min-h-screen pb-14 lg:pb-0">
@@ -364,6 +383,7 @@ const CityPage = () => {
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbSchema }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: localBusinessSchema }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productSchema }} />
 
       <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} activeSections={["why-us", "about", "faq", "learn-more", "contact"]} />
       <Hero
