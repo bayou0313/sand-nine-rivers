@@ -233,13 +233,21 @@ const CityPage = () => {
         } catch { /* ignore */ }
       }
 
-      const { data: others } = await supabase
-        .from("city_pages")
-        .select("city_name, city_slug, state")
-        .eq("status", "active")
-        .neq("city_slug", citySlug)
-        .limit(5);
+      const [{ data: others }, { data: imgSetting }] = await Promise.all([
+        supabase
+          .from("city_pages")
+          .select("city_name, city_slug, state")
+          .eq("status", "active")
+          .neq("city_slug", citySlug)
+          .limit(5),
+        supabase
+          .from("global_settings")
+          .select("value")
+          .eq("key", "product_image_url")
+          .maybeSingle(),
+      ]);
       if (others) setOtherCities(others);
+      if (imgSetting?.value) setProductImageUrl(imgSetting.value);
 
       setLoading(false);
     };
