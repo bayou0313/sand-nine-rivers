@@ -674,6 +674,7 @@ const Leads = () => {
         // Populate SEO settings
         const seo: Record<string, string> = {};
         Object.keys(data.settings).filter(k => k.startsWith("seo_")).forEach(k => { seo[k] = data.settings[k]; });
+        if (data.settings.product_image_url) seo.product_image_url = data.settings.product_image_url;
         setSeoSettings(seo);
         // Parse checklist
         try {
