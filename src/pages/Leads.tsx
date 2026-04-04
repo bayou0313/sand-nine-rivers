@@ -3876,6 +3876,23 @@ const Leads = () => {
                     ))}
                   </div>
 
+                  {/* Product Image */}
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>PRODUCT IMAGE</p>
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Product Image URL</label>
+                      <div className="flex gap-2">
+                        <Input className="h-9 flex-1" value={seoSettings.product_image_url || ""} onChange={e => setSeoSettings({ ...seoSettings, product_image_url: e.target.value })} placeholder="https://..." />
+                        {seoSettings.product_image_url && (
+                          <div className="h-9 w-16 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                            <img src={seoSettings.product_image_url} alt="Product" className="max-h-8 object-contain" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1">Used in Product schema on all city pages</p>
+                    </div>
+                  </div>
+
                   {/* Technical */}
                   <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>TECHNICAL</p>
                   <div className="space-y-3 mb-6">
