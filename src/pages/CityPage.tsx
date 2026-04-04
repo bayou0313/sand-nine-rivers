@@ -34,6 +34,20 @@ const slugToTitle = (slug: string): string => {
     .join(" ");
 };
 
+const parsePitAddress = (address: string) => {
+  const parts = address.split(",").map(s => s.trim());
+  const streetAddress = parts[0] || "";
+  const addressLocality = parts[1] || "";
+  const lastPart = parts[2] || "";
+  const stateZipMatch = lastPart.match(/([A-Z]{2})\s+(\d{5})/);
+  return {
+    streetAddress,
+    addressLocality,
+    addressRegion: stateZipMatch?.[1] || "LA",
+    postalCode: stateZipMatch?.[2] || "",
+  };
+};
+
 const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -181,7 +195,7 @@ const CityPage = () => {
       // Try active first, then waitlist
       const { data, error } = await supabase
         .from("city_pages")
-        .select("*")
+        .select("*, pits(name, address)")
         .eq("city_slug", citySlug)
         .in("status", ["active", "waitlist"])
         .maybeSingle();
@@ -283,10 +297,13 @@ const CityPage = () => {
     ],
   });
 
+  const pitData = cityPage.pits as { name: string; address: string } | null;
+  const parsedAddr = pitData?.address ? parsePitAddress(pitData.address) : null;
+
   const localBusinessSchema = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    name: "River Sand",
+    name: `River Sand — ${cityPage.city_name}`,
     url: canonicalUrl,
     telephone: "+18554689297",
     description: cityPage.meta_description || `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}`,
@@ -295,12 +312,21 @@ const CityPage = () => {
     paymentAccepted: "Cash, Credit Card",
     currenciesAccepted: "USD",
     openingHours: "Mo-Sa 07:00-17:00",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: cityPage.city_name,
-      addressRegion: cityPage.state || "LA",
-      addressCountry: "US",
-    },
+    address: parsedAddr
+      ? {
+          "@type": "PostalAddress",
+          streetAddress: parsedAddr.streetAddress,
+          addressLocality: parsedAddr.addressLocality,
+          addressRegion: parsedAddr.addressRegion,
+          postalCode: parsedAddr.postalCode,
+          addressCountry: "US",
+        }
+      : {
+          "@type": "PostalAddress",
+          addressLocality: cityPage.city_name,
+          addressRegion: cityPage.state || "LA",
+          addressCountry: "US",
+        },
     areaServed: {
       "@type": "City",
       name: cityPage.city_name,
