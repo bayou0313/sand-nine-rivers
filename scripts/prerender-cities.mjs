@@ -238,6 +238,15 @@ async function main() {
 
   console.log(`Pre-rendered ${cities.length} city pages.`);
 
+  // Generate static redirect pages for legacy -la slugs
+  for (const { from, to } of LEGACY_REDIRECTS) {
+    const dir = join(DIST, from, 'river-sand-delivery');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'index.html'), buildRedirect(from, to), 'utf-8');
+    console.log(`  ↪ ${from}/river-sand-delivery → ${to}/river-sand-delivery`);
+  }
+  console.log(`Generated ${LEGACY_REDIRECTS.length} legacy redirects.`);
+
   // Generate static sitemap.xml
   const now = new Date().toISOString().split('T')[0];
   let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
