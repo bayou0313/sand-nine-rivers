@@ -12,6 +12,35 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5c
 const DIST = join(process.cwd(), 'dist');
 const SITE = 'https://riversand.net';
 
+// Legacy city slugs that had a -la suffix — redirect to clean versions
+const LEGACY_REDIRECTS = [
+  { from: 'chalmette-la', to: 'chalmette' },
+  { from: 'bridge-city-la', to: 'bridge-city' },
+  { from: 'destrehan-la', to: 'destrehan' },
+  { from: 'kenner-la', to: 'kenner' },
+  { from: 'luling-la', to: 'luling' },
+  { from: 'meraux-la', to: 'meraux' },
+  { from: 'metairie-la', to: 'metairie' },
+  { from: 'new-orleans-la', to: 'new-orleans' },
+];
+
+function buildRedirect(fromSlug, toSlug) {
+  const target = `${SITE}/${toSlug}/river-sand-delivery`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redirecting…</title>
+<link rel="canonical" href="${target}">
+<meta http-equiv="refresh" content="0; url=${target}">
+<script>window.location.replace("${target}");</script>
+</head>
+<body>
+<p>This page has moved. <a href="${target}">Click here</a> if you are not redirected.</p>
+</body>
+</html>`;
+}
+
 async function query(table, params = '') {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/${table}?${params}`,
@@ -208,6 +237,15 @@ async function main() {
   }
 
   console.log(`Pre-rendered ${cities.length} city pages.`);
+
+  // Generate static redirect pages for legacy -la slugs
+  for (const { from, to } of LEGACY_REDIRECTS) {
+    const dir = join(DIST, from, 'river-sand-delivery');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'index.html'), buildRedirect(from, to), 'utf-8');
+    console.log(`  ↪ ${from}/river-sand-delivery → ${to}/river-sand-delivery`);
+  }
+  console.log(`Generated ${LEGACY_REDIRECTS.length} legacy redirects.`);
 
   // Generate static sitemap.xml
   const now = new Date().toISOString().split('T')[0];
