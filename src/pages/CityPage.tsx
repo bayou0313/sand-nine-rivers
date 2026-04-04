@@ -34,6 +34,20 @@ const slugToTitle = (slug: string): string => {
     .join(" ");
 };
 
+const parsePitAddress = (address: string) => {
+  const parts = address.split(",").map(s => s.trim());
+  const streetAddress = parts[0] || "";
+  const addressLocality = parts[1] || "";
+  const lastPart = parts[2] || "";
+  const stateZipMatch = lastPart.match(/([A-Z]{2})\s+(\d{5})/);
+  return {
+    streetAddress,
+    addressLocality,
+    addressRegion: stateZipMatch?.[1] || "LA",
+    postalCode: stateZipMatch?.[2] || "",
+  };
+};
+
 const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
