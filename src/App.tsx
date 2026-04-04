@@ -272,6 +272,14 @@ function AppContent() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/leads" element={<Leads />} />
+        <Route path="/chalmette-la/river-sand-delivery" element={<Navigate to="/chalmette/river-sand-delivery" replace />} />
+        <Route path="/bridge-city-la/river-sand-delivery" element={<Navigate to="/bridge-city/river-sand-delivery" replace />} />
+        <Route path="/destrehan-la/river-sand-delivery" element={<Navigate to="/destrehan/river-sand-delivery" replace />} />
+        <Route path="/kenner-la/river-sand-delivery" element={<Navigate to="/kenner/river-sand-delivery" replace />} />
+        <Route path="/luling-la/river-sand-delivery" element={<Navigate to="/luling/river-sand-delivery" replace />} />
+        <Route path="/meraux-la/river-sand-delivery" element={<Navigate to="/meraux/river-sand-delivery" replace />} />
+        <Route path="/metairie-la/river-sand-delivery" element={<Navigate to="/metairie/river-sand-delivery" replace />} />
+        <Route path="/new-orleans-la/river-sand-delivery" element={<Navigate to="/new-orleans/river-sand-delivery" replace />} />
         <Route path="/:citySlug/river-sand-delivery" element={<CityPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
