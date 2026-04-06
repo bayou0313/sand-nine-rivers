@@ -25,13 +25,17 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
   return (
     <section ref={sectionRef} className="relative min-h-[90vh] flex items-center overflow-hidden pt-24 md:pt-28">
       <motion.div className="absolute inset-0 h-[120%]" style={{ y: bgY }}>
-        <img
-          src={heroImage}
-          alt="River sand delivery truck unloading clean screened river sand at a New Orleans job site"
-          className="w-full h-full object-cover"
-          width={1920}
-          height={1080}
-        />
+        <picture>
+          <source srcSet={heroImageWebp} type="image/webp" />
+          <img
+            src={heroImage}
+            alt="River sand delivery truck unloading clean screened river sand at a New Orleans job site"
+            className="w-full h-full object-cover"
+            width={1920}
+            height={1080}
+            fetchPriority="high"
+          />
+        </picture>
         <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/95 via-sand-dark/85 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-sand-dark/60 via-transparent to-transparent" />
       </motion.div>
