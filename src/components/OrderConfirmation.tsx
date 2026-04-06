@@ -286,6 +286,7 @@ export default function OrderConfirmation({
             <img
               src={LOGO_WHITE}
               alt="River Sand"
+              title="River Sand Delivery — RiverSand.net"
               className="h-10 object-contain"
             />
           </Link>
