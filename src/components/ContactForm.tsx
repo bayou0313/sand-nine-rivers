@@ -8,7 +8,7 @@ import { formatPhone } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
 import BrandedConfirmation from "@/components/BrandedConfirmation";
 
-const ContactForm = () => {
+const ContactForm = ({ cityName }: { cityName?: string }) => {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   const [sending, setSending] = useState(false);
@@ -43,7 +43,7 @@ const ContactForm = () => {
               <p className="text-accent font-display text-lg tracking-widest mb-3">CONTACT</p>
               <h2 className="text-3xl md:text-4xl text-foreground">Talk to Us</h2>
               <p className="font-body text-muted-foreground mt-6 leading-relaxed text-lg">
-                Ready to order or have questions? Reach out by phone, email, or fill out the form. We'll get back to you as soon as possible.
+                {cityName ? `Ready to order river sand delivery in ${cityName}? Reach out by phone, email, or fill out the form and we'll get back to you fast.` : "Ready to order or have questions? Reach out by phone, email, or fill out the form. We'll get back to you as soon as possible."}
               </p>
             </div>
 
@@ -72,7 +72,7 @@ const ContactForm = () => {
                 </div>
                 <div>
                   <p className="font-display text-lg tracking-widest">SERVICE AREA</p>
-                  <p className="font-body text-muted-foreground">Greater New Orleans, LA</p>
+                  <p className="font-body text-muted-foreground">{cityName ? `${cityName}, LA` : "Greater New Orleans, LA"}</p>
                 </div>
               </div>
             </div>

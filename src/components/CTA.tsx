@@ -2,7 +2,7 @@ import { Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-const CTA = () => {
+const CTA = ({ cityName }: { cityName?: string }) => {
   const scrollToEstimator = () => {
     const el = document.getElementById("estimator");
     if (el) {
@@ -26,7 +26,7 @@ const CTA = () => {
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="text-3xl md:text-5xl text-foreground"
         >
-          Get your sand delivered today.
+          Get your sand delivered{cityName ? ` to ${cityName}` : ""} today.
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 15 }}
@@ -35,7 +35,7 @@ const CTA = () => {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="text-xl font-body text-muted-foreground max-w-xl mx-auto"
         >
-          Check your address for an instant price. Same-day delivery available in most areas.
+          Check your address for an instant price. Same-day delivery available in {cityName ? `${cityName} and surrounding areas` : "most areas"}.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
