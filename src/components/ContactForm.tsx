@@ -8,7 +8,7 @@ import { formatPhone } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
 import BrandedConfirmation from "@/components/BrandedConfirmation";
 
-const ContactForm = () => {
+const ContactForm = ({ cityName }: { cityName?: string }) => {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   const [sending, setSending] = useState(false);
