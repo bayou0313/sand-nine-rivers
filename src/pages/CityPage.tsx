@@ -431,6 +431,8 @@ const CityPage = () => {
               : cityPage.hero_intro
             : `Same-day bulk river sand delivery to ${cityPage.city_name}, ${cityPage.state}.`
         }
+        showEstimator={false}
+        ctaCityName={cityPage.city_name}
       />
 
       {/* Conditional price display for multi-PIT vs single-PIT cities */}

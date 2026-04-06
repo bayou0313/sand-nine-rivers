@@ -1,17 +1,21 @@
 import heroImage from "@/assets/hero-sand.jpg";
 import { Clock, Star, Truck, CheckCircle, ShieldCheck } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, lazy, Suspense } from "react";
 import { useCountdown } from "@/hooks/use-countdown";
-import DeliveryEstimator from "@/components/DeliveryEstimator";
+import { Link } from "react-router-dom";
+
+const DeliveryEstimator = lazy(() => import("@/components/DeliveryEstimator"));
 
 interface HeroProps {
   h1Override?: string;
   subtitleOverride?: string;
   prefillAddress?: string | null;
+  showEstimator?: boolean;
+  ctaCityName?: string;
 }
 
-const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
+const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = true, ctaCityName }: HeroProps) => {
   const { timeLeft, label } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
@@ -92,13 +96,23 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
             ))}
           </motion.div>
 
-          {/* Embedded DeliveryEstimator */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <DeliveryEstimator prefillAddress={prefillAddress} embedded />
+            {showEstimator ? (
+              <Suspense fallback={<div className="h-24 rounded-xl bg-white/5 animate-pulse" />}>
+                <DeliveryEstimator prefillAddress={prefillAddress} embedded />
+              </Suspense>
+            ) : (
+              <Link
+                to={`/?address=${encodeURIComponent(ctaCityName ? `${ctaCityName}, LA` : "")}`}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent text-accent-foreground font-display tracking-wider text-base hover:brightness-110 transition-all"
+              >
+                Check Delivery to {ctaCityName || "Your Area"} →
+              </Link>
+            )}
           </motion.div>
 
           {/* Trust bar */}
