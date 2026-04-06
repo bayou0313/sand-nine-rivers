@@ -1,14 +1,18 @@
 import heroImage from "@/assets/hero-sand.jpg";
 import { Clock, Star, Truck, CheckCircle, ShieldCheck } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, lazy, Suspense } from "react";
 import { useCountdown } from "@/hooks/use-countdown";
-import DeliveryEstimator from "@/components/DeliveryEstimator";
+import { Link } from "react-router-dom";
+
+const DeliveryEstimator = lazy(() => import("@/components/DeliveryEstimator"));
 
 interface HeroProps {
   h1Override?: string;
   subtitleOverride?: string;
   prefillAddress?: string | null;
+  showEstimator?: boolean;
+  ctaCityName?: string;
 }
 
 const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
