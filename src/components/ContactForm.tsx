@@ -43,7 +43,7 @@ const ContactForm = ({ cityName }: { cityName?: string }) => {
               <p className="text-accent font-display text-lg tracking-widest mb-3">CONTACT</p>
               <h2 className="text-3xl md:text-4xl text-foreground">Talk to Us</h2>
               <p className="font-body text-muted-foreground mt-6 leading-relaxed text-lg">
-                Ready to order or have questions? Reach out by phone, email, or fill out the form. We'll get back to you as soon as possible.
+                {cityName ? `Ready to order river sand delivery in ${cityName}? Reach out by phone, email, or fill out the form and we'll get back to you fast.` : "Ready to order or have questions? Reach out by phone, email, or fill out the form. We'll get back to you as soon as possible."}
               </p>
             </div>
 
