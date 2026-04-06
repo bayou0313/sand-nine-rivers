@@ -26,7 +26,7 @@ const CTA = ({ cityName }: { cityName?: string }) => {
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="text-3xl md:text-5xl text-foreground"
         >
-          Get your sand delivered today.
+          Get your sand delivered{cityName ? ` to ${cityName}` : ""} today.
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 15 }}
