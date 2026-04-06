@@ -464,8 +464,8 @@ const CityPage = () => {
       {otherCities.length > 0 && (
         <section className="py-12 bg-muted/50">
           <div className="container mx-auto px-6">
-            <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-6">
-              Other Areas We Serve
+             <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-6">
+              Other Areas We Serve Near {cityPage.city_name}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {otherCities.map((c) => (
