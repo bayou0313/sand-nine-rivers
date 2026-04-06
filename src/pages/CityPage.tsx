@@ -485,9 +485,9 @@ const CityPage = () => {
         </section>
       )}
 
-      <CTA />
-      <FAQ />
-      <ContactForm />
+      <CTA cityName={cityPage.city_name} />
+      <FAQ cityName={cityPage.city_name} />
+      <ContactForm cityName={cityPage.city_name} />
       <Footer />
       <MobilePhoneBar />
       <ScrollToTop />
