@@ -1,4 +1,5 @@
 import heroImage from "@/assets/hero-sand.jpg";
+import heroImageWebp from "@/assets/hero-sand.webp";
 import { Clock, Star, Truck, CheckCircle, ShieldCheck } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, lazy, Suspense } from "react";
