@@ -2,7 +2,7 @@ import { Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-const CTA = () => {
+const CTA = ({ cityName }: { cityName?: string }) => {
   const scrollToEstimator = () => {
     const el = document.getElementById("estimator");
     if (el) {
