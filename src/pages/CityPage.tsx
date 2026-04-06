@@ -455,7 +455,7 @@ const CityPage = () => {
       ) : null}
 
       <Stats />
-      <About />
+      <About cityName={cityPage.city_name} />
       <RiverSandInfo />
       <Features />
       <Testimonials />
