@@ -186,7 +186,7 @@ const Index = () => {
         <link rel="canonical" href={seo.seo_canonical || "https://riversand.net/"} />
         {seo.seo_og_title && <meta property="og:title" content={seo.seo_og_title} />}
         {seo.seo_og_description && <meta property="og:description" content={seo.seo_og_description} />}
-        {seo.seo_og_image && <meta property="og:image" content={seo.seo_og_image} />}
+        <meta property="og:image" content={seo.seo_og_image || "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg"} />
         {seo.seo_gsc_id && <meta name="google-site-verification" content={seo.seo_gsc_id} />}
         {seo.seo_schema_localbusiness !== "false" && (
           <script type="application/ld+json">{JSON.stringify(localBusinessJsonLd)}</script>
