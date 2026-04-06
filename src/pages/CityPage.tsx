@@ -100,6 +100,7 @@ const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
           <img
             src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png"
             alt="River Sand"
+            title="River Sand Delivery — RiverSand.net"
             className="h-10 mx-auto mb-8 opacity-80"
           />
           <h1 className="text-2xl md:text-4xl font-display text-white tracking-wide mb-6">

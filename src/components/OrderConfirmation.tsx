@@ -767,6 +767,7 @@ export default function OrderConfirmation({
           <img
             src={WAYS_LOGO_DARK}
             alt="WAYS"
+            title="WAYS® Materials LLC"
             className="w-[108px] mb-4"
           />
 

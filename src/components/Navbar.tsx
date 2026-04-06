@@ -47,6 +47,7 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
           <img
             src="/lovable-uploads/riversand-logo_WHITE-2.png"
             alt="RiverSand logo"
+            title="RiverSand.net — Bulk River Sand Delivery"
             className="h-[67px] lg:h-[80px] w-auto max-w-none object-contain transition-all duration-500"
           />
         </motion.a>

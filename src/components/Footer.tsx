@@ -82,6 +82,7 @@ const Footer = () => {
             <img
               src={WAYS_LOGO_DARK}
               alt="WAYS"
+              title="WAYS® Materials LLC"
               className="object-contain"
               width={155}
               height={54}

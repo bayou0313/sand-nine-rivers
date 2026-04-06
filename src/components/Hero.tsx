@@ -30,6 +30,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
           <img
             src={heroImage}
             alt="River sand delivery truck unloading clean screened river sand at a New Orleans job site"
+            title="River Sand Delivery — Same-Day Service in the Greater New Orleans Area"
             className="w-full h-full object-cover"
             width={1920}
             height={1080}

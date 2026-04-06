@@ -170,7 +170,7 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
           <div className="font-body">
             {/* Navy header */}
             <div className="flex flex-col items-center py-6" style={{ backgroundColor: "#0D2137" }}>
-              <img src={LOGO_WHITE} alt="River Sand" className="w-[160px] object-contain" />
+              <img src={LOGO_WHITE} alt="River Sand" title="River Sand Delivery — RiverSand.net" className="w-[160px] object-contain" />
               <div className="mt-3" style={{ width: 40, height: 2, backgroundColor: "#C07A00" }} />
             </div>
 
