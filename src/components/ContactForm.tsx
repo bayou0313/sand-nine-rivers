@@ -72,7 +72,7 @@ const ContactForm = ({ cityName }: { cityName?: string }) => {
                 </div>
                 <div>
                   <p className="font-display text-lg tracking-widest">SERVICE AREA</p>
-                  <p className="font-body text-muted-foreground">Greater New Orleans, LA</p>
+                  <p className="font-body text-muted-foreground">{cityName ? `${cityName}, LA` : "Greater New Orleans, LA"}</p>
                 </div>
               </div>
             </div>

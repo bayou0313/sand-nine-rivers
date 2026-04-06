@@ -35,7 +35,7 @@ const CTA = ({ cityName }: { cityName?: string }) => {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="text-xl font-body text-muted-foreground max-w-xl mx-auto"
         >
-          Check your address for an instant price. Same-day delivery available in most areas.
+          Check your address for an instant price. Same-day delivery available in {cityName ? `${cityName} and surrounding areas` : "most areas"}.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
