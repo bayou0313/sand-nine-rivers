@@ -415,6 +415,7 @@ const CityPage = () => {
         <meta property="og:description" content={cityPage.meta_description || ""} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content={productImageUrl} />
       </Helmet>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbSchema }} />
