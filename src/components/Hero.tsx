@@ -15,7 +15,7 @@ interface HeroProps {
   ctaCityName?: string;
 }
 
-const Hero = ({ h1Override, subtitleOverride, prefillAddress }: HeroProps) => {
+const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = true, ctaCityName }: HeroProps) => {
   const { timeLeft, label } = useCountdown();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
