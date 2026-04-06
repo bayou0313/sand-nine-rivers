@@ -84,6 +84,7 @@ export default function BrandedConfirmation({
           <img
             src={LOGO_WHITE}
             alt="River Sand"
+            title="River Sand Delivery — RiverSand.net"
             className="w-[200px] object-contain"
           />
           <div
@@ -160,6 +161,7 @@ export default function BrandedConfirmation({
           <img
             src={WAYS_LOGO_DARK}
             alt="WAYS"
+            title="WAYS® Materials LLC"
             className="w-[108px] mb-4"
           />
 
