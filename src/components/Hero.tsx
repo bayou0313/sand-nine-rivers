@@ -96,18 +96,24 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
             ))}
           </motion.div>
 
-          {showEstimator ? (
-            <Suspense fallback={<div className="h-24 rounded-xl bg-white/5 animate-pulse" />}>
-              <DeliveryEstimator prefillAddress={prefillAddress} embedded />
-            </Suspense>
-          ) : (
-            <Link
-              to={`/?address=${encodeURIComponent(ctaCityName ? `${ctaCityName}, LA` : "")}`}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent text-accent-foreground font-display tracking-wider text-base hover:brightness-110 transition-all"
-            >
-              Check Delivery to {ctaCityName || "Your Area"} →
-            </Link>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
+            {showEstimator ? (
+              <Suspense fallback={<div className="h-24 rounded-xl bg-white/5 animate-pulse" />}>
+                <DeliveryEstimator prefillAddress={prefillAddress} embedded />
+              </Suspense>
+            ) : (
+              <Link
+                to={`/?address=${encodeURIComponent(ctaCityName ? `${ctaCityName}, LA` : "")}`}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-accent text-accent-foreground font-display tracking-wider text-base hover:brightness-110 transition-all"
+              >
+                Check Delivery to {ctaCityName || "Your Area"} →
+              </Link>
+            )}
+          </motion.div>
 
           {/* Trust bar */}
           <motion.div
