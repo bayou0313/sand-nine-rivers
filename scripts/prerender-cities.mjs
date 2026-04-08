@@ -139,6 +139,14 @@ function buildPage(city, cssLinks, scriptTags) {
     priceRange: '$$',
     paymentAccepted: 'Cash, Credit Card',
     openingHours: 'Mo-Sa 07:00-17:00',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: city.local_address || '',
+      addressLocality: city.local_city || city.city_name,
+      addressRegion: 'LA',
+      postalCode: city.local_zip || '',
+      addressCountry: 'US',
+    },
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'River Sand Delivery Services',
@@ -213,7 +221,7 @@ async function main() {
   console.log('Fetching active city pages…');
   const cities = await query(
     'city_pages',
-    'status=eq.active&select=city_slug,city_name,state,meta_title,meta_description,h1_text,hero_intro,base_price,multi_pit_coverage,faq_items,region'
+    'status=eq.active&select=city_slug,city_name,state,meta_title,meta_description,h1_text,hero_intro,base_price,multi_pit_coverage,faq_items,region,local_address,local_city,local_zip'
   );
   console.log(`Found ${cities.length} active city pages`);
 
