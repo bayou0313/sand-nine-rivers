@@ -56,6 +56,7 @@ const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [returnAddress, setReturnAddress] = useState<string | null>(null);
   const [seo, setSeo] = useState<Record<string, string>>({});
+  const [priceRange, setPriceRange] = useState({ low: FALLBACK_LOW, high: FALLBACK_HIGH, count: FALLBACK_COUNT });
 
   useEffect(() => {
     const init = async () => {
@@ -81,6 +82,25 @@ const Index = () => {
       } catch { /* fallback to defaults */ }
     };
     fetchSeo();
+
+    const fetchPriceRange = async () => {
+      try {
+        const { data } = await supabase
+          .from("city_pages")
+          .select("base_price")
+          .eq("status", "active")
+          .not("base_price", "is", null);
+        if (data && data.length > 0) {
+          const prices = data.map((r: any) => Number(r.base_price));
+          setPriceRange({
+            low: Math.min(...prices).toFixed(2),
+            high: Math.max(...prices).toFixed(2),
+            count: String(prices.length),
+          });
+        }
+      } catch { /* fallback to defaults */ }
+    };
+    fetchPriceRange();
   }, []);
 
   useEffect(() => {
