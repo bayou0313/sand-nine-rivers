@@ -301,6 +301,7 @@ const CityPage = () => {
   const breadcrumbSchema = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    "name": `River Sand Delivery in ${cityPage.city_name}`,
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: "https://riversand.net" },
       { "@type": "ListItem", position: 2, name: "River Sand Delivery", item: "https://riversand.net" },
