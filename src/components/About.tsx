@@ -11,7 +11,7 @@ const card = {
   visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const } },
 };
 
-const About = ({ cityName }: { cityName?: string }) => {
+const About = ({ cityName, whyChooseIntro }: { cityName?: string; whyChooseIntro?: string }) => {
   return (
     <section id="about" className="py-24 bg-background">
       <div className="container mx-auto px-6">
@@ -19,7 +19,7 @@ const About = ({ cityName }: { cityName?: string }) => {
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">ABOUT US</motion.p>
           <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Why {cityName || "New Orleans"} Contractors Choose RiverSand.net</motion.h2>
           <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.25, duration: 0.5 }} className="font-body text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed text-lg">
-            We've been providing quality river sand to {cityName ? `${cityName} and the Greater Gulf South` : "the Greater New Orleans area"} for over 11 years. Our commitment is simple — deliver clean, screened sand on time, at a fair price, every single time.
+            {whyChooseIntro || (cityName ? `We've been providing quality river sand to ${cityName} and the Greater Gulf South for over 11 years. Our commitment is simple — deliver clean, screened sand on time, at a fair price, every single time.` : "We've been providing quality river sand to the Greater New Orleans area for over 11 years. Our commitment is simple — deliver clean, screened sand on time, at a fair price, every single time.")}
           </motion.p>
         </div>
 

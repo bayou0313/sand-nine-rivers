@@ -67,7 +67,12 @@ const item = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const } },
 };
 
-const FAQ = ({ cityName }: { cityName?: string }) => {
+const FAQ = ({ cityName, faqItems }: { cityName?: string; faqItems?: { question: string; answer: string }[] }) => {
+  const allFaqs = [
+    ...(faqItems || []).map((f) => ({ q: f.question, a: f.answer })),
+    ...faqs,
+  ];
+
   return (
     <section id="faq" className="py-24 bg-background">
       <div className="container mx-auto px-6">
@@ -84,7 +89,7 @@ const FAQ = ({ cityName }: { cityName?: string }) => {
           viewport={{ once: true, amount: 0.1 }}
         >
           <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, i) => (
+            {allFaqs.map((faq, i) => (
               <motion.div key={i} variants={item}>
                 <AccordionItem
                   value={`item-${i}`}
