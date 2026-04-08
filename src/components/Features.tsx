@@ -18,13 +18,13 @@ const item = {
   visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const } },
 };
 
-const Features = () => {
+const Features = ({ cityName = "New Orleans" }: { cityName?: string }) => {
   return (
     <section id="why-us" className="py-24 bg-card overflow-x-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">WHY US</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Why Customers Choose River Sand</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground">Why {cityName} Customers Choose River Sand</motion.h2>
         </div>
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto"

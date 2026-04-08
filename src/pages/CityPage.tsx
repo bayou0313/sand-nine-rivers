@@ -458,8 +458,8 @@ const CityPage = () => {
       <Stats />
       <About cityName={cityPage.city_name} />
       <RiverSandInfo cityName={cityPage.city_name} />
-      <Features />
-      <Testimonials />
+       <Features cityName={cityPage.city_name} />
+       <Testimonials cityName={cityPage.city_name} />
 
       {/* Other Areas We Serve */}
       {otherCities.length > 0 && (
