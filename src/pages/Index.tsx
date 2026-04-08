@@ -134,8 +134,10 @@ const Index = () => {
     "openingHours": "Mo-Sa 07:00-17:00",
     "address": {
       "@type": "PostalAddress",
-      "addressLocality": "Bridge City",
+      "streetAddress": "2429 Tifton St",
+      "addressLocality": "Kenner",
       "addressRegion": "LA",
+      "postalCode": "70062",
       "addressCountry": "US",
     },
     "geo": {
