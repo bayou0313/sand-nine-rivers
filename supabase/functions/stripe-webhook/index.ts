@@ -311,7 +311,7 @@ serve(async (req) => {
       if (stripePaymentId) {
         updateData.stripe_payment_id = stripePaymentId;
       }
-      if (paymentStatus === "paid") {
+      if (paymentStatus === "paid" || paymentStatus === "authorized") {
         const { data: currentOrder } = await supabase
           .from("orders")
           .select("*")
