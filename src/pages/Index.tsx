@@ -58,30 +58,18 @@ const localBusinessJsonLd = {
     "name": "River Sand Delivery Services",
     "itemListElement": [
       {
-        "@type": "Offer",
+        "@type": "AggregateOffer",
         "itemOffered": {
           "@type": "Service",
           "name": "Bulk River Sand Delivery",
           "description": "Same-day delivery of 9 cubic yards of river sand. Ideal for drainage, landscaping, fill, and construction projects.",
         },
-        "price": "195.00",
+        "lowPrice": "195.00",
+        "highPrice": "231.00",
         "priceCurrency": "USD",
-        "priceSpecification": {
-          "@type": "PriceSpecification",
-          "price": "195.00",
-          "priceCurrency": "USD",
-          "description": "Starting price — varies by distance",
-        },
+        "offerCount": "32",
+        "priceValidUntil": "2027-12-31",
         "availability": "https://schema.org/InStock",
-        "areaServed": {
-          "@type": "GeoCircle",
-          "geoMidpoint": {
-            "@type": "GeoCoordinates",
-            "latitude": 29.95,
-            "longitude": -90.07,
-          },
-          "geoRadius": "80000",
-        },
         "hasMerchantReturnPolicy": {
           "@type": "MerchantReturnPolicy",
           "applicableCountry": "US",

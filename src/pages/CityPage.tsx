@@ -398,10 +398,11 @@ const CityPage = () => {
     brand: { "@type": "Brand", name: "River Sand" },
     offers: {
       "@type": "Offer",
+      price: cityPage.base_price ? Number(cityPage.base_price).toFixed(2) : "195.00",
       priceCurrency: "USD",
-      ...(cityPage.base_price ? { price: Number(cityPage.base_price) } : {}),
+      priceValidUntil: "2027-12-31",
       availability: "https://schema.org/InStock",
-      areaServed: { "@type": "City", name: cityPage.city_name, addressRegion: cityPage.state || "LA" },
+      areaServed: { "@type": "City", name: cityPage.city_name, addressRegion: "LA" },
       hasMerchantReturnPolicy: {
         "@type": "MerchantReturnPolicy",
         applicableCountry: "US",
