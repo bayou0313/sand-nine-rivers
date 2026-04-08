@@ -143,7 +143,7 @@ function buildPage(city, allCities) {
     sections.push(`<section><h2>Delivery Details for ${esc(city.city_name)}</h2><p>${esc(city.delivery_details)}</p></section>`);
   }
   if (city.local_uses) {
-    sections.push(`<section><h2>Common Uses for River Sand in ${esc(city.city_name)}</h2><p>${esc(city.local_uses)}</p></section>`);
+    sections.push(`<section><h2>Common Uses for River Sand in ${esc(city.city_name)}</h2><div>${city.local_uses}</div></section>`);
   }
   if (city.local_expertise) {
     sections.push(`<section><h2>Local Expertise</h2><p>${esc(city.local_expertise)}</p></section>`);
