@@ -132,8 +132,10 @@ function buildPage(city, cssLinks, scriptTags) {
     '@type': 'LocalBusiness',
     name: `River Sand — ${city.city_name}`,
     url: canonical,
-    telephone: '1-855-GOT-WAYS',
+    image: productImageUrl,
+    telephone: '+18554689297',
     description: desc,
+    currenciesAccepted: 'USD',
     areaServed: {
       '@type': 'City',
       name: city.city_name,
