@@ -143,7 +143,7 @@ function buildPage(city, allCities) {
     sections.push(`<section><h2>Delivery Details for ${esc(city.city_name)}</h2><p>${esc(city.delivery_details)}</p></section>`);
   }
   if (city.local_uses) {
-    sections.push(`<section><h2>Common Uses for River Sand in ${esc(city.city_name)}</h2><p>${esc(city.local_uses)}</p></section>`);
+    sections.push(`<section><h2>Common Uses for River Sand in ${esc(city.city_name)}</h2><div>${city.local_uses}</div></section>`);
   }
   if (city.local_expertise) {
     sections.push(`<section><h2>Local Expertise</h2><p>${esc(city.local_expertise)}</p></section>`);
@@ -171,6 +171,8 @@ function buildPage(city, allCities) {
       ).join('')}</ul></section>`
     : '';
 
+  const LOGO_URL = 'https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -187,24 +189,46 @@ function buildPage(city, allCities) {
 <script type="application/ld+json">${localBusinessSchema}</script>
 ${faqSchema ? `<script type="application/ld+json">${faqSchema}</script>` : ''}
 <style>
-body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:0;color:#1a1a1a;line-height:1.6}
-.wrap{max-width:800px;margin:0 auto;padding:24px 16px}
-h1{font-size:2rem;margin-bottom:.5rem}
-h2{font-size:1.4rem;margin-top:2rem;border-bottom:2px solid #e5e5e5;padding-bottom:.25rem}
-h3{font-size:1.1rem;margin-top:1.2rem}
-.hero-intro{font-size:1.15rem;color:#444}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:0;color:#1a1a1a;line-height:1.7;background:#fff}
+.site-header{background:#0D2137;padding:16px 0}
+.site-header .wrap{display:flex;align-items:center}
+.site-header img{height:40px;width:auto}
+.wrap{max-width:840px;margin:0 auto;padding:24px 16px}
+h1{font-size:2rem;color:#0D2137;margin-bottom:.5rem;line-height:1.3}
+h2{font-size:1.35rem;color:#0D2137;margin-top:2.5rem;padding-bottom:.35rem;border-bottom:3px solid #C8A44A}
+h3{font-size:1.1rem;margin-top:1.2rem;color:#0D2137}
+p{margin:.75rem 0}
+.hero-intro{font-size:1.15rem;color:#444;margin-bottom:1.5rem}
 .price{font-size:1.3rem;margin:1rem 0}
+.price strong{color:#c4622d}
 .price-note{color:#666;font-style:italic;margin:1rem 0}
 a{color:#2563eb}
+ul,ol{padding-left:1.5rem;margin:.75rem 0}
+li{margin:.4rem 0;line-height:1.6}
+.cta{text-align:center;margin:2.5rem 0;padding:2rem;background:#faf6f1;border-radius:12px}
+.cta a{display:inline-block;padding:14px 36px;background:#c4622d;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:1.05rem;transition:background .2s}
+.cta a:hover{background:#a8501f}
+.other-cities{margin-top:3rem}
 .other-cities ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}
-.other-cities li{background:#f5f5f5;padding:6px 12px;border-radius:6px}
-.other-cities a{text-decoration:none;font-size:.9rem}
-.faq-item{margin:1rem 0}
-.cta{text-align:center;margin:2.5rem 0;padding:2rem;background:#f0f9ff;border-radius:12px}
-.cta a{display:inline-block;padding:12px 32px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-weight:600}
+.other-cities li{background:#f5f5f5;padding:8px 14px;border-radius:6px}
+.other-cities a{text-decoration:none;font-size:.9rem;color:#0D2137}
+.other-cities a:hover{text-decoration:underline}
+.faq-item{margin:1.25rem 0;padding:1rem;background:#f9f9f9;border-radius:8px}
+.faq-item h3{margin-top:0}
+section{margin-bottom:1.5rem}
+.site-footer{background:#0D2137;color:#fff;padding:24px 0;margin-top:3rem}
+.site-footer .wrap{text-align:center;font-size:.85rem;opacity:.85}
+.site-footer a{color:#C8A44A;text-decoration:none}
+.site-footer a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
+<header class="site-header">
+<div class="wrap">
+<a href="${SITE}"><img src="${LOGO_URL}" alt="River Sand — Same-Day Delivery" height="40"></a>
+</div>
+</header>
 <div class="wrap">
 <h1>${esc(h1)}</h1>
 <p class="hero-intro">${esc(heroIntro)}</p>
@@ -213,12 +237,12 @@ ${priceHtml}
 ${sections.join('\n')}
 ${otherCitiesHtml}
 <div class="cta"><a href="${SITE}/#estimator">Order River Sand Delivery Now →</a></div>
-<footer><p>© ${new Date().getFullYear()} River Sand. <a href="${SITE}">Home</a></p></footer>
 </div>
-<script>
-if(window.location.hash||document.referrer.includes('riversand.net')){
-}
-</script>
+<footer class="site-footer">
+<div class="wrap">
+<p>© ${new Date().getFullYear()} WAYS® Materials LLC · <a href="${SITE}">River Sand Home</a></p>
+</div>
+</footer>
 </body>
 </html>`;
 }
