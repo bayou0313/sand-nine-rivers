@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -21,80 +21,9 @@ import { initSession, getSession, incrementVisitCount, updateSession } from "@/l
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
 
-const localBusinessJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "River Sand",
-  "url": "https://riversand.net",
-  "telephone": "+18554689297",
-  "description": "Same-day bulk river sand delivery serving the Gulf South region. Instant price quotes, cash or card payment.",
-  "image": "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
-  "priceRange": "$$",
-  "paymentAccepted": "Cash, Credit Card",
-  "currenciesAccepted": "USD",
-  "openingHours": "Mo-Sa 07:00-17:00",
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Bridge City",
-    "addressRegion": "LA",
-    "addressCountry": "US",
-  },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": 29.95,
-    "longitude": -90.07,
-  },
-  "areaServed": {
-    "@type": "GeoCircle",
-    "geoMidpoint": {
-      "@type": "GeoCoordinates",
-      "latitude": 29.95,
-      "longitude": -90.07,
-    },
-    "geoRadius": "80000",
-  },
-  "hasOfferCatalog": {
-    "@type": "OfferCatalog",
-    "name": "River Sand Delivery Services",
-    "itemListElement": [
-      {
-        "@type": "AggregateOffer",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Bulk River Sand Delivery",
-          "description": "Same-day delivery of 9 cubic yards of river sand. Ideal for drainage, landscaping, fill, and construction projects.",
-        },
-        "lowPrice": "195.00",
-        "highPrice": "231.00",
-        "priceCurrency": "USD",
-        "offerCount": "32",
-        "priceValidUntil": "2027-12-31",
-        "availability": "https://schema.org/InStock",
-        "hasMerchantReturnPolicy": {
-          "@type": "MerchantReturnPolicy",
-          "applicableCountry": "US",
-          "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted",
-          "merchantReturnDays": 0,
-          "returnMethod": "https://schema.org/ReturnNotSupported",
-          "returnFees": "https://schema.org/FreeReturn",
-        },
-        "shippingDetails": {
-          "@type": "OfferShippingDetails",
-          "shippingRate": { "@type": "MonetaryAmount", "currency": "USD" },
-          "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "US", "addressRegion": "LA" },
-          "deliveryTime": {
-            "@type": "ShippingDeliveryTime",
-            "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 4, "unitCode": "HUR" },
-            "transitTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 4, "unitCode": "HUR" },
-          },
-        },
-      },
-    ],
-  },
-  "sameAs": [
-    "https://riversand.net",
-  ],
-};
+const FALLBACK_LOW = "195.00";
+const FALLBACK_HIGH = "231.00";
+const FALLBACK_COUNT = "32";
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -127,6 +56,7 @@ const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [returnAddress, setReturnAddress] = useState<string | null>(null);
   const [seo, setSeo] = useState<Record<string, string>>({});
+  const [priceRange, setPriceRange] = useState({ low: FALLBACK_LOW, high: FALLBACK_HIGH, count: FALLBACK_COUNT });
 
   useEffect(() => {
     const init = async () => {
@@ -152,6 +82,25 @@ const Index = () => {
       } catch { /* fallback to defaults */ }
     };
     fetchSeo();
+
+    const fetchPriceRange = async () => {
+      try {
+        const { data } = await supabase
+          .from("city_pages")
+          .select("base_price")
+          .eq("status", "active")
+          .not("base_price", "is", null);
+        if (data && data.length > 0) {
+          const prices = data.map((r: any) => Number(r.base_price));
+          setPriceRange({
+            low: Math.min(...prices).toFixed(2),
+            high: Math.max(...prices).toFixed(2),
+            count: String(prices.length),
+          });
+        }
+      } catch { /* fallback to defaults */ }
+    };
+    fetchPriceRange();
   }, []);
 
   useEffect(() => {
@@ -170,6 +119,81 @@ const Index = () => {
     `;
     document.head.appendChild(script);
   }, [seo?.seo_gtm_id]);
+
+  const localBusinessJsonLd = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "River Sand",
+    "url": "https://riversand.net",
+    "telephone": "+18554689297",
+    "description": "Same-day bulk river sand delivery serving the Gulf South region. Instant price quotes, cash or card payment.",
+    "image": "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
+    "priceRange": "$$",
+    "paymentAccepted": "Cash, Credit Card",
+    "currenciesAccepted": "USD",
+    "openingHours": "Mo-Sa 07:00-17:00",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Bridge City",
+      "addressRegion": "LA",
+      "addressCountry": "US",
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 29.95,
+      "longitude": -90.07,
+    },
+    "areaServed": {
+      "@type": "GeoCircle",
+      "geoMidpoint": {
+        "@type": "GeoCoordinates",
+        "latitude": 29.95,
+        "longitude": -90.07,
+      },
+      "geoRadius": "80000",
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "River Sand Delivery Services",
+      "itemListElement": [
+        {
+          "@type": "AggregateOffer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Bulk River Sand Delivery",
+            "description": "Same-day delivery of 9 cubic yards of river sand. Ideal for drainage, landscaping, fill, and construction projects.",
+          },
+          "lowPrice": priceRange.low,
+          "highPrice": priceRange.high,
+          "priceCurrency": "USD",
+          "offerCount": priceRange.count,
+          "priceValidUntil": "2027-12-31",
+          "availability": "https://schema.org/InStock",
+          "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": "US",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted",
+            "merchantReturnDays": 0,
+            "returnMethod": "https://schema.org/ReturnNotSupported",
+            "returnFees": "https://schema.org/FreeReturn",
+          },
+          "shippingDetails": {
+            "@type": "OfferShippingDetails",
+            "shippingRate": { "@type": "MonetaryAmount", "currency": "USD" },
+            "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "US", "addressRegion": "LA" },
+            "deliveryTime": {
+              "@type": "ShippingDeliveryTime",
+              "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 4, "unitCode": "HUR" },
+              "transitTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 4, "unitCode": "HUR" },
+            },
+          },
+        },
+      ],
+    },
+    "sameAs": [
+      "https://riversand.net",
+    ],
+  }), [priceRange]);
 
   const handleRecalculate = useCallback((address: string) => {
     setReturnAddress(address);
