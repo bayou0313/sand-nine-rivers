@@ -1096,6 +1096,8 @@ const Order = () => {
           order_number: insertedOrder?.order_number,
           origin_url: window.location.origin,
           return_mode: isEmbedded ? "popup" : "redirect",
+          same_day_requested: selectedDeliveryDate?.isSameDay || false,
+          delivery_date: selectedDeliveryDate?.iso || null,
         },
       });
 

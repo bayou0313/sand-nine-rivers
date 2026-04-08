@@ -325,6 +325,8 @@ export type Database = {
           billing_zip: string | null
           call_verified_at: string | null
           call_verified_by: string | null
+          capture_attempted_at: string | null
+          capture_status: string | null
           card_authorization_accepted: boolean | null
           card_authorization_timestamp: string | null
           cash_collected: boolean | null
@@ -358,6 +360,8 @@ export type Database = {
           pit_id: string | null
           price: number
           quantity: number
+          reschedule_token: string | null
+          reschedule_token_used: boolean | null
           review_status: string | null
           same_day_requested: boolean
           saturday_surcharge: boolean
@@ -379,6 +383,8 @@ export type Database = {
           billing_zip?: string | null
           call_verified_at?: string | null
           call_verified_by?: string | null
+          capture_attempted_at?: string | null
+          capture_status?: string | null
           card_authorization_accepted?: boolean | null
           card_authorization_timestamp?: string | null
           cash_collected?: boolean | null
@@ -412,6 +418,8 @@ export type Database = {
           pit_id?: string | null
           price: number
           quantity?: number
+          reschedule_token?: string | null
+          reschedule_token_used?: boolean | null
           review_status?: string | null
           same_day_requested?: boolean
           saturday_surcharge?: boolean
@@ -433,6 +441,8 @@ export type Database = {
           billing_zip?: string | null
           call_verified_at?: string | null
           call_verified_by?: string | null
+          capture_attempted_at?: string | null
+          capture_status?: string | null
           card_authorization_accepted?: boolean | null
           card_authorization_timestamp?: string | null
           cash_collected?: boolean | null
@@ -466,6 +476,8 @@ export type Database = {
           pit_id?: string | null
           price?: number
           quantity?: number
+          reschedule_token?: string | null
+          reschedule_token_used?: boolean | null
           review_status?: string | null
           same_day_requested?: boolean
           saturday_surcharge?: boolean

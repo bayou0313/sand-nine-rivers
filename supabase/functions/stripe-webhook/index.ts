@@ -78,6 +78,7 @@ serve(async (req) => {
     "payment_intent.succeeded",
     "payment_intent.payment_failed",
     "payment_intent.canceled",
+    "payment_intent.amount_capturable_updated",
     "charge.refunded",
   ];
 
@@ -97,7 +98,25 @@ serve(async (req) => {
       const session = event.data.object as Stripe.Checkout.Session;
       orderId = session.metadata?.order_id || null;
       stripePaymentId = (session.payment_intent as string) || null;
-      paymentStatus = session.payment_status === "paid" ? "paid" : "pending";
+      
+      // Check if this is a manual capture (auth-only) session
+      let isManualCapture = false;
+      if (stripePaymentId) {
+        try {
+          const pi = await stripe.paymentIntents.retrieve(stripePaymentId);
+          if (pi.capture_method === "manual" && pi.status === "requires_capture") {
+            isManualCapture = true;
+            paymentStatus = "authorized";
+            console.log("[stripe-webhook] Manual capture detected — setting status to authorized");
+          }
+        } catch (piErr) {
+          console.error("[stripe-webhook] Failed to retrieve payment intent:", piErr);
+        }
+      }
+      
+      if (!isManualCapture) {
+        paymentStatus = session.payment_status === "paid" ? "paid" : "pending";
+      }
 
       console.log("[stripe-webhook] checkout.session.completed — order_id from metadata:", orderId);
       console.log("[stripe-webhook] client_reference_id:", session.client_reference_id);
@@ -292,7 +311,7 @@ serve(async (req) => {
       if (stripePaymentId) {
         updateData.stripe_payment_id = stripePaymentId;
       }
-      if (paymentStatus === "paid") {
+      if (paymentStatus === "paid" || paymentStatus === "authorized") {
         const { data: currentOrder } = await supabase
           .from("orders")
           .select("*")
@@ -300,6 +319,9 @@ serve(async (req) => {
           .maybeSingle();
         if (currentOrder?.status === "pending") {
           updateData.status = "confirmed";
+        }
+        if (paymentStatus === "authorized") {
+          updateData.capture_status = "pending";
         }
 
         // Update order FIRST, then send email
