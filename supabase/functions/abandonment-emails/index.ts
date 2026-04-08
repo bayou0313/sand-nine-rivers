@@ -71,7 +71,7 @@ serve(async (req: Request) => {
     const SENDER_TITLE = cfg.sender_title || "Founder & CEO";
     const SITE = cfg.site_name || "River Sand";
 
-    const results = { email_1hr: 0, email_24hr: 0, email_72hr: 0, errors: [] as string[] };
+    const results = { email_1hr: 0, email_24hr: 0, email_72hr: 0, email_hot_path: 0, errors: [] as string[] };
 
     // Email 1: 1 hour after abandonment
     const { data: sessions1hr } = await supabase
@@ -152,7 +152,60 @@ serve(async (req: Request) => {
       }
     }
 
-    // Email 3: 72 hours — $5 off
+    // HOT PATH: Stripe link clicked — $10 off at 24hr (accelerated)
+    const { data: sessionsHotPath } = await supabase
+      .from("visitor_sessions")
+      .select("*")
+      .in("stage", ["started_checkout", "reached_payment"])
+      .not("customer_email", "is", null)
+      .eq("stripe_link_clicked", true)
+      .eq("email_24hr_sent", false)
+      .is("order_id", null) // not converted
+      .lt("updated_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+    for (const s of sessionsHotPath || []) {
+      try {
+        const firstName = (s.customer_name || "").split(" ")[0] || "there";
+        const originalPrice = s.calculated_price || 195;
+        const discountedPrice = Math.max(0, originalPrice - 10);
+        const orderUrl = `${BASE_URL}/order?address=${encodeURIComponent(s.delivery_address || "")}&price=${discountedPrice}&discount=10&utm_source=abandonment&utm_medium=email&utm_campaign=hot_path_10off`;
+
+        await resend.emails.send({
+          from: FROM,
+          to: [s.customer_email],
+          subject: "We saved $10 on your River Sand delivery",
+          html: emailWrapper(`
+            <h2>We saved $10 on your order</h2>
+            <p>Hi ${firstName},</p>
+            <p>You were so close. We're holding your quote and knocking <strong>$10 off</strong> if you complete your order in the next 24 hours.</p>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0">
+              <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Product</td><td style="padding:8px 0;border-bottom:1px solid #eee">River Sand — 9 Cubic Yards</td></tr>
+              <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Delivered to</td><td style="padding:8px 0;border-bottom:1px solid #eee">${s.delivery_address || ""}</td></tr>
+              <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Original price</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-decoration:line-through;color:#999">$${originalPrice.toFixed(2)}</td></tr>
+              <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Your price</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:700;color:${BRAND_GOLD}">$${discountedPrice.toFixed(2)}</td></tr>
+            </table>
+            <p style="text-align:center"><a href="${orderUrl}" class="cta">COMPLETE YOUR ORDER — $${discountedPrice.toFixed(2)}</a></p>
+            <p style="font-size:13px;color:#999">This $10 discount expires in 24 hours.</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SENDER_TITLE}, ${SITE}<br>${PHONE}</p>
+          `),
+        });
+
+        // Mark both 24hr and 72hr as sent so they skip the cold path
+        await supabase
+          .from("visitor_sessions")
+          .update({
+            email_24hr_sent: true, email_24hr_sent_at: new Date().toISOString(),
+            email_72hr_sent: true, email_72hr_sent_at: new Date().toISOString(),
+          })
+          .eq("id", s.id);
+
+        results.email_hot_path++;
+      } catch (err: any) {
+        results.errors.push(`hot-${s.id}: ${err.message}`);
+      }
+    }
+
+    // Email 3: 72 hours — $5 off (cold path only — excludes hot path sessions)
     const { data: sessions72hr } = await supabase
       .from("visitor_sessions")
       .select("*")
@@ -177,7 +230,7 @@ serve(async (req: Request) => {
             <h2>Here's $5 off your order</h2>
             <p>Hi ${firstName},</p>
             <p>We'd love to deliver to you. Here's $5 off your order — applied automatically, no code needed.</p>
-            <table class="info-table" style="width:100%;border-collapse:collapse;margin:16px 0">
+            <table style="width:100%;border-collapse:collapse;margin:16px 0">
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Product</td><td style="padding:8px 0;border-bottom:1px solid #eee">River Sand — 9 Cubic Yards</td></tr>
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Delivered to</td><td style="padding:8px 0;border-bottom:1px solid #eee">${s.delivery_address || ""}</td></tr>
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Your price</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:700;color:${BRAND_GOLD}">$${discountedPrice.toFixed(2)}</td></tr>
