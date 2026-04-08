@@ -1,0 +1,4 @@
+ALTER TABLE city_pages 
+  ADD COLUMN IF NOT EXISTS local_address TEXT,
+  ADD COLUMN IF NOT EXISTS local_zip TEXT,
+  ADD COLUMN IF NOT EXISTS local_city TEXT;

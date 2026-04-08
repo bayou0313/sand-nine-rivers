@@ -56,8 +56,11 @@ export type Database = {
           last_viewed_at: string | null
           lat: number | null
           lng: number | null
+          local_address: string | null
+          local_city: string | null
           local_expertise: string | null
           local_uses: string | null
+          local_zip: string | null
           meta_description: string | null
           meta_title: string | null
           multi_pit_coverage: boolean | null
@@ -93,8 +96,11 @@ export type Database = {
           last_viewed_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_address?: string | null
+          local_city?: string | null
           local_expertise?: string | null
           local_uses?: string | null
+          local_zip?: string | null
           meta_description?: string | null
           meta_title?: string | null
           multi_pit_coverage?: boolean | null
@@ -130,8 +136,11 @@ export type Database = {
           last_viewed_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_address?: string | null
+          local_city?: string | null
           local_expertise?: string | null
           local_uses?: string | null
+          local_zip?: string | null
           meta_description?: string | null
           meta_title?: string | null
           multi_pit_coverage?: boolean | null
