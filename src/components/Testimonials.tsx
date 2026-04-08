@@ -33,7 +33,7 @@ const card = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const } },
 };
 
-const Testimonials = () => {
+const Testimonials = ({ cityName = "New Orleans" }: { cityName?: string }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
@@ -41,7 +41,7 @@ const Testimonials = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">REVIEWS</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-primary-foreground">What Our Customers Say</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-primary-foreground">What {cityName} Customers Say</motion.h2>
         </div>
 
         {/* Desktop: 3-col grid */}
