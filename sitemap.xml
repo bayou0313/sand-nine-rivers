@@ -61,12 +61,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/poydras/river-sand-delivery</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://riversand.net/westwego/river-sand-delivery</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
@@ -74,6 +68,12 @@
   </url>
   <url>
     <loc>https://riversand.net/elmwood/river-sand-delivery</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/poydras/river-sand-delivery</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -175,13 +175,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/raceland/river-sand-delivery</loc>
+    <loc>https://riversand.net/montz/river-sand-delivery</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/montz/river-sand-delivery</loc>
+    <loc>https://riversand.net/raceland/river-sand-delivery</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
