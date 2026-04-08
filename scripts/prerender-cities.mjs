@@ -1,3 +1,4 @@
+// Deploy trigger — cache bust
 #!/usr/bin/env node
 /**
  * Pre-render static HTML for each active city page.
