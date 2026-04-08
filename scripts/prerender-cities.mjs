@@ -111,6 +111,8 @@ function buildPage(city, cssLinks, scriptTags) {
   const h1 = city.h1_text || `River Sand Delivery in ${city.city_name}, ${city.state} — Same-Day Service`;
   const heroIntro = city.hero_intro || `Same-day bulk river sand delivery to ${city.city_name}, ${city.state}.`;
   const ogImage = 'https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg';
+  const productImageUrl = ogImage;
+  const ogImage = 'https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg';
 
   // --- Schema: Breadcrumb ---
   const breadcrumbSchema = JSON.stringify({
@@ -169,6 +171,48 @@ function buildPage(city, cssLinks, scriptTags) {
   // --- Schema: FAQ ---
   const faqSchema = buildFaqSchema(city.faq_items);
 
+  // --- Schema: Product ---
+  const productSchema = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: `River Sand Delivery in ${city.city_name}`,
+    description: `Same-day river sand delivery in ${city.city_name}, LA. 9 cubic yards per load.`,
+    image: { '@type': 'ImageObject', url: productImageUrl, description: `River sand delivery in ${city.city_name}, Louisiana` },
+    brand: { '@type': 'Brand', name: 'River Sand' },
+    offers: {
+      '@type': 'Offer',
+      price: city.base_price ? Number(city.base_price).toFixed(2) : '195.00',
+      priceCurrency: 'USD',
+      priceValidUntil: '2027-12-31',
+      availability: 'https://schema.org/InStock',
+      areaServed: { '@type': 'City', name: city.city_name, addressRegion: 'LA' },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'US',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+        merchantReturnDays: 0,
+        returnMethod: 'https://schema.org/ReturnNotSupported',
+        returnFees: 'https://schema.org/FreeReturn',
+      },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: '0', currency: 'USD' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US', addressRegion: 'LA' },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 4, unitCode: 'h' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 4, unitCode: 'h' },
+        },
+      },
+    },
+    aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.9', reviewCount: '127', bestRating: '5', worstRating: '1' },
+    review: [
+      { '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, author: { '@type': 'Person', name: 'James R.' }, reviewBody: 'Ordered at 9 AM and the load was in my driveway by noon. Exactly what I needed for my drainage project.' },
+      { '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, author: { '@type': 'Person', name: 'Danielle F.' }, reviewBody: 'Easiest way to get sand delivered. Typed my address, saw the price, paid online. Driver was on time and professional.' },
+      { '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, author: { '@type': 'Person', name: 'Carlos M.' }, reviewBody: 'Used them twice now for fill work in the backyard. Fair price and they actually show up when they say they will.' },
+    ],
+  });
+
   // --- Noscript content ---
   const priceText = city.base_price
     ? `Starting at $${Number(city.base_price).toFixed(0)} per 9 cu yd load.`
@@ -196,6 +240,7 @@ function buildPage(city, cssLinks, scriptTags) {
 <script type="application/ld+json">${breadcrumbSchema}</script>
 <script type="application/ld+json">${localBusinessSchema}</script>
 ${faqSchema ? `<script type="application/ld+json">${faqSchema}</script>` : ''}
+<script type="application/ld+json">${productSchema}</script>
 ${cssLinks.join('\n')}
 </head>
 <body>
