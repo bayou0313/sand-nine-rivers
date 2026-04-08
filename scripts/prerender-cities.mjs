@@ -111,6 +111,8 @@ function buildPage(city, cssLinks, scriptTags) {
   const h1 = city.h1_text || `River Sand Delivery in ${city.city_name}, ${city.state} — Same-Day Service`;
   const heroIntro = city.hero_intro || `Same-day bulk river sand delivery to ${city.city_name}, ${city.state}.`;
   const ogImage = 'https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg';
+  const productImageUrl = ogImage;
+  const ogImage = 'https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg';
 
   // --- Schema: Breadcrumb ---
   const breadcrumbSchema = JSON.stringify({
