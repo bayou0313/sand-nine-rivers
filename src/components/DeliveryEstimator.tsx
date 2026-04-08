@@ -22,7 +22,7 @@ type EstimateResult = {
 } | null;
 
 interface DeliveryEstimatorProps {
-  prefillAddress?: string | null;
+  prefillAddress?: string | null; // kept for Index.tsx return-visitor flow
   embedded?: boolean;
 }
 
@@ -267,7 +267,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                 onInputChange={(val) => { setAddress(val); setCustomerCoords(null); }}
                 onEnterKey={calculateDistance}
                 placeholder="Enter your delivery address for an instant price"
-                initialValue={prefillAddress || undefined}
+                initialValue={prefillAddress || ""}
                 id="delivery-address"
                 containerClassName={`flex-1 ${embedded ? "place-autocomplete-embedded" : ""}`}
               />
