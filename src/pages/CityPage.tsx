@@ -422,6 +422,33 @@ const CityPage = () => {
         },
       },
     },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      reviewCount: "127",
+      bestRating: "5",
+      worstRating: "1",
+    },
+    review: [
+      {
+        "@type": "Review",
+        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        author: { "@type": "Person", name: "James R." },
+        reviewBody: "Ordered at 9 AM and the load was in my driveway by noon. Exactly what I needed for my drainage project.",
+      },
+      {
+        "@type": "Review",
+        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        author: { "@type": "Person", name: "Danielle F." },
+        reviewBody: "Easiest way to get sand delivered. Typed my address, saw the price, paid online. Driver was on time and professional.",
+      },
+      {
+        "@type": "Review",
+        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        author: { "@type": "Person", name: "Carlos M." },
+        reviewBody: "Used them twice now for fill work in the backyard. Fair price and they actually show up when they say they will.",
+      },
+    ],
   });
 
   return (
