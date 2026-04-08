@@ -320,6 +320,9 @@ serve(async (req) => {
         if (currentOrder?.status === "pending") {
           updateData.status = "confirmed";
         }
+        if (paymentStatus === "authorized") {
+          updateData.capture_status = "pending";
+        }
 
         // Update order FIRST, then send email
         console.log("[stripe-webhook] Updating order:", orderId, "with:", updateData);
