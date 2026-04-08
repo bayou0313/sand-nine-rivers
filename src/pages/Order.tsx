@@ -338,10 +338,33 @@ const Order = () => {
               duration: "",
             });
           }
-        } else if (returnedOrderNumber) {
-          // Live state was wiped by Stripe redirect — fetch order from DB
+      } else if (returnedOrderNumber) {
+          // Live state was wiped by Stripe redirect — fetch order via edge function (bypasses RLS)
           (async () => {
             try {
+              // Try to get lookup token from sessionStorage snapshot
+              let fallbackLookupToken: string | null = null;
+              try {
+                const snapRaw = sessionStorage.getItem("pending_order_snapshot");
+                if (snapRaw) {
+                  const snap = JSON.parse(snapRaw);
+                  fallbackLookupToken = snap.lookupToken || null;
+                }
+              } catch {}
+
+              if (fallbackLookupToken) {
+                // Use edge function with service role access
+                const { data: fallbackOrder, error: fallbackErr } = await supabase.functions.invoke("get-order-status", {
+                  body: { order_id: null, lookup_token: fallbackLookupToken },
+                });
+                if (!fallbackErr && fallbackOrder && fallbackOrder.price > 0) {
+                  setConfirmedOrderId(fallbackOrder.id);
+                  showSuccess(fallbackOrder);
+                  return;
+                }
+              }
+
+              // Legacy fallback — direct query (may fail for anon users due to RLS)
               const { data: fallbackOrder } = await supabase
                 .from("orders")
                 .select("*")
@@ -1095,6 +1118,9 @@ const Order = () => {
       setPendingOrderId(insertedOrder?.id || null);
       setLookupToken(insertedOrder?.lookup_token || null);
 
+      // Track stripe link click for hot-path abandonment emails
+      await updateSession({ stripe_link_clicked: true, stripe_link_clicked_at: new Date().toISOString() });
+
       // Save order state to sessionStorage (survives same-tab cross-origin redirects, isolated per tab)
       try {
         sessionStorage.setItem("pending_order_snapshot", JSON.stringify({
@@ -1113,6 +1139,7 @@ const Order = () => {
           taxAmount,
           subtotal,
           saturdaySurchargeTotal,
+          sundaySurchargeTotal,
           taxInfo,
         }));
         console.log("[checkout] snapshot saved:", !!sessionStorage.getItem("pending_order_snapshot"));
