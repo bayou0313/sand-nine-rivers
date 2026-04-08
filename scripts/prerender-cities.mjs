@@ -116,6 +116,7 @@ function buildPage(city, cssLinks, scriptTags) {
   const breadcrumbSchema = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
+    'name': `River Sand Delivery in ${city.city_name}`,
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE },
       { '@type': 'ListItem', position: 2, name: 'River Sand Delivery', item: SITE },
