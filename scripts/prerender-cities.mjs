@@ -11,7 +11,7 @@
  *
  * Result: Google reads rich metadata instantly; React hydrates the full UI.
  */
-import { writeFileSync, readFileSync, mkdirSync } from 'fs';
+import { writeFileSync, readFileSync, mkdirSync, copyFileSync } from 'fs';
 import { join } from 'path';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://lclbexhytmpfxzcztzva.supabase.co';
@@ -266,6 +266,10 @@ async function main() {
   sitemap += `\n</urlset>`;
   writeFileSync(join(DIST, 'sitemap.xml'), sitemap, 'utf-8');
   console.log(`✓ sitemap.xml (${cities.length + 2} URLs)`);
+
+  // SPA fallback for GitHub Pages — handles /leads, /order, /order-confirmation etc.
+  copyFileSync(join(DIST, 'index.html'), join(DIST, '404.html'));
+  console.log('✓ 404.html (SPA fallback)');
 }
 
 main().catch((err) => {
