@@ -402,6 +402,24 @@ const CityPage = () => {
       ...(cityPage.base_price ? { price: Number(cityPage.base_price) } : {}),
       availability: "https://schema.org/InStock",
       areaServed: { "@type": "City", name: cityPage.city_name, addressRegion: cityPage.state || "LA" },
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "US",
+        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+        merchantReturnDays: 0,
+        returnMethod: "https://schema.org/ReturnNotSupported",
+        returnFees: "https://schema.org/FreeReturn",
+      },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: { "@type": "MonetaryAmount", currency: "USD" },
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: "US", addressRegion: "LA" },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "HUR" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "HUR" },
+        },
+      },
     },
   });
 
