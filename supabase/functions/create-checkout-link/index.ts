@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url, return_mode } = await req.json();
+    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url, return_mode, same_day_requested, delivery_date } = await req.json();
 
     if (!amount || typeof amount !== "number" || amount < 50) {
       return new Response(
@@ -70,6 +70,15 @@ serve(async (req) => {
         .eq("id", order_id);
     }
 
+    // Determine capture method based on delivery timing
+    const isSameDay = !!same_day_requested;
+    const daysUntilDelivery = delivery_date
+      ? Math.floor((new Date(delivery_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : 0;
+    const captureMethod = isSameDay || daysUntilDelivery > 6 ? "automatic" : "manual";
+
+    console.log(`[create-checkout-link] same_day: ${isSameDay}, daysUntilDelivery: ${daysUntilDelivery}, capture_method: ${captureMethod}`);
+
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -95,6 +104,7 @@ serve(async (req) => {
       },
       payment_intent_data: {
         setup_future_usage: "off_session",
+        capture_method: captureMethod,
         metadata: {
           order_id: order_id || "",
           order_number: order_number || "",
