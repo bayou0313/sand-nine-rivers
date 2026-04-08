@@ -130,7 +130,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
           >
             {[
               { icon: Star, text: "4.9-star rated" },
-              { icon: Truck, text: "500+ loads delivered" },
+              { icon: Truck, text: "Fleet Owned" },
               { icon: CheckCircle, text: "Same-day available" },
               { icon: ShieldCheck, text: "Licensed & insured" },
             ].map((item) => (
