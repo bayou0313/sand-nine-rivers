@@ -226,6 +226,43 @@ CONTENT REQUIREMENTS:
       const supabase = createClient(supabaseUrl, serviceRoleKey);
       const generatedAt = new Date().toISOString();
 
+      // Reverse geocode the city's lat/lng for local address schema data
+      let localAddress: string | null = null;
+      let localCity: string | null = null;
+      let localZip: string | null = null;
+
+      try {
+        const { data: pageRow } = await supabase
+          .from("city_pages")
+          .select("lat, lng")
+          .eq("id", city_page_id)
+          .single();
+
+        if (pageRow?.lat && pageRow?.lng) {
+          const geoKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+          if (geoKey) {
+            const geoResp = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${pageRow.lat},${pageRow.lng}&result_type=street_address&key=${geoKey}`
+            );
+            const geoData = await geoResp.json();
+            const geoResult = geoData.results?.[0];
+            if (geoResult?.address_components) {
+              const comps = geoResult.address_components;
+              const streetNum = comps.find((c: any) => c.types?.includes("street_number"))?.long_name || "";
+              const route = comps.find((c: any) => c.types?.includes("route"))?.long_name || "";
+              localAddress = [streetNum, route].filter(Boolean).join(" ") || null;
+              localCity = comps.find((c: any) => c.types?.includes("locality"))?.long_name
+                || comps.find((c: any) => c.types?.includes("sublocality"))?.long_name
+                || null;
+              localZip = comps.find((c: any) => c.types?.includes("postal_code"))?.long_name || null;
+              console.log(`[generate-city-page] Geocoded ${city_name}: ${localAddress}, ${localCity} ${localZip}`);
+            }
+          }
+        }
+      } catch (geoErr: any) {
+        console.error(`[generate-city-page] Geocoding error for ${city_name}:`, geoErr.message);
+      }
+
       const baseUpdate = {
         meta_title: generated.meta_title,
         meta_description: generated.meta_description,
@@ -247,6 +284,9 @@ CONTENT REQUIREMENTS:
         local_uses: localUsesHtml ? `<ul>${localUsesHtml}</ul>` : null,
         local_expertise: generated.local_expertise || null,
         faq_items: generated.faq_items || null,
+        local_address: localAddress,
+        local_city: localCity,
+        local_zip: localZip,
       };
 
       let { error: updateErr } = await supabase

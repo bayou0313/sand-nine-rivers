@@ -323,21 +323,14 @@ const CityPage = () => {
     paymentAccepted: "Cash, Credit Card",
     currenciesAccepted: "USD",
     openingHours: "Mo-Sa 07:00-17:00",
-    address: parsedAddr
-      ? {
-          "@type": "PostalAddress",
-          streetAddress: parsedAddr.streetAddress,
-          addressLocality: parsedAddr.addressLocality,
-          addressRegion: parsedAddr.addressRegion,
-          postalCode: parsedAddr.postalCode,
-          addressCountry: "US",
-        }
-      : {
-          "@type": "PostalAddress",
-          addressLocality: cityPage.city_name,
-          addressRegion: cityPage.state || "LA",
-          addressCountry: "US",
-        },
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: cityPage.local_address || parsedAddr?.streetAddress || "",
+      addressLocality: cityPage.local_city || cityPage.city_name,
+      addressRegion: "LA",
+      postalCode: cityPage.local_zip || parsedAddr?.postalCode || "",
+      addressCountry: "US",
+    },
     areaServed: {
       "@type": "City",
       name: cityPage.city_name,

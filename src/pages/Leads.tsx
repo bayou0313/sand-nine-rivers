@@ -2544,6 +2544,27 @@ const Leads = () => {
                 Backfill Regions
               </Button>
               <Button
+                onClick={async () => {
+                  try {
+                    const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                      body: { password: storedPassword(), action: "backfill_local_addresses" },
+                    });
+                    if (fnError) throw fnError;
+                    if (data?.error) throw new Error(data.error);
+                    toast({ title: "Local Addresses Backfilled", description: data.message });
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+              >
+                <MapPin className="w-3 h-3 mr-1" />
+                Backfill Local Addresses
+              </Button>
+              <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 disabled={deletingAll || cityPages.length === 0}
                 size="sm"
