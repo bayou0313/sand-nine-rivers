@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Droplets, Calculator, HelpCircle, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 
-const RiverSandInfo = () => {
+const RiverSandInfo = ({ cityName = "New Orleans" }: { cityName?: string }) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -31,7 +31,7 @@ const RiverSandInfo = () => {
           {/* Always-visible intro */}
           <div className="mb-6">
             <p className="font-body text-muted-foreground leading-relaxed text-lg">
-              Not all sand is the same, and in a city like New Orleans — where drainage is everything — using the right material for the right application is the difference between a project that holds and one that fails inside two wet seasons.
+              Not all sand is the same, and in a city like {cityName} — where drainage is everything — using the right material for the right application is the difference between a project that holds and one that fails inside two wet seasons.
             </p>
             <p className="font-body text-muted-foreground leading-relaxed text-lg mt-4">
               The river sand RIVERSAND.NET delivers is pumped directly from the Mississippi River. It's a natural, unscreened material sourced from one of the most active waterways in North America, which gives it a distinct set of properties that make it particularly well-suited for the soil conditions and drainage challenges common across Southeast Louisiana.
@@ -70,7 +70,7 @@ const RiverSandInfo = () => {
           >
             <h4 className="font-display text-lg text-foreground mb-2">PUMPED FROM THE MISSISSIPPI RIVER — WHAT THAT MEANS FOR YOUR PROJECT</h4>
             <p className="font-body text-muted-foreground leading-relaxed text-sm">
-              Mississippi River sand has a naturally rounded grain structure shaped by decades of water flow and sediment movement. That rounded grain allows water to pass through it easily, which is why it outperforms angular manufactured sands in drainage applications. Because we pump it directly from the river, it arrives in its natural state — no artificial additives, no chemical processing — just the same material contractors across New Orleans have relied on for generations.
+              Mississippi River sand has a naturally rounded grain structure shaped by decades of water flow and sediment movement. That rounded grain allows water to pass through it easily, which is why it outperforms angular manufactured sands in drainage applications. Because we pump it directly from the river, it arrives in its natural state — no artificial additives, no chemical processing — just the same material contractors across {cityName} have relied on for generations.
             </p>
           </motion.div>
 
@@ -88,7 +88,7 @@ const RiverSandInfo = () => {
               <h3 className="font-display text-2xl text-foreground">IS UNSCREENED SAND RIGHT FOR MY PROJECT?</h3>
             </div>
             <p className="font-body text-muted-foreground leading-relaxed mb-4">
-              This is the question we hear most often from first-time buyers, and it's a fair one. "Unscreened" means the sand has not been run through a mechanical screen to remove oversized particles or standardize grain size. It is not a quality issue — it is a processing difference. The sand you receive from RIVERSAND.NET looks clean, performs reliably, and is the same material used daily by New Orleans landscapers, drainage contractors, and construction crews.
+              This is the question we hear most often from first-time buyers, and it's a fair one. "Unscreened" means the sand has not been run through a mechanical screen to remove oversized particles or standardize grain size. It is not a quality issue — it is a processing difference. The sand you receive from RIVERSAND.NET looks clean, performs reliably, and is the same material used daily by {cityName} landscapers, drainage contractors, and construction crews.
             </p>
             <p className="font-body text-muted-foreground leading-relaxed mb-4">
               What unscreened does mean in practice: there may occasionally be small traces of shell fragments, organic material, or minor size variation in the load. For the vast majority of applications — French drains, yard leveling, paver base, sandbox fills, pool surrounds, and backfill — this has no meaningful impact on performance.
@@ -164,7 +164,7 @@ const RiverSandInfo = () => {
               <h3 className="font-display text-2xl text-foreground">RIVER SAND VS. FILL DIRT VS. OTHER MATERIALS</h3>
             </div>
             <p className="font-body text-muted-foreground leading-relaxed mb-6">
-              New Orleans contractors and homeowners frequently ask us to compare river sand against fill dirt, masonry sand, and concrete sand. The short version: if drainage is involved in any form, river sand is almost always the better choice over fill dirt.
+              {cityName} contractors and homeowners frequently ask us to compare river sand against fill dirt, masonry sand, and concrete sand. The short version: if drainage is involved in any form, river sand is almost always the better choice over fill dirt.
             </p>
 
             <div className="overflow-x-auto">
@@ -194,7 +194,7 @@ const RiverSandInfo = () => {
             </div>
 
             <p className="font-body text-muted-foreground leading-relaxed mt-4 text-sm">
-              Fill dirt is the most common alternative considered for large-volume projects. It is cheaper per yard, but it is clay-heavy, compacts tightly, and offers no drainage benefit. In New Orleans's flat, high-water-table environment, placing fill dirt in a drainage context is a common and costly mistake. River sand costs more per yard and it earns that difference in performance on any water-management application.
+              Fill dirt is the most common alternative considered for large-volume projects. It is cheaper per yard, but it is clay-heavy, compacts tightly, and offers no drainage benefit. In {cityName}'s flat, high-water-table environment, placing fill dirt in a drainage context is a common and costly mistake. River sand costs more per yard and it earns that difference in performance on any water-management application.
             </p>
           </motion.div>
 
