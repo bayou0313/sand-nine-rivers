@@ -266,7 +266,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                 onPlaceSelect={handlePlaceSelect}
                 onInputChange={(val) => { setAddress(val); setCustomerCoords(null); }}
                 onEnterKey={calculateDistance}
-                placeholder="Enter your delivery address..."
+                placeholder="Enter your delivery address for an instant price"
                 initialValue={prefillAddress || undefined}
                 id="delivery-address"
                 containerClassName={`flex-1 ${embedded ? "place-autocomplete-embedded" : ""}`}

@@ -434,7 +434,7 @@ const CityPage = () => {
             : `Same-day bulk river sand delivery to ${cityPage.city_name}, ${cityPage.state}.`
         }
         showEstimator={true}
-        prefillAddress={cityPage.city_name + ", LA"}
+        
       />
 
       {/* Conditional price display for multi-PIT vs single-PIT cities */}
