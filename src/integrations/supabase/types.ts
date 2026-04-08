@@ -643,6 +643,8 @@ export type Database = {
           serviceable: boolean | null
           session_token: string
           stage: string | null
+          stripe_link_clicked: boolean | null
+          stripe_link_clicked_at: string | null
           updated_at: string | null
           visit_count: number | null
         }
@@ -679,6 +681,8 @@ export type Database = {
           serviceable?: boolean | null
           session_token: string
           stage?: string | null
+          stripe_link_clicked?: boolean | null
+          stripe_link_clicked_at?: string | null
           updated_at?: string | null
           visit_count?: number | null
         }
@@ -715,6 +719,8 @@ export type Database = {
           serviceable?: boolean | null
           session_token?: string
           stage?: string | null
+          stripe_link_clicked?: boolean | null
+          stripe_link_clicked_at?: string | null
           updated_at?: string | null
           visit_count?: number | null
         }
