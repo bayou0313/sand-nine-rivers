@@ -1,5 +1,5 @@
-// Deploy trigger — cache bust
 #!/usr/bin/env node
+// Deploy trigger — cache bust
 /**
  * Pre-render static HTML for each active city page.
  * Runs after `npm run build` during GitHub Actions deploy.
