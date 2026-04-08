@@ -3007,6 +3007,70 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    if (action === "backfill_local_addresses") {
+      const apiKey = Deno.env.get("GOOGLE_MAPS_SERVER_KEY") || "";
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "GOOGLE_MAPS_SERVER_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { data: pages } = await supabase
+        .from("city_pages")
+        .select("id, city_name, lat, lng")
+        .eq("status", "active")
+        .is("local_address", null)
+        .not("lat", "is", null)
+        .not("lng", "is", null);
+
+      if (!pages?.length) {
+        return new Response(JSON.stringify({ success: true, updated: 0, message: "All active city pages already have local addresses" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      console.log(`[backfill_local_addresses] Found ${pages.length} pages without local_address`);
+      let updated = 0;
+
+      for (const page of pages) {
+        try {
+          const resp = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${page.lat},${page.lng}&result_type=street_address&key=${apiKey}`
+          );
+          const data = await resp.json();
+          const result = data.results?.[0];
+          if (result?.address_components) {
+            const comps = result.address_components;
+            const streetNum = comps.find((c: any) => c.types?.includes("street_number"))?.long_name || "";
+            const route = comps.find((c: any) => c.types?.includes("route"))?.long_name || "";
+            const localAddress = [streetNum, route].filter(Boolean).join(" ") || null;
+            const localCity = comps.find((c: any) => c.types?.includes("locality"))?.long_name
+              || comps.find((c: any) => c.types?.includes("sublocality"))?.long_name
+              || null;
+            const localZip = comps.find((c: any) => c.types?.includes("postal_code"))?.long_name || null;
+
+            if (localAddress) {
+              await supabase.from("city_pages").update({
+                local_address: localAddress,
+                local_city: localCity,
+                local_zip: localZip,
+                updated_at: new Date().toISOString(),
+              }).eq("id", page.id);
+              console.log(`[backfill_local_addresses] ${page.city_name} → ${localAddress}, ${localCity} ${localZip}`);
+              updated++;
+            } else {
+              console.warn(`[backfill_local_addresses] No street address for ${page.city_name}`);
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err: any) {
+          console.error(`[backfill_local_addresses] Error for ${page.city_name}:`, err.message);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, updated, total: pages.length, message: `Updated ${updated} of ${pages.length} city pages with local addresses` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     if (action === "process_regen_queue") {
       const { data: pendingPages } = await supabase
         .from("city_pages")
