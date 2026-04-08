@@ -455,11 +455,55 @@ const CityPage = () => {
         </div>
       ) : null}
 
+      {/* Delivery Details — unique per city */}
+      {cityPage.delivery_details && (
+        <section className="py-16 bg-background">
+          <div className="container mx-auto px-6 max-w-3xl text-center">
+            <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-4">
+              Delivery to {cityPage.city_name}
+            </h2>
+            <p className="font-body text-muted-foreground leading-relaxed text-lg">
+              {cityPage.delivery_details}
+            </p>
+          </div>
+        </section>
+      )}
+
       <Stats />
-      <About cityName={cityPage.city_name} />
+      <About cityName={cityPage.city_name} whyChooseIntro={cityPage.why_choose_intro || undefined} />
+
+      {/* Common Uses — unique per city */}
+      {cityPage.local_uses && (
+        <section className="py-16 bg-card">
+          <div className="container mx-auto px-6 max-w-3xl">
+            <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-6 text-center">
+              Common Uses in {cityPage.city_name}
+            </h2>
+            <div
+              className="font-body text-muted-foreground leading-relaxed text-lg [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-3 [&_li]:leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: cityPage.local_uses }}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Local Expertise — unique per city */}
+      {cityPage.local_expertise && (
+        <section className="py-16 bg-background">
+          <div className="container mx-auto px-6 max-w-3xl text-center">
+            <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-4">
+              Why River Sand Works in {cityPage.city_name}
+            </h2>
+            <p className="font-body text-muted-foreground leading-relaxed text-lg">
+              {cityPage.local_expertise}
+            </p>
+          </div>
+        </section>
+      )}
+
       <RiverSandInfo cityName={cityPage.city_name} />
-       <Features cityName={cityPage.city_name} />
-       <Testimonials cityName={cityPage.city_name} />
+      <Features cityName={cityPage.city_name} />
+      <Testimonials cityName={cityPage.city_name} />
 
       {/* Other Areas We Serve */}
       {otherCities.length > 0 && (
@@ -487,7 +531,7 @@ const CityPage = () => {
       )}
 
       <CTA cityName={cityPage.city_name} />
-      <FAQ cityName={cityPage.city_name} />
+      <FAQ cityName={cityPage.city_name} faqItems={Array.isArray(cityPage.faq_items) ? cityPage.faq_items as { question: string; answer: string }[] : undefined} />
       <ContactForm cityName={cityPage.city_name} />
       <Footer />
       <MobilePhoneBar />
