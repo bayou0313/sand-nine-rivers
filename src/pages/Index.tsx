@@ -195,6 +195,7 @@ const Index = () => {
     ],
   }), [priceRange]);
 
+  const handleRecalculate = useCallback((address: string) => {
     setReturnAddress(address);
     const el = document.getElementById("estimator");
     if (el) {
