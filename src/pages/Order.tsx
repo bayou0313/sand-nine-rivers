@@ -1774,7 +1774,7 @@ const Order = () => {
                             </div>
                             <p className="font-body text-xs text-amber-700 flex items-start gap-1.5">
                               <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                              Processing fee ({formatCurrency(processingFee)}) is non-refundable if cancelled
+                              Processing fee is non-refundable under any circumstances.
                             </p>
                           </>
                         ) : (
@@ -1811,7 +1811,7 @@ const Order = () => {
                           <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
                           <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
                           <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
-                          <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
+                          <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled before scheduled delivery will be refunded in full, excluding the processing fee. Processing fees are non-refundable under any circumstances.</p>
                         </div>
                         <label className="flex items-start gap-3 cursor-pointer">
                           <input
@@ -1828,7 +1828,7 @@ const Order = () => {
                           <span className="font-body text-xs text-foreground leading-relaxed">
                             {paymentMethod !== "stripe-link"
                               ? "I agree to the delivery terms, cancellation policy, and confirm that payment is due at delivery."
-                              : "I agree to the delivery terms and cancellation policy. Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable."}
+                              : "I agree to the delivery terms and cancellation policy. Orders canceled before scheduled delivery will be refunded in full, excluding the processing fee. Processing fees are non-refundable under any circumstances."}
                           </span>
                         </label>
                       </div>
