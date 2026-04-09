@@ -369,7 +369,12 @@ const Leads = () => {
   const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
 
   // SEO state
-  const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo">("pricing");
+  const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
+  const [notrackIps, setNotrackIps] = useState<string[]>([]);
+  const [notrackNewIp, setNotrackNewIp] = useState("");
+  const [notrackDetectedIp, setNotrackDetectedIp] = useState<string | null>(null);
+  const [notrackSaving, setNotrackSaving] = useState(false);
+  const [notrackLoading, setNotrackLoading] = useState(false);
   const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
   const [savingSeo, setSavingSeo] = useState(false);
   const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
@@ -3567,8 +3572,17 @@ const Leads = () => {
 
             {/* Tabs */}
             <div className="flex gap-1 mb-6" style={{ borderBottom: `2px solid ${CARD_BORDER}` }}>
-              {([["pricing", "Pricing"], ["profile", "Business Profile"], ["seo", "SEO"]] as const).map(([id, label]) => (
-                <button key={id} onClick={() => setSettingsTab(id as any)} className="px-4 py-2 text-sm font-medium transition-colors -mb-[2px]" style={{
+              {([["pricing", "Pricing"], ["profile", "Business Profile"], ["seo", "SEO"], ["tracking", "Tracking"]] as const).map(([id, label]) => (
+                <button key={id} onClick={() => {
+                  setSettingsTab(id as any);
+                  if (id === "tracking" && notrackIps.length === 0 && !notrackLoading) {
+                    setNotrackLoading(true);
+                    supabase.functions.invoke("leads-auth", { body: { action: "get_notrack_ips", password: sessionStorage.getItem("leads_pw") || "" } })
+                      .then(({ data }: any) => { if (data?.ips) setNotrackIps(data.ips); })
+                      .finally(() => setNotrackLoading(false));
+                    fetch("https://api.ipify.org?format=json").then(r => r.json()).then(d => setNotrackDetectedIp(d.ip || null)).catch(() => {});
+                  }
+                }} className="px-4 py-2 text-sm font-medium transition-colors -mb-[2px]" style={{
                   color: settingsTab === id ? BRAND_GOLD : "#666",
                   borderBottom: settingsTab === id ? `2px solid ${BRAND_GOLD}` : "2px solid transparent",
                 }}>
@@ -3978,6 +3992,98 @@ const Leads = () => {
                     {savingSeo ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
                     Save SEO Settings
                   </Button>
+                </div>
+              </>
+            )}
+
+            {settingsTab === "tracking" && (
+              <>
+                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>No-Track IP Addresses</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                    IP addresses listed here will be silently excluded from visitor session tracking, lead capture, and analytics.
+                    Use this to prevent your own browsing from polluting data.
+                  </p>
+
+                  {notrackDetectedIp && (
+                    <div className="flex items-center justify-between p-3 rounded-lg mb-4" style={{ backgroundColor: "#F0F7FF", border: "1px solid #D0E3F7" }}>
+                      <div>
+                        <p className="text-xs font-medium" style={{ color: BRAND_NAVY }}>Your current IP</p>
+                        <p className="text-sm font-mono" style={{ color: BRAND_NAVY }}>{notrackDetectedIp}</p>
+                      </div>
+                      {!notrackIps.includes(notrackDetectedIp) ? (
+                        <Button size="sm" onClick={() => {
+                          const updated = [...notrackIps, notrackDetectedIp];
+                          setNotrackIps(updated);
+                          setNotrackSaving(true);
+                          supabase.functions.invoke("leads-auth", { body: { action: "set_notrack_ips", password: sessionStorage.getItem("leads_pw") || "", ips: updated } })
+                            .then(({ error }: any) => {
+                              if (error) toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+                              else toast({ title: "Added", description: `${notrackDetectedIp} is now excluded from tracking` });
+                            })
+                            .finally(() => setNotrackSaving(false));
+                        }} disabled={notrackSaving} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                          {notrackSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                          Add to No-Track
+                        </Button>
+                      ) : (
+                        <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: "#E8F5E9", color: "#2E7D32" }}>✓ Already excluded</span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      className="h-9 font-mono flex-1"
+                      placeholder="Enter IP address (e.g. 72.14.201.33)"
+                      value={notrackNewIp}
+                      onChange={e => setNotrackNewIp(e.target.value.replace(/[^0-9.:a-fA-F]/g, ""))}
+                      maxLength={45}
+                    />
+                    <Button size="sm" className="h-9" disabled={!notrackNewIp.trim() || notrackIps.includes(notrackNewIp.trim()) || notrackSaving} onClick={() => {
+                      const ip = notrackNewIp.trim();
+                      if (!ip) return;
+                      const updated = [...notrackIps, ip];
+                      setNotrackIps(updated);
+                      setNotrackNewIp("");
+                      setNotrackSaving(true);
+                      supabase.functions.invoke("leads-auth", { body: { action: "set_notrack_ips", password: sessionStorage.getItem("leads_pw") || "", ips: updated } })
+                        .then(({ error }: any) => {
+                          if (error) toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+                          else toast({ title: "Added", description: `${ip} added to no-track list` });
+                        })
+                        .finally(() => setNotrackSaving(false));
+                    }} style={{ backgroundColor: BRAND_NAVY, color: "white" }}>
+                      Add IP
+                    </Button>
+                  </div>
+
+                  {notrackLoading ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+                  ) : notrackIps.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-6">No IPs excluded yet. Add your IP above to start.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {notrackIps.map((ip, i) => (
+                        <div key={ip} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ backgroundColor: i % 2 === 0 ? "#FAFAFA" : "white", border: `1px solid ${CARD_BORDER}` }}>
+                          <span className="text-sm font-mono" style={{ color: BRAND_NAVY }}>{ip}</span>
+                          <button onClick={() => {
+                            const updated = notrackIps.filter(x => x !== ip);
+                            setNotrackIps(updated);
+                            setNotrackSaving(true);
+                            supabase.functions.invoke("leads-auth", { body: { action: "set_notrack_ips", password: sessionStorage.getItem("leads_pw") || "", ips: updated } })
+                              .then(({ error }: any) => {
+                                if (error) toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+                                else toast({ title: "Removed", description: `${ip} removed from no-track list` });
+                              })
+                              .finally(() => setNotrackSaving(false));
+                          }} className="text-red-400 hover:text-red-600 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
