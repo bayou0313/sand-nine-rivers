@@ -2,6 +2,9 @@
  * Visitor session management for abandonment tracking.
  * All writes go through the leads-auth edge function (service role)
  * to comply with RLS — anon users cannot UPDATE visitor_sessions directly.
+ *
+ * NOTRACK MODE: Visit any page with ?notrack=1 to disable tracking for your
+ * browser (persists in localStorage). Use ?notrack=0 to re-enable.
  */
 import { supabase } from "@/integrations/supabase/client";
 
@@ -46,6 +49,8 @@ async function callSessionAction(action: string, payload: Record<string, any>) {
 
 export async function initSession(): Promise<void> {
   if (isNoTrack()) return;
+  const token = getSessionToken();
+  await callSessionAction("session_init", {
     session_token: token,
     entry_page: window.location.pathname,
     referrer: document.referrer || null,
@@ -55,6 +60,7 @@ export async function initSession(): Promise<void> {
 export async function updateSession(
   updates: Record<string, any>
 ): Promise<void> {
+  if (isNoTrack()) return;
   const token = getSessionToken();
   await callSessionAction("session_update", {
     session_token: token,
@@ -63,6 +69,7 @@ export async function updateSession(
 }
 
 export async function getSession(): Promise<any | null> {
+  if (isNoTrack()) return null;
   const token = getSessionToken();
   try {
     const { data } = await supabase.rpc("get_own_session" as any, { p_token: token });
@@ -73,6 +80,7 @@ export async function getSession(): Promise<any | null> {
 }
 
 export async function incrementVisitCount(): Promise<void> {
+  if (isNoTrack()) return;
   const token = getSessionToken();
   try {
     await supabase.rpc("increment_visit_count" as any, { p_token: token });
