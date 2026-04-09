@@ -1240,9 +1240,23 @@ const Order = () => {
   return (
     <>
     <div className={`min-h-screen ${step === "success" ? "bg-[#F9FAFB]" : "bg-gradient-to-b from-background via-muted/30 to-background"}`}>
-      
+      {/* Minimal header bar — logo + phone */}
+      {step !== "success" && (
+        <div className="bg-background border-b border-border/50 py-3 px-6 flex items-center justify-between">
+          <Link to="/">
+            <img
+              src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png"
+              alt="RiverSand"
+              className="h-8"
+            />
+          </Link>
+          <a href="tel:+18554689297" className="font-display text-sm tracking-wider text-foreground hover:text-accent transition-colors">
+            1-855-GOT-WAYS
+          </a>
+        </div>
+      )}
 
-      <div className={`container mx-auto px-4 ${step === "success" ? "pt-0 pb-0" : "pt-24 pb-8 md:pt-28 md:pb-12"}`}>
+      <div className={`container mx-auto px-4 ${step === "success" ? "pt-0 pb-0" : "pt-8 pb-8 md:pt-12 md:pb-12"}`}>
         {/* Proposal banner for leads coming from email */}
         {showProposalBanner && (
           <motion.div
@@ -1259,8 +1273,7 @@ const Order = () => {
         )}
         {/* Sticky countdown + progress — hidden on success */}
         {step !== "success" && (
-        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-border/30 -mx-4 px-4 mb-6 shadow-sm">
-          <CountdownBar />
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-border/30 -mx-4 px-4 mb-6 shadow-sm">
           {/* Progress steps */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -1428,6 +1441,14 @@ const Order = () => {
                     <span className="text-xs font-body text-muted-foreground">{quantity} load{quantity > 1 ? "s" : ""} · {formatCurrency(totalPrice)} total</span>
                   </div>
                 </motion.div>
+                {/* Change address link */}
+                <button
+                  type="button"
+                  onClick={() => window.history.back()}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors font-body flex items-center gap-1 mt-1"
+                >
+                  <ArrowLeft className="w-3 h-3" /> Change delivery address
+                </button>
 
                 {/* Quantity selector in confirmation bar */}
                 <motion.div
