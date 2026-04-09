@@ -91,7 +91,11 @@ function parseCutoffHour(cutoff: string | null | undefined): number {
   return CUTOFF_HOUR;
 }
 
-export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null, maxSlots: number = 7): (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] {
+export function getAvailableDeliveryDates(
+  pitSchedule?: PitSchedule | null,
+  maxSlots: number = 7,
+  weekendPitMap?: Partial<Record<0 | 6, unknown>> | null,
+): (DeliveryDate & { blocked?: boolean; blockedReason?: string })[] {
   const centralNow = getCentralTime();
   const centralHour = centralNow.getHours() + centralNow.getMinutes() / 60;
   const today = getCentralDate();
@@ -108,21 +112,26 @@ export function getAvailableDeliveryDates(pitSchedule?: PitSchedule | null, maxS
     d.setDate(today.getDate() + i);
     const dayOfWeek = d.getDay();
 
-    // Never show Sundays unless PIT explicitly includes Sunday
-    if (isSunday(d) && !(hasDaysConfig && operatingDays!.includes(0))) continue;
+    // Allow weekend days if an alternate PIT can serve them
+    const isWeekendCoveredByAlternatePit =
+      (dayOfWeek === 6 && weekendPitMap?.[6]) ||
+      (dayOfWeek === 0 && weekendPitMap?.[0]);
 
-    // Never show Saturdays unless PIT explicitly includes Saturday
-    if (isSaturday(d) && hasDaysConfig && !operatingDays!.includes(6)) continue;
+    // Never show Sundays unless PIT includes Sunday OR alternate weekend PIT covers it
+    if (isSunday(d) && !(hasDaysConfig && operatingDays!.includes(0)) && !isWeekendCoveredByAlternatePit) continue;
+
+    // Never show Saturdays unless PIT includes Saturday OR alternate weekend PIT covers it
+    if (isSaturday(d) && hasDaysConfig && !operatingDays!.includes(6) && !isWeekendCoveredByAlternatePit) continue;
 
     const isToday = i === 0;
 
     // Determine if today qualifies for same-day
     const todayAvailable = todayDay >= 1 && todayDay <= 6 && centralHour < cutoffHour;
     if (isToday && !todayAvailable) continue;
-    if (isToday && todayDay === 0 && !(hasDaysConfig && operatingDays!.includes(0))) continue;
+    if (isToday && todayDay === 0 && !(hasDaysConfig && operatingDays!.includes(0)) && !isWeekendCoveredByAlternatePit) continue;
 
-    // Check if this day is blocked by PIT operating_days
-    const blockedByPit = hasDaysConfig && !operatingDays!.includes(dayOfWeek);
+    // Check if this day is blocked by PIT operating_days (but NOT if weekend alternate covers it)
+    const blockedByPit = hasDaysConfig && !operatingDays!.includes(dayOfWeek) && !isWeekendCoveredByAlternatePit;
 
     const entry: DeliveryDate & { blocked?: boolean; blockedReason?: string } = {
       date: d,
