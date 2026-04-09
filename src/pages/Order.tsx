@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
+import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, ClipboardList } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
@@ -1894,24 +1894,19 @@ const Order = () => {
                 )}
                 {/* Receipt-style confirmation */}
                 <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                  {/* Secure header */}
-                  <div className="bg-primary px-6 py-3 flex items-center justify-between">
-                    <h2 className="font-display text-sm text-primary-foreground tracking-wider">ORDER REVIEW</h2>
-                    <span className="flex items-center gap-1 text-primary-foreground/70 text-[10px] font-body"><Lock className="w-2.5 h-2.5" /> Secure Checkout</span>
-                  </div>
-
                   <div className="p-6 space-y-4">
+                    <SectionHeading icon={ClipboardList} title="ORDER REVIEW" />
 
                     {/* Product */}
                     <div>
-                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">PRODUCT</p>
+                      <SectionHeading icon={Package} title="PRODUCT" />
                       <ReceiptRow label="River Sand" value={`${quantity} × 9 CU YDS`} />
                     </div>
                     <div className="border-b border-dashed border-border" />
 
                     {/* Delivery */}
                     <div>
-                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">DELIVERY</p>
+                      <SectionHeading icon={MapPin} title="DELIVERY" />
                       <div className="flex justify-between items-start py-2.5 gap-4">
                         <span className="font-body text-base text-muted-foreground leading-relaxed shrink-0">Address</span>
                         <span className="font-display text-base text-foreground text-right break-words min-w-0">{address}</span>
@@ -1923,7 +1918,7 @@ const Order = () => {
 
                     {/* Customer */}
                     <div>
-                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">CUSTOMER</p>
+                      <SectionHeading icon={User} title="CUSTOMER" />
                       <ReceiptRow label="Name" value={form.name} />
                       <ReceiptRow label="Phone" value={form.phone} />
                       {form.email && <ReceiptRow label="Email" value={form.email} />}
@@ -1932,7 +1927,7 @@ const Order = () => {
 
                     {/* Payment */}
                     <div>
-                      <p className="font-display text-xs text-muted-foreground tracking-wider mb-2">PAYMENT</p>
+                      <SectionHeading icon={CreditCard} title="PAYMENT" />
                       <ReceiptRow label="Method" value={paymentMethod === "stripe-link" ? "Pay Now — Stripe" : `${codSubOption === "cash" ? "Cash" : "Check"} at Delivery`} />
 
                       {selectedDeliveryDate.isSameDay && (
