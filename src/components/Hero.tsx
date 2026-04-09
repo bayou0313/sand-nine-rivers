@@ -23,7 +23,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-[75vh] flex items-center justify-center overflow-hidden py-20 md:py-24">
+    <section ref={sectionRef} className="relative min-h-[65vh] flex items-center justify-center overflow-hidden py-16 md:py-20">
       <motion.div className="absolute inset-0 h-[120%]" style={{ y: bgY }}>
         <picture>
           <source srcSet={heroImageWebp} type="image/webp" />
