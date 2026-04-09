@@ -130,9 +130,9 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
           >
             {[
               { icon: Star, text: "4.9-star rated" },
-              { icon: Truck, text: "Fleet Owned" },
+              { icon: Truck, text: "Pit Direct Delivery" },
               { icon: CheckCircle, text: "Same-day available" },
-              { icon: ShieldCheck, text: "Licensed & insured" },
+              { icon: ShieldCheck, text: "9 Cu Yds Per Load" },
             ].map((item) => (
               <div key={item.text} className="flex items-center gap-1.5 text-primary-foreground/70 font-body text-sm">
                 <item.icon className="w-4 h-4 text-accent shrink-0" />
