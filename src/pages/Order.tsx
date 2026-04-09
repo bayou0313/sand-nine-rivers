@@ -1828,7 +1828,7 @@ const Order = () => {
                           <span className="font-body text-xs text-foreground leading-relaxed">
                             {paymentMethod !== "stripe-link"
                               ? "I agree to the delivery terms, cancellation policy, and confirm that payment is due at delivery."
-                              : "I agree to the delivery terms and cancellation policy. Orders canceled before scheduled delivery will be refunded in full, excluding the processing fee. Processing fees are non-refundable under any circumstances."}
+                              : "I agree to the delivery terms and cancellation policy. All sales are final. Orders are non-refundable once placed. Processing fees are non-refundable under any circumstances."}
                           </span>
                         </label>
                       </div>
