@@ -1804,7 +1804,7 @@ const Order = () => {
                       <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
                         <p className="font-display text-xs tracking-wider text-foreground">DELIVERY TERMS</p>
                         <div className="space-y-1.5">
-                          <p className="font-body text-xs text-foreground font-medium">📍 Delivering to: {result.address}</p>
+                          <p className="font-body text-xs text-foreground font-medium">📍 Delivering to: {address}</p>
                           <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
                           <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
                           <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
