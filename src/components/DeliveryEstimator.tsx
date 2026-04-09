@@ -253,6 +253,19 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         nearest_pit_name: bestResult.pit.name,
         serviceable: true,
       });
+      // Save to persistent cart
+      saveCart({
+        address: currentAddress,
+        distance: parseFloat(bestResult.distance.toFixed(1)),
+        price: bestResult.price,
+        quantity,
+        pitId: bestResult.pit.id,
+        pitName: bestResult.pit.name,
+        operatingDays: bestResult.pit.operating_days || [],
+        satSurcharge: effective.saturday_surcharge,
+        sameDayCutoff: bestResult.pit.same_day_cutoff || null,
+        savedAt: Date.now(),
+      });
     } catch {
       setError("Something went wrong. Please try again or call us directly.");
     } finally {
