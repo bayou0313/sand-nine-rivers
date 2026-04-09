@@ -307,10 +307,11 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                   setMatchedPit(null);
                   setMatchedEffective(null);
                   setQuantity(1);
-                  setTimeout(() => {
-                    const input = containerRef.current?.querySelector<HTMLInputElement>("input");
-                    if (input) { input.value = ""; input.focus(); }
-                  }, 50);
+                  setVolumeSuccess(false);
+                  setVolumeName("");
+                  setVolumePhone("");
+                  setVolumeEmail("");
+                  setVolumeError("");
                 }}
                 className="text-sm text-accent underline underline-offset-2 hover:text-accent/80 font-body cursor-pointer transition-colors"
               >
