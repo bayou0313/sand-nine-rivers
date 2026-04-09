@@ -426,6 +426,9 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
             <CalendarDays className="w-4 h-4 shrink-0" />
             Saturday delivery — ${effectiveSatSurcharge} surcharge added. Limited spots available.
           </p>
+          <p className="font-body text-xs text-amber-700 mt-1 ml-6">
+            Card payment required for weekend deliveries.
+          </p>
         </motion.div>
       )}
 
