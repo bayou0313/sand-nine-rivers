@@ -1857,7 +1857,7 @@ const Order = () => {
                       <Button
                         onClick={goToStep2}
                         disabled={!isFormValid}
-                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl bg-accent hover:bg-accent/90 text-white disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
+                        className={`w-full h-14 font-display tracking-wider text-lg rounded-2xl shadow-lg transition-all duration-300 ${isFormValid ? "bg-accent hover:bg-accent/90 text-white shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 cursor-pointer" : "bg-muted text-muted-foreground cursor-not-allowed"}`}
                       >
                         <ShieldCheck className="w-5 h-5 mr-2" /> REVIEW ORDER
                       </Button>
