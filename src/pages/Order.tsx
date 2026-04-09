@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck, ClipboardList } from "lucide-react";
+import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
@@ -69,7 +69,7 @@ const Order = () => {
   useBrandPalette();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState<"address" | "details" | "confirm" | "success">("address");
+  const [step, setStep] = useState<"address" | "details" | "success">("address");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -453,7 +453,7 @@ const Order = () => {
       console.log("[cancel] totalPrice:", totalPrice, "address:", address);
       // If we still have in-memory state, just go back to confirm step
       if (totalPrice > 0 && address) {
-        setStep("confirm");
+        setStep("details");
       } else {
         // Page reloaded from Stripe redirect — restore from sessionStorage snapshot
         try {
@@ -475,7 +475,7 @@ const Order = () => {
             if (snap.result) {
               setResult(snap.result);
             }
-            setStep("confirm");
+            setStep("details");
             // Clean up after restore
             sessionStorage.removeItem("pending_order_snapshot");
           } else {
@@ -576,7 +576,7 @@ const Order = () => {
             });
           }
         } else if (signal.status === "canceled") {
-          setStep("confirm");
+          setStep("details");
           toast({
             title: "Payment canceled",
             description: "No charge was made. You can try again anytime.",
@@ -953,34 +953,6 @@ const Order = () => {
     }
   }, [address, customerCoords, allPits, globalPricing]);
 
-  const goToStep2 = () => {
-    if (!selectedDeliveryDate) {
-      setDateError("Please select a delivery date to continue.");
-      return;
-    }
-    if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
-      toast({ title: "Missing info", description: "Please enter your name, phone, and email.", variant: "destructive" });
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email.trim())) {
-      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
-      return;
-    }
-    setDateError("");
-    setStep("confirm");
-    trackEvent("add_payment_info", {
-      value: totalPrice,
-      currency: "USD",
-      payment_type: paymentMethod,
-    });
-    updateSession({
-      stage: "reached_payment",
-      customer_name: form.name.trim(),
-      customer_email: form.email.trim() || null,
-      customer_phone: form.phone.trim(),
-    });
-  };
 
   const buildOrderData = () => ({
     customer_name: form.name.trim(),
@@ -1216,7 +1188,7 @@ const Order = () => {
     }
   };
 
-  const stepLabels = ["Delivery Details", "Payment", "Confirm"];
+  const stepLabels = ["Delivery Details", "Payment"];
 
   const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim() && form.email.trim();
 
@@ -1282,7 +1254,7 @@ const Order = () => {
           {/* Stepper — center */}
           <div className="hidden sm:flex items-center gap-3">
             {stepLabels.map((label, i) => {
-              const stepIndex = ["address", "details", "confirm"].indexOf(step);
+              const stepIndex = ["address", "details"].indexOf(step);
               const isActive = i <= stepIndex;
               const isCurrent = i === stepIndex;
               const isCompleted = i < stepIndex;
@@ -1847,26 +1819,107 @@ const Order = () => {
                     {!paymentMethod && (
                       <p className="font-body text-xs text-muted-foreground text-center">Select a payment method to continue.</p>
                     )}
+
+                    {/* Delivery Terms — required for ALL orders */}
+                    {paymentMethod && (
+                      <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
+                        <p className="font-display text-xs tracking-wider text-foreground">DELIVERY TERMS</p>
+                        <div className="space-y-1.5">
+                          <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
+                          <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
+                          <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
+                          <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
+                          <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
+                          <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
+                          <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
+                        </div>
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={deliveryTermsAccepted}
+                            onChange={(e) => setDeliveryTermsAccepted(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 rounded accent-primary"
+                          />
+                          <span className="font-body text-xs text-foreground leading-relaxed">
+                            I agree to the payment terms and cancellation policy.
+                            Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Payment Policy — COD orders */}
+                    {(paymentMethod === "cash" || paymentMethod === "check" ||
+                      codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAYMENT DUE AT DELIVERY</p>
+                        <p className="font-body text-sm text-amber-800 leading-relaxed mb-2">
+                          Cash or check payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
+                        </p>
+                        <p className="font-body text-xs text-amber-700">
+                          Cash total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(parseFloat((totalPrice * (1 + globalPricing.card_processing_fee_percent / 100) + globalPricing.card_processing_fee_fixed).toFixed(2)))}</strong> (includes {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} fee)
+                        </p>
+                      </div>
+                    )}
+
+                    {/* COD Payment Confirmation Checkbox */}
+                    {paymentMethod && paymentMethod !== "stripe-link" && (
+                      <label className="flex items-start gap-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={codPaymentConfirmed}
+                          onChange={(e) => setCodPaymentConfirmed(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 rounded accent-primary"
+                        />
+                        <span className="font-body text-xs text-foreground leading-relaxed font-medium">
+                          I confirm that payment is due at delivery.
+                        </span>
+                      </label>
+                    )}
                   </div>
 
-                  {/* Review Order Button */}
+                  {/* PAY / PLACE ORDER Button */}
                   {paymentMethod && (
-                    <div className="px-6 pb-6 space-y-3">
-                      <Button
-                        onClick={goToStep2}
-                        disabled={!isFormValid}
-                        className={`w-full h-14 font-display tracking-wider text-lg rounded-2xl shadow-lg transition-all duration-300 ${isFormValid ? "bg-accent hover:bg-accent/90 text-white shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 cursor-pointer" : "bg-muted text-muted-foreground cursor-not-allowed"}`}
-                      >
-                        <ShieldCheck className="w-5 h-5 mr-2" /> REVIEW ORDER
-                      </Button>
+                    <div className="px-6 pb-6 space-y-3 relative">
+                      {/* Payment waiting overlay */}
+                      {pendingOrderId && submitting && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="absolute inset-0 z-20 bg-background/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-4"
+                        >
+                          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                          <p className="font-display text-lg text-foreground tracking-wider">Waiting for payment confirmation…</p>
+                          <p className="font-body text-sm text-muted-foreground max-w-xs text-center">Complete your payment in the Stripe tab. This page will update automatically.</p>
+                        </motion.div>
+                      )}
+                      <motion.div whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.15)" }} whileTap={{ y: 0 }}>
+                        <Button
+                          onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
+                          disabled={submitting || !isFormValid || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)}
+                          className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-2xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
+                        >
+                          {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                            paymentMethod === "stripe-link"
+                              ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
+                              : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
+                          )}
+                        </Button>
+                      </motion.div>
                       {!isFormValid && (
                         <p className="font-body text-xs text-destructive text-center">
                           {!selectedDeliveryDate ? "Please select a delivery date above." : "Please fill in all required fields above."}
                         </p>
                       )}
                       <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
-                        <Lock className="w-2.5 h-2.5" /> Your information is secure and never shared
+                        <ShieldCheck className="w-3 h-3" /> 256-bit SSL encryption • Your data is protected
                       </p>
+                      {paymentMethod === "stripe-link" && (
+                        <div className="flex items-center justify-center gap-2 mt-1">
+                          <svg className="w-3 h-3 text-muted-foreground/60" viewBox="0 0 24 24" fill="currentColor"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-7.076-2.19L3.312 21.98C5.263 23.171 8.26 24 11.342 24c2.589 0 4.758-.631 6.299-1.828 1.667-1.301 2.487-3.155 2.487-5.516 0-4.096-2.535-5.772-6.152-7.206z"/></svg>
+                          <span className="font-body text-[10px] text-muted-foreground/60">Powered by Stripe</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </motion.div>
@@ -1874,195 +1927,6 @@ const Order = () => {
                 <button onClick={() => setStep("address")} className="flex items-center gap-1 mx-auto text-xs font-body text-muted-foreground hover:text-foreground transition-colors py-2">
                   <ArrowLeft className="w-3 h-3" /> Change delivery address
                 </button>
-              </motion.div>
-            )}
-
-            {/* STEP 3: Confirm */}
-            {step === "confirm" && result && selectedDeliveryDate && (
-              <motion.div key="confirm" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="space-y-4 relative">
-                {/* Payment waiting overlay */}
-                {pendingOrderId && submitting && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute inset-0 z-20 bg-background/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-4"
-                  >
-                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                    <p className="font-display text-lg text-foreground tracking-wider">Waiting for payment confirmation…</p>
-                    <p className="font-body text-sm text-muted-foreground max-w-xs text-center">Complete your payment in the Stripe tab. This page will update automatically.</p>
-                  </motion.div>
-                )}
-                {/* Receipt-style confirmation */}
-                <div className="bg-background rounded-2xl border border-border/50 shadow-lg shadow-foreground/5 overflow-hidden">
-                  <div className="p-6 space-y-4">
-                    <SectionHeading icon={ClipboardList} title="ORDER REVIEW" />
-
-                    {/* Product */}
-                    <div>
-                      <SectionHeading icon={Package} title="PRODUCT" />
-                      <ReceiptRow label="River Sand" value={`${quantity} × 9 CU YDS`} />
-                    </div>
-                    <div className="border-b border-dashed border-border" />
-
-                    {/* Delivery */}
-                    <div>
-                      <SectionHeading icon={MapPin} title="DELIVERY" />
-                      <div className="flex justify-between items-start py-2.5 gap-4">
-                        <span className="font-body text-base text-muted-foreground leading-relaxed shrink-0">Address</span>
-                        <span className="font-display text-base text-foreground text-right break-words min-w-0">{address}</span>
-                      </div>
-                      <ReceiptRow label="Date" value={selectedDeliveryDate.fullLabel} />
-                      <ReceiptRow label="Window" value="8:00 AM – 5:00 PM" />
-                    </div>
-                    <div className="border-b border-dashed border-border" />
-
-                    {/* Customer */}
-                    <div>
-                      <SectionHeading icon={User} title="CUSTOMER" />
-                      <ReceiptRow label="Name" value={form.name} />
-                      <ReceiptRow label="Phone" value={form.phone} />
-                      {form.email && <ReceiptRow label="Email" value={form.email} />}
-                    </div>
-                    <div className="border-b border-dashed border-border" />
-
-                    {/* Payment */}
-                    <div>
-                      <SectionHeading icon={CreditCard} title="PAYMENT" />
-                      <ReceiptRow label="Method" value={paymentMethod === "stripe-link" ? "Pay Now — Stripe" : `${codSubOption === "cash" ? "Cash" : "Check"} at Delivery`} />
-
-                      {selectedDeliveryDate.isSameDay && (
-                        <p className="font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-lg my-2">
-                          Same-day request — we'll call to confirm availability.
-                        </p>
-                      )}
-
-                      {selectedDeliveryDate.isSaturday && (
-                        <ReceiptRow label={`Saturday Surcharge ($${effectiveSatSurcharge} × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
-                      )}
-                      {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
-                        <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} destructive />
-                      )}
-                      {(() => {
-                        const stateTaxAmt = Math.round((taxAmount / (taxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
-                        const parishTaxAmt = Math.round((taxAmount - stateTaxAmt) * 100) / 100;
-                        const parishLocalRate = taxInfo.rate - LA_STATE_TAX_RATE;
-                        return (
-                          <>
-                            <ReceiptRow label={`Louisiana State Tax (${(LA_STATE_TAX_RATE * 100).toFixed(2)}%)`} value={`+${formatCurrency(stateTaxAmt)}`} />
-                            <ReceiptRow label={`${taxInfo.parish} Tax (${(parishLocalRate * 100).toFixed(2)}%)`} value={`+${formatCurrency(parishTaxAmt)}`} />
-                          </>
-                        );
-                      })()}
-
-                      {paymentMethod === "stripe-link" && (
-                        <>
-                          <ReceiptRow label="Subtotal" value={formatCurrency(totalPrice)} />
-                          <ReceiptRow label={`Processing Fee (${globalPricing.card_processing_fee_percent}% + $${globalPricing.card_processing_fee_fixed.toFixed(2)})`} value={`+${formatCurrency(processingFee)}`} />
-                        </>
-                      )}
-                    </div>
-
-                    {/* Grand total */}
-                    <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 flex justify-between items-center">
-                      <span className="font-display text-lg text-foreground">
-                        {paymentMethod === "stripe-link" ? "TOTAL CHARGE" : "TOTAL"}
-                      </span>
-                      <span className="font-display text-3xl text-primary">
-                        {paymentMethod === "stripe-link" ? formatCurrency(totalWithProcessingFee) : formatCurrency(totalPrice)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Delivery Terms — required for ALL orders */}
-                <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
-                  <p className="font-display text-xs tracking-wider text-foreground">DELIVERY TERMS</p>
-                  <div className="space-y-1.5">
-                    <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
-                    <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
-                    <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
-                    <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
-                    <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
-                    <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
-                    <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.</p>
-                  </div>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={deliveryTermsAccepted}
-                      onChange={(e) => setDeliveryTermsAccepted(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded accent-primary"
-                    />
-                    <span className="font-body text-xs text-foreground leading-relaxed">
-                      I agree to the payment terms and cancellation policy.
-                      Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.
-                    </span>
-                  </label>
-                </div>
-
-                {/* Payment Policy — COD orders */}
-                {(paymentMethod === "cash" || paymentMethod === "check" ||
-                  codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
-                    <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAYMENT DUE AT DELIVERY</p>
-                    <p className="font-body text-sm text-amber-800 leading-relaxed mb-2">
-                      Cash or check payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
-                    </p>
-                    <p className="font-body text-xs text-amber-700">
-                      Cash total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(parseFloat((totalPrice * (1 + globalPricing.card_processing_fee_percent / 100) + globalPricing.card_processing_fee_fixed).toFixed(2)))}</strong> (includes {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} fee)
-                    </p>
-                  </div>
-                )}
-
-                {/* COD Payment Confirmation Checkbox */}
-                {paymentMethod !== "stripe-link" && (
-                  <div className="mt-4">
-                    <label className="flex items-start gap-3 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={codPaymentConfirmed}
-                        onChange={(e) => setCodPaymentConfirmed(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded accent-primary"
-                      />
-                      <span className="font-body text-xs text-foreground leading-relaxed font-medium">
-                        I confirm that payment is due at delivery.
-                      </span>
-                    </label>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setDeliveryTermsAccepted(false); setCodPaymentConfirmed(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
-                      <ArrowLeft className="w-4 h-4 mr-1" /> BACK
-                    </Button>
-                    <motion.div whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.15)" }} whileTap={{ y: 0 }} className="flex-1">
-                      <Button
-                        onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                        disabled={
-                          submitting || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)
-                        }
-                        className="w-full h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-2xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
-                      >
-                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                          paymentMethod === "stripe-link"
-                            ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
-                            : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </div>
-                  <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> 256-bit SSL encryption • Your data is protected
-                  </p>
-                  {paymentMethod === "stripe-link" && (
-                    <div className="flex items-center justify-center gap-2 mt-1">
-                      <svg className="w-3 h-3 text-muted-foreground/60" viewBox="0 0 24 24" fill="currentColor"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-7.076-2.19L3.312 21.98C5.263 23.171 8.26 24 11.342 24c2.589 0 4.758-.631 6.299-1.828 1.667-1.301 2.487-3.155 2.487-5.516 0-4.096-2.535-5.772-6.152-7.206z"/></svg>
-                      <span className="font-body text-[10px] text-muted-foreground/60">Powered by Stripe</span>
-                    </div>
-                  )}
-                </div>
               </motion.div>
             )}
 
