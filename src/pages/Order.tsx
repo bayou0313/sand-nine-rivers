@@ -527,6 +527,7 @@ const Order = () => {
           // Show verifying state, then verify payment
           setVerifyingPayment(true);
           setStep("success");
+          clearCart();
 
           const verifyOrderId = snap.pendingOrderId || signal.order_id || null;
           const verifyToken = snap.lookupToken || null;
