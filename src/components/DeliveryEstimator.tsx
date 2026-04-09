@@ -60,10 +60,8 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   useEffect(() => {
     if (prefillAddress && apiLoaded) {
       setAddress(prefillAddress);
-      setTimeout(() => {
-        const btn = document.querySelector('[data-estimator-btn]') as HTMLButtonElement;
-        btn?.click();
-      }, 500);
+      // Auto-calculate will trigger via customerCoords useEffect
+      // if the prefill comes with geocoded coords; otherwise user picks from dropdown
     }
   }, [prefillAddress, apiLoaded]);
 
@@ -128,6 +126,13 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     });
     trackEvent("address_entered", { address: result.formattedAddress });
   }, []);
+
+  // Auto-calculate price when coordinates are set (address selected from dropdown)
+  useEffect(() => {
+    if (customerCoords) {
+      calculateDistance();
+    }
+  }, [customerCoords]);
 
   const calculateDistance = useCallback(async () => {
     console.log("[calculateDistance] starting, address:", address);
@@ -274,9 +279,12 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             ) : (
               <div className="flex-1 h-12 rounded-xl border border-input bg-background animate-pulse" />
             )}
-            <Button type="button" data-estimator-btn onClick={() => { console.log("BUTTON CLICKED"); calculateDistance(); }} disabled={loading || !customerCoords} className="h-12 min-h-[44px] font-display tracking-wider text-base px-8 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET PRICE</>}
-            </Button>
+            {loading && (
+              <div className="flex items-center justify-center h-12 min-h-[44px] px-8">
+                <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                <span className="ml-2 font-display tracking-wider text-sm text-muted-foreground">Calculating...</span>
+              </div>
+            )}
           </div>
 
         </div>
