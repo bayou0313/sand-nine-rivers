@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { updateSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart, Clock } from "lucide-react";
+import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart, Clock, Minus, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -44,6 +44,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [pits, setPits] = useState<PitData[]>([]);
   const [matchedEffective, setMatchedEffective] = useState<{ free_miles: number; extra_per_mile: number; saturday_surcharge: number } | null>(null);
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -313,6 +314,36 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               </p>
             </div>
 
+            {/* Quantity selector */}
+            <div className={`flex items-center justify-center gap-4 p-3 rounded-xl ${embedded ? "bg-white/10" : "bg-background"}`}>
+              <span className={`font-body text-sm ${embedded ? "text-primary-foreground/70" : "text-muted-foreground"}`}>Number of Loads</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  className="w-8 h-8 rounded-lg bg-accent text-accent-foreground flex items-center justify-center disabled:opacity-30 hover:bg-accent/90 transition-colors"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className={`font-display text-xl w-8 text-center ${embedded ? "text-primary-foreground" : "text-foreground"}`}>{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity(q => Math.min(10, q + 1))}
+                  disabled={quantity >= 10}
+                  className="w-8 h-8 rounded-lg bg-accent text-accent-foreground flex items-center justify-center disabled:opacity-30 hover:bg-accent/90 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {quantity > 1 && (
+              <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground" : "text-foreground"}`}>
+                {quantity} loads × {formatCurrency(result.price)} = <span className="font-display text-lg text-accent">{formatCurrency(result.price * quantity)}</span>
+              </p>
+            )}
+
             {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
               <div className="flex items-center gap-2 justify-center text-green-400">
                 <Clock className="w-4 h-4" />
@@ -330,7 +361,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
-                <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}&pit_id=${matchedPit?.id || ""}&pit_name=${encodeURIComponent(matchedPit?.name || "")}${matchedPit?.operating_days ? `&operating_days=${matchedPit.operating_days.join(",")}` : ""}${matchedPit?.saturday_surcharge_override != null ? `&sat_surcharge=${matchedPit.saturday_surcharge_override}` : ""}${matchedPit?.same_day_cutoff ? `&same_day_cutoff=${encodeURIComponent(matchedPit.same_day_cutoff)}` : ""}`} onClick={() => updateSession({ stage: "clicked_order_now", calculated_price: result!.price, delivery_address: address })}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW</Link>
+                <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}&quantity=${quantity}&pit_id=${matchedPit?.id || ""}&pit_name=${encodeURIComponent(matchedPit?.name || "")}${matchedPit?.operating_days ? `&operating_days=${matchedPit.operating_days.join(",")}` : ""}${matchedPit?.saturday_surcharge_override != null ? `&sat_surcharge=${matchedPit.saturday_surcharge_override}` : ""}${matchedPit?.same_day_cutoff ? `&same_day_cutoff=${encodeURIComponent(matchedPit.same_day_cutoff)}` : ""}`} onClick={() => updateSession({ stage: "clicked_order_now", calculated_price: result!.price * quantity, delivery_address: address })}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW{quantity > 1 ? ` (${quantity} LOADS)` : ""}</Link>
               </Button>
               <Button variant="outline" className={`flex-1 h-12 font-display tracking-wider text-lg rounded-xl ${embedded ? "border-2 border-white text-white bg-white/10 hover:bg-white/20" : "border-2 border-accent text-accent bg-transparent hover:bg-accent/10"}`} asChild>
                 <a href="tel:+18554689297">CALL TO ORDER</a>
@@ -345,6 +376,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                 setError("");
                 setMatchedPit(null);
                 setMatchedEffective(null);
+                setQuantity(1);
                 setTimeout(() => {
                   const input = containerRef.current?.querySelector<HTMLInputElement>("input");
                   if (input) { input.value = ""; input.focus(); }
