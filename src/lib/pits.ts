@@ -140,7 +140,8 @@ export async function findBestPitDriving(
     const pitsOpenOnDay = activePits.filter(p =>
       !p.operating_days || p.operating_days.length === 0 || p.operating_days.includes(deliveryDayOfWeek)
     );
-    if (pitsOpenOnDay.length > 0) activePits = pitsOpenOnDay;
+    if (pitsOpenOnDay.length === 0) return null;
+    activePits = pitsOpenOnDay;
   }
 
   if (activePits.length === 0) return null;
