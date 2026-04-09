@@ -21,6 +21,7 @@ import { loadCart, clearCart } from "@/lib/cart";
 
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge, getEffectiveSundaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
+import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
@@ -126,6 +127,7 @@ const Order = () => {
   const [lookupToken, setLookupToken] = useState<string | null>(null);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
   const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
+  const [showRefundPolicy, setShowRefundPolicy] = useState(false);
   const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
   const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
   const [nearestPitInfo, setNearestPitInfo] = useState<{ id: string; name: string; distance: number } | null>(null);
@@ -1811,7 +1813,7 @@ const Order = () => {
                           <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
                           <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
                           <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
-                          <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — All sales are final. Orders are non-refundable once placed. Processing fees are non-refundable under any circumstances.</p>
+                          <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — All sales are final. Orders are non-refundable once placed. Processing fees are non-refundable under any circumstances. <button type="button" onClick={() => setShowRefundPolicy(true)} className="text-primary underline hover:opacity-80 transition-opacity">See full refund policy</button></p>
                         </div>
                         <label className="flex items-start gap-3 cursor-pointer">
                           <input
@@ -1938,6 +1940,7 @@ const Order = () => {
       nearestPit={nearestPitInfo}
       calculatedPrice={null}
     />
+    <RefundPolicyModal open={showRefundPolicy} onClose={() => setShowRefundPolicy(false)} />
   </>
   );
 };
