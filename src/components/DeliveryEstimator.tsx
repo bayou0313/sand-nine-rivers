@@ -287,6 +287,31 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               </div>
             )}
           </div>
+
+          {/* Change Address — right-aligned, only when result is showing */}
+          {result && (
+            <div className="flex justify-end mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setResult(null);
+                  setAddress("");
+                  setCustomerCoords(null);
+                  setError("");
+                  setMatchedPit(null);
+                  setMatchedEffective(null);
+                  setQuantity(1);
+                  setTimeout(() => {
+                    const input = containerRef.current?.querySelector<HTMLInputElement>("input");
+                    if (input) { input.value = ""; input.focus(); }
+                  }, 50);
+                }}
+                className="text-sm text-accent underline underline-offset-2 hover:text-accent/80 font-body cursor-pointer transition-colors"
+              >
+                Change Address
+              </button>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -301,21 +326,18 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             ref={resultRef}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 p-6 bg-primary/10 border border-primary/20 rounded-2xl space-y-4"
+            className="mt-6 space-y-5"
           >
-            <div className="flex items-center gap-2 text-primary">
-              <CheckCircle2 className="w-6 h-6" />
-              <span className="font-display text-xl tracking-wider">DELIVERY AVAILABLE!</span>
-            </div>
-            <div className={`text-center p-4 rounded-xl ${embedded ? "bg-white/10" : "bg-background"}`}>
-              <p className={`font-body text-xs uppercase ${embedded ? "text-primary-foreground/50" : "text-muted-foreground"}`}>Per Load Starting At</p>
-              <p className="font-display text-3xl text-accent flex items-center justify-center">
+            {/* Price per load */}
+            <div className="text-center">
+              <p className={`font-body text-xs uppercase tracking-wider ${embedded ? "text-primary-foreground/50" : "text-muted-foreground"}`}>Per Load Starting At</p>
+              <p className="font-display text-4xl text-accent mt-1">
                 {formatCurrency(result.price)}
               </p>
             </div>
 
-            {/* Quantity selector */}
-            <div className={`flex items-center justify-center gap-4 p-3 rounded-xl ${embedded ? "bg-white/10" : "bg-background"}`}>
+            {/* Quantity selector — no background card */}
+            <div className="flex items-center justify-center gap-4">
               <span className={`font-body text-sm ${embedded ? "text-primary-foreground/70" : "text-muted-foreground"}`}>Number of Loads</span>
               <div className="flex items-center gap-3">
                 <button
@@ -338,11 +360,10 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               </div>
             </div>
 
-            {quantity > 1 && (
-              <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground" : "text-foreground"}`}>
-                {quantity} loads × {formatCurrency(result.price)} = <span className="font-display text-lg text-accent">{formatCurrency(result.price * quantity)}</span>
-              </p>
-            )}
+            {/* Total calculation line — always visible */}
+            <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+              {quantity} {quantity === 1 ? "load" : "loads"} × {formatCurrency(result.price)} = <span className="font-display text-lg text-accent font-bold">{formatCurrency(result.price * quantity)}</span>
+            </p>
 
             {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
               <div className="flex items-center gap-2 justify-center text-green-400">
@@ -353,12 +374,15 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               </div>
             )}
 
+            {/* Disclaimer */}
             <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
               9 cubic yards of river sand • {matchedEffective && result.distance > matchedEffective.free_miles
                 ? `Includes ${formatCurrency((result.distance - matchedEffective.free_miles) * matchedEffective.extra_per_mile)} extended-area surcharge`
                 : "Local delivery included"
               } • Saturday +{formatCurrency(matchedEffective?.saturday_surcharge ?? globalPricing.saturday_surcharge)}
             </p>
+
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Button className="flex-1 h-12 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-md shadow-accent/20" asChild>
                 <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}&quantity=${quantity}&pit_id=${matchedPit?.id || ""}&pit_name=${encodeURIComponent(matchedPit?.name || "")}${matchedPit?.operating_days ? `&operating_days=${matchedPit.operating_days.join(",")}` : ""}${matchedPit?.saturday_surcharge_override != null ? `&sat_surcharge=${matchedPit.saturday_surcharge_override}` : ""}${matchedPit?.same_day_cutoff ? `&same_day_cutoff=${encodeURIComponent(matchedPit.same_day_cutoff)}` : ""}`} onClick={() => updateSession({ stage: "clicked_order_now", calculated_price: result!.price * quantity, delivery_address: address })}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW{quantity > 1 ? ` (${quantity} LOADS)` : ""}</Link>
@@ -367,25 +391,6 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                 <a href="tel:+18554689297">CALL TO ORDER</a>
               </Button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setResult(null);
-                setAddress("");
-                setCustomerCoords(null);
-                setError("");
-                setMatchedPit(null);
-                setMatchedEffective(null);
-                setQuantity(1);
-                setTimeout(() => {
-                  const input = containerRef.current?.querySelector<HTMLInputElement>("input");
-                  if (input) { input.value = ""; input.focus(); }
-                }, 50);
-              }}
-              className="mt-3 text-sm text-accent underline underline-offset-2 hover:text-accent/80 font-body cursor-pointer transition-colors text-center w-full"
-            >
-              Change Address
-            </button>
           </motion.div>
         )}
       </div>
