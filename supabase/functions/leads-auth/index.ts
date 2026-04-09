@@ -109,6 +109,48 @@ serve(async (req) => {
     const body = await req.json();
     const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile, url } = body;
 
+    // ── GET NOTRACK IPS (password required) ──
+    if (action === "get_notrack_ips") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data } = await sb.from("global_settings").select("value").eq("key", "notrack_ips").single();
+      const ips = data ? JSON.parse(data.value) : [];
+      return new Response(JSON.stringify({ ips }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── SET NOTRACK IPS (password required) ──
+    if (action === "set_notrack_ips") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { ips } = body;
+      if (!Array.isArray(ips)) {
+        return new Response(JSON.stringify({ error: "ips must be an array" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      await sb.from("global_settings").update({ value: JSON.stringify(ips) }).eq("key", "notrack_ips");
+      return new Response(JSON.stringify({ success: true, count: ips.length }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── Helper: check if IP is in notrack list ──
+    async function isNotrackIp(ip: string): Promise<boolean> {
+      if (!ip || ip === "unknown") return false;
+      try {
+        const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { data } = await sb.from("global_settings").select("value").eq("key", "notrack_ips").single();
+        if (!data) return false;
+        const ips: string[] = JSON.parse(data.value);
+        return ips.includes(ip);
+      } catch { return false; }
+    }
+
     // ── SESSION INIT (no password required — called from frontend) ──
     if (action === "session_init") {
       const { session_token, entry_page, referrer } = body;
@@ -116,14 +158,20 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Missing session_token" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const sb = createClient(supabaseUrl, serviceRoleKey);
 
-      // Capture visitor IP
+      // Check notrack IP
       const visitorIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
         || req.headers.get("x-real-ip")
         || "unknown";
+      if (await isNotrackIp(visitorIp)) {
+        console.log(`[session_init] Skipping notrack IP: ${visitorIp}`);
+        return new Response(JSON.stringify({ success: true, notrack: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, serviceRoleKey);
 
       // Geolocate IP (free tier, best-effort)
       let geo: Record<string, any> = {};
