@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import Navbar from "@/components/Navbar";
+
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge, getEffectiveSundaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import logoImg from "@/assets/riversand-logo.png";
@@ -1240,7 +1240,7 @@ const Order = () => {
   return (
     <>
     <div className={`min-h-screen ${step === "success" ? "bg-[#F9FAFB]" : "bg-gradient-to-b from-background via-muted/30 to-background"}`}>
-      {step !== "success" && <Navbar solid />}
+      
 
       <div className={`container mx-auto px-4 ${step === "success" ? "pt-0 pb-0" : "pt-24 pb-8 md:pt-28 md:pb-12"}`}>
         {/* Proposal banner for leads coming from email */}
