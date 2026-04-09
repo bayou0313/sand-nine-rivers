@@ -6,6 +6,24 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const SESSION_KEY = "rsnd_session";
+const NOTRACK_KEY = "rsnd_notrack";
+
+/** Call once on app load to check for ?notrack=1 in the URL */
+export function checkNoTrack(): void {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("notrack") === "1") {
+    localStorage.setItem(NOTRACK_KEY, "1");
+    console.info("[session] notrack mode enabled — session tracking disabled");
+  } else if (params.get("notrack") === "0") {
+    localStorage.removeItem(NOTRACK_KEY);
+    console.info("[session] notrack mode disabled — session tracking re-enabled");
+  }
+}
+
+export function isNoTrack(): boolean {
+  return localStorage.getItem(NOTRACK_KEY) === "1";
+}
 
 export function getSessionToken(): string {
   let token = localStorage.getItem(SESSION_KEY);
