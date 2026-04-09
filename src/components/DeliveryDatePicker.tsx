@@ -199,7 +199,7 @@ type Props = {
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturdaySurcharge, pitId, weekendPitMap, weekdayPitName }: Props) => {
-  const rawDates = useMemo(() => getAvailableDeliveryDates(pitSchedule), [pitSchedule]);
+  const rawDates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 7, weekendPitMap), [pitSchedule, weekendPitMap]);
 
   // Filter out weekend dates where weekendPitMap has no serviceable PIT
   const dates = useMemo(() => {
