@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { updateSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart, Clock } from "lucide-react";
+import { MapPin, Truck, AlertCircle, CheckCircle2, Loader2, ShoppingCart, Clock, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -286,7 +286,26 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               </div>
             )}
           </div>
-
+          {result && (
+            <button
+              type="button"
+              onClick={() => {
+                setResult(null);
+                setAddress("");
+                setCustomerCoords(null);
+                setError("");
+                setMatchedPit(null);
+                setMatchedEffective(null);
+                setTimeout(() => {
+                  const input = containerRef.current?.querySelector<HTMLInputElement>("input");
+                  if (input) { input.value = ""; input.focus(); }
+                }, 50);
+              }}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm text-accent underline underline-offset-2 hover:text-accent/80 font-body transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Change Address
+            </button>
+          )}
         </div>
 
         {error && (
