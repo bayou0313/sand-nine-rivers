@@ -55,12 +55,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/jean-lafitte/river-sand-delivery</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://riversand.net/raceland/river-sand-delivery</loc>
     <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
@@ -127,12 +121,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/new-orleans/river-sand-delivery</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://riversand.net/poydras/river-sand-delivery</loc>
     <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
@@ -140,12 +128,6 @@
   </url>
   <url>
     <loc>https://riversand.net/barataria/river-sand-delivery</loc>
-    <lastmod>2026-04-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/saint-rose/river-sand-delivery</loc>
     <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -193,13 +175,31 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://riversand.net/jean-lafitte/river-sand-delivery</loc>
+    <lastmod>2026-04-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://riversand.net/kenner/river-sand-delivery</loc>
     <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://riversand.net/new-orleans/river-sand-delivery</loc>
+    <lastmod>2026-04-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://riversand.net/westwego/river-sand-delivery</loc>
+    <lastmod>2026-04-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/saint-rose/river-sand-delivery</loc>
     <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
