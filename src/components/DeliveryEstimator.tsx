@@ -376,6 +376,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                 setError("");
                 setMatchedPit(null);
                 setMatchedEffective(null);
+                setQuantity(1);
                 setTimeout(() => {
                   const input = containerRef.current?.querySelector<HTMLInputElement>("input");
                   if (input) { input.value = ""; input.focus(); }
