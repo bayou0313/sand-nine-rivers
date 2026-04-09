@@ -60,10 +60,8 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   useEffect(() => {
     if (prefillAddress && apiLoaded) {
       setAddress(prefillAddress);
-      setTimeout(() => {
-        const btn = document.querySelector('[data-estimator-btn]') as HTMLButtonElement;
-        btn?.click();
-      }, 500);
+      // Auto-calculate will trigger via customerCoords useEffect
+      // if the prefill comes with geocoded coords; otherwise user picks from dropdown
     }
   }, [prefillAddress, apiLoaded]);
 
