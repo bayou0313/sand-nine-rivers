@@ -81,6 +81,24 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     }
   }, [result]);
 
+  // Update cart when quantity changes
+  useEffect(() => {
+    if (result && matchedPit) {
+      saveCart({
+        address,
+        distance: result.distance,
+        price: result.price,
+        quantity,
+        pitId: matchedPit.id,
+        pitName: matchedPit.name,
+        operatingDays: matchedPit.operating_days || [],
+        satSurcharge: matchedEffective?.saturday_surcharge ?? globalPricing.saturday_surcharge,
+        sameDayCutoff: matchedPit.same_day_cutoff || null,
+        savedAt: Date.now(),
+      });
+    }
+  }, [quantity]);
+
   // Save session state on page exit (captures exit intent)
   useEffect(() => {
     const handleBeforeUnload = () => {
