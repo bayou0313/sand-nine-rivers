@@ -410,18 +410,6 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
                     SUN +${effectiveSunSurcharge}
                   </span>
                 )}
-                {!isBlocked && !booked && (d.isSaturday || d.isSunday) && (() => {
-                  const dayKey = d.isSaturday ? 6 : 0;
-                  const wPit = weekendPitMap?.[dayKey as 0 | 6];
-                  if (wPit && weekdayPitName && wPit.pit.name !== weekdayPitName) {
-                    return (
-                      <span className="inline-block mt-1 text-[8px] font-body text-muted-foreground truncate max-w-[80px]">
-                        From {wPit.pit.name}
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
               </motion.button>
             );
           })}
