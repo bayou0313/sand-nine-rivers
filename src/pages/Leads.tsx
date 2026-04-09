@@ -4091,7 +4091,9 @@ const Leads = () => {
 
       case "profile":
         return (
-          <>
+          </>
+        );
+      }
             {/* Brand Identity */}
             <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
               <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Brand Identity</h3>
