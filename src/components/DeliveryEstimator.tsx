@@ -371,7 +371,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             </div>
 
             {/* Price breakdown */}
-            {quantity >= 2 ? (() => {
+            {(() => {
               const subtotal = result.price * quantity;
               const taxInfo = getTaxRateFromAddress(address);
               const taxAmount = subtotal * taxInfo.rate;
@@ -399,11 +399,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                   </div>
                 </div>
               );
-            })() : (
-              <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                1 load × {formatCurrency(result.price)} = <span className="font-display text-lg text-accent font-bold">{formatCurrency(result.price)}</span>
-              </p>
-            )}
+            })()}
 
             {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
               <div className="flex items-center gap-2 justify-center text-green-400">
