@@ -1348,9 +1348,11 @@ const Order = () => {
                       <p className="font-body text-sm text-destructive">{error}</p>
                     </motion.div>
                   )}
-                  <Button data-calc-btn onClick={calculateDistance} disabled={loading || !customerCoords} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow disabled:opacity-40 disabled:cursor-not-allowed">
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET DELIVERY PRICE</>}
-                  </Button>
+                  <motion.div whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.15)" }} whileTap={{ y: 0 }}>
+                    <Button data-calc-btn onClick={calculateDistance} disabled={loading || !customerCoords} className="w-full h-14 font-display tracking-wider text-lg rounded-xl shadow-md hover:shadow-lg transition-shadow disabled:opacity-40 disabled:cursor-not-allowed">
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5 mr-2" /> GET DELIVERY PRICE</>}
+                    </Button>
+                  </motion.div>
                 </div>
 
                 <div className="mt-6 grid grid-cols-3 gap-2 text-center">
@@ -1980,19 +1982,21 @@ const Order = () => {
                     <Button variant="outline" onClick={() => { setDisclaimerAccepted(false); setDeliveryTermsAccepted(false); setCodPaymentConfirmed(false); setStep("details"); }} className="h-14 font-display tracking-wider rounded-xl text-sm px-5">
                       <ArrowLeft className="w-4 h-4 mr-1" /> BACK
                     </Button>
-                    <Button
-                      onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                      disabled={
-                        submitting || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)
-                      }
-                      className="flex-1 h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
-                    >
-                      {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                        paymentMethod === "stripe-link"
-                          ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
-                          : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
-                      )}
-                    </Button>
+                    <motion.div whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.15)" }} whileTap={{ y: 0 }} className="flex-1">
+                      <Button
+                        onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
+                        disabled={
+                          submitting || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)
+                        }
+                        className="w-full h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
+                      >
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                          paymentMethod === "stripe-link"
+                            ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
+                            : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
+                        )}
+                      </Button>
+                    </motion.div>
                   </div>
                   <p className="font-body text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
                     <ShieldCheck className="w-3 h-3" /> 256-bit SSL encryption • Your data is protected
