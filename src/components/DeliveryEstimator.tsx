@@ -45,6 +45,12 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [matchedEffective, setMatchedEffective] = useState<{ free_miles: number; extra_per_mile: number; saturday_surcharge: number } | null>(null);
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [volumeName, setVolumeName] = useState("");
+  const [volumePhone, setVolumePhone] = useState("");
+  const [volumeEmail, setVolumeEmail] = useState("");
+  const [volumeSubmitting, setVolumeSubmitting] = useState(false);
+  const [volumeSuccess, setVolumeSuccess] = useState(false);
+  const [volumeError, setVolumeError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
