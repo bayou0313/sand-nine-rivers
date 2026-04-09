@@ -152,7 +152,7 @@ const Order = () => {
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<DeliveryDate | null>(null);
   const [dateError, setDateError] = useState("");
 
-  const qtyParam = parseInt(searchParams.get("qty") || "1", 10);
+  const qtyParam = parseInt(searchParams.get("quantity") || searchParams.get("qty") || "1", 10);
   const discountParam = parseFloat(searchParams.get("discount") || "0");
   const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
   const [discountAmount] = useState(isNaN(discountParam) ? 0 : Math.max(0, discountParam));
