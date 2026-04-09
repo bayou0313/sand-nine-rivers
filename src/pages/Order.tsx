@@ -1242,15 +1242,46 @@ const Order = () => {
     <div className={`min-h-screen ${step === "success" ? "bg-[#F9FAFB]" : "bg-gradient-to-b from-background via-muted/30 to-background"}`}>
       {/* Minimal header bar — logo + phone */}
       {step !== "success" && (
-        <div className="bg-background border-b border-border/50 py-3 px-6 flex items-center justify-between">
+        <div className="bg-background border-b border-border w-full py-3 px-6 flex items-center justify-between">
           <Link to="/">
             <img
               src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png"
               alt="RiverSand"
-              className="h-8"
+              className="h-12"
             />
           </Link>
-          <a href="tel:+18554689297" className="font-display text-sm tracking-wider text-foreground hover:text-accent transition-colors">
+          {/* Stepper — center */}
+          <div className="hidden sm:flex items-center gap-3">
+            {stepLabels.map((label, i) => {
+              const stepIndex = ["address", "details", "confirm"].indexOf(step);
+              const isActive = i <= stepIndex;
+              const isCurrent = i === stepIndex;
+              const isCompleted = i < stepIndex;
+              return (
+                <div key={label} className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-display text-[10px] transition-all ${
+                      isCompleted ? "bg-primary text-primary-foreground"
+                      : isCurrent ? "bg-accent text-accent-foreground ring-2 ring-accent/30 ring-offset-1 ring-offset-background"
+                      : "bg-muted text-muted-foreground/40 border border-border"
+                    }`}>
+                      {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
+                    </div>
+                    <span className={`font-body text-xs whitespace-nowrap ${
+                      isCurrent ? "text-foreground font-semibold" : isActive ? "text-foreground/60" : "text-muted-foreground/40"
+                    }`}>{label}</span>
+                  </div>
+                  {i < 2 && (
+                    <div className="w-8 h-0.5 bg-border rounded-full overflow-hidden">
+                      <div className={`h-full bg-accent rounded-full transition-all duration-500 ${isActive && i < stepIndex ? "w-full" : "w-0"}`} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <a href="tel:+18554689297" className="flex items-center gap-1.5 font-display text-sm tracking-wider text-accent hover:text-accent/80 transition-colors">
+            <Phone className="w-4 h-4" />
             1-855-GOT-WAYS
           </a>
         </div>
