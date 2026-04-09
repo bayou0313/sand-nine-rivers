@@ -411,8 +411,8 @@ const CityPage = () => {
         shippingDestination: { "@type": "DefinedRegion", addressCountry: "US", addressRegion: "LA" },
         deliveryTime: {
           "@type": "ShippingDeliveryTime",
-          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "h" },
-          transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "h" },
+          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "HUR" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "HUR" },
         },
       },
     },
