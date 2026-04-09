@@ -1569,8 +1569,8 @@ const Order = () => {
                         <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div className="sm:col-span-2">
-                        <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Notes (optional)</label>
-                        <Textarea id="order-notes" name="notes" placeholder="Gate code, placement instructions..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
+                        <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Instructions</label>
+                        <Textarea id="order-notes" name="notes" placeholder="Where to drop the sand, gate code, landmark, or any special instructions for the driver..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
                         <p className="text-xs text-muted-foreground mt-1 text-right font-body">{form.notes.length}/275</p>
                       </div>
                     </div>
