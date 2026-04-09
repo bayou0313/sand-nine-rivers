@@ -498,7 +498,7 @@ const CityPage = () => {
 
       {/* Delivery Details — unique per city */}
       {cityPage.delivery_details && (
-        <section className="py-16 bg-background">
+        <motion.section initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }} className="py-16 bg-background">
           <div className="container mx-auto px-6 max-w-3xl text-center">
             <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-4">
               Delivery to {cityPage.city_name}
@@ -507,15 +507,15 @@ const CityPage = () => {
               {cityPage.delivery_details}
             </p>
           </div>
-        </section>
+        </motion.section>
       )}
 
-      <Stats />
-      <About cityName={cityPage.city_name} whyChooseIntro={cityPage.why_choose_intro || undefined} />
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Stats /></motion.div>
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><About cityName={cityPage.city_name} whyChooseIntro={cityPage.why_choose_intro || undefined} /></motion.div>
 
       {/* Common Uses — unique per city */}
       {cityPage.local_uses && (
-        <section className="py-16 bg-card">
+        <motion.section initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }} className="py-16 bg-card">
           <div className="container mx-auto px-6 max-w-3xl">
             <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-6 text-center">
               Common Uses in {cityPage.city_name}
@@ -525,12 +525,12 @@ const CityPage = () => {
               dangerouslySetInnerHTML={{ __html: cityPage.local_uses }}
             />
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* Local Expertise — unique per city */}
       {cityPage.local_expertise && (
-        <section className="py-16 bg-background">
+        <motion.section initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }} className="py-16 bg-background">
           <div className="container mx-auto px-6 max-w-3xl text-center">
             <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-4">
               Why River Sand Works in {cityPage.city_name}
@@ -539,41 +539,42 @@ const CityPage = () => {
               {cityPage.local_expertise}
             </p>
           </div>
-        </section>
+        </motion.section>
       )}
 
-      <RiverSandInfo cityName={cityPage.city_name} />
-      <Features cityName={cityPage.city_name} />
-      <Testimonials cityName={cityPage.city_name} />
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><RiverSandInfo cityName={cityPage.city_name} /></motion.div>
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Features cityName={cityPage.city_name} /></motion.div>
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Testimonials cityName={cityPage.city_name} /></motion.div>
 
       {/* Other Areas We Serve */}
       {otherCities.length > 0 && (
-        <section className="py-12 bg-muted/50">
+        <motion.section initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }} className="py-12 bg-muted/50">
           <div className="container mx-auto px-6">
              <h2 className="text-2xl md:text-3xl font-display text-foreground tracking-wide mb-6">
               Other Areas We Serve Near {cityPage.city_name}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {otherCities.map((c) => (
-                <Link
-                  key={c.city_slug}
-                  to={`/${c.city_slug}/river-sand-delivery`}
-                  className="block p-4 bg-background rounded-xl border border-border hover:border-accent hover:shadow-md transition-all"
-                >
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-accent" />
-                    <span className="font-display text-foreground">River Sand Delivery in {c.city_name}, {c.state}</span>
-                  </div>
-                </Link>
+              {otherCities.map((c, i) => (
+                <motion.div key={c.city_slug} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }}>
+                  <Link
+                    to={`/${c.city_slug}/river-sand-delivery`}
+                    className="block p-4 bg-background rounded-xl border border-border hover:border-accent hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-accent" />
+                      <span className="font-display text-foreground">River Sand Delivery in {c.city_name}, {c.state}</span>
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
             </div>
           </div>
-        </section>
+        </motion.section>
       )}
 
-      <CTA cityName={cityPage.city_name} />
-      <FAQ cityName={cityPage.city_name} faqItems={Array.isArray(cityPage.faq_items) ? cityPage.faq_items as { question: string; answer: string }[] : undefined} />
-      <ContactForm cityName={cityPage.city_name} />
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><CTA cityName={cityPage.city_name} /></motion.div>
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><FAQ cityName={cityPage.city_name} faqItems={Array.isArray(cityPage.faq_items) ? cityPage.faq_items as { question: string; answer: string }[] : undefined} /></motion.div>
+      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><ContactForm cityName={cityPage.city_name} /></motion.div>
       <Footer />
       <MobilePhoneBar />
       <ScrollToTop />
