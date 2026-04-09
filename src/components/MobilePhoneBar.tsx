@@ -1,8 +1,13 @@
 import { Phone } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 const MobilePhoneBar = () => {
   const biz = useBusinessSettings();
+  const location = useLocation();
+
+  // Hide on order page — it has its own header with phone
+  if (location.pathname.startsWith("/order")) return null;
 
   return (
     <a
