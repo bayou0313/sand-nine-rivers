@@ -73,9 +73,9 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   }, [prefillAddress, apiLoaded]);
 
   useEffect(() => {
-    if (result && resultRef.current) {
+    if (result && containerRef.current) {
       setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 200);
     }
   }, [result]);
@@ -263,7 +263,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     <>
       <div id={embedded ? undefined : "estimator"} ref={containerRef} className={embedded
         ? "bg-foreground/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl scroll-mt-24"
-        : "bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
+        : "bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow scroll-mt-24"
       }>
         <div className="space-y-4">
           <label htmlFor="delivery-address" className={`font-display tracking-wider flex items-center gap-2 ${embedded ? "text-primary-foreground" : "text-foreground"} text-2xl py-[5px]`}>
