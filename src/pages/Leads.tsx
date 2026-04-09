@@ -369,7 +369,12 @@ const Leads = () => {
   const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
 
   // SEO state
-  const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo">("pricing");
+  const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
+  const [notrackIps, setNotrackIps] = useState<string[]>([]);
+  const [notrackNewIp, setNotrackNewIp] = useState("");
+  const [notrackDetectedIp, setNotrackDetectedIp] = useState<string | null>(null);
+  const [notrackSaving, setNotrackSaving] = useState(false);
+  const [notrackLoading, setNotrackLoading] = useState(false);
   const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
   const [savingSeo, setSavingSeo] = useState(false);
   const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
