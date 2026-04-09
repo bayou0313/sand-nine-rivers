@@ -1490,7 +1490,7 @@ const Order = () => {
                               address: `${weekendEntry.distance.toFixed(1)} mi away`,
                             } : prev);
                             if (weekdayPit && weekendEntry.pit.id !== weekdayPit.id) {
-                              toast({ title: "Price updated", description: `${d.fullLabel} delivery from ${weekendEntry.pit.name}. Price: ${formatCurrency(weekendEntry.price)}/load.` });
+                              toast({ title: "Price updated for Saturday delivery", description: `Rate adjusted to ${formatCurrency(weekendEntry.price)}/load + $${weekendEntry.satSurcharge} Saturday surcharge.` });
                             }
                           }
                         } else {
