@@ -1308,7 +1308,7 @@ const Order = () => {
           <AnimatePresence mode="wait">
             {/* STEP 1: Address */}
             {step === "address" && (
-              <motion.div key="address" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="bg-background rounded-2xl p-6 md:p-8 border border-border/50 shadow-lg shadow-foreground/5">
+              <motion.div key="address" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="bg-background rounded-2xl p-6 md:p-8 border border-border/50 shadow-lg shadow-foreground/5">
                 <motion.h1
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1397,7 +1397,7 @@ const Order = () => {
 
             {/* STEP 2: Details + Payment */}
             {step === "details" && result && (
-              <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4">
+              <motion.div key="details" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="space-y-4">
                 {/* Compact delivery confirmation banner */}
                  <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -1437,19 +1437,21 @@ const Order = () => {
                   className="flex items-center justify-center gap-4 bg-primary/5 border border-primary/10 rounded-xl px-5 py-3"
                 >
                   <span className="font-body text-sm text-muted-foreground">Loads:</span>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => setQuantity(q => Math.max(1, q - 1))}
                     className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center hover:bg-accent/80 transition-colors font-bold text-lg"
                   >
                     −
-                  </button>
+                  </motion.button>
                   <span className="font-display text-xl text-foreground w-8 text-center">{quantity}</span>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => setQuantity(q => Math.min(10, q + 1))}
                     className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center hover:bg-accent/80 transition-colors font-bold text-lg"
                   >
                     +
-                  </button>
+                  </motion.button>
                   <span className="font-body text-sm text-muted-foreground">× 9 cu yds</span>
                 </motion.div>
 
@@ -1815,7 +1817,7 @@ const Order = () => {
 
             {/* STEP 3: Confirm */}
             {step === "confirm" && result && selectedDeliveryDate && (
-              <motion.div key="confirm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="space-y-4 relative">
+              <motion.div key="confirm" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="space-y-4 relative">
                 {/* Payment waiting overlay */}
                 {pendingOrderId && submitting && (
                   <motion.div
