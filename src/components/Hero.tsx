@@ -37,8 +37,8 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
             fetchPriority="high"
           />
         </picture>
-        <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/95 via-sand-dark/85 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-sand-dark/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/60 via-sand-dark/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-sand-dark/30 via-transparent to-transparent" />
       </motion.div>
 
       <div className="relative z-10 container mx-auto px-6 pt-[25px] my-px py-[37px] pb-[34px] mt-[3px]">
@@ -48,10 +48,10 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 bg-foreground/60 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/10">
+            <div className="inline-flex items-center gap-2 bg-primary/80 backdrop-blur-sm border border-accent/40 px-5 py-2 rounded-full">
               <Clock className="w-3.5 h-3.5 text-accent" />
               <p className="font-display tracking-wider text-accent text-lg">{label}</p>
-              <span className="font-mono text-primary-foreground/90 font-medium tracking-wide text-lg pt-0 pb-[4px]">{timeLeft}</span>
+              <span className="font-mono text-primary-foreground font-bold tracking-wide text-lg">{timeLeft}</span>
             </div>
           </motion.div>
 
