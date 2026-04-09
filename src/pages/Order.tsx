@@ -278,6 +278,7 @@ const Order = () => {
       // Show verifying state while we confirm with backend
       setVerifyingPayment(true);
       setStep("success");
+      clearCart();
 
       const showSuccess = (orderData?: any) => {
         setVerifyingPayment(false);
