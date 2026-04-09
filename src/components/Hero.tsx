@@ -109,16 +109,16 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.85 }}
-              className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-6 gap-y-2 pt-2"
+              className="flex flex-nowrap gap-3 pt-2"
             >
               {[
-                { icon: Star, text: "4.9-star rated" },
-                { icon: Truck, text: "Pit Direct Delivery" },
-                { icon: CheckCircle, text: "Same-day available" },
-                { icon: ShieldCheck, text: "9 Cu Yds Per Load" },
+                { icon: Star, text: "4.9-star rated", hideOnMobile: false },
+                { icon: Truck, text: "Pit Direct Delivery", hideOnMobile: false },
+                { icon: CheckCircle, text: "Same-day available", hideOnMobile: false },
+                { icon: ShieldCheck, text: "9 Cu Yds Per Load", hideOnMobile: true },
               ].map((item) => (
-                <div key={item.text} className="flex items-center gap-1.5 text-primary-foreground/70 font-body text-sm">
-                  <item.icon className="w-4 h-4 text-accent shrink-0" />
+                <div key={item.text} className={`flex items-center gap-1 text-primary-foreground/70 font-body text-xs ${item.hideOnMobile ? "hidden sm:flex" : ""}`}>
+                  <item.icon className="w-3 h-3 text-accent shrink-0" />
                   {item.text}
                 </div>
               ))}
