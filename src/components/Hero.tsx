@@ -23,7 +23,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-[75vh] flex items-center overflow-hidden pt-20 md:pt-24">
+    <section ref={sectionRef} className="relative min-h-[75vh] flex items-center justify-center overflow-hidden py-20 md:py-24">
       <motion.div className="absolute inset-0 h-[120%]" style={{ y: bgY }}>
         <picture>
           <source srcSet={heroImageWebp} type="image/webp" />
@@ -42,7 +42,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
       </motion.div>
 
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="max-w-2xl space-y-5 pt-12 md:pt-16">
+        <div className="max-w-2xl space-y-6">
           {/* Content container with semi-transparent background */}
           <div className="bg-primary/60 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/10 space-y-5">
             <motion.div
