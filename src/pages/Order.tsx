@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadCart, clearCart } from "@/lib/cart";
 
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge, getEffectiveSundaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
@@ -277,6 +278,7 @@ const Order = () => {
       // Show verifying state while we confirm with backend
       setVerifyingPayment(true);
       setStep("success");
+      clearCart();
 
       const showSuccess = (orderData?: any) => {
         setVerifyingPayment(false);
@@ -525,6 +527,7 @@ const Order = () => {
           // Show verifying state, then verify payment
           setVerifyingPayment(true);
           setStep("success");
+          clearCart();
 
           const verifyOrderId = snap.pendingOrderId || signal.order_id || null;
           const verifyToken = snap.lookupToken || null;
@@ -735,6 +738,31 @@ const Order = () => {
           btn?.click();
         }
       }, 1500);
+    } else if (!searchParams.get("payment")) {
+      // No URL params at all — try restoring from cart
+      const savedCart = loadCart();
+      if (savedCart) {
+        setAddress(savedCart.address);
+        setResult({
+          distance: savedCart.distance,
+          price: savedCart.price,
+          address: `${savedCart.distance} miles away`,
+          duration: "~30 min",
+        });
+        setQuantity(savedCart.quantity);
+        if (savedCart.operatingDays.length > 0 || savedCart.satSurcharge) {
+          setMatchedPitSchedule({
+            operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null,
+            saturday_surcharge_override: savedCart.satSurcharge || null,
+            sunday_surcharge: null,
+            same_day_cutoff: savedCart.sameDayCutoff || null,
+          });
+        }
+        if (savedCart.pitId) {
+          setMatchedPit({ id: savedCart.pitId, name: savedCart.pitName, lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null, saturday_surcharge_override: savedCart.satSurcharge || null, same_day_cutoff: savedCart.sameDayCutoff || null, sunday_surcharge: null } as PitData);
+        }
+        setStep("details");
+      }
     }
   }, [searchParams]);
 
@@ -1017,6 +1045,7 @@ const Order = () => {
       };
       setConfirmedTotals(snapshotTotals);
       setStep("success");
+      clearCart();
       trackEvent("purchase", {
         transaction_id: inserted?.order_number || "",
         value: totalPrice,

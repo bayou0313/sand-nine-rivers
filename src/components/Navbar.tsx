@@ -1,8 +1,10 @@
 import { Phone, Menu, X, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadCart, clearCart, type CartState } from "@/lib/cart";
+import { formatCurrency } from "@/lib/format";
 
 const navLinks = ["Pricing", "How It Works", "Why Us", "About", "FAQ", "Learn More", "Contact"];
 
@@ -16,15 +18,96 @@ const sectionIdMap: Record<string, string> = {
   "Contact": "contact",
 };
 
+const CartDropdown = ({ cart, onContinue, onClear }: { cart: CartState; onContinue: () => void; onClear: () => void }) => (
+  <motion.div
+    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+    transition={{ duration: 0.15 }}
+    className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-xl shadow-xl p-4 z-50"
+  >
+    <p className="font-body text-xs text-muted-foreground mb-1">Saved order</p>
+    <p className="font-body text-sm text-foreground truncate" title={cart.address}>
+      {cart.address.length > 30 ? cart.address.slice(0, 30) + "…" : cart.address}
+    </p>
+    <p className="font-display text-lg text-accent mt-1">
+      {cart.quantity} load{cart.quantity > 1 ? "s" : ""} · {formatCurrency(cart.price * cart.quantity)}
+    </p>
+    <button
+      onClick={onContinue}
+      className="w-full mt-3 h-9 font-display tracking-wider text-sm bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg transition-colors"
+    >
+      CONTINUE ORDER
+    </button>
+    <button
+      onClick={onClear}
+      className="w-full mt-2 text-xs font-body text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+    >
+      Clear
+    </button>
+  </motion.div>
+);
+
 const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boolean; logoHref?: string; activeSections?: string[] }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(solid);
+  const [cart, setCart] = useState<CartState | null>(null);
+  const [cartOpen, setCartOpen] = useState(false);
+  const cartRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(solid || window.scrollY > 50);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, [solid]);
+
+  const refreshCart = useCallback(() => setCart(loadCart()), []);
+
+  useEffect(() => {
+    refreshCart();
+    const onFocus = () => refreshCart();
+    const onVisibility = () => { if (document.visibilityState === "visible") refreshCart(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refreshCart]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!cartOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (cartRef.current && !cartRef.current.contains(e.target as Node)) setCartOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [cartOpen]);
+
+  const handleContinue = () => {
+    if (!cart) return;
+    const params = new URLSearchParams({
+      address: cart.address,
+      distance: String(cart.distance),
+      price: String(cart.price),
+      quantity: String(cart.quantity),
+      pit_id: cart.pitId,
+      pit_name: cart.pitName,
+    });
+    if (cart.operatingDays.length > 0) params.set("operating_days", cart.operatingDays.join(","));
+    if (cart.satSurcharge) params.set("sat_surcharge", String(cart.satSurcharge));
+    if (cart.sameDayCutoff) params.set("same_day_cutoff", cart.sameDayCutoff);
+    setCartOpen(false);
+    navigate(`/order?${params.toString()}`);
+  };
+
+  const handleClear = () => {
+    clearCart();
+    setCart(null);
+    setCartOpen(false);
+  };
 
   return (
     <motion.nav
@@ -74,6 +157,25 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Cart icon */}
+          {cart && (
+            <div className="relative" ref={cartRef}>
+              <button
+                onClick={() => setCartOpen(!cartOpen)}
+                className="relative p-2 text-primary-foreground/80 hover:text-accent transition-colors"
+                aria-label="View saved order"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-primary" />
+              </button>
+              <AnimatePresence>
+                {cartOpen && (
+                  <CartDropdown cart={cart} onContinue={handleContinue} onClear={handleClear} />
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           <div className="hidden sm:block">
             <Button size="sm" className="font-display tracking-wider bg-accent hover:bg-accent/80 text-accent-foreground rounded-lg" asChild>
               <Link to="/order">
@@ -130,6 +232,27 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
                 </motion.a>
               );
             })}
+
+            {/* Mobile cart banner */}
+            {cart && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-3 bg-accent/10 border border-accent/20 rounded-lg"
+              >
+                <p className="font-body text-xs text-primary-foreground/60 truncate">{cart.address}</p>
+                <p className="font-display text-sm text-accent">
+                  {cart.quantity} load{cart.quantity > 1 ? "s" : ""} · {formatCurrency(cart.price * cart.quantity)}
+                </p>
+                <button
+                  onClick={() => { setMenuOpen(false); handleContinue(); }}
+                  className="mt-2 w-full h-8 font-display tracking-wider text-xs bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg transition-colors"
+                >
+                  CONTINUE ORDER
+                </button>
+              </motion.div>
+            )}
+
             <div className="flex flex-col gap-2 pt-2">
               <Button size="sm" className="font-display tracking-wider w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg" asChild>
                 <Link to="/order" onClick={() => setMenuOpen(false)}>

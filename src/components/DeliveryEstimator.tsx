@@ -1,6 +1,7 @@
 // Force redeploy: 2026-03-31
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
+import { saveCart } from "@/lib/cart";
 import { updateSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, AlertCircle, Loader2, ShoppingCart, Clock, Minus, Plus, HardHat } from "lucide-react";
@@ -79,6 +80,24 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
       }, 200);
     }
   }, [result]);
+
+  // Update cart when quantity changes
+  useEffect(() => {
+    if (result && matchedPit) {
+      saveCart({
+        address,
+        distance: result.distance,
+        price: result.price,
+        quantity,
+        pitId: matchedPit.id,
+        pitName: matchedPit.name,
+        operatingDays: matchedPit.operating_days || [],
+        satSurcharge: matchedEffective?.saturday_surcharge ?? globalPricing.saturday_surcharge,
+        sameDayCutoff: matchedPit.same_day_cutoff || null,
+        savedAt: Date.now(),
+      });
+    }
+  }, [quantity]);
 
   // Save session state on page exit (captures exit intent)
   useEffect(() => {
@@ -251,6 +270,19 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         nearest_pit_id: bestResult.pit.id,
         nearest_pit_name: bestResult.pit.name,
         serviceable: true,
+      });
+      // Save to persistent cart
+      saveCart({
+        address: currentAddress,
+        distance: parseFloat(bestResult.distance.toFixed(1)),
+        price: bestResult.price,
+        quantity,
+        pitId: bestResult.pit.id,
+        pitName: bestResult.pit.name,
+        operatingDays: bestResult.pit.operating_days || [],
+        satSurcharge: effective.saturday_surcharge,
+        sameDayCutoff: bestResult.pit.same_day_cutoff || null,
+        savedAt: Date.now(),
       });
     } catch {
       setError("Something went wrong. Please try again or call us directly.");
