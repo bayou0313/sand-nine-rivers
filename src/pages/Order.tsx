@@ -1242,7 +1242,7 @@ const Order = () => {
     <div className={`min-h-screen ${step === "success" ? "bg-[#F9FAFB]" : "bg-gradient-to-b from-background via-muted/30 to-background"}`}>
       {/* Minimal header bar — logo + phone */}
       {step !== "success" && (
-        <div className="bg-background border-b border-border w-full py-3 px-6 flex items-center justify-between">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border h-16 px-6 flex items-center justify-between">
           <Link to="/">
             <img
               src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png"
@@ -1287,7 +1287,7 @@ const Order = () => {
         </div>
       )}
 
-      <div className={`container mx-auto px-4 ${step === "success" ? "pt-0 pb-0" : "pt-8 pb-8 md:pt-12 md:pb-12"}`}>
+      <div className={`container mx-auto px-4 ${step === "success" ? "pt-0 pb-0" : "pt-24 pb-8 md:pt-28 md:pb-12"}`}>
         {/* Proposal banner for leads coming from email */}
         {showProposalBanner && (
           <motion.div
