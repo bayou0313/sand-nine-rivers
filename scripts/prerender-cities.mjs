@@ -201,8 +201,8 @@ function buildPage(city, cssLinks, scriptTags) {
         shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'US', addressRegion: 'LA' },
         deliveryTime: {
           '@type': 'ShippingDeliveryTime',
-          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 4, unitCode: 'HUR' },
-          transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 4, unitCode: 'HUR' },
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 4 },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 4 },
         },
       },
     },
