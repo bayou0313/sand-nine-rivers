@@ -253,6 +253,17 @@ const Index = () => {
         {seo.seo_schema_faq !== "false" && (
           <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
         )}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "River Sand Delivery",
+          "url": "https://riversand.net",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://riversand.net/order?address={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        })}</script>
       </Helmet>
       <Navbar />
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
