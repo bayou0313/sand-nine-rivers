@@ -21,6 +21,7 @@ import { loadCart, clearCart } from "@/lib/cart";
 
 import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCHARGE, getEffectiveSaturdaySurcharge, getEffectiveSundaySurcharge } from "@/components/DeliveryDatePicker";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
+import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
