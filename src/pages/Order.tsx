@@ -1260,13 +1260,16 @@ const Order = () => {
               return (
                 <div key={label} className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-display text-[10px] transition-all ${
+                    <motion.div
+                      animate={isCurrent ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center font-display text-[10px] transition-all ${
                       isCompleted ? "bg-primary text-primary-foreground"
                       : isCurrent ? "bg-accent text-accent-foreground ring-2 ring-accent/30 ring-offset-1 ring-offset-background"
                       : "bg-muted text-muted-foreground/40 border border-border"
                     }`}>
                       {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
-                    </div>
+                    </motion.div>
                     <span className={`font-body text-xs whitespace-nowrap ${
                       isCurrent ? "text-foreground font-semibold" : isActive ? "text-foreground/60" : "text-muted-foreground/40"
                     }`}>{label}</span>
