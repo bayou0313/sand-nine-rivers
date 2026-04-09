@@ -1302,59 +1302,7 @@ const Order = () => {
             <button onClick={() => setShowProposalBanner(false)} className="ml-4 text-lg font-bold" style={{ color: "#0D2137" }}>×</button>
           </motion.div>
         )}
-        {/* Sticky countdown + progress — hidden on success */}
-        {step !== "success" && (
-        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md py-3 border-b border-border/30 -mx-4 px-4 mb-6 shadow-sm">
-          {/* Progress steps */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-            className="flex items-center justify-center gap-1 sm:gap-3 mb-2"
-          >
-            {stepLabels.map((label, i) => {
-              const stepIndex = ["address", "details", "confirm"].indexOf(step);
-              const isActive = i <= stepIndex;
-              const isCurrent = i === stepIndex;
-              const isCompleted = i < stepIndex;
-              return (
-                <div key={label} className="flex items-center gap-1 sm:gap-2">
-                  <div className="flex flex-col items-center gap-0.5">
-                    <motion.div
-                      animate={{
-                        scale: isCurrent ? 1.15 : 1,
-                        boxShadow: isCurrent ? "0 4px 14px hsl(var(--accent) / 0.35)" : "none",
-                      }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-xs transition-all duration-300 ${
-                        isCompleted ? "bg-primary text-primary-foreground"
-                        : isCurrent ? "bg-accent text-accent-foreground ring-2 ring-accent/30 ring-offset-2 ring-offset-background" 
-                        : "bg-muted text-muted-foreground/40 border border-border"
-                      }`}
-                    >
-                      {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
-                    </motion.div>
-                    <span className={`font-body text-[10px] sm:text-xs transition-colors duration-300 whitespace-nowrap ${
-                      isCurrent ? "text-foreground font-semibold" : isActive ? "text-foreground/60" : "text-muted-foreground/40"
-                    }`}>{label}</span>
-                  </div>
-                  {i < 2 && (
-                    <div className="relative w-8 sm:w-12 h-0.5 mt-[-12px] sm:mt-[-14px]">
-                      <div className="absolute inset-0 bg-border rounded-full" />
-                      <motion.div
-                        className="absolute inset-y-0 left-0 bg-accent rounded-full"
-                        initial={{ width: "0%" }}
-                        animate={{ width: isActive && i < stepIndex ? "100%" : "0%" }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </motion.div>
-        </div>
-        )}
+
 
         <div className="max-w-2xl mx-auto">
           <AnimatePresence mode="wait">
