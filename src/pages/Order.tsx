@@ -1816,6 +1816,52 @@ const Order = () => {
                     )}
                     </AnimatePresence>
 
+                    {/* Order Total Summary — always visible when payment method selected */}
+                    {paymentMethod && result && (
+                      <motion.div
+                        key={`total-${paymentMethod}`}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-card border border-border rounded-xl p-4 space-y-2"
+                      >
+                        <div className="flex justify-between font-body text-sm">
+                          <span className="text-muted-foreground">Order Total</span>
+                          <span className="text-foreground font-medium">{formatCurrency(totalPrice)}</span>
+                        </div>
+                        {paymentMethod === "stripe-link" ? (
+                          <>
+                            <div className="flex justify-between font-body text-sm">
+                              <span className="text-muted-foreground">Processing Fee (3.5% card)</span>
+                              <span className="text-foreground font-medium">+{formatCurrency(processingFee)}</span>
+                            </div>
+                            <div className="border-t border-border pt-2 flex justify-between">
+                              <span className="font-display tracking-wider text-foreground">TOTAL CHARGE</span>
+                              <span className="font-display text-lg font-bold text-foreground">{formatCurrency(totalWithProcessingFee)}</span>
+                            </div>
+                            <p className="font-body text-xs text-amber-700 flex items-start gap-1.5">
+                              <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                              Processing fee ({formatCurrency(processingFee)}) is non-refundable if cancelled
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between font-body text-sm">
+                              <span className="text-muted-foreground">Processing Fee</span>
+                              <span className="text-green-600 font-medium">$0.00 — Waived</span>
+                            </div>
+                            <div className="border-t border-border pt-2 flex justify-between">
+                              <span className="font-display tracking-wider text-foreground">TOTAL DUE</span>
+                              <span className="font-display text-lg font-bold text-foreground">{formatCurrency(totalPrice)}</span>
+                            </div>
+                            <p className="font-body text-xs text-muted-foreground">
+                              Cash or check accepted at delivery
+                            </p>
+                          </>
+                        )}
+                      </motion.div>
+                    )}
+
                     {!paymentMethod && (
                       <p className="font-body text-xs text-muted-foreground text-center">Select a payment method to continue.</p>
                     )}
@@ -1827,7 +1873,7 @@ const Order = () => {
                       <Button
                         onClick={goToStep2}
                         disabled={!isFormValid}
-                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl bg-accent hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
+                        className="w-full h-14 font-display tracking-wider text-lg rounded-xl bg-accent hover:bg-accent/90 text-white disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300"
                       >
                         <ShieldCheck className="w-5 h-5 mr-2" /> REVIEW ORDER
                       </Button>
