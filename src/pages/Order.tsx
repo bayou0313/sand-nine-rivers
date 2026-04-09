@@ -820,7 +820,7 @@ const Order = () => {
         setWeekdayPit(matchedPit);
         setWeekdayResult(result);
         setWeekdayPitSchedule(matchedPitSchedule);
-        resolveWeekendPits(allPits, customerCoords.lat, customerCoords.lng, globalPricing)
+        resolveWeekendPits(allPits, address, globalPricing)
           .then(wMap => setWeekendPitMap(wMap))
           .catch(() => setWeekendPitMap({}));
       }
@@ -838,7 +838,7 @@ const Order = () => {
         setWeekdayPit(matchedPit);
         setWeekdayResult(result);
         setWeekdayPitSchedule(matchedPitSchedule);
-        resolveWeekendPits(allPits, lat, lng, globalPricing)
+        resolveWeekendPits(allPits, address, globalPricing)
           .then(wMap => setWeekendPitMap(wMap))
           .catch(() => setWeekendPitMap({}));
       }
@@ -922,11 +922,9 @@ const Order = () => {
       setWeekdayPitSchedule(weekdaySchedule);
 
       // Resolve weekend PITs independently
-      if (custLat != null && custLng != null) {
-        resolveWeekendPits(allPits, custLat, custLng, globalPricing)
-          .then(wMap => setWeekendPitMap(wMap))
-          .catch(() => setWeekendPitMap({}));
-      }
+      resolveWeekendPits(allPits, currentAddress, globalPricing)
+        .then(wMap => setWeekendPitMap(wMap))
+        .catch(() => setWeekendPitMap({}));
 
       setResult({
         distance: parseFloat(bestResult.distance.toFixed(1)),
