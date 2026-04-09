@@ -37,8 +37,8 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
             fetchPriority="high"
           />
         </picture>
-        <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/95 via-sand-dark/85 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-sand-dark/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-sand-dark/60 via-sand-dark/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-sand-dark/30 via-transparent to-transparent" />
       </motion.div>
 
       <div className="relative z-10 container mx-auto px-6 pt-[25px] my-px py-[37px] pb-[34px] mt-[3px]">
