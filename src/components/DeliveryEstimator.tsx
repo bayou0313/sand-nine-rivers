@@ -366,10 +366,40 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               </div>
             </div>
 
-            {/* Total calculation line — always visible */}
-            <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-              {quantity} {quantity === 1 ? "load" : "loads"} × {formatCurrency(result.price)} = <span className="font-display text-lg text-accent font-bold">{formatCurrency(result.price * quantity)}</span>
-            </p>
+            {/* Price breakdown */}
+            {quantity >= 2 ? (() => {
+              const subtotal = result.price * quantity;
+              const taxInfo = getTaxRateFromAddress(address);
+              const taxAmount = subtotal * taxInfo.rate;
+              const processingFee = subtotal * 0.035;
+              const total = subtotal + taxAmount + processingFee;
+              const muted = embedded ? "text-primary-foreground/50" : "text-muted-foreground";
+              const text = embedded ? "text-primary-foreground" : "text-foreground";
+              return (
+                <div className="space-y-2 font-body text-sm">
+                  <div className="flex justify-between">
+                    <span className={muted}>Subtotal <span className="ml-2">{quantity} × {formatCurrency(result.price)}</span></span>
+                    <span className="text-accent">{formatCurrency(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className={muted}>Sales Tax <span className="ml-1 text-xs">({(taxInfo.rate * 100).toFixed(2)}%)</span></span>
+                    <span className="text-accent">{formatCurrency(taxAmount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className={muted}>Processing Fee <span className="ml-1 text-xs">(3.5% card · included if paying cash)</span></span>
+                    <span className="text-accent">{formatCurrency(processingFee)}</span>
+                  </div>
+                  <div className={`border-t ${embedded ? "border-white/20" : "border-border"} pt-2 flex justify-between`}>
+                    <span className={`font-display tracking-wider ${text}`}>Total Estimated</span>
+                    <span className={`font-display text-lg font-bold ${text}`}>{formatCurrency(total)}</span>
+                  </div>
+                </div>
+              );
+            })() : (
+              <p className={`font-body text-sm text-center ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                1 load × {formatCurrency(result.price)} = <span className="font-display text-lg text-accent font-bold">{formatCurrency(result.price)}</span>
+              </p>
+            )}
 
             {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
               <div className="flex items-center gap-2 justify-center text-green-400">
@@ -397,6 +427,90 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                 <a href="tel:+18554689297">CALL TO ORDER</a>
               </Button>
             </div>
+
+            {/* Volume quote form at quantity = 10 */}
+            {quantity >= 10 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 space-y-4"
+              >
+                <div className={`border-t ${embedded ? "border-white/10" : "border-border"} pt-6`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <HardHat className="w-5 h-5 text-accent" />
+                    <span className={`font-display text-lg tracking-wider ${embedded ? "text-primary-foreground" : "text-foreground"}`}>Large Order? Get a Special Rate.</span>
+                  </div>
+                  <p className={`font-body text-sm mb-4 ${embedded ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                    Orders of 10+ loads qualify for volume pricing. Leave your info and we'll call you back with a custom quote.
+                  </p>
+
+                  {volumeSuccess ? (
+                    <p className="font-body text-sm text-green-400 text-center py-4">✅ We'll call you within 1 business hour.</p>
+                  ) : (
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const phone = stripPhone(volumePhone);
+                        if (!volumeName.trim() || phone.length < 10) return;
+                        setVolumeSubmitting(true);
+                        setVolumeError("");
+                        try {
+                          const { error: insertErr } = await supabase.from("delivery_leads").insert({
+                            customer_name: volumeName.trim(),
+                            customer_phone: phone,
+                            customer_email: volumeEmail.trim() || null,
+                            address: address,
+                            calculated_price: result!.price * 10,
+                            notes: "10+ loads volume inquiry",
+                            stage: "new",
+                          });
+                          if (insertErr) throw insertErr;
+                          setVolumeSuccess(true);
+                          trackEvent("volume_quote_requested", { loads: 10, price: result!.price * 10 });
+                        } catch {
+                          setVolumeError("Something went wrong. Please call 1-855-GOT-WAYS");
+                        } finally {
+                          setVolumeSubmitting(false);
+                        }
+                      }}
+                      className="space-y-3"
+                    >
+                      <input
+                        type="text"
+                        required
+                        placeholder="Name"
+                        value={volumeName}
+                        onChange={(e) => setVolumeName(e.target.value)}
+                        className="w-full h-12 rounded-xl border border-white/20 bg-white/5 px-4 font-body text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent"
+                      />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="Phone"
+                        value={volumePhone}
+                        onChange={(e) => setVolumePhone(formatPhone(e.target.value))}
+                        className="w-full h-12 rounded-xl border border-white/20 bg-white/5 px-4 font-body text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent"
+                      />
+                      <input
+                        type="email"
+                        placeholder="Email (optional)"
+                        value={volumeEmail}
+                        onChange={(e) => setVolumeEmail(e.target.value)}
+                        className="w-full h-12 rounded-xl border border-white/20 bg-white/5 px-4 font-body text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent"
+                      />
+                      {volumeError && <p className="font-body text-sm text-destructive">{volumeError}</p>}
+                      <Button
+                        type="submit"
+                        disabled={volumeSubmitting}
+                        className="w-full h-12 font-display tracking-wider text-base bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl"
+                      >
+                        {volumeSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "REQUEST VOLUME QUOTE"}
+                      </Button>
+                    </form>
+                  )}
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </div>
