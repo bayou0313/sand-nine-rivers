@@ -209,6 +209,15 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Missing session_token or updates" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Check notrack IP
+      const visitorIpUpd = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || "unknown";
+      if (await isNotrackIp(visitorIpUpd)) {
+        console.log(`[session_update] Skipping notrack IP: ${visitorIpUpd}`);
+        return new Response(JSON.stringify({ success: true, notrack: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const sb = createClient(supabaseUrl, serviceRoleKey);
