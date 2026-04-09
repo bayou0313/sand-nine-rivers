@@ -215,7 +215,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
 
       // Distances are real driving miles from Google Distance Matrix API — NOT haversine.
       console.log("[calculateDistance] calling findBestPitDriving, pits:", pits.length);
-      const bestResult = await findBestPitDriving(pits, custLat!, custLng!, globalPricing, supabase);
+      const bestResult = await findBestPitDriving(pits, currentAddress, globalPricing, supabase);
       console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {

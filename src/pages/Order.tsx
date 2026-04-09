@@ -770,10 +770,10 @@ const Order = () => {
 
   // --- Weekend PIT resolution helper ---
   const resolveWeekendPits = useCallback(async (
-    pits: PitData[], lat: number, lng: number, gp: GlobalPricing
+    pits: PitData[], customerAddr: string, gp: GlobalPricing
   ): Promise<WeekendPitMap> => {
     const buildEntry = async (dayOfWeek: 0 | 6): Promise<WeekendPitEntry | null> => {
-      const res = await findBestPitDriving(pits, lat, lng, gp, supabase, dayOfWeek);
+      const res = await findBestPitDriving(pits, customerAddr, gp, supabase, dayOfWeek);
       if (!res || !res.serviceable) return null;
       const effective = getEffectivePrice(res.pit, gp);
       const satSurcharge = res.pit.saturday_surcharge_override ?? gp.saturday_surcharge;
@@ -883,7 +883,7 @@ const Order = () => {
       }
 
       console.log("[calculateDistance] calling findBestPitDriving, pits:", allPits.length);
-      const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing, supabase);
+      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase);
       console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {
