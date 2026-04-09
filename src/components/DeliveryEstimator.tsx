@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { updateSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Truck, AlertCircle, Loader2, ShoppingCart, Clock, Minus, Plus } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
+import { MapPin, Truck, AlertCircle, Loader2, ShoppingCart, Clock, Minus, Plus, HardHat } from "lucide-react";
+import { formatCurrency, getTaxRateFromAddress, formatPhone, stripPhone } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
