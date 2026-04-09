@@ -1045,6 +1045,7 @@ const Order = () => {
       };
       setConfirmedTotals(snapshotTotals);
       setStep("success");
+      clearCart();
       trackEvent("purchase", {
         transaction_id: inserted?.order_number || "",
         value: totalPrice,
