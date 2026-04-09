@@ -761,7 +761,7 @@ const Order = () => {
           });
         }
         if (savedCart.pitId) {
-          setMatchedPit({ id: savedCart.pitId, name: savedCart.pitName, lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null, saturday_surcharge_override: savedCart.satSurcharge || null, same_day_cutoff: savedCart.sameDayCutoff || null, sunday_surcharge: null } as PitData);
+          setMatchedPit({ id: savedCart.pitId, name: savedCart.pitName, address: "", lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null, saturday_surcharge_override: savedCart.satSurcharge || null, same_day_cutoff: savedCart.sameDayCutoff || null, sunday_surcharge: null } as PitData);
         }
         setStep("details");
       }
