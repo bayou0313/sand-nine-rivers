@@ -1968,7 +1968,7 @@ const Order = () => {
                     </div>
 
                     {/* Grand total */}
-                    <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 flex justify-between items-center">
+                    <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 flex justify-between items-center">
                       <span className="font-display text-lg text-foreground">
                         {paymentMethod === "stripe-link" ? "TOTAL CHARGE" : "TOTAL"}
                       </span>
@@ -2048,7 +2048,7 @@ const Order = () => {
                         disabled={
                           submitting || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)
                         }
-                        className="w-full h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
+                        className="w-full h-14 font-display tracking-wider text-base bg-accent hover:bg-accent/90 rounded-2xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
                       >
                         {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                           paymentMethod === "stripe-link"
