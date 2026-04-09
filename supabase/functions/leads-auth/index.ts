@@ -305,8 +305,9 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const originsStr = origins.map((o: any) => `${o.lat},${o.lng}`).join("|");
-      const destStr = `${destination.lat},${destination.lng}`;
+      // Accept origins and destination as street address strings
+      const originsStr = (origins as string[]).map((o: string) => encodeURIComponent(o)).join("|");
+      const destStr = encodeURIComponent(destination as string);
       console.log("[calculate_distances] origins:", JSON.stringify(origins));
       console.log("[calculate_distances] destination:", JSON.stringify(destination));
       const url =

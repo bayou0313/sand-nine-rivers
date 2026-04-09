@@ -105,7 +105,7 @@ const Order = () => {
     const fetchData = async () => {
       const [settingsRes, pitsRes] = await Promise.all([
         supabase.from("global_settings").select("key, value"),
-        supabase.from("pits").select("id, name, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff, sunday_surcharge").eq("status", "active"),
+        supabase.from("pits").select("id, name, address, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff, sunday_surcharge").eq("status", "active"),
       ]);
       if (settingsRes.data) {
         const gp = parseGlobalSettings(settingsRes.data as any);
@@ -761,7 +761,7 @@ const Order = () => {
           });
         }
         if (savedCart.pitId) {
-          setMatchedPit({ id: savedCart.pitId, name: savedCart.pitName, lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null, saturday_surcharge_override: savedCart.satSurcharge || null, same_day_cutoff: savedCart.sameDayCutoff || null, sunday_surcharge: null } as PitData);
+          setMatchedPit({ id: savedCart.pitId, name: savedCart.pitName, address: "", lat: 0, lon: 0, status: "active", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null, saturday_surcharge_override: savedCart.satSurcharge || null, same_day_cutoff: savedCart.sameDayCutoff || null, sunday_surcharge: null } as PitData);
         }
         setStep("details");
       }
@@ -770,10 +770,10 @@ const Order = () => {
 
   // --- Weekend PIT resolution helper ---
   const resolveWeekendPits = useCallback(async (
-    pits: PitData[], lat: number, lng: number, gp: GlobalPricing
+    pits: PitData[], customerAddr: string, gp: GlobalPricing
   ): Promise<WeekendPitMap> => {
     const buildEntry = async (dayOfWeek: 0 | 6): Promise<WeekendPitEntry | null> => {
-      const res = await findBestPitDriving(pits, lat, lng, gp, supabase, dayOfWeek);
+      const res = await findBestPitDriving(pits, customerAddr, gp, supabase, dayOfWeek);
       if (!res || !res.serviceable) return null;
       const effective = getEffectivePrice(res.pit, gp);
       const satSurcharge = res.pit.saturday_surcharge_override ?? gp.saturday_surcharge;
@@ -820,7 +820,7 @@ const Order = () => {
         setWeekdayPit(matchedPit);
         setWeekdayResult(result);
         setWeekdayPitSchedule(matchedPitSchedule);
-        resolveWeekendPits(allPits, customerCoords.lat, customerCoords.lng, globalPricing)
+        resolveWeekendPits(allPits, address, globalPricing)
           .then(wMap => setWeekendPitMap(wMap))
           .catch(() => setWeekendPitMap({}));
       }
@@ -838,7 +838,7 @@ const Order = () => {
         setWeekdayPit(matchedPit);
         setWeekdayResult(result);
         setWeekdayPitSchedule(matchedPitSchedule);
-        resolveWeekendPits(allPits, lat, lng, globalPricing)
+        resolveWeekendPits(allPits, address, globalPricing)
           .then(wMap => setWeekendPitMap(wMap))
           .catch(() => setWeekendPitMap({}));
       }
@@ -883,7 +883,7 @@ const Order = () => {
       }
 
       console.log("[calculateDistance] calling findBestPitDriving, pits:", allPits.length);
-      const bestResult = await findBestPitDriving(allPits, custLat!, custLng!, globalPricing, supabase);
+      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase);
       console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {
@@ -922,11 +922,9 @@ const Order = () => {
       setWeekdayPitSchedule(weekdaySchedule);
 
       // Resolve weekend PITs independently
-      if (custLat != null && custLng != null) {
-        resolveWeekendPits(allPits, custLat, custLng, globalPricing)
-          .then(wMap => setWeekendPitMap(wMap))
-          .catch(() => setWeekendPitMap({}));
-      }
+      resolveWeekendPits(allPits, currentAddress, globalPricing)
+        .then(wMap => setWeekendPitMap(wMap))
+        .catch(() => setWeekendPitMap({}));
 
       setResult({
         distance: parseFloat(bestResult.distance.toFixed(1)),

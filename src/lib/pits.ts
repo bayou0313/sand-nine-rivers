@@ -14,6 +14,7 @@
 export interface PitData {
   id: string;
   name: string;
+  address: string;
   lat: number;
   lon: number;
   status: string;
@@ -127,8 +128,7 @@ export function calcFinalPrice(effective: EffectivePricing, distance: number, qt
  */
 export async function findBestPitDriving(
   pits: PitData[],
-  customerLat: number,
-  customerLng: number,
+  customerAddress: string,
   globalPricing: GlobalPricing,
   supabaseClient?: any,
   deliveryDayOfWeek?: number // 0=Sun..6=Sat — filter pits by operating_days
@@ -155,8 +155,8 @@ export async function findBestPitDriving(
     const { data, error } = await supabaseClient.functions.invoke("leads-auth", {
       body: {
         action: "calculate_distances",
-        origins: activePits.map(p => ({ lat: p.lat, lng: p.lon })),
-        destination: { lat: customerLat, lng: customerLng },
+        origins: activePits.map(p => p.address),
+        destination: customerAddress,
       },
     });
 
