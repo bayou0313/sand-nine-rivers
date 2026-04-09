@@ -1,6 +1,7 @@
 // Force redeploy: 2026-03-31
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback } from "react";
+import { saveCart } from "@/lib/cart";
 import { updateSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, AlertCircle, Loader2, ShoppingCart, Clock, Minus, Plus, HardHat } from "lucide-react";
