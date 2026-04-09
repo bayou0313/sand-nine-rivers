@@ -1743,7 +1743,7 @@ const Order = () => {
                       </p>
                     )}
 
-                    {/* Policy notice: PAY NOW */}
+                    {/* Policy notice: PAY NOW — card-only info (total shown below) */}
                     <AnimatePresence mode="wait">
                     {paymentMethod === "stripe-link" && (
                       <motion.div
@@ -1752,27 +1752,11 @@ const Order = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-3"
                       >
-                        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-                          <div className="flex justify-between text-base">
-                            <span className="font-body text-muted-foreground">Order Total</span>
-                            <span className="font-display text-foreground">{formatCurrency(totalPrice)}</span>
-                          </div>
-                          <div className="flex justify-between text-base">
-                            <span className="font-body text-muted-foreground">Processing Fee ({globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)})</span>
-                            <span className="font-display text-foreground">+{formatCurrency(processingFee)}</span>
-                          </div>
-                          <Separator className="my-1" />
-                          <div className="flex justify-between">
-                            <span className="font-display text-base text-foreground">TOTAL CHARGE</span>
-                            <span className="font-display text-xl text-primary">{formatCurrency(totalWithProcessingFee)}</span>
-                          </div>
-                        </div>
                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1.5">
                           <p className="font-body text-sm text-blue-900 leading-relaxed flex items-start gap-2">
                             <CreditCard className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
-                            Processing fee ({formatCurrency(processingFee)}) is <strong>non-refundable</strong> if order is cancelled
+                            Secure card payment via Stripe. You'll be redirected to complete payment.
                           </p>
                         </div>
                       </motion.div>
