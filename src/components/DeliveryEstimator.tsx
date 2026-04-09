@@ -57,7 +57,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     const fetchData = async () => {
       const [settingsRes, pitsRes] = await Promise.all([
         supabase.from("global_settings").select("key, value"),
-        supabase.from("pits").select("id, name, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active"),
+        supabase.from("pits").select("id, name, address, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active"),
       ]);
       if (settingsRes.data) setGlobalPricing(parseGlobalSettings(settingsRes.data as any));
       if (pitsRes.data) setPits(pitsRes.data as any);
