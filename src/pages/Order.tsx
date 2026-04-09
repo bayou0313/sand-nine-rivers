@@ -1807,14 +1807,17 @@ const Order = () => {
                         <p className="font-display text-xs tracking-wider text-foreground">DELIVERY TERMS</p>
                         <div className="space-y-1.5">
                           <p className="font-body text-xs text-foreground font-medium">📍 Delivering to: {address}</p>
-                          <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
+                          <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — material will be placed between the curb and the nearest accessible driveway or sidewalk area</p>
                           <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
-                          <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
-                          <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property</p>
-                          <p className="font-body text-xs text-muted-foreground">• Customer or designated representative must be present at time of delivery</p>
-                          <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability confirmation by our dispatch team</p>
-                          <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — All sales are final. Orders are non-refundable once placed. Processing fees are non-refundable under any circumstances. <button type="button" onClick={() => setShowRefundPolicy(true)} className="text-primary underline hover:opacity-80 transition-opacity">See full refund policy</button></p>
+                          <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear, safe, and accessible delivery area prior to arrival</p>
+                          <p className="font-body text-xs text-muted-foreground">• WAYS® Materials LLC is not responsible for damage to driveways, landscaping, vehicles, or any private property during delivery</p>
+                          <p className="font-body text-xs text-muted-foreground">• Customer or a designated representative is recommended to be present at the time of delivery</p>
+                          <p className="font-body text-xs text-muted-foreground">• If no one is present, delivery will be completed based on instructions provided at checkout or communicated directly to the driver. By providing such instructions, the customer accepts full responsibility for the placement of materials</p>
+                          <p className="font-body text-xs text-muted-foreground">• A photo will be taken at the time of delivery as proof of completion. This photo will serve as confirmation that the order was delivered according to the provided instructions</p>
+                          <p className="font-body text-xs text-muted-foreground">• Same-day orders are subject to availability and dispatch confirmation</p>
+                          <p className="font-body text-xs text-muted-foreground">• Cancellation Policy — Orders may be canceled only before the truck is loaded. Once loaded, orders are non-refundable. Approved cancellations are subject to non-refundable processing fees charged by third-party providers. <button type="button" onClick={() => setShowRefundPolicy(true)} className="text-primary underline hover:opacity-80 transition-opacity">See full refund policy</button></p>
                         </div>
+                        <p className="font-display text-xs tracking-wider text-foreground pt-2">Customer Acknowledgment</p>
                         <label className="flex items-start gap-3 cursor-pointer">
                           <input
                             type="checkbox"
@@ -1828,9 +1831,10 @@ const Order = () => {
                             className="mt-0.5 w-4 h-4 rounded accent-primary"
                           />
                           <span className="font-body text-xs text-foreground leading-relaxed">
-                            {paymentMethod !== "stripe-link"
-                              ? "I agree to the delivery terms, cancellation policy, and confirm that payment is due at delivery."
-                              : "I agree to the delivery terms and cancellation policy. All sales are final. Orders are non-refundable once placed. Processing fees are non-refundable under any circumstances."}
+                            I agree to the delivery terms and cancellation policy. I understand that orders may only be canceled before the truck is loaded, and that processing fees are non-refundable as they are charged by third-party providers.
+                            {" "}I also acknowledge that if I am not present at the time of delivery, the order will be completed based on my provided instructions, and I accept full responsibility for the delivery location and outcome.
+                            {" "}I understand that a photo will be taken upon delivery as proof of completion, and I accept this as confirmation that the service has been fulfilled.
+                            {paymentMethod !== "stripe-link" && " I confirm that payment is due at delivery."}
                           </span>
                         </label>
                       </div>
