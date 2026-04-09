@@ -335,8 +335,9 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         {result && (
           <motion.div
             ref={resultRef}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="mt-6 space-y-5"
           >
             {/* Price per load */}
@@ -350,23 +351,25 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             {/* Quantity selector — no background card */}
             <div className="flex items-center justify-center gap-4">
               <div className="flex items-center gap-3">
-                <button
+                <motion.button
                   type="button"
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
                   disabled={quantity <= 1}
                   className="w-8 h-8 rounded-lg bg-accent text-accent-foreground flex items-center justify-center disabled:opacity-30 hover:bg-accent/90 transition-colors"
                 >
                   <Minus className="w-4 h-4" />
-                </button>
+                </motion.button>
                 <span className={`font-display text-xl w-8 text-center ${embedded ? "text-primary-foreground" : "text-foreground"}`}>{quantity}</span>
-                <button
+                <motion.button
                   type="button"
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setQuantity(q => Math.min(10, q + 1))}
                   disabled={quantity >= 10}
                   className="w-8 h-8 rounded-lg bg-accent text-accent-foreground flex items-center justify-center disabled:opacity-30 hover:bg-accent/90 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                </button>
+                </motion.button>
               </div>
             </div>
 
