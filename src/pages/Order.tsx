@@ -1413,19 +1413,44 @@ const Order = () => {
                   transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
                   className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-5 py-4 shadow-sm"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
                       <CheckCircle2 className="w-5 h-5 text-primary" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <span className="font-display text-sm tracking-wider text-primary block">DELIVERY CONFIRMED</span>
-                      <span className="font-body text-xs text-muted-foreground">{address.length > 45 ? address.slice(0, 42) + "…" : address}</span>
+                      <span className="font-body text-xs text-muted-foreground block truncate">{address.length > 45 ? address.slice(0, 42) + "…" : address}</span>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <span className="font-display text-2xl text-primary">{formatCurrency(result.price)}</span>
                     <span className="text-[10px] font-body text-muted-foreground block">/load</span>
+                    <span className="text-xs font-body text-muted-foreground">{quantity} load{quantity > 1 ? "s" : ""} · {formatCurrency(totalPrice)} total</span>
                   </div>
+                </motion.div>
+
+                {/* Quantity selector in confirmation bar */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 20 }}
+                  className="flex items-center justify-center gap-4 bg-primary/5 border border-primary/10 rounded-xl px-5 py-3"
+                >
+                  <span className="font-body text-sm text-muted-foreground">Loads:</span>
+                  <button
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center hover:bg-accent/80 transition-colors font-bold text-lg"
+                  >
+                    −
+                  </button>
+                  <span className="font-display text-xl text-foreground w-8 text-center">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(q => Math.min(10, q + 1))}
+                    className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center hover:bg-accent/80 transition-colors font-bold text-lg"
+                  >
+                    +
+                  </button>
+                  <span className="font-body text-sm text-muted-foreground">× 9 cu yds</span>
                 </motion.div>
 
                 {/* Combined: Delivery Date + Customer Info */}
