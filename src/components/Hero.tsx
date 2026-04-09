@@ -46,9 +46,9 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
           {/* Content container with semi-transparent background */}
           <div className="bg-primary/60 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/10 space-y-5">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0, duration: 0.4, ease: "easeOut" }}
             >
               <div className="inline-flex items-center gap-2 bg-primary/80 backdrop-blur-sm border border-accent/40 px-5 py-2 rounded-full">
                 <Clock className="w-3.5 h-3.5 text-accent" />
@@ -58,9 +58,9 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.05] text-primary-foreground tracking-wide">
                 {h1Override || "Same-Day River Sand Delivery"}
@@ -70,9 +70,9 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
 
             {subtitleOverride && (
               <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.45 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.4, ease: "easeOut" }}
                 className="text-base md:text-lg font-body text-primary-foreground/80 max-w-xl leading-relaxed"
               >
                 {subtitleOverride}
@@ -81,9 +81,9 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
 
             {!subtitleOverride && (
               <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.45 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.4, ease: "easeOut" }}
                 className="text-lg md:text-xl font-body text-primary-foreground/85 max-w-lg leading-relaxed"
               >
                 See your exact price in seconds — no account needed
@@ -91,9 +91,9 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
             )}
 
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.55 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4, ease: "easeOut" }}
               className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-body text-primary-foreground/60"
             >
               {["Serving the Gulf South", "No minimums", "Cash or card accepted"].map((item, i) => (
@@ -106,9 +106,9 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
 
             {/* Trust bar */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.85 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4, ease: "easeOut" }}
               className="flex flex-nowrap gap-3 pt-2"
             >
               {[
@@ -129,7 +129,7 @@ const Hero = ({ h1Override, subtitleOverride, prefillAddress, showEstimator = tr
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.4, duration: 0.5, ease: "easeOut" }}
           >
             {showEstimator ? (
               <Suspense fallback={<div className="h-24 rounded-xl bg-white/5 animate-pulse" />}>
