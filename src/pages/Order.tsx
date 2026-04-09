@@ -1275,7 +1275,7 @@ const Order = () => {
                       isCurrent ? "text-foreground font-semibold" : isActive ? "text-foreground/60" : "text-muted-foreground/40"
                     }`}>{label}</span>
                   </div>
-                  {i < 2 && (
+                  {i < stepLabels.length - 1 && (
                     <div className="w-8 h-0.5 bg-border rounded-full overflow-hidden">
                       <div className={`h-full bg-accent rounded-full transition-all duration-500 ${isActive && i < stepIndex ? "w-full" : "w-0"}`} />
                     </div>
@@ -1741,30 +1741,9 @@ const Order = () => {
                         exit={{ opacity: 0, y: -8 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-                          <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAY AT DELIVERY — what to expect:</p>
-                          <ul className="space-y-1.5">
-                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
-                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
-                              Payment is due at the time of delivery
-                            </li>
-                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
-                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
-                              Cash or check is accepted on arrival
-                            </li>
-                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
-                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
-                              If payment cannot be collected at delivery, a secure card payment link will be sent automatically
-                            </li>
-                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
-                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
-                              The card payment link includes a {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee
-                            </li>
-                            <li className="font-body text-sm text-amber-800 leading-relaxed flex items-start gap-2">
-                              <span className="text-amber-500 mt-0.5 shrink-0">•</span>
-                              By selecting this option you agree to pay at delivery or via the payment link if required
-                            </li>
-                          </ul>
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1">
+                          <p className="font-display text-xs tracking-wider text-amber-900">PAY AT DELIVERY</p>
+                          <p className="font-body text-sm text-amber-800 leading-relaxed">Cash or check is accepted on arrival. If payment cannot be collected, a secure card payment link will be sent with a {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee.</p>
                         </div>
                       </motion.div>
                     )}
@@ -1825,6 +1804,7 @@ const Order = () => {
                       <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
                         <p className="font-display text-xs tracking-wider text-foreground">DELIVERY TERMS</p>
                         <div className="space-y-1.5">
+                          <p className="font-body text-xs text-foreground font-medium">📍 Delivering to: {result.address}</p>
                           <p className="font-body text-xs text-muted-foreground">• Delivery is curbside only — between the curb and nearest sidewalk or driveway edge</p>
                           <p className="font-body text-xs text-muted-foreground">• Driver will not enter private property under any circumstances</p>
                           <p className="font-body text-xs text-muted-foreground">• Customer must ensure a clear and accessible delivery area before arrival</p>
@@ -1837,44 +1817,21 @@ const Order = () => {
                           <input
                             type="checkbox"
                             checked={deliveryTermsAccepted}
-                            onChange={(e) => setDeliveryTermsAccepted(e.target.checked)}
+                            onChange={(e) => {
+                              setDeliveryTermsAccepted(e.target.checked);
+                              if (paymentMethod && paymentMethod !== "stripe-link") {
+                                setCodPaymentConfirmed(e.target.checked);
+                              }
+                            }}
                             className="mt-0.5 w-4 h-4 rounded accent-primary"
                           />
                           <span className="font-body text-xs text-foreground leading-relaxed">
-                            I agree to the payment terms and cancellation policy.
-                            Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.
+                            {paymentMethod !== "stripe-link"
+                              ? "I agree to the delivery terms, cancellation policy, and confirm that payment is due at delivery."
+                              : "I agree to the delivery terms and cancellation policy. Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable."}
                           </span>
                         </label>
                       </div>
-                    )}
-
-                    {/* Payment Policy — COD orders */}
-                    {(paymentMethod === "cash" || paymentMethod === "check" ||
-                      codSubOption === "cash" || codSubOption === "check") && paymentMethod !== "stripe-link" && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                        <p className="font-display text-xs tracking-wider text-amber-900 mb-2">PAYMENT DUE AT DELIVERY</p>
-                        <p className="font-body text-sm text-amber-800 leading-relaxed mb-2">
-                          Cash or check payment is due at the time of delivery. If payment cannot be collected, a secure card payment link will be sent automatically.
-                        </p>
-                        <p className="font-body text-xs text-amber-700">
-                          Cash total: <strong>{formatCurrency(totalPrice)}</strong> · Card total if needed: <strong>{formatCurrency(parseFloat((totalPrice * (1 + globalPricing.card_processing_fee_percent / 100) + globalPricing.card_processing_fee_fixed).toFixed(2)))}</strong> (includes {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} fee)
-                        </p>
-                      </div>
-                    )}
-
-                    {/* COD Payment Confirmation Checkbox */}
-                    {paymentMethod && paymentMethod !== "stripe-link" && (
-                      <label className="flex items-start gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={codPaymentConfirmed}
-                          onChange={(e) => setCodPaymentConfirmed(e.target.checked)}
-                          className="mt-0.5 w-4 h-4 rounded accent-primary"
-                        />
-                        <span className="font-body text-xs text-foreground leading-relaxed font-medium">
-                          I confirm that payment is due at delivery.
-                        </span>
-                      </label>
                     )}
                   </div>
 
@@ -1924,9 +1881,6 @@ const Order = () => {
                   )}
                 </motion.div>
 
-                <button onClick={() => setStep("address")} className="flex items-center gap-1 mx-auto text-xs font-body text-muted-foreground hover:text-foreground transition-colors py-2">
-                  <ArrowLeft className="w-3 h-3" /> Change delivery address
-                </button>
               </motion.div>
             )}
 
