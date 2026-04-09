@@ -35,8 +35,8 @@ const ContactForm = ({ cityName }: { cityName?: string }) => {
   }
 
   return (
-    <section id="contact" className="py-24 bg-muted/50">
-      <div className="container mx-auto px-6">
+    <section id="contact" className="bg-muted/50 py-[109px]">
+      <div className="container mx-auto px-6 pt-[26px]">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
           <div className="space-y-10">
             <div>
