@@ -349,7 +349,6 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
 
             {/* Quantity selector — no background card */}
             <div className="flex items-center justify-center gap-4">
-              <span className={`font-body text-sm ${embedded ? "text-primary-foreground/70" : "text-muted-foreground"}`}>Number of Loads</span>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -391,7 +390,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                     <span className="text-accent">{formatCurrency(taxAmount)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={muted}>Processing Fee <span className="ml-1 text-xs">(3.5% card · included if paying cash)</span></span>
+                    <span className={muted}>Processing Fee (3.5% card) · Waived if paying cash at delivery</span>
                     <span className="text-accent">{formatCurrency(processingFee)}</span>
                   </div>
                   <div className={`border-t ${embedded ? "border-white/20" : "border-border"} pt-2 flex justify-between`}>
