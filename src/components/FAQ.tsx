@@ -74,7 +74,7 @@ const FAQ = ({ cityName, faqItems }: { cityName?: string; faqItems?: { question:
   ];
 
   return (
-    <section id="faq" className="py-24 bg-background">
+    <section id="faq" className="py-24 bg-background scroll-mt-24">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">FAQ</motion.p>

@@ -8,7 +8,7 @@ const steps = [
 ];
 
 const HowItWorks = () => (
-  <section id="how-it-works" className="py-20 bg-background">
+  <section id="how-it-works" className="py-20 bg-background scroll-mt-24">
     <div className="container mx-auto px-6">
       <motion.h2
         initial={{ opacity: 0, y: 20 }}

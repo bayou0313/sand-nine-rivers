@@ -6,7 +6,7 @@ const RiverSandInfo = ({ cityName = "New Orleans" }: { cityName?: string }) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <section id="learn-more" className="py-24 bg-card">
+    <section id="learn-more" className="py-24 bg-card scroll-mt-24">
       <div className="container mx-auto px-6">
         <div className="text-center mb-8">
           <motion.p
