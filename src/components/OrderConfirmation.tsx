@@ -167,7 +167,7 @@ export default function OrderConfirmation({
 }: OrderConfirmationProps) {
   const { toast } = useToast();
   const biz = useBusinessSettings();
-  const [showWhatsAppChoice, setShowWhatsAppChoice] = useState(false);
+  
 
   const isStripePaid =
     paymentMethod === "stripe-link" || stripePaymentId != null;
