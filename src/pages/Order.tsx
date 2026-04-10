@@ -186,7 +186,9 @@ const Order = () => {
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
   const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
   const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
-  const processingFee = parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2));
+  const processingFee = totalPrice > 0
+    ? parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2))
+    : 0;
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
 
   // Auto-switch to card-only on weekend dates
