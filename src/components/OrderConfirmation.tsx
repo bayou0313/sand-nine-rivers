@@ -468,7 +468,7 @@ export default function OrderConfirmation({
             })()}
             {isStripePaid && (
               <PriceRow
-                label="Processing fee"
+                label="Card Processing Fee (3.5% + $0.30/txn)"
                 value={formatCurrency(displayProcessingFee)}
               />
             )}
