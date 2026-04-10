@@ -405,6 +405,8 @@ serve(async (req) => {
     priceLines.push({ desc: `${biz.site_name} — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
     if (distanceFee > 0) priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
     if (satSurcharge > 0) priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
+    if (sunSurcharge > 0) priceLines.push({ desc: "Sunday surcharge", amt: fmt(sunSurcharge) });
+    if (discountAmount > 0) priceLines.push({ desc: "Discount", amt: `-${fmt(discountAmount)}` });
     if (taxAmount > 0) {
       // Split tax into state + parish lines
       const taxableBase = taxAmount / (combinedRate || 1); // reverse-calc taxable amount
