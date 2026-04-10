@@ -695,42 +695,55 @@ export default function OrderConfirmation({
             View Order Details
           </Button>
 
-          {/* WhatsApp share */}
-          <div className="relative">
+          {/* Share buttons row */}
+          <div className="grid grid-cols-4 gap-2">
             <Button
               variant="outline"
-              className="w-full h-11 rounded-xl font-display tracking-wider text-sm"
-              onClick={handleWhatsApp}
+              className="h-10 rounded-xl text-xs font-display"
+              onClick={handleMailtoClick}
             >
-              <Share2 className="w-4 h-4 mr-2" /> WhatsApp
+              <Mail className="w-4 h-4 mr-1" /> Email
             </Button>
-
-            {/* WhatsApp choice modal */}
-            {showWhatsAppChoice && (
-              <div className="absolute bottom-full mb-2 right-0 bg-white rounded-xl shadow-xl border border-border p-3 z-50 w-56">
-                <p className="text-xs font-semibold font-display mb-2" style={{ color: "#0D2137" }}>
-                  Open with:
-                </p>
-                <button
-                  onClick={sendWhatsAppApp}
-                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  📱 WhatsApp App
-                </button>
-                <button
-                  onClick={sendWhatsAppWeb}
-                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  💻 WhatsApp Web
-                </button>
-                <button
-                  onClick={() => setShowWhatsAppChoice(false)}
-                  className="w-full text-center text-xs font-body text-muted-foreground mt-1 py-1"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display md:hidden"
+              asChild
+            >
+              <a href={`sms:?body=${encodeURIComponent(shareText)}`}>
+                <MessageCircle className="w-4 h-4 mr-1" /> SMS
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display hidden md:inline-flex"
+              disabled
+              title="SMS available on mobile only"
+            >
+              <MessageCircle className="w-4 h-4 mr-1" /> SMS
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display"
+              asChild
+            >
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Share2 className="w-4 h-4 mr-1" /> WhatsApp
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast({ title: "Link copied!" });
+              }}
+            >
+              🔗 Copy
+            </Button>
           </div>
 
           <div className="text-center space-y-1 pt-2">
