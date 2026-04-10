@@ -464,7 +464,7 @@ serve(async (req) => {
     doc.text(fmt(order.price), amtX, y, { align: "right" });
     y += 7;
 
-    if (isCard && isPaid) {
+    if (isCard && effectivelyPaid) {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
@@ -498,8 +498,8 @@ serve(async (req) => {
       "Cancellation Policy: Orders canceled a day before scheduled delivery are fully refunded. Processing fees are non-refundable.",
     ];
 
-    const hasCODBox = !isPaid;
-    const hasPaidBox = isPaid;
+    const hasCODBox = !effectivelyPaid;
+    const hasPaidBox = effectivelyPaid;
     const pinnedBlockH = hasCODBox ? 14 : (hasPaidBox ? 14 : 0);
     const footerGoldY = ph - 24;
     const codGap = 6;
