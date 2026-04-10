@@ -230,6 +230,55 @@ const Order = () => {
     return null;
   }, []);
 
+  // Handle lookup token (shared order link)
+  useEffect(() => {
+    const tokenParam = searchParams.get("token");
+    if (!tokenParam) return;
+
+    (async () => {
+      try {
+        const { data: order, error } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("lookup_token", tokenParam)
+          .single();
+
+        if (error || !order) {
+          console.error("[token-lookup] Order not found:", error);
+          return;
+        }
+
+        setStep("success");
+        setConfirmedTotals({
+          totalPrice: Number(order.price) || 0,
+          totalWithProcessingFee: Number(order.price) || 0,
+          processingFee: 0,
+          taxAmount: Number(order.tax_amount) || 0,
+          subtotal: Number(order.price) || 0,
+          saturdaySurchargeTotal: Number(order.saturday_surcharge_amount) || 0,
+          sundaySurchargeTotal: Number(order.sunday_surcharge_amount) || 0,
+          distanceFee: 0,
+          taxInfo: { rate: Number(order.tax_rate) || 0, parish: "" },
+        });
+        setAddress(order.delivery_address || "");
+        setPendingOrderId(order.id);
+        setOrderNumber(order.order_number || null);
+        setLookupToken(order.lookup_token || null);
+        setConfirmedOrderId(order.id);
+        if (order.delivery_date) {
+          setSelectedDeliveryDate({
+            value: order.delivery_date,
+            label: order.delivery_date,
+            fullLabel: order.delivery_date,
+            date: new Date(order.delivery_date + "T12:00:00"),
+          });
+        }
+      } catch (err) {
+        console.error("[token-lookup] Error:", err);
+      }
+    })();
+  }, []);
+
   // Handle Stripe return via URL params
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
