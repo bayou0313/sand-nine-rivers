@@ -20,7 +20,7 @@ const DEFAULTS: BusinessSettings = {
   phone: "1-855-GOT-WAYS",
   phone_tel: "+18554689297",
   website: "riversand.net",
-  footer_address: "202 Larosa Dr, Long Beach, MS",
+  footer_address: "",
   support_email: "orders@riversand.net",
   whatsapp_number: "",
   tagline: "Real Sand. Real People.",

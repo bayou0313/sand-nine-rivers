@@ -61,7 +61,7 @@ const DEFAULT_BIZ: BizSettings = {
   site_name: "River Sand",
   phone: "1-855-GOT-WAYS",
   website: "riversand.net",
-  footer_address: "202 Larosa Dr, Long Beach, MS",
+  footer_address: "",
   ein_number: "",
   support_email: "",
 };

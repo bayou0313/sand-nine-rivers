@@ -760,9 +760,11 @@ export default function OrderConfirmation({
           <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
-            {biz.footer_address}
-          </p>
+          {biz.footer_address && (
+            <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
+              {biz.footer_address}
+            </p>
+          )}
           <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             {biz.support_email} · {biz.phone}
           </p>
