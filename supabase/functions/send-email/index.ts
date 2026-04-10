@@ -669,10 +669,10 @@ function brandedEmailWrapper(options: {
   const primary = options.primaryColor || BRAND_COLOR;
   const accent = options.accentColor || "#C8A44A";
   const WAYS_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png";
-  const phone = options.bizPhone || DEFAULT_PHONE;
-  const email = options.bizEmail || DEFAULT_SUPPORT_EMAIL;
-  const website = options.bizWebsite || DEFAULT_WEBSITE;
-  const legalName = options.bizLegalName || DEFAULT_LEGAL_NAME;
+  const phone = options.bizPhone || PHONE;
+  const email = options.bizEmail || SUPPORT_EMAIL;
+  const website = options.bizWebsite || WEBSITE;
+  const legalName = options.bizLegalName || LEGAL_NAME;
 
   const ctaBlock = options.ctaText && options.ctaUrl ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
