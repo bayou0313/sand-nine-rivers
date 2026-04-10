@@ -237,14 +237,12 @@ const Order = () => {
 
     (async () => {
       try {
-        const { data: order, error } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("lookup_token", tokenParam)
-          .single();
+        const { data: order, error } = await supabase.functions.invoke("get-order-status", {
+          body: { lookup_token: tokenParam },
+        });
 
-        if (error || !order) {
-          console.error("[token-lookup] Order not found:", error);
+        if (error || !order || order.error) {
+          console.error("[token-lookup] Order not found:", error || order?.error);
           return;
         }
 
@@ -263,8 +261,9 @@ const Order = () => {
         setAddress(order.delivery_address || "");
         setPendingOrderId(order.id);
         setOrderNumber(order.order_number || null);
-        setLookupToken(order.lookup_token || null);
+        setLookupToken(order.lookup_token || tokenParam);
         setConfirmedOrderId(order.id);
+        setPaymentMethod(order.payment_method || "stripe-link");
         if (order.delivery_date) {
           const d = new Date(order.delivery_date + "T12:00:00");
           const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
