@@ -16,8 +16,7 @@ import {
 
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
-const WAYS_LOGO_DARK =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/Ways_Sitewide_Logo_Black.png";
+// WAYS_LOGO_DARK removed — footer simplified to text-only
 
 
 const DELIVERY_TERMS = [
