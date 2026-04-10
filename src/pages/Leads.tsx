@@ -2289,17 +2289,16 @@ const Leads = () => {
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
         const duplicateCount = cityPages.filter((cp: any) => duplicateSlugs.has(cp.city_slug)).length;
-        const CURRENT_PROMPT_VERSION = "3.0";
-        const currentCount = cityPages.filter((cp: any) => cp.prompt_version === CURRENT_PROMPT_VERSION && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed).length;
+        const currentCount = cityPages.filter((cp: any) => cp.content_generated_at && !cp.needs_regen && !cp.pit_reassigned && !cp.price_changed).length;
         const pitChangedCount = cityPages.filter((cp: any) => cp.pit_reassigned).length;
         const priceChangedCount = cityPages.filter((cp: any) => cp.price_changed && !cp.pit_reassigned).length;
-        const outdatedCount = cityPages.filter((cp: any) => (!cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION) && !cp.pit_reassigned && !cp.price_changed && cp.content_generated_at).length;
+        const outdatedCount = cityPages.filter((cp: any) => cp.needs_regen && !cp.pit_reassigned && !cp.price_changed && cp.content_generated_at).length;
         const missingCount = cityPages.filter((cp: any) => !cp.content_generated_at).length;
-        const needsRegenCount = cityPages.filter((cp: any) => cp.pit_reassigned || cp.price_changed || !cp.prompt_version || cp.prompt_version !== CURRENT_PROMPT_VERSION || !cp.content_generated_at).length;
+        const needsRegenCount = cityPages.filter((cp: any) => cp.needs_regen || cp.pit_reassigned || cp.price_changed || !cp.content_generated_at).length;
 
         const regenOutdated = async () => {
           const toRegen = cityPages.filter(
-            (p: any) => p.pit_reassigned || p.price_changed || !p.prompt_version || p.prompt_version !== CURRENT_PROMPT_VERSION || !p.content_generated_at
+            (p: any) => p.needs_regen || p.pit_reassigned || p.price_changed || !p.content_generated_at
           ).sort((a: any, b: any) => {
             const priority = (p: any) =>
               p.pit_reassigned ? 0 :
@@ -2341,7 +2340,7 @@ const Leads = () => {
                   city_page: { ...page, status: "active" },
                 },
               });
-              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, prompt_version: CURRENT_PROMPT_VERSION, pit_reassigned: false, price_changed: false, regen_reason: null, content_generated_at: new Date().toISOString(), status: "active" } : cp));
+              setCityPages(prev => prev.map((cp: any) => cp.id === page.id ? { ...cp, needs_regen: false, pit_reassigned: false, price_changed: false, regen_reason: null, content_generated_at: new Date().toISOString(), status: "active" } : cp));
             } catch (err) {
               console.error(`Failed to regen ${page.city_name}:`, err);
             }
@@ -3021,11 +3020,11 @@ const Leads = () => {
                         </td>
                          <td className="px-3 py-2">
                           {(() => {
-                            const isCurrent = cp.prompt_version === "3.0" && cp.content_generated_at && !cp.pit_reassigned && !cp.price_changed;
+                            const isCurrent = !!cp.content_generated_at && !cp.needs_regen && !cp.pit_reassigned && !cp.price_changed;
                             const isPitChanged = cp.pit_reassigned;
                             const isPriceChanged = cp.price_changed && !cp.pit_reassigned;
                             const isMissing = !cp.content_generated_at;
-                            const isOutdated = !isCurrent && !isPitChanged && !isPriceChanged && !isMissing;
+                            const isOutdated = !!cp.needs_regen && !isPitChanged && !isPriceChanged && !isMissing;
                             const dotColor = isCurrent ? "#22C55E" : isPitChanged ? "#EF4444" : isPriceChanged ? "#EF4444" : isMissing ? "#6B7280" : "#F59E0B";
                             const label = isCurrent ? "Current" : isPitChanged ? "PIT Changed" : isPriceChanged ? "Price Changed" : isMissing ? "Missing" : "Outdated";
                             return (
