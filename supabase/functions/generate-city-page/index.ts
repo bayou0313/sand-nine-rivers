@@ -279,7 +279,7 @@ CRITICAL RULES:
         meta_description: generated.meta_description,
         h1_text: generated.h1_text,
         content: fullContent,
-        prompt_version: "3.1",
+        prompt_version: "4.0",
         pit_reassigned: false,
         price_changed: false,
         regen_reason: null,
