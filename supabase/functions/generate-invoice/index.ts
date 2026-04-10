@@ -147,7 +147,6 @@ serve(async (req) => {
       .in("key", [
         "legal_name", "site_name", "phone", "website",
         "footer_address", "ein_number", "support_email",
-        "base_price", "free_miles", "price_per_extra_mile",
         "card_processing_fee_percent", "card_processing_fee_fixed",
       ]);
 
