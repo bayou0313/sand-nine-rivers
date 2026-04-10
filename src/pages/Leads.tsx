@@ -27,10 +27,6 @@ const HQ_LAT = 29.9308;
 const HQ_LON = -90.1685;
 
 const DEFAULT_SETTINGS: Record<string, string> = {
-  default_base_price: "195.00",
-  default_free_miles: "15",
-  default_extra_per_mile: "5.00",
-  default_max_distance: "30",
   saturday_surcharge: "35.00",
   site_name: "River Sand",
   phone: "1-855-GOT-WAYS",
@@ -98,11 +94,11 @@ interface GlobalSettings {
   [key: string]: string;
 }
 
-const getEffectivePrice = (pit: Pit, gs: GlobalSettings) => ({
-  base_price: pit.base_price ?? parseFloat(gs.default_base_price || "195"),
-  free_miles: pit.free_miles ?? parseFloat(gs.default_free_miles || "15"),
-  extra_per_mile: pit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5"),
-  max_distance: pit.max_distance ?? parseFloat(gs.default_max_distance || "30"),
+const getEffectivePrice = (pit: Pit, _gs: GlobalSettings) => ({
+  base_price: pit.base_price ?? 195,
+  free_miles: pit.free_miles ?? 15,
+  extra_per_mile: pit.price_per_extra_mile ?? 5,
+  max_distance: pit.max_distance ?? 30,
 });
 
 const parseAddress = (address: string): { state: string; zip: string; city: string } => {
@@ -646,7 +642,7 @@ const Leads = () => {
   }, [fetchAbandonedSessions, toast]);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
-  const basePrice = parseFloat(globalSettings.default_base_price || "195");
+  const basePrice = 195; // Pricing now lives on individual PITs
 
   const fetchLeads = useCallback(async (pw: string) => {
     setLoading(true);
@@ -1887,7 +1883,7 @@ const Leads = () => {
     );
   }
 
-  const livePricing = `$${globalSettings.default_base_price} base · $${globalSettings.default_extra_per_mile}/mi · ${globalSettings.default_max_distance}mi max`;
+  const livePricing = "Pricing configured per PIT";
   const currentPage = PAGE_TITLES[activePage];
 
   // ─── RENDER PAGES ───
@@ -3593,40 +3589,11 @@ const Leads = () => {
 
             {settingsTab === "pricing" && (
               <>
-                {/* Pricing Defaults */}
+                {/* Pricing Notice */}
                 <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Global Pricing Defaults</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Apply to all PITs unless overridden</p>
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Base price per load</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                        <Input className="pl-6 h-9" value={editSettings.default_base_price || ""} onChange={e => setEditSettings({ ...editSettings, default_base_price: e.target.value })} />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Free delivery distance (miles)</label>
-                      <div className="relative">
-                        <Input className="pr-12 h-9" value={editSettings.default_free_miles || ""} onChange={e => setEditSettings({ ...editSettings, default_free_miles: e.target.value })} />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Extra per mile</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-                        <Input className="pl-6 pr-12 h-9" value={editSettings.default_extra_per_mile || ""} onChange={e => setEditSettings({ ...editSettings, default_extra_per_mile: e.target.value })} />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">/mile</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Max delivery distance</label>
-                      <div className="relative">
-                        <Input className="pr-12 h-9" value={editSettings.default_max_distance || ""} onChange={e => setEditSettings({ ...editSettings, default_max_distance: e.target.value })} />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">miles</span>
-                      </div>
-                    </div>
+                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Pricing is configured per PIT. Edit each PIT to set its base price, free miles, extra per mile, and max distance.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
                       <div className="relative">
@@ -5417,30 +5384,25 @@ const Leads = () => {
 
               <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
 
-              {/* Section 2 — Pricing Overrides */}
+              {/* Section 2 — Pricing (Required) */}
               <div>
-                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing Overrides</p>
-                <p className="text-xs text-gray-500 mb-3">Leave blank to use global defaults</p>
-                <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: "#F8F7F2", border: `1px solid ${CARD_BORDER}` }}>
-                  <p className="text-xs text-gray-500">
-                    Global defaults: ${globalSettings.default_base_price} base · {globalSettings.default_free_miles}mi free · ${globalSettings.default_extra_per_mile}/mi · {globalSettings.default_max_distance}mi max
-                  </p>
-                </div>
+                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing (Required)</p>
+                <p className="text-xs text-gray-500 mb-3">All pricing fields are required before a PIT can be activated.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load *</label>
                     <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles) *</label>
                     <Input placeholder="e.g. 15" value={newPit.free_miles ?? ""} onChange={e => setNewPit({ ...newPit, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Extra per mile</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Extra per mile *</label>
                     <Input placeholder="e.g. 5.00" value={newPit.price_per_extra_mile ?? ""} onChange={e => setNewPit({ ...newPit, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.price_per_extra_mile != null && !isNaN(newPit.price_per_extra_mile)) setNewPit(prev => ({ ...prev, price_per_extra_mile: Math.round(prev.price_per_extra_mile! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Max delivery distance (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Max delivery distance (miles) *</label>
                     <Input placeholder="e.g. 30" value={newPit.max_distance ?? ""} onChange={e => setNewPit({ ...newPit, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                 </div>
@@ -5717,30 +5679,25 @@ const Leads = () => {
 
               <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
 
-              {/* Pricing Overrides */}
+              {/* Pricing (Required) */}
               <div>
-                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing Overrides</p>
-                <p className="text-xs text-gray-500 mb-3">Leave blank to use global defaults</p>
-                <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: "#F8F7F2", border: `1px solid ${CARD_BORDER}` }}>
-                  <p className="text-xs text-gray-500">
-                    Global defaults: ${globalSettings.default_base_price} base · {globalSettings.default_free_miles}mi free · ${globalSettings.default_extra_per_mile}/mi · {globalSettings.default_max_distance}mi max
-                  </p>
-                </div>
+                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing (Required)</p>
+                <p className="text-xs text-gray-500 mb-3">All pricing fields are required before a PIT can be activated.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load *</label>
                     <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Free delivery distance (miles) *</label>
                     <Input placeholder="e.g. 15" value={editPitData.free_miles ?? ""} onChange={e => setEditPitData({ ...editPitData, free_miles: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Extra per mile</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Extra per mile *</label>
                     <Input placeholder="e.g. 5.00" value={editPitData.price_per_extra_mile ?? ""} onChange={e => setEditPitData({ ...editPitData, price_per_extra_mile: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("price_per_extra_mile", editPitData.price_per_extra_mile ?? null, setEditPitData, editPitData)} type="number" className="h-9 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Max delivery distance (miles)</label>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Max delivery distance (miles) *</label>
                     <Input placeholder="e.g. 30" value={editPitData.max_distance ?? ""} onChange={e => setEditPitData({ ...editPitData, max_distance: e.target.value ? parseFloat(e.target.value) : null })} type="number" className="h-9 text-sm" />
                   </div>
                 </div>

@@ -7,6 +7,10 @@
  * mode=driving and avoid=ferries. Toll roads (I-10 etc.) are used for
  * deliveries, so tolls are NOT avoided. This ensures accurate road-based
  * mileage for pricing. Never add haversine as a fallback or pre-filter.
+ *
+ * PRICING: All pricing comes from individual PIT records. There are no
+ * global pricing defaults — each PIT must have base_price, free_miles,
+ * price_per_extra_mile, and max_distance set.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -29,11 +33,8 @@ export interface PitData {
   is_pickup_only?: boolean;
 }
 
-export interface GlobalPricing {
-  base_price: number;
-  free_miles: number;
-  extra_per_mile: number;
-  max_distance: number;
+/** Non-pricing global settings still read from global_settings */
+export interface GlobalFees {
   saturday_surcharge: number;
   card_processing_fee_percent: number;
   card_processing_fee_fixed: number;
@@ -54,51 +55,71 @@ export interface FindBestPitResult {
   serviceable: boolean;
 }
 
-// Last-resort fallbacks if DB fetch fails entirely
+// Last-resort fallbacks if a pit somehow has null pricing
 const FALLBACK_BASE_PRICE = 195;
 const FALLBACK_FREE_MILES = 15;
 const FALLBACK_EXTRA_PER_MILE = 5;
 const FALLBACK_MAX_DISTANCE = 30;
 const FALLBACK_SATURDAY_SURCHARGE = 35;
 
-export const FALLBACK_GLOBAL_PRICING: GlobalPricing = {
-  base_price: FALLBACK_BASE_PRICE,
-  free_miles: FALLBACK_FREE_MILES,
-  extra_per_mile: FALLBACK_EXTRA_PER_MILE,
-  max_distance: FALLBACK_MAX_DISTANCE,
+export const FALLBACK_GLOBAL_FEES: GlobalFees = {
   saturday_surcharge: FALLBACK_SATURDAY_SURCHARGE,
   card_processing_fee_percent: 3.5,
   card_processing_fee_fixed: 0.30,
 };
 
 /**
- * Parse global_settings rows into a GlobalPricing object.
+ * Parse global_settings rows into GlobalFees (non-pricing settings only).
  */
-export function parseGlobalSettings(rows: { key: string; value: string }[]): GlobalPricing {
+export function parseGlobalFees(rows: { key: string; value: string }[]): GlobalFees {
   const map: Record<string, string> = {};
   rows.forEach((r) => { map[r.key] = r.value; });
   return {
-    base_price: parseFloat(map.default_base_price) || FALLBACK_BASE_PRICE,
-    free_miles: parseFloat(map.default_free_miles) || FALLBACK_FREE_MILES,
-    extra_per_mile: parseFloat(map.default_extra_per_mile) || FALLBACK_EXTRA_PER_MILE,
-    max_distance: parseFloat(map.default_max_distance) || FALLBACK_MAX_DISTANCE,
     saturday_surcharge: parseFloat(map.saturday_surcharge) || FALLBACK_SATURDAY_SURCHARGE,
     card_processing_fee_percent: parseFloat(map.card_processing_fee_percent) || 3.5,
     card_processing_fee_fixed: parseFloat(map.card_processing_fee_fixed) || 0.30,
   };
 }
 
-/**
- * Merge PIT-level overrides with global pricing.
- * NULL PIT fields fall back to global values.
- */
-export function getEffectivePrice(pit: PitData, global: GlobalPricing): EffectivePricing {
+// ── Legacy aliases for backward compatibility ──
+// Some files may still import these names; they map to the new types.
+export type GlobalPricing = GlobalFees & {
+  base_price: number;
+  free_miles: number;
+  extra_per_mile: number;
+  max_distance: number;
+};
+
+export const FALLBACK_GLOBAL_PRICING: GlobalPricing = {
+  ...FALLBACK_GLOBAL_FEES,
+  base_price: FALLBACK_BASE_PRICE,
+  free_miles: FALLBACK_FREE_MILES,
+  extra_per_mile: FALLBACK_EXTRA_PER_MILE,
+  max_distance: FALLBACK_MAX_DISTANCE,
+};
+
+export function parseGlobalSettings(rows: { key: string; value: string }[]): GlobalPricing {
+  const fees = parseGlobalFees(rows);
   return {
-    base_price: pit.base_price ?? global.base_price,
-    free_miles: pit.free_miles ?? global.free_miles,
-    extra_per_mile: pit.price_per_extra_mile ?? global.extra_per_mile,
-    max_distance: pit.max_distance ?? global.max_distance,
-    saturday_surcharge: pit.saturday_surcharge_override ?? global.saturday_surcharge,
+    ...fees,
+    base_price: FALLBACK_BASE_PRICE,
+    free_miles: FALLBACK_FREE_MILES,
+    extra_per_mile: FALLBACK_EXTRA_PER_MILE,
+    max_distance: FALLBACK_MAX_DISTANCE,
+  };
+}
+
+/**
+ * Get effective pricing from a PIT record.
+ * The globalFees parameter is only used for saturday_surcharge fallback.
+ */
+export function getEffectivePrice(pit: PitData, globalFees: GlobalFees | GlobalPricing): EffectivePricing {
+  return {
+    base_price: pit.base_price ?? FALLBACK_BASE_PRICE,
+    free_miles: pit.free_miles ?? FALLBACK_FREE_MILES,
+    extra_per_mile: pit.price_per_extra_mile ?? FALLBACK_EXTRA_PER_MILE,
+    max_distance: pit.max_distance ?? FALLBACK_MAX_DISTANCE,
+    saturday_surcharge: pit.saturday_surcharge_override ?? globalFees.saturday_surcharge,
   };
 }
 
@@ -125,11 +146,12 @@ export function calcFinalPrice(effective: EffectivePricing, distance: number, qt
 /**
  * Find the best PIT for a customer location using driving distance.
  * Calls the leads-auth edge function which proxies the Google Distance Matrix API.
+ * All pricing comes from individual PIT records.
  */
 export async function findBestPitDriving(
   pits: PitData[],
   customerAddress: string,
-  globalPricing: GlobalPricing,
+  globalFees: GlobalFees | GlobalPricing,
   supabaseClient?: any,
   deliveryDayOfWeek?: number // 0=Sun..6=Sat — filter pits by operating_days
 ): Promise<FindBestPitResult | null> {
@@ -169,7 +191,7 @@ export async function findBestPitDriving(
       .map((pit, i) => {
         const distance = drivingDistances[i];
         if (distance === null || distance === undefined) return null;
-        const effective = getEffectivePrice(pit, globalPricing);
+        const effective = getEffectivePrice(pit, globalFees);
         const price = calcPitPrice(effective, distance, 1);
         const serviceable = distance <= effective.max_distance;
         return { pit, distance, price, serviceable };

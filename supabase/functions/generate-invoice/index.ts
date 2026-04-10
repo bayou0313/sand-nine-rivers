@@ -147,7 +147,6 @@ serve(async (req) => {
       .in("key", [
         "legal_name", "site_name", "phone", "website",
         "footer_address", "ein_number", "support_email",
-        "base_price", "free_miles", "price_per_extra_mile",
         "card_processing_fee_percent", "card_processing_fee_fixed",
       ]);
 
@@ -183,16 +182,18 @@ serve(async (req) => {
     const isPaid = order.payment_status === "paid";
     const isCard = ["stripe-link", "stripe", "card"].includes((order.payment_method || "").toLowerCase());
     console.log("[invoice] payment_method:", order.payment_method, "isPaid:", isPaid, "isCard:", isCard);
-    // Fetch pit-specific base price if order has pit_id
-    let basePrice = Number(settings.base_price) || 195;
+    // Fetch pit-specific pricing if order has pit_id
+    let basePrice = 195;
+    let baseMiles = 15;
+    let perMileExtra = 5.0;
     if (order.pit_id) {
       const { data: pit } = await supabase.from("pits").select("base_price, free_miles, price_per_extra_mile").eq("id", order.pit_id).maybeSingle();
       if (pit) {
         basePrice = Number(pit.base_price) || basePrice;
+        baseMiles = Number(pit.free_miles) || baseMiles;
+        perMileExtra = Number(pit.price_per_extra_mile) || perMileExtra;
       }
     }
-    const baseMiles = Number(settings.free_miles) || 15;
-    const perMileExtra = Number(settings.price_per_extra_mile) || 5.5;
     const feeRate = Number(settings.card_processing_fee_percent || 3.5) / 100;
     const feeFixed = Number(settings.card_processing_fee_fixed || 0.30);
 
