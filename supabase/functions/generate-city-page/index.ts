@@ -85,52 +85,63 @@ IMPORTANT — Multi-PIT Coverage is TRUE for this city:
 - All other fields (hero_intro, why_choose_intro, local_uses, local_expertise) write normally with local knowledge.
 - meta_description should NOT include a specific price — instead emphasize "instant pricing" and "same-day delivery".` : "";
 
-    const userPrompt = `Generate structured local SEO content for this city page. Return ONLY a JSON object — no markdown, no explanation.
+    const userPrompt = `Generate a complete city landing page for river sand delivery in ${city_name}, ${state}. Return ONLY a JSON object — no markdown, no explanation.
 
-CITY DATA:
-- City: ${city_name}
-- State: ${state} (Louisiana = uses "Parish" not "County")
-- Parish/County: ${effectiveRegion}
-Reference ${effectiveRegion} by name naturally in the content — Louisiana locals identify strongly with their parish and it builds trust and local relevance.
+INPUTS:
+- City: ${city_name}, ${state}
+- Parish/Region: ${effectiveRegion}
 - Distance from pit: ${distance} miles
-- Delivery price: $${price}
-- PIT name: ${pit_name}
-- PIT location city: ${pit_city || pit_name}
-- Multi-PIT coverage: ${isMultiPit ? "TRUE" : "FALSE"}
-- Operating days: Monday through Saturday
+- Base delivery price: $${price}/load
+- Free delivery zone: ${free_miles} miles
+- Saturday delivery: ${saturday_available ? "Yes" : "No"}
 - Same-day cutoff: ${effectiveCutoff}
-- Free delivery radius: ${free_miles} miles
-- Saturday available: ${saturday_available ? "yes" : "no"}
+- Served by: ${pit_name} (${pit_city || pit_name})
+- Multi-PIT coverage: ${isMultiPit ? "TRUE" : "FALSE"}
 ${multiPitInstructions}
 ${city_name.toLowerCase() === "algiers" ? `
 IMPORTANT — ALGIERS ROUTING:
 Algiers is on the west bank of the Mississippi River within Orleans Parish.
 All delivery routes from east bank PITs cross via the Crescent City Connection bridge.
-Mention this in delivery_details and local_expertise — it demonstrates genuine
-local knowledge and sets accurate expectations.
+Mention this in delivery_details and local_expertise.
 ` : ""}${city_name.toLowerCase() === "new orleans east" ? `
 IMPORTANT — NEW ORLEANS EAST ROUTING:
 New Orleans East is east of the Industrial Canal, accessed primarily via I-10.
-It is significantly further from the CBD than its Orleans Parish designation suggests.
-Reference I-10, Chef Menteur Highway, or specific New Orleans East landmarks
-(NASA Michoud, Lake Forest Boulevard, Read Boulevard) in local content.
+Reference I-10, Chef Menteur Highway, or landmarks (NASA Michoud, Lake Forest Boulevard).
 ` : ""}
-CONTENT REQUIREMENTS:
-- meta_title: Max 60 chars. Must include city name and "river sand delivery". ${isMultiPit ? `Format: "River Sand Delivery in ${city_name}, ${state} | Same-Day"` : `Format: "River Sand Delivery in ${city_name}, ${state} | $${price}/Load"`}. Never include the brand name "River Sand" at the end if it pushes past 60 chars.
-- meta_description: Max 160 chars. Must be UNIQUE to this city — never reuse the same sentence structure across cities. ${isMultiPit ? `Must include: city name, "same-day", "instant pricing", and "cash or card". Example: "Same-day river sand delivery to ${city_name}, ${state}. Enter your address for instant pricing. Cash or card accepted."` : `Must include: city name, exact price ($${price}), "same-day", and "cash or card". Example: "Same-day river sand delivery to ${city_name}, ${state} — $${price} per load. No minimums. Cash or card. Order before ${effectiveCutoff} for today."`} Vary the opening word and sentence rhythm — do NOT start with "Same-day" on every page. Avoid generic AI filler words like "bustling", "vibrant", "thriving", or vague Louisiana descriptors. Write like a local business, not a travel blog.
-- h1_text: Max 70 chars. MUST start with "River Sand Delivery in". Format: "River Sand Delivery in ${city_name}, ${state} — Same-Day Service". NO pipe characters (|) — pipes are for meta_title only. Must read as a natural headline, not an SEO tag.
-- hero_intro: ONE sentence. Maximum 120 characters. Must contain "${city_name} river sand delivery" naturally. Lead with a specific local detail — a road, landmark, or project type. Never restate the H1. No period at the end. Example: "Serving Chalmette homeowners along St. Bernard Highway — same-day bulk river sand delivery"
-- why_choose_intro: ONE sentence. Maximum 200 characters. Must include the city name, the parish name, and the phrase "river sand" or "river sand delivery". Establishes local authority — reference a specific terrain challenge, drainage issue, or soil condition unique to this parish. No generic claims.
-- delivery_details: ${isMultiPit ? "ONE sentence. Maximum 220 characters. Must include the city name. Do NOT mention a specific price or distance. Direct the customer to enter their address for an exact quote." : `ONE sentence. Maximum 220 characters. Must include: city name, the phrase "river sand delivery", pit name, exact distance (${distance} miles), at least one real Louisiana highway (LA-18, US-90, I-10, LA-308, etc.), and delivery price ($${price}). Pack in the specifics — this is conversion copy.`}
-- local_uses: Exactly 4 items. Each item is ONE sentence, maximum 100 characters. Each must mention the city name OR a specific local landmark/geography. Cover 4 different use cases from: levee repair, drainage fill, landscaping base, pool fill, foundation backfill, driveway base, arena footing, garden beds. Vary the use cases — no repeats. Must include "river sand" in at least 2 of the 4 items.
-- local_expertise: Exactly 2 sentences. Maximum 320 characters total. Must include: city name, parish name, and "river sand" or "bulk sand". First sentence: specific geography (river proximity, elevation, flood zone, levee system). Second sentence: specific soil challenge and why river sand is the solution. No generic Louisiana filler.
-- faq_items: Exactly 3 FAQ items. Each with "question" and "answer" fields.
-  QUESTION rules: maximum 80 characters, phrased as a natural search query, must include city name and "river sand" in at least 2 of 3 questions.
-  ANSWER rules: maximum 160 characters, must be a direct confident answer, must include city name in each answer, include specific data (price, distance, time, or day) wherever possible.
-  Question 1: Delivery schedule or same-day availability for ${city_name} — answer must mention same-day cutoff time and days available.
-  Question 2: ${isMultiPit ? `Pricing for ${city_name} — answer says pricing varies by exact address and directs to the estimator. Do NOT mention a dollar amount.` : `Price or distance for ${city_name} — answer must include exact price ($${price}) and exact distance (${distance} miles).`}
-  Question 3: A local use case specific to ${city_name} geography — answer demonstrates local expertise with a specific detail.
-- schema_service_area: City name formatted for schema: "${city_name}, ${state}"`;
+STRICT REQUIREMENTS — every field must be 100% unique to ${city_name}. Never use generic New Orleans or Louisiana boilerplate.
+
+FIELD SPECIFICATIONS:
+
+meta_title: ${isMultiPit ? `"River Sand Delivery in ${city_name}, ${state} | Same-Day"` : `"River Sand Delivery in ${city_name}, ${state} | Same-Day from $${price}"`}. Max 65 characters. Include city name and price.
+
+meta_description: Must include ALL of these: 1) City name "${city_name}", 2) ${isMultiPit ? '"instant pricing"' : `Exact price "$${price}"`}, 3) Same-day availability, 4) "Cash or card accepted". Under 155 characters. Vary the opening word — do NOT start with "Same-day" every time. No AI filler words (bustling, vibrant, thriving).
+
+h1_text: "Same-Day River Sand Delivery in ${city_name}, ${state}". Must include city name. No pipe characters.
+
+hero_intro: 3 sentences. Sentence 1: Reference a specific street, highway, or landmark in ${city_name}. Sentence 2: ${isMultiPit ? "Mention instant pricing and same-day delivery." : `Mention the delivery price ($${price}) and distance (${distance} miles).`} Sentence 3: Call to action with phone number 1-855-GOT-WAYS. Max 300 characters total.
+
+why_choose_intro: 2-3 sentences specific to ${city_name} customers — mention local drainage issues, soil type, or common construction projects in the area. Include the parish name "${effectiveRegion}". Never mention pit locations or pit addresses.
+
+delivery_details: ${isMultiPit ? `ONE sentence, max 220 chars. Do NOT mention a specific price or distance. Direct the customer to enter their address for an exact quote.` : `ONE sentence, max 220 chars. Must include: city name, "river sand delivery", exact distance (${distance} miles), at least one real Louisiana highway, and price ($${price}).`}
+
+local_uses: Exactly 4 items. Each item is ONE sentence, max 100 characters. Each must mention ${city_name} OR a specific local landmark/geography. Cover 4 different use cases (levee repair, drainage fill, landscaping, pool fill, foundation backfill, driveway base, arena footing, garden beds). Include "river sand" in at least 2.
+
+local_expertise: 2-3 sentences about why river sand specifically matters in ${city_name}. Reference local soil conditions, flood history, or construction patterns. Include parish name "${effectiveRegion}". Max 320 chars total.
+
+faq_items: Exactly 3 FAQ items with "question" and "answer" fields.
+  Q1: Delivery schedule/same-day availability for ${city_name}. Answer must mention cutoff time and days.
+  Q2: ${isMultiPit ? `Pricing for ${city_name} — answer says pricing varies, directs to estimator. No dollar amount.` : `Price for ${city_name} — answer must include exact price ($${price}) and distance (${distance} miles).`}
+  Q3: A local use case specific to ${city_name} geography. Answer demonstrates local expertise.
+  Questions must be phrased as natural search queries. Include "river sand" and "${city_name}" in at least 2 questions.
+
+schema_service_area: "${city_name}, ${state}"
+
+CRITICAL RULES:
+- Never mention Bridge City, Hahnville, Chalmette, or any pit location by name
+- Every page must read as if written specifically for a ${city_name} resident
+- ${isMultiPit ? "Do not mention specific prices — direct to estimator" : `Include the price $${price} at least 3 times across all content`}
+- Always mention 1-855-GOT-WAYS at least once
+- Reference the parish "${effectiveRegion}" by name naturally`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -268,7 +279,7 @@ CONTENT REQUIREMENTS:
         meta_description: generated.meta_description,
         h1_text: generated.h1_text,
         content: fullContent,
-        prompt_version: "3.1",
+        prompt_version: "4.0",
         pit_reassigned: false,
         price_changed: false,
         regen_reason: null,
