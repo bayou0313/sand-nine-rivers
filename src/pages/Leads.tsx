@@ -1125,6 +1125,17 @@ const Leads = () => {
 
   const addPit = async () => {
     if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
+    const requiredNewPitFields = [
+      { field: newPit.base_price, name: "Base price per load" },
+      { field: newPit.free_miles, name: "Free delivery distance" },
+      { field: newPit.price_per_extra_mile, name: "Extra per mile" },
+      { field: newPit.max_distance, name: "Max delivery distance" },
+    ];
+    const missingNewFields = requiredNewPitFields.filter(f => f.field === null || f.field === undefined || f.field === "" || isNaN(Number(f.field)));
+    if (missingNewFields.length > 0) {
+      toast({ title: "Missing required pricing", description: `Please fill in: ${missingNewFields.map(f => f.name).join(", ")}`, variant: "destructive" });
+      return;
+    }
     setGeocoding(true);
     let lat = newPit.lat;
     let lon = newPit.lon;
@@ -1276,6 +1287,20 @@ const Leads = () => {
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
       toast({ title: "Missing info", variant: "destructive" });
+      return;
+    }
+    const requiredEditFields = [
+      { field: editPitData.base_price, name: "Base price per load" },
+      { field: editPitData.free_miles, name: "Free delivery distance" },
+      { field: editPitData.price_per_extra_mile, name: "Extra per mile" },
+      { field: editPitData.max_distance, name: "Max delivery distance" },
+    ];
+    const missingEditFields = requiredEditFields.filter(f => f.field === null || f.field === undefined || f.field === "" || isNaN(Number(f.field)));
+    if (missingEditFields.length > 0) {
+      toast({ title: "Missing required pricing", description: `Please fill in: ${missingEditFields.map(f => f.name).join(", ")}`, variant: "destructive" });
+      return;
+    }
+    if (false) { // original guard placeholder
       return;
     }
     setSavingPit(true);
@@ -5498,17 +5523,23 @@ const Leads = () => {
 
               {/* Section 3 — Live Price Preview */}
               {(() => {
-                const effBase = newPit.base_price ?? parseFloat(globalSettings.default_base_price || "195");
-                const effFree = newPit.free_miles ?? parseFloat(globalSettings.default_free_miles || "15");
-                const effEpm = newPit.price_per_extra_mile ?? parseFloat(globalSettings.default_extra_per_mile || "5");
-                const effMax = newPit.max_distance ?? parseFloat(globalSettings.default_max_distance || "30");
-                const hasAnyOverride = newPit.base_price != null || newPit.free_miles != null || newPit.price_per_extra_mile != null || newPit.max_distance != null;
+                const hasValid = newPit.base_price != null && !isNaN(Number(newPit.base_price)) && newPit.free_miles != null && !isNaN(Number(newPit.free_miles)) && newPit.price_per_extra_mile != null && !isNaN(Number(newPit.price_per_extra_mile)) && newPit.max_distance != null && !isNaN(Number(newPit.max_distance));
+                if (!hasValid) return (
+                  <div>
+                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <p className="text-xs" style={{ color: "#888" }}>Fill in all pricing fields to see preview</p>
+                  </div>
+                );
+                const effBase = Number(newPit.base_price);
+                const effFree = Number(newPit.free_miles);
+                const effEpm = Number(newPit.price_per_extra_mile);
+                const effMax = Number(newPit.max_distance);
                 const at20 = 20 > effFree ? effBase + (20 - effFree) * effEpm : effBase;
                 const atMax = effMax > effFree ? effBase + (effMax - effFree) * effEpm : effBase;
                 return (
                   <div>
                     <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
-                    <div className="text-xs space-y-1" style={{ color: hasAnyOverride ? BRAND_GOLD : "#999" }}>
+                    <div className="text-xs space-y-1" style={{ color: BRAND_GOLD }}>
                       <p>Within {effFree} mi: ${effBase.toFixed(2)}</p>
                       <p>At 20 mi: ${at20.toFixed(2)}</p>
                       <p>At {effMax} mi: ${atMax.toFixed(2)}</p>
@@ -5798,17 +5829,23 @@ const Leads = () => {
 
               {/* Live Price Preview */}
               {(() => {
-                const effBase = (editPitData.base_price as number | null) ?? parseFloat(globalSettings.default_base_price || "195");
-                const effFree = (editPitData.free_miles as number | null) ?? parseFloat(globalSettings.default_free_miles || "15");
-                const effEpm = (editPitData.price_per_extra_mile as number | null) ?? parseFloat(globalSettings.default_extra_per_mile || "5");
-                const effMax = (editPitData.max_distance as number | null) ?? parseFloat(globalSettings.default_max_distance || "30");
-                const hasAnyOverride = editPitData.base_price != null || editPitData.free_miles != null || editPitData.price_per_extra_mile != null || editPitData.max_distance != null;
+                const hasValid = editPitData.base_price != null && !isNaN(Number(editPitData.base_price)) && editPitData.free_miles != null && !isNaN(Number(editPitData.free_miles)) && editPitData.price_per_extra_mile != null && !isNaN(Number(editPitData.price_per_extra_mile)) && editPitData.max_distance != null && !isNaN(Number(editPitData.max_distance));
+                if (!hasValid) return (
+                  <div>
+                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <p className="text-xs" style={{ color: "#888" }}>Fill in all pricing fields to see preview</p>
+                  </div>
+                );
+                const effBase = Number(editPitData.base_price);
+                const effFree = Number(editPitData.free_miles);
+                const effEpm = Number(editPitData.price_per_extra_mile);
+                const effMax = Number(editPitData.max_distance);
                 const at20 = 20 > effFree ? effBase + (20 - effFree) * effEpm : effBase;
                 const atMax = effMax > effFree ? effBase + (effMax - effFree) * effEpm : effBase;
                 return (
                   <div>
                     <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
-                    <div className="text-xs space-y-1" style={{ color: hasAnyOverride ? BRAND_GOLD : "#999" }}>
+                    <div className="text-xs space-y-1" style={{ color: BRAND_GOLD }}>
                       <p>Within {effFree} mi: ${effBase.toFixed(2)}</p>
                       <p>At 20 mi: ${at20.toFixed(2)}</p>
                       <p>At {effMax} mi: ${atMax.toFixed(2)}</p>
