@@ -221,11 +221,14 @@ export default function OrderConfirmation({
       ? `https://riversand.net/order/track?token=${lookupToken}`
       : "https://riversand.net";
 
+    const addressForShare = address || "See order details";
+    const dateForShare = deliveryDateLabel || "See order details";
+
     const message = encodeURIComponent(
       `✅ River Sand Order Confirmed\n\n` +
       `Order: ${orderNumber}\n` +
-      `Date: ${deliveryDateLabel}\n` +
-      `Address: ${address}\n` +
+      `Date: ${dateForShare}\n` +
+      `Address: ${addressForShare}\n` +
       `Total: ${formatCurrency(finalAmount)}\n\n` +
       `View your order details & invoice:\n` +
       `${orderUrl}\n\n` +
