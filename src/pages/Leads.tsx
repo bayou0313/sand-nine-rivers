@@ -1265,10 +1265,20 @@ const Leads = () => {
     if (!authenticated) return;
     const runRegenQueue = async () => {
       try {
+        // Check count first — skip if nothing pending
+        const { count } = await supabase
+          .from("city_pages")
+          .select("id", { count: "exact", head: true })
+          .eq("needs_regen", true);
+        if (!count || count === 0) {
+          setRegenQueuePending(0);
+          return;
+        }
+        setRegenQueuePending(count);
         const { data } = await supabase.functions.invoke("leads-auth", {
           body: { password: storedPassword(), action: "process_regen_queue" },
         });
-        if (data?.remaining !== undefined) setRegenQueuePending(data.remaining + (data.processed || 0));
+        if (data?.remaining !== undefined) setRegenQueuePending(data.remaining);
         if (data?.processed > 0) {
           console.log(`[regen] Processed ${data.processed} pages. ${data.remaining} remaining.`);
           if (data.remaining === 0) setRegenQueuePending(0);
