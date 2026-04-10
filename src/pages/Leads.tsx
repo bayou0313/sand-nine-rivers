@@ -27,10 +27,6 @@ const HQ_LAT = 29.9308;
 const HQ_LON = -90.1685;
 
 const DEFAULT_SETTINGS: Record<string, string> = {
-  default_base_price: "195.00",
-  default_free_miles: "15",
-  default_extra_per_mile: "5.00",
-  default_max_distance: "30",
   saturday_surcharge: "35.00",
   site_name: "River Sand",
   phone: "1-855-GOT-WAYS",
@@ -98,11 +94,11 @@ interface GlobalSettings {
   [key: string]: string;
 }
 
-const getEffectivePrice = (pit: Pit, gs: GlobalSettings) => ({
-  base_price: pit.base_price ?? parseFloat(gs.default_base_price || "195"),
-  free_miles: pit.free_miles ?? parseFloat(gs.default_free_miles || "15"),
-  extra_per_mile: pit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5"),
-  max_distance: pit.max_distance ?? parseFloat(gs.default_max_distance || "30"),
+const getEffectivePrice = (pit: Pit, _gs: GlobalSettings) => ({
+  base_price: pit.base_price ?? 195,
+  free_miles: pit.free_miles ?? 15,
+  extra_per_mile: pit.price_per_extra_mile ?? 5,
+  max_distance: pit.max_distance ?? 30,
 });
 
 const parseAddress = (address: string): { state: string; zip: string; city: string } => {
