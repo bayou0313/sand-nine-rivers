@@ -349,20 +349,24 @@ const Order = () => {
           // Live state was wiped by Stripe redirect — fetch order via edge function (bypasses RLS)
           (async () => {
             try {
-              // Try to get lookup token from sessionStorage snapshot
+              // Try to get lookup token + order_id from sessionStorage snapshot
               let fallbackLookupToken: string | null = null;
+              let fallbackOrderId: string | null = null;
               try {
                 const snapRaw = sessionStorage.getItem("pending_order_snapshot");
                 if (snapRaw) {
                   const snap = JSON.parse(snapRaw);
                   fallbackLookupToken = snap.lookupToken || null;
+                  fallbackOrderId = snap.pendingOrderId || null;
                 }
               } catch {}
 
-              if (fallbackLookupToken) {
+              console.log("[showSuccess fallback] snapshot:", { fallbackOrderId, fallbackLookupToken: !!fallbackLookupToken });
+
+              if (fallbackLookupToken && fallbackOrderId) {
                 // Use edge function with service role access
                 const { data: fallbackOrder, error: fallbackErr } = await supabase.functions.invoke("get-order-status", {
-                  body: { order_id: null, lookup_token: fallbackLookupToken },
+                  body: { order_id: fallbackOrderId, lookup_token: fallbackLookupToken },
                 });
                 if (!fallbackErr && fallbackOrder && fallbackOrder.price > 0) {
                   setConfirmedOrderId(fallbackOrder.id);

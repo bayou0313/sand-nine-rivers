@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Loader2, Download, ChevronDown, MessageCircle, Mail, Share2 } from "lucide-react";
+import { Loader2, Download, ChevronDown, MessageCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
@@ -214,73 +214,8 @@ export default function OrderConfirmation({
     a.click();
     document.body.removeChild(a);
   };
-  const [whatsappLoading, setWhatsappLoading] = useState(false);
-
-  const handleWhatsApp = async () => {
-    const orderUrl = lookupToken
-      ? `https://riversand.net/order/track?token=${lookupToken}`
-      : "https://riversand.net";
-
-    const addressForShare = address || "See order details";
-    const dateForShare = deliveryDateLabel || "See order details";
-
-    const message = encodeURIComponent(
-      `✅ River Sand Order Confirmed\n\n` +
-      `Order: ${orderNumber}\n` +
-      `Date: ${dateForShare}\n` +
-      `Address: ${addressForShare}\n` +
-      `Total: ${formatCurrency(finalAmount)}\n\n` +
-      `View your order details & invoice:\n` +
-      `${orderUrl}\n\n` +
-      `Questions? Call 1-855-GOT-WAYS`
-    );
-
-    if (confirmedOrderId && lookupToken) {
-      setWhatsappLoading(true);
-      toast({ title: "Generating PDF...", description: "Preparing your invoice." });
-
-      try {
-        const response = await supabase.functions.invoke("generate-invoice", {
-          body: { order_id: confirmedOrderId, lookup_token: lookupToken },
-        });
-
-        if (!response.error && response.data) {
-          const blob = new Blob([response.data], { type: "application/pdf" });
-          const file = new File([blob], `RiverSand-${orderNumber}.pdf`, { type: "application/pdf" });
-
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({
-              title: `River Sand Order ${orderNumber}`,
-              text: `Your order is confirmed. Total: ${formatCurrency(finalAmount)}`,
-              files: [file],
-            });
-            setWhatsappLoading(false);
-            return;
-          }
-
-          // Fallback: download PDF + open WhatsApp
-          const pdfUrl = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = pdfUrl;
-          a.download = `RiverSand-${orderNumber}.pdf`;
-          a.click();
-
-          setTimeout(() => {
-            window.open(`https://wa.me/?text=${message}`, "_blank");
-            toast({ title: "PDF downloaded", description: "Attach the downloaded PDF to your WhatsApp message." });
-          }, 1000);
-          setWhatsappLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn("PDF generation failed:", err);
-      } finally {
-        setWhatsappLoading(false);
-      }
-    }
-
-    window.open(`https://wa.me/?text=${message}`, "_blank");
-  };
+  // WhatsApp disabled — will be enabled when API is configured
+  // const whatsappEnabled = false;
 
 
   return (
@@ -706,7 +641,7 @@ export default function OrderConfirmation({
           </Button>
 
           {/* Share buttons row */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button
               variant="outline"
               className="h-10 rounded-xl text-xs font-display"
@@ -734,22 +669,12 @@ export default function OrderConfirmation({
             <Button
               variant="outline"
               className="h-10 rounded-xl text-xs font-display"
-              onClick={handleWhatsApp}
-              disabled={whatsappLoading}
-            >
-              {whatsappLoading ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-              ) : (
-                <Share2 className="w-4 h-4 mr-1" />
-              )}
-              WhatsApp
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl text-xs font-display"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                toast({ title: "Link copied!" });
+              onClick={async () => {
+                const permanentUrl = lookupToken
+                  ? `https://riversand.net/order?token=${lookupToken}`
+                  : `https://riversand.net/order?order_id=${confirmedOrderId}&order_number=${orderNumber}`;
+                await navigator.clipboard.writeText(permanentUrl);
+                toast({ title: "Link copied!", description: "Share this link to view the order." });
               }}
             >
               🔗 Copy
