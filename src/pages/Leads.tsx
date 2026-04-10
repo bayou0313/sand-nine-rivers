@@ -1282,7 +1282,7 @@ const Leads = () => {
         if (data?.processed > 0) {
           console.log(`[regen] Processed ${data.processed} pages. ${data.remaining} remaining.`);
           if (data.remaining === 0) setRegenQueuePending(0);
-          if (activePage === "city_pages") fetchCityPages();
+          fetchCityPages();
         }
         if (data?.remaining === 0 && data?.processed === 0) setRegenQueuePending(0);
       } catch (err) {
