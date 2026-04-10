@@ -706,7 +706,7 @@ export default function OrderConfirmation({
           </Button>
 
           {/* Share buttons row */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button
               variant="outline"
               className="h-10 rounded-xl text-xs font-display"
@@ -734,22 +734,12 @@ export default function OrderConfirmation({
             <Button
               variant="outline"
               className="h-10 rounded-xl text-xs font-display"
-              onClick={handleWhatsApp}
-              disabled={whatsappLoading}
-            >
-              {whatsappLoading ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-              ) : (
-                <Share2 className="w-4 h-4 mr-1" />
-              )}
-              WhatsApp
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl text-xs font-display"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                toast({ title: "Link copied!" });
+              onClick={async () => {
+                const permanentUrl = lookupToken
+                  ? `https://riversand.net/order?token=${lookupToken}`
+                  : `https://riversand.net/order?order_id=${confirmedOrderId}&order_number=${orderNumber}`;
+                await navigator.clipboard.writeText(permanentUrl);
+                toast({ title: "Link copied!", description: "Share this link to view the order." });
               }}
             >
               🔗 Copy
