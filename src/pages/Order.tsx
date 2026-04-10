@@ -1832,16 +1832,15 @@ const Order = () => {
                         {paymentMethod === "stripe-link" ? (
                           <>
                             <div className="flex justify-between font-body text-sm">
-                              <span className="text-muted-foreground">Processing Fee (3.5% card)</span>
+                              <span className="text-muted-foreground">Card Processing Fee (3.5% + $0.30/txn)</span>
                               <span className="text-foreground font-medium">+{formatCurrency(processingFee)}</span>
                             </div>
                             <div className="border-t border-border pt-2 flex justify-between">
                               <span className="font-display tracking-wider text-foreground">TOTAL CHARGE</span>
                               <span className="font-display text-lg font-bold text-foreground">{formatCurrency(totalWithProcessingFee)}</span>
                             </div>
-                            <p className="font-body text-xs text-amber-700 flex items-start gap-1.5">
-                              <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                              Processing fee is non-refundable under any circumstances.
+                            <p style={{ fontSize: "11px", color: "#888888", marginTop: "3px", marginBottom: "0" }}>
+                              ⓘ Processing fees are charged by our payment provider and are non-refundable.
                             </p>
                           </>
                         ) : (

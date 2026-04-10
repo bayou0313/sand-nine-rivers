@@ -434,7 +434,7 @@ serve(async (req) => {
       const parishLabel = parishName ? `${parishName} Parish Tax (${parishRatePct}%)` : `Local Parish Tax (${parishRatePct}%)`;
       priceLines.push({ desc: parishLabel, amt: fmt(parishAmt) });
     }
-    if (isCard && processingFee > 0.01) priceLines.push({ desc: "Processing Fee", amt: fmt(processingFee) });
+    if (isCard && processingFee > 0.01) priceLines.push({ desc: "Card Processing Fee (3.5% + $0.30/transaction)", amt: fmt(processingFee) });
 
     doc.setFontSize(9);
     priceLines.forEach((line) => {
