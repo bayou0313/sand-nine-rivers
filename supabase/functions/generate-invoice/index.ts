@@ -457,7 +457,7 @@ serve(async (req) => {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BLACK);
-    doc.text("Subtotal", tableX, y);
+    doc.text("TOTAL", tableX, y);
     doc.text(fmt(order.price), amtX, y, { align: "right" });
     y += 7;
 
