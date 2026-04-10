@@ -180,8 +180,10 @@ serve(async (req) => {
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
     const isPaid = order.payment_status === "paid";
-    const isCard = ["stripe-link", "stripe", "card"].includes((order.payment_method || "").toLowerCase());
-    console.log("[invoice] payment_method:", order.payment_method, "isPaid:", isPaid, "isCard:", isCard);
+    const isCard = !["cash", "check", "cod", "COD"].includes(order.payment_method || "");
+    // For card payments, treat as paid even if payment_status hasn't been updated yet
+    const effectivelyPaid = isPaid || isCard;
+    console.log("[invoice] payment_method:", order.payment_method, "isPaid:", isPaid, "isCard:", isCard, "effectivelyPaid:", effectivelyPaid);
     // Fetch pit-specific pricing if order has pit_id
     let basePrice = 195;
     let baseMiles = 15;
