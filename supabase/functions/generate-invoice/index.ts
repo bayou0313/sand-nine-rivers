@@ -183,9 +183,18 @@ serve(async (req) => {
     const isPaid = order.payment_status === "paid";
     const isCard = ["stripe-link", "stripe", "card"].includes((order.payment_method || "").toLowerCase());
     console.log("[invoice] payment_method:", order.payment_method, "isPaid:", isPaid, "isCard:", isCard);
-    const basePrice = Number(settings.base_price) || 195;
+    // Fetch pit-specific base price if order has pit_id
+    let basePrice = Number(settings.base_price) || 195;
+    if (order.pit_id) {
+      const { data: pit } = await supabase.from("pits").select("base_price, free_miles, price_per_extra_mile").eq("id", order.pit_id).maybeSingle();
+      if (pit) {
+        basePrice = Number(pit.base_price) || basePrice;
+      }
+    }
     const baseMiles = Number(settings.free_miles) || 15;
     const perMileExtra = Number(settings.price_per_extra_mile) || 5.5;
+    const feeRate = Number(settings.card_processing_fee_percent || 3.5) / 100;
+    const feeFixed = Number(settings.card_processing_fee_fixed || 0.30);
 
     // ─── HEADER ───
     y = 18;
@@ -335,8 +344,11 @@ serve(async (req) => {
     const taxAmount = Number(order.tax_amount || 0);
     const combinedRate = Number(order.tax_rate || 0);
     const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + sunSurcharge - discountAmount + taxAmount;
-    const processingFee = isCard ? Math.max(0, Number(order.price) - subtotalBeforeFee) : 0;
-    console.log("[invoice] pricing breakdown:", { baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, orderPrice: order.price });
+    // Reverse-calculate processing fee from stored total using the known fee rate
+    const processingFee = isCard
+      ? parseFloat((subtotalBeforeFee * feeRate + feeFixed).toFixed(2))
+      : 0;
+    console.log("[invoice] pricing breakdown:", { basePrice, baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, feeRate, feeFixed, orderPrice: order.price });
 
     // Parish detection for tax breakdown
     const PARISH_TAX_RATES: Record<string, number> = {
@@ -445,7 +457,7 @@ serve(async (req) => {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BLACK);
-    doc.text("Subtotal", tableX, y);
+    doc.text("TOTAL", tableX, y);
     doc.text(fmt(order.price), amtX, y, { align: "right" });
     y += 7;
 
