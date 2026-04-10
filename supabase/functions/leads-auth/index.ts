@@ -1235,13 +1235,9 @@ serve(async (req) => {
           (pit.price_per_extra_mile ?? null) !== (existingPit.price_per_extra_mile ?? null);
 
         if (pricingChanged) {
-          const { data: gs } = await supabase.from("global_settings").select("key, value");
-          const gMap: Record<string, string> = {};
-          for (const r of gs || []) gMap[r.key] = r.value;
-
-          const effBP = savedPit.base_price ?? parseFloat(gMap.default_base_price || "195");
-          const effFM = savedPit.free_miles ?? parseFloat(gMap.default_free_miles || "15");
-          const effEPM = savedPit.price_per_extra_mile ?? parseFloat(gMap.default_extra_per_mile || "5");
+          const effBP = savedPit.base_price;
+          const effFM = savedPit.free_miles;
+          const effEPM = savedPit.price_per_extra_mile;
 
           const { data: affectedPages } = await supabase
             .from("city_pages")
@@ -1490,13 +1486,8 @@ serve(async (req) => {
           (existingPagesForNew || []).map((p: any) => [p.city_name.toLowerCase(), p])
         );
 
-        // Fetch global settings
-        const { data: gsForNew } = await supabase.from("global_settings").select("key, value");
-        const gMapNew: Record<string, string> = {};
-        for (const r of gsForNew || []) gMapNew[r.key] = r.value;
-
         // Discover cities near new pit via reverse geocoding
-        const newPitMaxDist = savedPit.max_distance || parseFloat(gMapNew.default_max_distance || "30");
+        const newPitMaxDist = savedPit.max_distance || 30;
         const VALID_TYPES = ["sublocality_level_1", "locality", "administrative_area_level_3"];
         const EXCLUDE_WORDS = [
           "inc", "llc", "corp", "association", "club", "center", "centre",
@@ -3147,12 +3138,7 @@ serve(async (req) => {
 
       console.log(`[regen_queue] Processing ${pendingPages.length} pages`);
 
-      // Get global settings for pricing defaults
-      const { data: gSettings } = await supabase.from("global_settings").select("key, value");
-      const gs: Record<string, string> = {};
-      (gSettings || []).forEach((s: any) => { gs[s.key] = s.value; });
-
-      // Get all pits for lookup
+      // Get all pits for lookup — pricing comes from pit directly, no global fallbacks
       const { data: allPits } = await supabase.from("pits").select("*").eq("status", "active");
       const pitsById: Record<string, any> = {};
       (allPits || []).forEach((p: any) => { pitsById[p.id] = p; });
@@ -3165,8 +3151,8 @@ serve(async (req) => {
         try {
           const pit = pitsById[page.pit_id] || {};
           const pitName = pit.name || "Unknown";
-          const freeMiles = pit.free_miles || parseFloat(gs.default_free_miles || "15");
-          const sameDayCutoff = pit.same_day_cutoff || gs.same_day_cutoff || "10:00 am";
+          const freeMiles = pit.free_miles || 15;
+          const sameDayCutoff = pit.same_day_cutoff || "10:00 am";
           const satAvailable = pit.operating_days ? pit.operating_days.includes(6) : true;
 
           console.log(`[regen_queue] Generating: ${page.city_name} (pit: ${pitName})`);
