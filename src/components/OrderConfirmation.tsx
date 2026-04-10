@@ -731,15 +731,15 @@ export default function OrderConfirmation({
             <Button
               variant="outline"
               className="h-10 rounded-xl text-xs font-display"
-              asChild
+              onClick={handleWhatsApp}
+              disabled={whatsappLoading}
             >
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Share2 className="w-4 h-4 mr-1" /> WhatsApp
-              </a>
+              {whatsappLoading ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Share2 className="w-4 h-4 mr-1" />
+              )}
+              WhatsApp
             </Button>
             <Button
               variant="outline"
