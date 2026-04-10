@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Loader2, Download, ChevronDown, MessageCircle, Mail, Share2 } from "lucide-react";
+import { Loader2, Download, ChevronDown, MessageCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
@@ -214,73 +214,8 @@ export default function OrderConfirmation({
     a.click();
     document.body.removeChild(a);
   };
-  const [whatsappLoading, setWhatsappLoading] = useState(false);
-
-  const handleWhatsApp = async () => {
-    const orderUrl = lookupToken
-      ? `https://riversand.net/order/track?token=${lookupToken}`
-      : "https://riversand.net";
-
-    const addressForShare = address || "See order details";
-    const dateForShare = deliveryDateLabel || "See order details";
-
-    const message = encodeURIComponent(
-      `✅ River Sand Order Confirmed\n\n` +
-      `Order: ${orderNumber}\n` +
-      `Date: ${dateForShare}\n` +
-      `Address: ${addressForShare}\n` +
-      `Total: ${formatCurrency(finalAmount)}\n\n` +
-      `View your order details & invoice:\n` +
-      `${orderUrl}\n\n` +
-      `Questions? Call 1-855-GOT-WAYS`
-    );
-
-    if (confirmedOrderId && lookupToken) {
-      setWhatsappLoading(true);
-      toast({ title: "Generating PDF...", description: "Preparing your invoice." });
-
-      try {
-        const response = await supabase.functions.invoke("generate-invoice", {
-          body: { order_id: confirmedOrderId, lookup_token: lookupToken },
-        });
-
-        if (!response.error && response.data) {
-          const blob = new Blob([response.data], { type: "application/pdf" });
-          const file = new File([blob], `RiverSand-${orderNumber}.pdf`, { type: "application/pdf" });
-
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({
-              title: `River Sand Order ${orderNumber}`,
-              text: `Your order is confirmed. Total: ${formatCurrency(finalAmount)}`,
-              files: [file],
-            });
-            setWhatsappLoading(false);
-            return;
-          }
-
-          // Fallback: download PDF + open WhatsApp
-          const pdfUrl = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = pdfUrl;
-          a.download = `RiverSand-${orderNumber}.pdf`;
-          a.click();
-
-          setTimeout(() => {
-            window.open(`https://wa.me/?text=${message}`, "_blank");
-            toast({ title: "PDF downloaded", description: "Attach the downloaded PDF to your WhatsApp message." });
-          }, 1000);
-          setWhatsappLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn("PDF generation failed:", err);
-      } finally {
-        setWhatsappLoading(false);
-      }
-    }
-
-    window.open(`https://wa.me/?text=${message}`, "_blank");
-  };
+  // WhatsApp disabled — will be enabled when API is configured
+  // const whatsappEnabled = false;
 
 
   return (
