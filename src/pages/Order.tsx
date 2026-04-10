@@ -75,6 +75,7 @@ const Order = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [formAttempted, setFormAttempted] = useState(false);
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
   const { loaded: apiLoaded } = useGoogleMaps();
@@ -1192,6 +1193,10 @@ const Order = () => {
 
   const isFormValid = selectedDeliveryDate && form.name.trim() && form.phone.trim() && form.email.trim();
 
+  useEffect(() => {
+    if (isFormValid) setFormAttempted(false);
+  }, [isFormValid]);
+
   // --- Section heading helper ---
   const SectionHeading = ({ icon: Icon, title }: { icon: any; title: string }) => (
     <div className="flex items-center gap-3 mb-4">
@@ -1526,7 +1531,7 @@ const Order = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="order-name" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Full Name *</label>
-                        <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-[52px] rounded-lg text-base" />
+                        <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div>
                         <label htmlFor="order-company" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Company Name</label>
@@ -1534,11 +1539,11 @@ const Order = () => {
                       </div>
                       <div>
                         <label htmlFor="order-phone" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Phone *</label>
-                        <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-[52px] rounded-lg text-base" />
+                        <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(504) 555-0123" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.phone.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div>
                         <label htmlFor="order-email" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Email *</label>
-                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-[52px] rounded-lg text-base" />
+                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className={`h-[52px] rounded-lg text-base ${formAttempted && !form.email.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Instructions</label>
@@ -1856,8 +1861,11 @@ const Order = () => {
                       )}
                       <motion.div whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.15)" }} whileTap={{ y: 0 }}>
                         <Button
-                          onClick={paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit}
-                          disabled={submitting || !isFormValid || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)}
+                          onClick={() => {
+                            if (!isFormValid) { setFormAttempted(true); return; }
+                            (paymentMethod === "stripe-link" ? handleStripeLink : handleCodSubmit)();
+                          }}
+                          disabled={submitting || !deliveryTermsAccepted || (paymentMethod !== "stripe-link" && !codPaymentConfirmed)}
                           className="w-full h-14 font-display tracking-wider text-lg bg-accent hover:bg-accent/90 rounded-2xl shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/30 transition-all duration-300 disabled:opacity-40"
                         >
                           {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
