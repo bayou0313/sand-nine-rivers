@@ -43,13 +43,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
 
-    // Look up order by ID + lookup_token, only if token hasn't been used
+    // Look up order by ID + lookup_token (allow reuse within 24h of creation)
     const { data: order, error } = await supabase
       .from("orders")
-      .select("id, status, payment_status, order_number, delivery_date, delivery_day_of_week, delivery_window, quantity, price, delivery_address, customer_name, customer_phone, customer_email, company_name, payment_method, distance_miles, tax_amount, tax_rate, saturday_surcharge, saturday_surcharge_amount, sunday_surcharge, sunday_surcharge_amount, same_day_requested, stripe_payment_id, discount_amount")
+      .select("id, status, payment_status, order_number, delivery_date, delivery_day_of_week, delivery_window, quantity, price, delivery_address, customer_name, customer_phone, customer_email, company_name, payment_method, distance_miles, tax_amount, tax_rate, saturday_surcharge, saturday_surcharge_amount, sunday_surcharge, sunday_surcharge_amount, same_day_requested, stripe_payment_id, discount_amount, card_last4, card_brand")
       .eq("id", order_id)
       .eq("lookup_token", lookup_token)
-      .eq("lookup_token_used", false)
       .maybeSingle();
 
     if (error) {

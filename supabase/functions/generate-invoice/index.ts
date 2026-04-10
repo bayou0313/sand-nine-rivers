@@ -181,7 +181,8 @@ serve(async (req) => {
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
     const isPaid = order.payment_status === "paid";
-    const isCard = order.payment_method === "stripe-link" || order.payment_method === "card";
+    const isCard = ["stripe-link", "stripe", "card"].includes((order.payment_method || "").toLowerCase());
+    console.log("[invoice] payment_method:", order.payment_method, "isPaid:", isPaid, "isCard:", isCard);
     const basePrice = Number(settings.base_price) || 195;
     const baseMiles = Number(settings.free_miles) || 15;
     const perMileExtra = Number(settings.price_per_extra_mile) || 5.5;
@@ -329,10 +330,13 @@ serve(async (req) => {
     const dist = Number(order.distance_miles || 0);
     const distanceFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * qty : 0;
     const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
+    const sunSurcharge = order.sunday_surcharge ? (order.sunday_surcharge_amount || 0) : 0;
+    const discountAmount = Number(order.discount_amount || 0);
     const taxAmount = Number(order.tax_amount || 0);
     const combinedRate = Number(order.tax_rate || 0);
-    const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + taxAmount;
+    const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + sunSurcharge - discountAmount + taxAmount;
     const processingFee = isCard ? Math.max(0, Number(order.price) - subtotalBeforeFee) : 0;
+    console.log("[invoice] pricing breakdown:", { baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, orderPrice: order.price });
 
     // Parish detection for tax breakdown
     const PARISH_TAX_RATES: Record<string, number> = {
@@ -401,6 +405,8 @@ serve(async (req) => {
     priceLines.push({ desc: `${biz.site_name} — 9 cu/yd (×${qty})`, amt: fmt(baseLine) });
     if (distanceFee > 0) priceLines.push({ desc: "Extended area surcharge", amt: fmt(distanceFee) });
     if (satSurcharge > 0) priceLines.push({ desc: "Saturday surcharge", amt: fmt(satSurcharge) });
+    if (sunSurcharge > 0) priceLines.push({ desc: "Sunday surcharge", amt: fmt(sunSurcharge) });
+    if (discountAmount > 0) priceLines.push({ desc: "Discount", amt: `-${fmt(discountAmount)}` });
     if (taxAmount > 0) {
       // Split tax into state + parish lines
       const taxableBase = taxAmount / (combinedRate || 1); // reverse-calc taxable amount

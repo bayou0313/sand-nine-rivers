@@ -1,0 +1,1 @@
+UPDATE global_settings SET value = '' WHERE key = 'footer_address';
