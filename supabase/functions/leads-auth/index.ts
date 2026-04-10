@@ -1671,6 +1671,65 @@ serve(async (req) => {
         console.log(`[save_pit] Auto-discovery complete for ${savedPit.name}: ${pages_created_count} created, ${pages_reassigned} reassigned`);
       }
 
+      // ── PART 4: Inline regen — process flagged pages immediately ──
+      if (regenTriggered) {
+        const regenUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-city-page`;
+        const leadsPass = Deno.env.get("LEADS_PASSWORD") || "";
+        const { data: inlinePages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
+          .eq("needs_regen", true)
+          .in("status", ["active", "draft"])
+          .order("updated_at", { ascending: true })
+          .limit(5);
+
+        const { data: inlinePits } = await supabase.from("pits").select("*").eq("status", "active");
+        const inlinePitsById: Record<string, any> = {};
+        (inlinePits || []).forEach((p: any) => { inlinePitsById[p.id] = p; });
+
+        let inline_processed = 0;
+        for (const page of inlinePages || []) {
+          try {
+            const pit = inlinePitsById[page.pit_id] || {};
+            const response = await fetch(regenUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}` },
+              body: JSON.stringify({
+                password: leadsPass,
+                city_page_id: page.id,
+                city_name: page.city_name,
+                state: page.state || "LA",
+                region: page.region || page.state || "LA",
+                pit_name: pit.name || "Unknown",
+                pit_city: pit.name || "Unknown",
+                distance: page.distance_from_pit || 0,
+                price: page.base_price || pit.base_price || 195,
+                free_miles: pit.free_miles || 15,
+                saturday_available: pit.operating_days ? pit.operating_days.includes(6) : true,
+                same_day_cutoff: pit.same_day_cutoff || "10:00 am",
+                multi_pit_coverage: page.multi_pit_coverage || false,
+              }),
+            });
+            if (response.ok) {
+              await supabase.from("city_pages").update({
+                needs_regen: false, pit_reassigned: false, price_changed: false,
+                regen_reason: null, status: "active", updated_at: new Date().toISOString(),
+              }).eq("id", page.id);
+              inline_processed++;
+              console.log(`[save_pit] Inline regen done: ${page.city_name}`);
+            } else {
+              console.error(`[save_pit] Inline regen failed: ${page.city_name} (${response.status})`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } catch (err: any) {
+            console.error(`[save_pit] Inline regen error: ${page.city_name}`, err.message);
+            continue;
+          }
+        }
+        console.log(`[save_pit] Inline regen complete: ${inline_processed} processed`);
+        pages_regenerated += inline_processed;
+      }
+
       return new Response(
         JSON.stringify({ success: true, pit: savedPit, prices_updated, pages_regenerated, pages_reassigned, pages_created: pages_created_count, deactivation_reassigned, deactivation_waitlisted, reactivation_reassigned, reactivation_unwaitlisted }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
