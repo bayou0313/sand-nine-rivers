@@ -247,16 +247,29 @@ const Order = () => {
         }
 
         setStep("success");
+        const orderTaxRate = Number(order.tax_rate) || 0;
+        const orderTaxAmount = Number(order.tax_amount) || 0;
+        const orderSatSurcharge = Number(order.saturday_surcharge_amount) || 0;
+        const isStripe = order.payment_method ? !["cash", "check", "cod", "COD"].includes(order.payment_method) : false;
+        const orderProcessingFee = isStripe
+          ? parseFloat(((Number(order.price) || 0) / 1.035 * 0.035).toFixed(2))
+          : 0;
+        const orderTotalWithFee = Number(order.price) || 0;
+        const orderTotalWithoutFee = isStripe
+          ? parseFloat((orderTotalWithFee - orderProcessingFee).toFixed(2))
+          : orderTotalWithFee;
+        const orderSubtotal = orderTotalWithoutFee - orderTaxAmount;
+        const orderParish = order.delivery_address ? getTaxRateFromAddress(order.delivery_address).parish : "";
         setConfirmedTotals({
-          totalPrice: Number(order.price) || 0,
-          totalWithProcessingFee: Number(order.price) || 0,
-          processingFee: 0,
-          taxAmount: Number(order.tax_amount) || 0,
-          subtotal: Number(order.price) || 0,
-          saturdaySurchargeTotal: Number(order.saturday_surcharge_amount) || 0,
+          totalPrice: orderTotalWithoutFee,
+          totalWithProcessingFee: orderTotalWithFee,
+          processingFee: orderProcessingFee,
+          taxAmount: orderTaxAmount,
+          subtotal: orderSubtotal,
+          saturdaySurchargeTotal: orderSatSurcharge,
           sundaySurchargeTotal: Number(order.sunday_surcharge_amount) || 0,
           distanceFee: 0,
-          taxInfo: { rate: Number(order.tax_rate) || 0, parish: "" },
+          taxInfo: { rate: orderTaxRate, parish: orderParish },
         });
         setAddress(order.delivery_address || "");
         setPendingOrderId(order.id);
