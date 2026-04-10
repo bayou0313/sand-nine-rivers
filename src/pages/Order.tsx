@@ -266,11 +266,19 @@ const Order = () => {
         setLookupToken(order.lookup_token || null);
         setConfirmedOrderId(order.id);
         if (order.delivery_date) {
+          const d = new Date(order.delivery_date + "T12:00:00");
+          const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+          const shortDays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
           setSelectedDeliveryDate({
-            value: order.delivery_date,
-            label: order.delivery_date,
-            fullLabel: order.delivery_date,
-            date: new Date(order.delivery_date + "T12:00:00"),
+            date: d,
+            label: shortDays[d.getDay()],
+            dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+            fullLabel: d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
+            isSameDay: false,
+            isSaturday: d.getDay() === 6,
+            isSunday: d.getDay() === 0,
+            iso: order.delivery_date,
+            dayOfWeek: dayNames[d.getDay()],
           });
         }
       } catch (err) {
