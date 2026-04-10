@@ -329,6 +329,8 @@ export type Database = {
           capture_status: string | null
           card_authorization_accepted: boolean | null
           card_authorization_timestamp: string | null
+          card_brand: string | null
+          card_last4: string | null
           cash_collected: boolean | null
           cash_collected_at: string | null
           cash_collected_by: string | null
@@ -387,6 +389,8 @@ export type Database = {
           capture_status?: string | null
           card_authorization_accepted?: boolean | null
           card_authorization_timestamp?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           cash_collected?: boolean | null
           cash_collected_at?: string | null
           cash_collected_by?: string | null
@@ -445,6 +449,8 @@ export type Database = {
           capture_status?: string | null
           card_authorization_accepted?: boolean | null
           card_authorization_timestamp?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           cash_collected?: boolean | null
           cash_collected_at?: string | null
           cash_collected_by?: string | null
