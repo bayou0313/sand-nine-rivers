@@ -16,8 +16,7 @@ import {
 
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
-const WAYS_LOGO_DARK =
-  "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/Ways_Sitewide_Logo_Black.png";
+// WAYS_LOGO_DARK removed — footer simplified to text-only
 
 
 const DELIVERY_TERMS = [
@@ -758,28 +757,6 @@ export default function OrderConfirmation({
           className="py-10 px-6 flex flex-col items-center text-center rounded-b-2xl"
           style={{ backgroundColor: "#FFFFFF", borderTop: "1px solid #E5E7EB" }}
         >
-          <p
-            className="text-[9px] tracking-[0.2em] uppercase mb-2 font-display"
-            style={{ color: "#000000" }}
-          >
-            Powered by
-          </p>
-          <img
-            src={WAYS_LOGO_DARK}
-            alt="WAYS"
-            title="WAYS® Materials LLC"
-            className="w-[108px] mb-4"
-          />
-
-          <div
-            style={{
-              width: 40,
-              height: 1,
-              backgroundColor: "#C07A00",
-              marginBottom: 24,
-            }}
-          />
-
           <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
