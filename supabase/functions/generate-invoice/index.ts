@@ -546,13 +546,25 @@ serve(async (req) => {
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...GRAY);
-      doc.text("Nothing due at delivery — payment collected by Stripe", mx, pinnedTopY + 9);
+      doc.text("Nothing due at delivery — payment collected by credit card", mx, pinnedTopY + 9);
 
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
       doc.text("$0.00", pw - mx, pinnedTopY + 4, { align: "right" });
-      if (order.stripe_payment_id) {
+
+      // Show card brand + last4 if available, otherwise Stripe ref
+      const cardLast4 = (order as any).card_last4;
+      const cardBrand = (order as any).card_brand;
+      if (cardLast4) {
+        const brandLabel = cardBrand
+          ? cardBrand.charAt(0).toUpperCase() + cardBrand.slice(1)
+          : "Card";
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...GRAY);
+        doc.text(`${brandLabel} •••• ${cardLast4}`, pw - mx, pinnedTopY + 9, { align: "right" });
+      } else if (order.stripe_payment_id) {
         doc.setFontSize(6.5);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(...GRAY);

@@ -305,12 +305,30 @@ serve(async (req) => {
     console.log("[stripe-webhook] Resolved order:", orderId, "paymentStatus:", paymentStatus, "stripePaymentId:", stripePaymentId);
 
     if (orderId && paymentStatus) {
-      const updateData: Record<string, string> = {
+      const updateData: Record<string, any> = {
         payment_status: paymentStatus,
       };
       if (stripePaymentId) {
         updateData.stripe_payment_id = stripePaymentId;
       }
+
+      // Retrieve card details from Stripe for paid orders
+      if (paymentStatus === "paid" && stripePaymentId) {
+        try {
+          const pi = await stripe.paymentIntents.retrieve(stripePaymentId, {
+            expand: ["payment_method"],
+          });
+          const card = (pi.payment_method as any)?.card;
+          if (card?.last4) {
+            updateData.card_last4 = card.last4;
+            updateData.card_brand = card.brand || null;
+            console.log(`[stripe-webhook] Card details: ${card.brand} ****${card.last4}`);
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] Could not retrieve card details:", e);
+        }
+      }
+
       if (paymentStatus === "paid" || paymentStatus === "authorized") {
         const { data: currentOrder } = await supabase
           .from("orders")
@@ -325,14 +343,14 @@ serve(async (req) => {
         }
 
         // Update order FIRST, then send email
-        console.log("[stripe-webhook] Updating order:", orderId, "with:", updateData);
+        console.log("[stripe-webhook] Updating order:", orderId, "with:", JSON.stringify(updateData));
         const { error: updateError, data: updateResult } = await supabase
           .from("orders")
           .update(updateData)
           .eq("id", orderId)
           .select("id, order_number, payment_status, status");
 
-        console.log("[stripe-webhook] Order update result:", updateResult, "error:", updateError);
+        console.log("[stripe-webhook] Order update result:", JSON.stringify(updateResult), "error:", JSON.stringify(updateError));
 
         if (updateError) {
           console.error("[stripe-webhook] Failed to update order:", updateError);
