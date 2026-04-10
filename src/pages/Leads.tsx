@@ -2550,10 +2550,10 @@ const Leads = () => {
                 size="sm"
                 variant="outline"
                 className="text-xs"
-                style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
+                style={{ borderColor: "#D97706", color: "#D97706", fontWeight: 600 }}
               >
                <RefreshCw className="w-3 h-3 mr-1" />
-                Regen All to v3.1
+                Regen All Pages
               </Button>
               <Button
                 onClick={async () => {
@@ -2574,7 +2574,7 @@ const Leads = () => {
                 style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
               >
                 <RefreshCw className="w-3 h-3 mr-1" />
-                Backfill Regions
+                Fix Missing Regions
               </Button>
               <Button
                 onClick={async () => {
@@ -2595,7 +2595,7 @@ const Leads = () => {
                 style={{ borderColor: BRAND_GOLD + "40", color: BRAND_GOLD }}
               >
                 <MapPin className="w-3 h-3 mr-1" />
-                Backfill Local Addresses
+                Fix Missing Addresses
               </Button>
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
@@ -2610,13 +2610,13 @@ const Leads = () => {
               </Button>
             </div>
 
-            {/* Regen All to v3.1 Confirmation Modal */}
+            {/* Regen All Pages Confirmation Modal */}
             {showRegenAllConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regen All to v3.1?</h3>
+                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regen All Pages?</h3>
                   <p className="text-sm text-gray-600">
-                    This will flag all <strong>{cityPages.filter(c => c.status === "active").length}</strong> active city pages for regeneration with the updated v3.1 prompt (unique meta titles & descriptions with pricing).
+                    This will flag all <strong>{cityPages.filter(c => c.status === "active").length}</strong> active city pages for regeneration with the current prompt version.
                   </p>
                   <p className="text-sm text-gray-600">
                     Pages will be queued and processed automatically by the background regen system. No content will change until the queue runs.
@@ -2624,7 +2624,7 @@ const Leads = () => {
                   <div className="flex gap-3 justify-end">
                     <Button variant="outline" onClick={() => setShowRegenAllConfirm(false)}>Cancel</Button>
                     <Button
-                      style={{ backgroundColor: BRAND_GOLD, color: "#fff" }}
+                      style={{ backgroundColor: "#D97706", color: "#fff" }}
                       disabled={flaggingRegenAll}
                       onClick={async () => {
                         setFlaggingRegenAll(true);
