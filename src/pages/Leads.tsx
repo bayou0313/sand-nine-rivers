@@ -1131,7 +1131,7 @@ const Leads = () => {
       { field: newPit.price_per_extra_mile, name: "Extra per mile" },
       { field: newPit.max_distance, name: "Max delivery distance" },
     ];
-    const missingNewFields = requiredNewPitFields.filter(f => f.field === null || f.field === undefined || f.field === "" || isNaN(Number(f.field)));
+    const missingNewFields = requiredNewPitFields.filter(f => f.field == null || isNaN(Number(f.field)));
     if (missingNewFields.length > 0) {
       toast({ title: "Missing required pricing", description: `Please fill in: ${missingNewFields.map(f => f.name).join(", ")}`, variant: "destructive" });
       return;
@@ -1295,12 +1295,9 @@ const Leads = () => {
       { field: editPitData.price_per_extra_mile, name: "Extra per mile" },
       { field: editPitData.max_distance, name: "Max delivery distance" },
     ];
-    const missingEditFields = requiredEditFields.filter(f => f.field === null || f.field === undefined || f.field === "" || isNaN(Number(f.field)));
+    const missingEditFields = requiredEditFields.filter(f => f.field == null || isNaN(Number(f.field)));
     if (missingEditFields.length > 0) {
       toast({ title: "Missing required pricing", description: `Please fill in: ${missingEditFields.map(f => f.name).join(", ")}`, variant: "destructive" });
-      return;
-    }
-    if (false) { // original guard placeholder
       return;
     }
     setSavingPit(true);
