@@ -389,7 +389,10 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                   <tr>
                     <td style="text-align:center;">
-                      <a href="https://${WEBSITE}" style="display:inline-block;background-color:${BRAND_GOLD};color:#FFFFFF;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">
+                      <a href="${order.lookup_token
+                        ? `https://${WEBSITE}/order?token=${order.lookup_token}`
+                        : `https://${WEBSITE}`
+                      }" style="display:inline-block;background-color:${BRAND_GOLD};color:#FFFFFF;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;">
                         VIEW ORDER DETAILS
                       </a>
                     </td>
@@ -459,7 +462,7 @@ function orderDispatchEmail(data: any): string {
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
 </head>
 <body style="margin:0;padding:0;background:#0A1628;
-  font-family:'Courier New',Courier,monospace;">
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0">
 <tr><td align="center" style="padding:20px 16px;">
 <table width="560" cellpadding="0" cellspacing="0"
@@ -635,13 +638,17 @@ function orderDispatchEmail(data: any): string {
     border-radius:0 0 12px 12px;
     text-align:center;
     border-top:1px solid #1E3A5F;">
-    <img src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png"
+    <img src="${WAYS_WHITE_LOGO}"
       alt="WAYS" width="64"
       style="display:block;margin:0 auto 10px auto;
       opacity:0.45;" />
     <p style="color:rgba(255,255,255,0.25);
-      font-size:9px;margin:0;letter-spacing:1px;">
+      font-size:9px;margin:0 0 4px 0;letter-spacing:1px;">
       © ${COPYRIGHT_YEAR} ${LEGAL_NAME}
+    </p>
+    <p style="color:rgba(255,255,255,0.3);
+      font-size:10px;margin:0;">
+      ${PHONE} · ${SUPPORT_EMAIL}
     </p>
   </td></tr>
 
