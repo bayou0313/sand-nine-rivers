@@ -10,16 +10,11 @@ export interface Palette {
 }
 
 export const PALETTES: Palette[] = [
-  { id: "original_navy",    name: "Original Navy",    vibe: "Current brand",    primary: "#0D2137", accent: "#C07A00", background: "#F2EDE4" },
-  { id: "charcoal_ember",   name: "Charcoal Ember",   vibe: "Warm industrial",  primary: "#2D2D2D", accent: "#D4763A", background: "#F5F2EE" },
-  { id: "forest_gold",      name: "Forest Gold",      vibe: "Earthy natural",   primary: "#1B4332", accent: "#D4A017", background: "#F4F1EC" },
-  { id: "slate_copper",     name: "Slate Copper",     vibe: "Modern refined",   primary: "#334155", accent: "#B87333", background: "#F8F6F3" },
-  { id: "espresso_sand",    name: "Espresso Sand",    vibe: "Warm premium",     primary: "#3E2723", accent: "#C9A84C", background: "#FAF7F2" },
-  { id: "storm_steel",      name: "Storm Steel",      vibe: "Cool minimal",     primary: "#1E293B", accent: "#64748B", background: "#F1F5F9" },
-  { id: "oxblood_clay",     name: "Oxblood Clay",     vibe: "Bold heritage",    primary: "#6B1D1D", accent: "#C07A00", background: "#FBF7F2" },
-  { id: "midnight_sage",    name: "Midnight Sage",    vibe: "Calm natural",     primary: "#1A1A2E", accent: "#7C9A6E", background: "#F5F5F0" },
-  { id: "granite_amber",    name: "Granite Amber",    vibe: "Neutral bold",     primary: "#4A4A4A", accent: "#E5A100", background: "#FAFAF8" },
-  { id: "dusk_terracotta",  name: "Dusk Terracotta",  vibe: "Desert warmth",    primary: "#2C1810", accent: "#C45B28", background: "#F9F5F0" },
+  { id: "ways-core",          name: "WAYS Core",           vibe: "Authority — Navy + Gold",        primary: "#0D2137", accent: "#C07A00", background: "#F5F2EA" },
+  { id: "mississippi-mud",    name: "Mississippi Mud",      vibe: "Earthy — Brown + Orange",        primary: "#3D2B1F", accent: "#D4822A", background: "#FBF6EF" },
+  { id: "gulf-green",         name: "Gulf Green",           vibe: "Natural — Forest + Gold",        primary: "#1B4332", accent: "#D4A017", background: "#F0F7F4" },
+  { id: "bayou-night",        name: "Bayou Night",          vibe: "Bold — Deep Navy + Orange",      primary: "#1A0A2E", accent: "#FF6B2B", background: "#FFFFFF" },
+  { id: "river-sand-natural", name: "River Sand Natural",   vibe: "Premium — Slate + Sand Yellow",  primary: "#2C3E50", accent: "#E8C547", background: "#FAFAF8" },
 ];
 
 /** Convert hex (#RRGGBB) to HSL "h s% l%" string */
@@ -100,7 +95,7 @@ export function getPaletteById(id: string): Palette {
 export function getPaletteForSlug(slug: string): Palette {
   let hash = 0;
   for (let i = 0; i < slug.length; i++) {
-    hash = ((hash << 5) - hash + slug.charCodeAt(i)) | 0;
+    hash = (hash * 31 + slug.charCodeAt(i)) & 0xffffffff;
   }
   return PALETTES[Math.abs(hash) % PALETTES.length];
 }
