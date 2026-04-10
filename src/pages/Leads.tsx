@@ -642,7 +642,7 @@ const Leads = () => {
   }, [fetchAbandonedSessions, toast]);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
-  const basePrice = parseFloat(globalSettings.default_base_price || "195");
+  const basePrice = 195; // Pricing now lives on individual PITs
 
   const fetchLeads = useCallback(async (pw: string) => {
     setLoading(true);
@@ -1883,7 +1883,7 @@ const Leads = () => {
     );
   }
 
-  const livePricing = `$${globalSettings.default_base_price} base · $${globalSettings.default_extra_per_mile}/mi · ${globalSettings.default_max_distance}mi max`;
+  const livePricing = "Pricing configured per PIT";
   const currentPage = PAGE_TITLES[activePage];
 
   // ─── RENDER PAGES ───
