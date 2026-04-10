@@ -513,7 +513,7 @@ export default function OrderConfirmation({
           <div className="px-6 pb-6 max-w-[680px] mx-auto" style={{ marginTop: "8px" }}>
             <div className="flex justify-between items-baseline">
               <span className="font-display text-sm font-bold tracking-wider" style={{ color: "#111827" }}>PAID IN FULL</span>
-              <span className="font-display text-sm font-bold" style={{ color: "#111827" }}>$0.00</span>
+              <span className="font-display text-sm font-bold" style={{ color: "#111827" }}>{formatCurrency(finalAmount)}</span>
             </div>
             <p className="text-xs font-body mt-1" style={{ color: "#6B7280" }}>
               Nothing due at delivery — payment collected by Stripe

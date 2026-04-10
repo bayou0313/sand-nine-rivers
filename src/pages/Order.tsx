@@ -230,6 +230,62 @@ const Order = () => {
     return null;
   }, []);
 
+  // Handle lookup token (shared order link)
+  useEffect(() => {
+    const tokenParam = searchParams.get("token");
+    if (!tokenParam) return;
+
+    (async () => {
+      try {
+        const { data: order, error } = await supabase.functions.invoke("get-order-status", {
+          body: { lookup_token: tokenParam },
+        });
+
+        if (error || !order || order.error) {
+          console.error("[token-lookup] Order not found:", error || order?.error);
+          return;
+        }
+
+        setStep("success");
+        setConfirmedTotals({
+          totalPrice: Number(order.price) || 0,
+          totalWithProcessingFee: Number(order.price) || 0,
+          processingFee: 0,
+          taxAmount: Number(order.tax_amount) || 0,
+          subtotal: Number(order.price) || 0,
+          saturdaySurchargeTotal: Number(order.saturday_surcharge_amount) || 0,
+          sundaySurchargeTotal: Number(order.sunday_surcharge_amount) || 0,
+          distanceFee: 0,
+          taxInfo: { rate: Number(order.tax_rate) || 0, parish: "" },
+        });
+        setAddress(order.delivery_address || "");
+        setPendingOrderId(order.id);
+        setOrderNumber(order.order_number || null);
+        setLookupToken(order.lookup_token || tokenParam);
+        setConfirmedOrderId(order.id);
+        setPaymentMethod(order.payment_method || "stripe-link");
+        if (order.delivery_date) {
+          const d = new Date(order.delivery_date + "T12:00:00");
+          const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+          const shortDays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+          setSelectedDeliveryDate({
+            date: d,
+            label: shortDays[d.getDay()],
+            dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+            fullLabel: d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
+            isSameDay: false,
+            isSaturday: d.getDay() === 6,
+            isSunday: d.getDay() === 0,
+            iso: order.delivery_date,
+            dayOfWeek: dayNames[d.getDay()],
+          });
+        }
+      } catch (err) {
+        console.error("[token-lookup] Error:", err);
+      }
+    })();
+  }, []);
+
   // Handle Stripe return via URL params
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");

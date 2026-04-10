@@ -22,16 +22,16 @@ serve(async (req) => {
   try {
     const { order_id, lookup_token } = await req.json();
 
-    if (!order_id || !lookup_token) {
+    if (!lookup_token) {
       return new Response(
-        JSON.stringify({ error: "order_id and lookup_token are required" }),
+        JSON.stringify({ error: "lookup_token is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(order_id) || !uuidRegex.test(lookup_token)) {
+    if (!uuidRegex.test(lookup_token) || (order_id && !uuidRegex.test(order_id))) {
       return new Response(
         JSON.stringify({ error: "Invalid format" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -43,13 +43,17 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
 
-    // Look up order by ID + lookup_token (allow reuse within 24h of creation)
-    const { data: order, error } = await supabase
+    // Look up order by lookup_token (and optionally order_id)
+    let query = supabase
       .from("orders")
-      .select("id, status, payment_status, order_number, delivery_date, delivery_day_of_week, delivery_window, quantity, price, delivery_address, customer_name, customer_phone, customer_email, company_name, payment_method, distance_miles, tax_amount, tax_rate, saturday_surcharge, saturday_surcharge_amount, sunday_surcharge, sunday_surcharge_amount, same_day_requested, stripe_payment_id, discount_amount, card_last4, card_brand")
-      .eq("id", order_id)
-      .eq("lookup_token", lookup_token)
-      .maybeSingle();
+      .select("id, status, payment_status, order_number, delivery_date, delivery_day_of_week, delivery_window, quantity, price, delivery_address, customer_name, customer_phone, customer_email, company_name, payment_method, distance_miles, tax_amount, tax_rate, saturday_surcharge, saturday_surcharge_amount, sunday_surcharge, sunday_surcharge_amount, same_day_requested, stripe_payment_id, discount_amount, card_last4, card_brand, lookup_token")
+      .eq("lookup_token", lookup_token);
+
+    if (order_id) {
+      query = query.eq("id", order_id);
+    }
+
+    const { data: order, error } = await query.maybeSingle();
 
     if (error) {
       console.error("DB error:", error);
@@ -102,6 +106,7 @@ serve(async (req) => {
         same_day_requested: order.same_day_requested,
         stripe_payment_id: order.stripe_payment_id,
         discount_amount: order.discount_amount,
+        lookup_token: order.lookup_token,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
