@@ -436,6 +436,30 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               );
             })()}
 
+            {/* Saturday availability note */}
+            {(() => {
+              const saturdayAvailable = pits.some(p => p.status === "active" && p.operating_days?.includes(6));
+              return saturdayAvailable ? (
+                <div style={{
+                  fontSize: "11px",
+                  color: "#92400E",
+                  background: "#FEF9C3",
+                  border: "1px solid #FDE68A",
+                  borderRadius: "6px",
+                  padding: "6px 10px",
+                  marginTop: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}>
+                  <span>📅</span>
+                  <span>
+                    <strong>Saturday delivery available</strong> — price may vary based on availability. Select your date to see exact pricing.
+                  </span>
+                </div>
+              ) : null;
+            })()}
+
             {result.sameDayCutoff && isSameDayAvailable(result.sameDayCutoff) && (
               <div className="flex items-center gap-2 justify-center text-green-400">
                 <Clock className="w-4 h-4" />
