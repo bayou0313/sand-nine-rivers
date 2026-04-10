@@ -215,63 +215,8 @@ export default function OrderConfirmation({
     document.body.removeChild(a);
   };
 
-  const handleWhatsApp = () => {
-    setShowWhatsAppChoice(true);
-  };
 
-  const sendWhatsAppApp = () => {
-    setShowWhatsAppChoice(false);
-    const url = `whatsapp://send?text=${encodeURIComponent(shareText)}`;
-    try {
-      const a = document.createElement("a");
-      a.href = url;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      // Fallback after timeout — if app didn't open, try web
-      setTimeout(() => {
-        // Can't reliably detect if it opened, so we don't auto-fallback here
-      }, 1500);
-    } catch {
-      sendWhatsAppWeb();
-    }
-  };
 
-  const sendWhatsAppWeb = async () => {
-    setShowWhatsAppChoice(false);
-
-    // Try sharing the PDF file via Web Share API if order details are available
-    if (confirmedOrderId && lookupToken) {
-      toast({ title: "Generating PDF…", description: "Preparing your order for sharing." });
-      try {
-        const response = await supabase.functions.invoke("generate-invoice", {
-          body: { order_id: confirmedOrderId, lookup_token: lookupToken },
-        });
-        if (response.error) throw new Error("Failed to generate PDF");
-
-        const blob = new Blob([response.data], { type: "application/pdf" });
-        const file = new File([blob], `RiverSand-Order-${orderNumber || "details"}.pdf`, { type: "application/pdf" });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], text: shareText });
-          return;
-        }
-      } catch (err: any) {
-        if (err?.name === "AbortError") return; // User cancelled share dialog
-        toast({ title: "Could not share PDF", description: "Falling back to text share.", variant: "destructive" });
-      }
-    }
-
-    // Fallback: text-only WhatsApp Web link
-    const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-    const win = window.open(url, "_blank");
-    if (!win) {
-      navigator.clipboard.writeText(shareText).then(() => {
-        toast({ title: "Copied to clipboard", description: "Order details copied — paste into WhatsApp." });
-      }).catch(() => {});
-    }
-  };
 
   return (
     <div className="print-confirmation max-w-[720px] mx-auto my-6 rounded-2xl shadow-lg border border-border/40 overflow-hidden font-body" style={{ backgroundColor: "#FFFFFF" }}>
