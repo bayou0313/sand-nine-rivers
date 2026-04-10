@@ -1579,7 +1579,7 @@ const Order = () => {
                       {result.distance > effectivePricing.free_miles && (
                         <>
                           <div className="border-b border-dashed border-border" />
-                          <ReceiptRow label={`Extended delivery surcharge × ${quantity}`} value={`+${formatCurrency((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity)}`} />
+                          <ReceiptRow label={`Extra Mile Fee (${Math.round(result.distance - effectivePricing.free_miles)} mi beyond service area) × ${quantity}`} value={`+${formatCurrency((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity)}`} />
                         </>
                       )}
                       <div className="border-b border-dashed border-border" />

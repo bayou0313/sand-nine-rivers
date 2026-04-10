@@ -420,13 +420,13 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="p-3 bg-amber-50 border border-amber-200 rounded-lg"
+          className="p-4 bg-amber-50 border-2 border-amber-400 rounded-xl"
         >
-          <p className="font-body text-sm text-amber-800 flex items-center gap-2">
+          <p className="font-body text-base font-semibold text-amber-800 flex items-center gap-2">
             <CalendarDays className="w-4 h-4 shrink-0" />
             Saturday delivery — ${effectiveSatSurcharge} surcharge added. Limited spots available.
           </p>
-          <p className="font-body text-xs text-amber-700 mt-1 ml-6">
+          <p className="font-body text-sm text-amber-700 mt-1 ml-6">
             Card payment required for weekend deliveries.
           </p>
         </motion.div>
