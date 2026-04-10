@@ -61,7 +61,7 @@ const DEFAULT_BIZ: BizSettings = {
   site_name: "River Sand",
   phone: "1-855-GOT-WAYS",
   website: "riversand.net",
-  footer_address: "202 Larosa Dr, Long Beach, MS",
+  footer_address: "",
   ein_number: "",
   support_email: "",
 };
@@ -551,7 +551,7 @@ serve(async (req) => {
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...DARK);
-      doc.text("$0.00", pw - mx, pinnedTopY + 4, { align: "right" });
+      doc.text(fmt(order.price), pw - mx, pinnedTopY + 4, { align: "right" });
 
       // Show card brand + last4 if available, otherwise Stripe ref
       const cardLast4 = (order as any).card_last4;

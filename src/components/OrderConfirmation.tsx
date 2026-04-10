@@ -167,7 +167,7 @@ export default function OrderConfirmation({
 }: OrderConfirmationProps) {
   const { toast } = useToast();
   const biz = useBusinessSettings();
-  const [showWhatsAppChoice, setShowWhatsAppChoice] = useState(false);
+  
 
   const isStripePaid =
     paymentMethod === "stripe-link" || stripePaymentId != null;
@@ -215,63 +215,8 @@ export default function OrderConfirmation({
     document.body.removeChild(a);
   };
 
-  const handleWhatsApp = () => {
-    setShowWhatsAppChoice(true);
-  };
 
-  const sendWhatsAppApp = () => {
-    setShowWhatsAppChoice(false);
-    const url = `whatsapp://send?text=${encodeURIComponent(shareText)}`;
-    try {
-      const a = document.createElement("a");
-      a.href = url;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      // Fallback after timeout — if app didn't open, try web
-      setTimeout(() => {
-        // Can't reliably detect if it opened, so we don't auto-fallback here
-      }, 1500);
-    } catch {
-      sendWhatsAppWeb();
-    }
-  };
 
-  const sendWhatsAppWeb = async () => {
-    setShowWhatsAppChoice(false);
-
-    // Try sharing the PDF file via Web Share API if order details are available
-    if (confirmedOrderId && lookupToken) {
-      toast({ title: "Generating PDF…", description: "Preparing your order for sharing." });
-      try {
-        const response = await supabase.functions.invoke("generate-invoice", {
-          body: { order_id: confirmedOrderId, lookup_token: lookupToken },
-        });
-        if (response.error) throw new Error("Failed to generate PDF");
-
-        const blob = new Blob([response.data], { type: "application/pdf" });
-        const file = new File([blob], `RiverSand-Order-${orderNumber || "details"}.pdf`, { type: "application/pdf" });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], text: shareText });
-          return;
-        }
-      } catch (err: any) {
-        if (err?.name === "AbortError") return; // User cancelled share dialog
-        toast({ title: "Could not share PDF", description: "Falling back to text share.", variant: "destructive" });
-      }
-    }
-
-    // Fallback: text-only WhatsApp Web link
-    const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-    const win = window.open(url, "_blank");
-    if (!win) {
-      navigator.clipboard.writeText(shareText).then(() => {
-        toast({ title: "Copied to clipboard", description: "Order details copied — paste into WhatsApp." });
-      }).catch(() => {});
-    }
-  };
 
   return (
     <div className="print-confirmation max-w-[720px] mx-auto my-6 rounded-2xl shadow-lg border border-border/40 overflow-hidden font-body" style={{ backgroundColor: "#FFFFFF" }}>
@@ -695,42 +640,55 @@ export default function OrderConfirmation({
             View Order Details
           </Button>
 
-          {/* WhatsApp share */}
-          <div className="relative">
+          {/* Share buttons row */}
+          <div className="grid grid-cols-4 gap-2">
             <Button
               variant="outline"
-              className="w-full h-11 rounded-xl font-display tracking-wider text-sm"
-              onClick={handleWhatsApp}
+              className="h-10 rounded-xl text-xs font-display"
+              onClick={handleMailtoClick}
             >
-              <Share2 className="w-4 h-4 mr-2" /> WhatsApp
+              <Mail className="w-4 h-4 mr-1" /> Email
             </Button>
-
-            {/* WhatsApp choice modal */}
-            {showWhatsAppChoice && (
-              <div className="absolute bottom-full mb-2 right-0 bg-white rounded-xl shadow-xl border border-border p-3 z-50 w-56">
-                <p className="text-xs font-semibold font-display mb-2" style={{ color: "#0D2137" }}>
-                  Open with:
-                </p>
-                <button
-                  onClick={sendWhatsAppApp}
-                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  📱 WhatsApp App
-                </button>
-                <button
-                  onClick={sendWhatsAppWeb}
-                  className="w-full text-left text-sm font-body px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  💻 WhatsApp Web
-                </button>
-                <button
-                  onClick={() => setShowWhatsAppChoice(false)}
-                  className="w-full text-center text-xs font-body text-muted-foreground mt-1 py-1"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display md:hidden"
+              asChild
+            >
+              <a href={`sms:?body=${encodeURIComponent(shareText)}`}>
+                <MessageCircle className="w-4 h-4 mr-1" /> SMS
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display hidden md:inline-flex"
+              disabled
+              title="SMS available on mobile only"
+            >
+              <MessageCircle className="w-4 h-4 mr-1" /> SMS
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display"
+              asChild
+            >
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Share2 className="w-4 h-4 mr-1" /> WhatsApp
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl text-xs font-display"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast({ title: "Link copied!" });
+              }}
+            >
+              🔗 Copy
+            </Button>
           </div>
 
           <div className="text-center space-y-1 pt-2">
@@ -760,9 +718,11 @@ export default function OrderConfirmation({
           <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             © {biz.copyright_year} {biz.legal_name}
           </p>
-          <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
-            {biz.footer_address}
-          </p>
+          {biz.footer_address && (
+            <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
+              {biz.footer_address}
+            </p>
+          )}
           <p className="text-xs mb-1 font-body" style={{ color: "#000000" }}>
             {biz.support_email} · {biz.phone}
           </p>
