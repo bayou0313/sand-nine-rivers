@@ -344,8 +344,11 @@ serve(async (req) => {
     const taxAmount = Number(order.tax_amount || 0);
     const combinedRate = Number(order.tax_rate || 0);
     const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + sunSurcharge - discountAmount + taxAmount;
-    const processingFee = isCard ? Math.max(0, Number(order.price) - subtotalBeforeFee) : 0;
-    console.log("[invoice] pricing breakdown:", { baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, orderPrice: order.price });
+    // Reverse-calculate processing fee from stored total using the known fee rate
+    const processingFee = isCard
+      ? parseFloat((subtotalBeforeFee * feeRate + feeFixed).toFixed(2))
+      : 0;
+    console.log("[invoice] pricing breakdown:", { basePrice, baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, feeRate, feeFixed, orderPrice: order.price });
 
     // Parish detection for tax breakdown
     const PARISH_TAX_RATES: Record<string, number> = {
