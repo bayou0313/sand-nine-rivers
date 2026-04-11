@@ -11,11 +11,13 @@ const checkMobile = () => {
 };
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState<boolean>(checkMobile);
+  const [isMobile, setIsMobile] = useState(() => checkMobile());
 
   useEffect(() => {
     const handler = () => setIsMobile(checkMobile());
     window.addEventListener("resize", handler);
+    // Re-check immediately on mount
+    handler();
     return () => window.removeEventListener("resize", handler);
   }, []);
 
