@@ -136,6 +136,7 @@ export interface OrderConfirmationProps {
   canDownload: boolean;
   confirmedOrderId?: string | null;
   lookupToken?: string | null;
+  pricingMode?: "transparent" | "baked";
 }
 
 export default function OrderConfirmation({
@@ -164,6 +165,7 @@ export default function OrderConfirmation({
   canDownload,
   confirmedOrderId,
   lookupToken,
+  pricingMode = "transparent",
 }: OrderConfirmationProps) {
   const { toast } = useToast();
   const biz = useBusinessSettings();
@@ -466,7 +468,7 @@ export default function OrderConfirmation({
                 </>
               );
             })()}
-            {isStripePaid && (
+            {isStripePaid && pricingMode !== "baked" && (
               <PriceRow
                 label="Card Processing Fee (3.5% + $0.30/txn)"
                 value={formatCurrency(displayProcessingFee)}

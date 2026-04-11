@@ -1,6 +1,6 @@
 const CORPORATE_DESIGNATORS = new Set([
   'LLC', 'L.L.C.', 'LC', 'L.C.',
-  'Inc', 'Inc.', 'Corp', 'Corp.', 'Ltd', 'Ltd.', 'Co.',
+  'Inc', 'Inc.', 'Corp', 'Corp.', 'Ltd', 'Ltd.',
   'GP', 'LP', 'L.P.', 'LLP', 'L.L.P.', 'LLLP', 'L.L.L.P.',
   'PC', 'P.C.', 'PA', 'P.A.', 'PLLC', 'P.L.L.C.',
   'Chtd.', 'CHTD', 'SC', 'S.C.',
@@ -18,20 +18,20 @@ export function formatProperName(value: string): string {
       const isLastWord = index === words.length - 1;
       const isBeingTyped = isLastWord && !endsWithSpace;
 
-      // Always check corporate designators first — even on last word
+      // Only match corporate designators on completed words (not while typing)
       const cleaned = word.replace(/[.,]/g, '').toUpperCase();
-      for (const d of CORPORATE_DESIGNATORS) {
-        if (d.replace(/[.,]/g, '').toUpperCase() === cleaned) {
-          return d;
+      if (cleaned.length >= 2 && !isBeingTyped) {
+        for (const d of CORPORATE_DESIGNATORS) {
+          if (d.replace(/[.,]/g, '').toUpperCase() === cleaned) {
+            return d;
+          }
         }
       }
 
       if (isBeingTyped) {
-        // Still typing — capitalize first letter, lowercase rest (handles Caps Lock)
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       }
 
-      // Complete word — full title case enforcement
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
     .join(' ');

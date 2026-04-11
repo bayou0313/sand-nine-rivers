@@ -136,6 +136,7 @@ const OrderMobile = () => {
   const [showCompany, setShowCompany] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [gmbReviewUrl, setGmbReviewUrl] = useState<string | null>(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Derived pricing
   const effectivePricing = useMemo(() => {
@@ -492,8 +493,13 @@ const OrderMobile = () => {
           const verifyTk = lookupToken || null;
           if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
           if (verifyOrderId && verifyTk) {
-            verifyStripePayment(verifyOrderId, verifyTk).then(() => {
+            verifyStripePayment(verifyOrderId, verifyTk).then((orderData) => {
               setVerifyingPayment(false);
+              if (orderData) {
+                populateConfirmedTotals(orderData);
+                setConfirmedOrderId(orderData.id || verifyOrderId);
+                setOrderNumber(orderData.order_number || signal.order_number);
+              }
               toast({ title: "Payment successful", description: `Order ${signal.order_number || ""} confirmed.` });
             });
           } else {
@@ -1142,49 +1148,30 @@ const OrderMobile = () => {
                 )}
               </div>
 
-              {/* Delivery Terms — single checkbox */}
-              <div className="flex items-start gap-3 mt-3">
-                <input
-                  type="checkbox"
-                  checked={deliveryTermsAccepted}
-                  onChange={e => setDeliveryTermsAccepted(e.target.checked)}
-                  className="mt-0.5 shrink-0"
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    accentColor: 'hsl(var(--accent))',
-                    cursor: 'pointer'
-                  }}
-                />
-                <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  I agree to the{' '}
-                  <a 
-                    href="/delivery-terms" 
-                    target="_blank"
-                    className="underline"
-                    style={{ color: 'hsl(var(--accent))' }}
-                  >
-                    delivery terms
-                  </a>
-                </p>
-              </div>
-
-              {/* Delivery & COD disclaimers */}
-              <div className="rounded-xl p-3 mb-3">
-                <p className="font-body text-xs leading-relaxed" style={{ color: '#0D2137' }}>
-                  <strong>Delivery:</strong>{' '}
-                  Curbside only - curb to sidewalk/driveway edge. No private property entry. 
-                  Customer must ensure clear, accessible delivery area before arrival. 
-                  WAYS® Materials LLC not liable for damage to driveways, landscaping, or property. 
-                  Customer or representative must be present at delivery.
+              {/* Disclaimer + checkbox in styled container */}
+              <div className="rounded-2xl p-4 mt-3" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB' }}>
+                <p className="font-body text-xs leading-relaxed" style={{ color: '#4B5563' }}>
+                  <strong style={{ color: '#0D2137' }}>Delivery Terms:</strong> Curbside only. No private property entry. Customer must ensure clear site access. WAYS® Materials LLC not liable for damage to driveways or landscaping. Customer must be present at delivery.
                 </p>
                 {(paymentMethod === 'cash' || paymentMethod === 'check') && (
-                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: '#0D2137' }}>
-                    <strong>COD Payment:</strong>{' '}
-                    Cash or check due at time of delivery. Driver cannot accept partial payments. 
-                    No card payments at door. Cancellation must be made before dispatch.
+                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: '#4B5563' }}>
+                    <strong style={{ color: '#0D2137' }}>COD Payment:</strong> Cash or check due at delivery. No partial payments. No card payments at door.
                   </p>
                 )}
+                <div className="flex items-start gap-3 mt-3 pt-3" style={{ borderTop: '1px solid #E5E7EB' }}>
+                  <input
+                    type="checkbox"
+                    checked={deliveryTermsAccepted}
+                    onChange={e => setDeliveryTermsAccepted(e.target.checked)}
+                    style={{ width: '20px', height: '20px', marginTop: '2px', accentColor: '#0D2137', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  <p className="font-body text-sm" style={{ color: '#0D2137' }}>
+                    I agree to the{' '}
+                    <button type="button" onClick={() => setShowTermsModal(true)} className="underline font-semibold" style={{ color: 'hsl(var(--accent))' }}>
+                      delivery terms
+                    </button>
+                  </p>
+                </div>
               </div>
 
               {/* Payment buttons — full width, stacked */}
@@ -1227,6 +1214,35 @@ const OrderMobile = () => {
           </motion.div>
         )}
 
+        {/* ── DELIVERY TERMS MODAL ── */}
+        {showTermsModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="w-full rounded-t-2xl p-6 max-h-[70vh] overflow-y-auto" style={{ backgroundColor: 'white' }}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-display text-xl" style={{ color: '#0D2137' }}>DELIVERY TERMS</h3>
+                <button onClick={() => setShowTermsModal(false)} className="text-gray-400 text-xl">✕</button>
+              </div>
+              <div className="font-body text-sm text-gray-600 space-y-3">
+                <p>• Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.</p>
+                <p>• Customer must ensure clear, accessible delivery area before arrival.</p>
+                <p>• WAYS® Materials LLC not liable for damage to driveways, landscaping, or property.</p>
+                <p>• Customer or representative must be present at delivery.</p>
+                <p>• Photo proof of completion at delivery serves as final confirmation of fulfillment.</p>
+                <p>• Same-day orders subject to dispatch confirmation within 30 minutes.</p>
+                <p>• Cancellations are penalty-free only if the truck has not been loaded. Once loaded, the order is non-refundable.</p>
+                <p>• All processing fees are non-refundable in all cases.</p>
+              </div>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="w-full h-12 rounded-2xl font-display text-lg mt-6"
+                style={{ backgroundColor: '#0D2137', color: 'white' }}
+              >
+                CLOSE
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── SCREEN 4: SUCCESS ── */}
         {step === "success" && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col">
@@ -1249,6 +1265,7 @@ const OrderMobile = () => {
                 customerEmail={form.email}
                 customerPhone={form.phone}
                 companyName={form.companyName || undefined}
+                pricingMode={pricingMode}
                 confirmedTotals={confirmedTotals ? {
                   totalPrice: confirmedTotals.total - (confirmedTotals.processingFee || 0),
                   totalWithProcessingFee: confirmedTotals.total,
