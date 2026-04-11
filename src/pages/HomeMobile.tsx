@@ -16,7 +16,8 @@ const HomeMobile = () => {
 
   const handlePlaceSelect = (result: PlaceSelectResult) => {
     sessionStorage.setItem("mobile_prefill_address", result.formattedAddress);
-    navigate(`/order?address=${encodeURIComponent(result.formattedAddress)}`);
+    sessionStorage.setItem("mobile_prefill_place", JSON.stringify(result));
+    navigate("/order");
   };
 
   const handleViewFullSite = () => {
