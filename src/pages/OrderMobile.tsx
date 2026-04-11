@@ -680,6 +680,17 @@ const OrderMobile = () => {
       toast({ title: "Missing info", description: "Name and phone are required.", variant: "destructive" });
       return;
     }
+    // Sync autocomplete value from DOM before validation
+    const emailInputEl = document.querySelector<HTMLInputElement>('#mobile-email-input input, input[name="email"]');
+    const currentEmail = emailInputEl?.value || form.email;
+    if (currentEmail !== form.email) {
+      setForm(f => ({ ...f, email: currentEmail }));
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (currentEmail.trim() && !emailRegex.test(currentEmail.trim())) {
+      toast({ title: "Invalid email address", description: "Please enter a complete email address (e.g. name@domain.com)", variant: "destructive" });
+      return;
+    }
     if (!result || !selectedDeliveryDate) return;
     setSubmitting(true);
     try {
@@ -727,7 +738,13 @@ const OrderMobile = () => {
         window.location.assign(data.url);
       }
     } catch (err: any) {
-      toast({ title: "Payment link failed", description: err.message || "Try another method.", variant: "destructive" });
+      toast({
+        title: "Payment could not be processed",
+        description: err.message?.includes('email')
+          ? "Please check your email address and try again."
+          : "Something went wrong. Please try again or call 1-855-GOT-WAYS.",
+        variant: "destructive",
+      });
     } finally { setSubmitting(false); }
   };
 

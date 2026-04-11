@@ -16,6 +16,12 @@ serve(async (req) => {
   try {
     const { amount, description, customer_name, customer_email, order_id, order_number, origin_url, return_mode, same_day_requested, delivery_date } = await req.json();
 
+    // Validate email format before passing to Stripe
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const safeEmail = customer_email && emailRegex.test(customer_email.trim())
+      ? customer_email.trim()
+      : undefined;
+
     if (!amount || typeof amount !== "number" || amount < 50) {
       return new Response(
         JSON.stringify({ error: "Invalid amount" }),
