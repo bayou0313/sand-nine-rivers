@@ -13,9 +13,10 @@ interface EmailInputProps {
   id?: string;
   name?: string;
   onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onBlur?: (value: string) => void;
 }
 
-const EmailInput = ({ value, onChange, placeholder = "john@example.com", required, className, maxLength = 255, id, name, onFocus }: EmailInputProps) => {
+const EmailInput = ({ value, onChange, placeholder = "john@example.com", required, className, maxLength = 255, id, name, onFocus, onBlur }: EmailInputProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -80,6 +81,7 @@ const EmailInput = ({ value, onChange, placeholder = "john@example.com", require
         onChange={(e) => handleChange(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={(e) => { if (suggestions.length > 0) setShowSuggestions(true); onFocus?.(e); }}
+        onBlur={() => { setShowSuggestions(false); onBlur?.(value); }}
         className={className}
       />
       {showSuggestions && (
