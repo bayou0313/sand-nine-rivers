@@ -1875,7 +1875,19 @@ const Order = () => {
                           <span className="text-muted-foreground">Order Total</span>
                           <span className="text-foreground font-medium">{formatCurrency(totalPrice)}</span>
                         </div>
-                        {paymentMethod === "stripe-link" ? (
+                        {isBaked ? (
+                          <>
+                            <div className="border-t border-border pt-2 flex justify-between">
+                              <span className="font-display tracking-wider text-foreground">TOTAL DUE</span>
+                              <span className="font-display text-lg font-bold text-foreground">{formatCurrency(totalPrice)}</span>
+                            </div>
+                            {isCOD && codSavingsPerLoad > 0 && (
+                              <p className="font-body text-xs" style={{ color: "#16A34A" }}>
+                                💵 You save {formatCurrency(codSavingsPerLoad * quantity)} by paying at delivery
+                              </p>
+                            )}
+                          </>
+                        ) : paymentMethod === "stripe-link" ? (
                           <>
                             <div className="flex justify-between font-body text-sm">
                               <span className="text-muted-foreground">Card Processing Fee (3.5% + $0.30/txn)</span>
