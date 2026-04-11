@@ -345,19 +345,6 @@ const OrderMobile = () => {
     findAllPitDistances(allPits, address, globalPricing, supabase).then(d => setAllPitDistances(d)).catch(() => {});
   }, [allPits, address, result, matchedPit, allPitDistances]);
 
-  useEffect(() => {
-    const state = location.state as { prefillAddress?: string; prefillPlace?: PlaceSelectResult } | null;
-    if (state?.prefillPlace && pitsLoaded && allPits.length > 0) {
-      handlePlaceSelect(state.prefillPlace);
-      setTimeout(() => {
-        calculateDistance();
-      }, 0);
-      window.history.replaceState({}, "", "/order");
-    } else if (state?.prefillAddress) {
-      setAddress(state.prefillAddress);
-    }
-  }, [location.state, pitsLoaded, allPits, handlePlaceSelect, calculateDistance]);
-
   // Handle Stripe return
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
