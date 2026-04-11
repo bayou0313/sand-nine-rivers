@@ -864,10 +864,6 @@ const OrderMobile = () => {
                   DELIVERY ADDRESS
                 </p>
                 <div ref={addressContainerRef} className="min-h-[4rem] text-lg [&_input]:border-2 [&_input]:border-white/20 [&_input]:focus:border-accent [&_input]:rounded-2xl [&_input]:transition-colors"
-                  onFocusCapture={() => setTimeout(() => {
-                    const input = document.querySelector('#mobile-address input') as HTMLElement;
-                    input?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                  }, 300)}
                 >
                   {apiLoaded ? (
                     <PlaceAutocompleteInput
@@ -1096,7 +1092,8 @@ const OrderMobile = () => {
 
               {/* Your Info */}
               <h2 className="font-display text-lg text-foreground tracking-wider mb-3">YOUR INFO</h2>
-              <div className="space-y-3 mb-6">
+              <form autoComplete="on" onSubmit={e => e.preventDefault()}>
+                <div className="space-y-3 mb-6">
                 {/* Company name — collapsed toggle */}
                 {!showCompany ? (
                   <button type="button" onClick={() => setShowCompany(true)} className="font-body text-sm text-primary hover:underline">+ Add company name</button>
@@ -1234,7 +1231,8 @@ const OrderMobile = () => {
                     </p>
                   </div>
                 )}
-              </div>
+                </div>
+              </form>
 
               {/* Disclaimer + checkbox in styled container */}
               <div className="rounded-2xl p-4 mt-3" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB' }}>
