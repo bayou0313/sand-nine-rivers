@@ -397,7 +397,10 @@ const OrderMobile = () => {
 
   // Listen for cross-tab Stripe signals
   useEffect(() => {
+    const isSuccessStep = step === "success";
+
     const processSignal = (raw: string) => {
+      if (isSuccessStep) return;
       try {
         const signal = JSON.parse(raw);
         if (signal.type !== "stripe-payment-result") return;
@@ -428,11 +431,25 @@ const OrderMobile = () => {
         }
       } catch {}
     };
-    const handleStorage = (e: StorageEvent) => { if (e.key === "stripe_payment_signal" && e.newValue) processSignal(e.newValue); };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (isSuccessStep) return;
+      if (e.key === "stripe_payment_signal" && e.newValue) processSignal(e.newValue);
+    };
+
+    if (isSuccessStep) return;
+
     window.addEventListener("storage", handleStorage);
-    const poll = setInterval(() => { const r = localStorage.getItem("stripe_payment_signal"); if (r) processSignal(r); }, 1000);
-    return () => { window.removeEventListener("storage", handleStorage); clearInterval(poll); };
-  }, [toast, verifyStripePayment, pendingOrderId, lookupToken]);
+    const poll = setInterval(() => {
+      const r = localStorage.getItem("stripe_payment_signal");
+      if (r) processSignal(r);
+    }, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(poll);
+    };
+  }, [toast, verifyStripePayment, pendingOrderId, lookupToken, step]);
 
   // Address selection
   const handlePlaceSelect = useCallback((res: PlaceSelectResult) => {
