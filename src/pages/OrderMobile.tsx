@@ -850,11 +850,11 @@ const OrderMobile = () => {
               <div className="space-y-3 mb-8">
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
-                  <Input placeholder="Your full name" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base" />
+                  <Input placeholder="Your full name" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base placeholder:text-black/35" />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone *</label>
-                  <Input type="tel" placeholder="(555) 555-5555" required maxLength={14} value={form.phone} onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base" />
+                  <Input type="tel" placeholder="(555) 555-5555" required maxLength={14} value={form.phone} onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base placeholder:text-black/35" />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
@@ -862,7 +862,7 @@ const OrderMobile = () => {
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Instructions</label>
-                  <Textarea placeholder="Gate code, landmark, or special instructions..." maxLength={275} rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="rounded-xl text-base" />
+                  <Textarea placeholder="Gate code, landmark, or special instructions..." maxLength={275} rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="rounded-xl text-base placeholder:text-black/35" />
                 </div>
               </div>
 
