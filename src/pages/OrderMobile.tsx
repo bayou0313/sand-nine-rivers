@@ -65,7 +65,8 @@ const AnimatedCheckmark = () => (
 const OrderMobile = () => {
   useBrandPalette();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stripeReturnHandled = useRef(false);
   const { loaded: apiLoaded } = useGoogleMaps();
   const addressContainerRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
