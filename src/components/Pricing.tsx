@@ -49,8 +49,9 @@ const Pricing = () => {
     <section id="pricing" className="relative py-20 md:py-28 bg-muted/30 overflow-hidden scroll-mt-24">
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-14">
-          <motion.h2 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-5xl text-foreground font-display text-center tracking-wide">
-            OUR SOURCE
+          <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">OUR SOURCE</motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground font-display tracking-wide text-center">
+            From Our Pit to Your Property
           </motion.h2>
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.15 }} className="font-body text-muted-foreground mt-4 text-lg max-w-2xl mx-auto text-center">
             Price based on distance enter your address to see yours. <br />
