@@ -1172,12 +1172,13 @@ const Order = () => {
 
     setSubmitting(true);
     try {
+      const stripeTotal = isBaked ? totalPrice : totalWithProcessingFee;
       const orderData = {
         ...buildOrderData(),
         payment_method: "stripe-link",
         payment_status: "pending",
-        price: totalWithProcessingFee,
-        processing_fee: processingFee,
+        price: stripeTotal,
+        processing_fee: isBaked ? 0 : processingFee,
       };
       const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
         p_data: orderData,
