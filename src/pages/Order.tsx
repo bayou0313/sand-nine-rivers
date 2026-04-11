@@ -1612,10 +1612,11 @@ const Order = () => {
                   {/* Customer Info Section */}
                   <div className="p-6">
                     <SectionHeading icon={User} title="YOUR INFORMATION" />
+                    <p className="text-xs text-muted-foreground mb-3 -mt-1">Enter your delivery contact details. Our driver will call 30 minutes before arrival.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="order-name" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Full Name *</label>
-                        <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
+                        <Input id="order-name" name="name" autoComplete="name" placeholder="Your full name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div>
                         <label htmlFor="order-company" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Company Name</label>
@@ -1631,7 +1632,7 @@ const Order = () => {
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Instructions</label>
-                        <Textarea id="order-notes" name="notes" placeholder="Where to drop the sand, gate code, landmark, or any special instructions for the driver..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
+                        <Textarea id="order-notes" name="notes" placeholder="Gate code, landmark, or special drop-off instructions for the driver..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
                         <p className="text-xs text-muted-foreground mt-1 text-right font-body">{form.notes.length}/275</p>
                       </div>
                     </div>
