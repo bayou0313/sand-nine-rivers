@@ -99,7 +99,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      customer_email: customer_email || undefined,
+      customer_email: safeEmail,
       customer_creation: "always",
       client_reference_id: order_id || undefined,
       billing_address_collection: "required",
