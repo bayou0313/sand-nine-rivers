@@ -362,7 +362,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
           {nextAvailable ? (
             <button
               type="button"
-              onClick={() => onSelect(nextAvailable)}
+              onClick={() => { onSelect(nextAvailable); if ((nextAvailable as DeliveryDateWithPit).assignedPit && onPitAssigned) onPitAssigned((nextAvailable as DeliveryDateWithPit).assignedPit!.pit); }}
               className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground font-display text-sm tracking-wider rounded-lg shadow-md hover:shadow-lg hover:bg-accent/90 transition-all"
             >
               <CalendarDays className="w-4 h-4" />
@@ -387,7 +387,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                onClick={() => !isBlocked && onSelect(d)}
+                onClick={() => { if (!isBlocked) { onSelect(d); if ((d as DeliveryDateWithPit).assignedPit && onPitAssigned) onPitAssigned((d as DeliveryDateWithPit).assignedPit!.pit); } }}
                 disabled={isBlocked}
                 className={`flex-shrink-0 w-[88px] rounded-xl p-3 text-center border-2 transition-all duration-200 ${
                   isBlocked
