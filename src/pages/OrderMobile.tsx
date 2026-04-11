@@ -927,7 +927,21 @@ const OrderMobile = () => {
                   </div>
                 </motion.div>
               )}
-              <p className="font-body text-xs text-muted-foreground text-center mt-4 truncate">{address}</p>
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <p className="font-body text-xs text-muted-foreground truncate max-w-[70%]">{address}</p>
+                <button
+                  onClick={() => {
+                    setStep("address");
+                    setResult(null);
+                    setSelectedDeliveryDate(null);
+                    setAllPitDistances([]);
+                    setMatchedPit(null);
+                  }}
+                  className="font-body text-xs text-accent underline shrink-0"
+                >
+                  Change
+                </button>
+              </div>
             </div>
 
             {/* Bottom CTA */}
