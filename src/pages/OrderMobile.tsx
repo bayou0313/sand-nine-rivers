@@ -873,16 +873,15 @@ const OrderMobile = () => {
                     value={form.phone}
                     onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); emailRef.current?.focus(); } }}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("mobile-email-input")?.querySelector("input")?.focus(); } }}
                     inputMode="tel"
                     enterKeyHint="next"
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
                   />
                 </div>
-                <div>
+                <div id="mobile-email-input">
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
                   <EmailInput
-                    ref={emailRef}
                     value={form.email}
                     onChange={v => setForm({ ...form, email: v })}
                     required
