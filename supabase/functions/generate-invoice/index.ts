@@ -199,6 +199,7 @@ serve(async (req) => {
     }
     const feeRate = Number(settings.card_processing_fee_percent || 3.5) / 100;
     const feeFixed = Number(settings.card_processing_fee_fixed || 0.30);
+    const isBakedMode = settings.pricing_mode === "baked";
 
     // ─── HEADER ───
     y = 18;
