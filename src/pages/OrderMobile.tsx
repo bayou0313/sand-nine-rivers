@@ -1393,6 +1393,14 @@ const OrderMobile = () => {
         )}
 
       </AnimatePresence>
+      <OutOfAreaModal
+        open={showOutOfAreaModal}
+        onClose={() => setShowOutOfAreaModal(false)}
+        address={outOfAreaAddress}
+        distanceMiles={outOfAreaDistance}
+        nearestPit={nearestPitInfo}
+        calculatedPrice={null}
+      />
     </div>
   );
 };
