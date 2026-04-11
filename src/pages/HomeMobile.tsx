@@ -30,7 +30,7 @@ const HomeMobile = () => {
     <div className="min-h-dvh flex flex-col" style={{ backgroundColor: "hsl(var(--primary))" }}>
       {/* Header */}
       <header className="flex items-center justify-center px-5 pt-5 pb-2">
-        <img src={LOGO_WHITE} alt="River Sand" className="object-contain" style={{ width: '80%', maxWidth: '320px' }} />
+        <img src={LOGO_WHITE} alt="River Sand" className="object-contain" style={{ width: '50%', maxWidth: '200px' }} />
       </header>
 
       {/* Hero */}
