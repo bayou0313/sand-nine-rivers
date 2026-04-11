@@ -194,7 +194,24 @@ const OrderMobile = () => {
     fetchData();
   }, []);
 
-  // Verify Stripe payment
+  // Helper: populate confirmedTotals from a DB order record
+  const populateConfirmedTotals = useCallback((orderData: any) => {
+    if (!orderData) return;
+    const mode = pricingMode;
+    const isBkd = mode === "baked";
+    setConfirmedTotals({
+      basePrice: Number(orderData.base_unit_price ?? 0),
+      distanceFee: Number(orderData.distance_fee ?? 0),
+      processingFee: isBkd ? 0 : Number(orderData.processing_fee ?? 0),
+      saturdaySurcharge: Number(orderData.saturday_surcharge_amount ?? 0),
+      sundaySurcharge: Number(orderData.sunday_surcharge_amount ?? 0),
+      tax: Number(orderData.tax_amount ?? 0),
+      total: Number(orderData.price ?? 0),
+      pricingMode: mode,
+    });
+  }, [pricingMode]);
+
+
   const verifyStripePayment = useCallback(async (orderId: string, token: string): Promise<any | null> => {
     const MAX_ATTEMPTS = 8;
     const POLL_INTERVAL = 2500;
