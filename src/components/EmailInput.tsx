@@ -81,19 +81,9 @@ const EmailInput = ({ value, onChange, placeholder = "john@example.com", require
         onChange={(e) => handleChange(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={(e) => { if (suggestions.length > 0) setShowSuggestions(true); onFocus?.(e); }}
-        onBlur={(e) => {
+onBlur={() => {
           setShowSuggestions(false);
-          // Use setTimeout to let browser autocomplete finish filling the field
-          setTimeout(() => {
-            const inputEl = e.target as HTMLInputElement;
-            const domValue = inputEl.value;
-            if (domValue && domValue !== value) {
-              onChange(domValue);
-              onBlur?.(domValue);
-            } else {
-              onBlur?.(value);
-            }
-          }, 100);
+          onBlur?.(value);
         }}
         className={className}
       />
