@@ -113,6 +113,16 @@ const OrderMobile = () => {
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [confirmedTotals, setConfirmedTotals] = useState<{
+    basePrice: number;
+    distanceFee: number;
+    processingFee: number;
+    saturdaySurcharge: number;
+    sundaySurcharge: number;
+    tax: number;
+    total: number;
+    pricingMode: string;
+  } | null>(null);
   const [deliveryTermsAccepted, setDeliveryTermsAccepted] = useState(false);
   const [detectedParish, setDetectedParish] = useState<string | null>(null);
   const [showCompany, setShowCompany] = useState(false);
