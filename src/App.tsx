@@ -20,6 +20,31 @@ import Review from "./pages/Review.tsx";
 
 const queryClient = new QueryClient();
 
+const MobileDebug = () => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      zIndex: 99999,
+      background: 'rgba(0,0,0,0.85)',
+      color: 'white',
+      fontSize: '11px',
+      padding: '6px 10px',
+      fontFamily: 'monospace',
+      lineHeight: '1.6',
+      maxWidth: '100vw',
+      wordBreak: 'break-all' as const
+    }}>
+      <div>innerWidth: {typeof window !== 'undefined' ? window.innerWidth : '?'}</div>
+      <div>touchPoints: {typeof navigator !== 'undefined' ? navigator.maxTouchPoints : '?'}</div>
+      <div>agent: {typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 60) : '?'}</div>
+      <div>isMobile: {String(isMobile)}</div>
+    </div>
+  );
+};
+
 const OrderRouter = () => {
   const isMobile = useIsMobile();
   return isMobile ? <OrderMobile /> : <Order />;
@@ -239,6 +264,7 @@ function AppContent() {
 
   return (
     <div suppressHydrationWarning={true}>
+      <MobileDebug />
       {typeof window !== "undefined" && stripeMode === "test" && !isAdminRoute && (
         <div id="stripe-test-banner" suppressHydrationWarning={true} className="hidden md:flex" style={{
           position: "fixed",
