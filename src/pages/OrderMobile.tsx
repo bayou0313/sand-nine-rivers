@@ -1094,6 +1094,9 @@ const OrderMobile = () => {
                   <div>
                     <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Company Name</label>
                     <Input
+                      name="organization"
+                      id="mobile-company"
+                      autoComplete="organization"
                       placeholder="Company name (optional)"
                       value={form.companyName}
                     onBlur={e => setForm({ ...form, companyName: formatProperNameFinal(e.target.value) })}
@@ -1110,6 +1113,9 @@ const OrderMobile = () => {
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
                   <Input
                     ref={nameRef}
+                    name="name"
+                    id="mobile-name"
+                    autoComplete="name"
                     placeholder="Your full name"
                     required
                     value={form.name}
@@ -1126,6 +1132,9 @@ const OrderMobile = () => {
                   <Input
                     ref={phoneRef}
                     type="tel"
+                    name="tel"
+                    id="mobile-phone"
+                    autoComplete="tel"
                     placeholder="(555) 555-5555"
                     required
                     maxLength={14}
@@ -1170,6 +1179,9 @@ const OrderMobile = () => {
                   <div>
                     <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Instructions</label>
                     <Textarea
+                      name="notes"
+                      id="mobile-notes"
+                      autoComplete="off"
                       placeholder="Gate code, landmark, or special instructions..."
                       maxLength={275}
                       rows={2}
