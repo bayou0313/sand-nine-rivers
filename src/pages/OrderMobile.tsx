@@ -176,6 +176,26 @@ const OrderMobile = () => {
   // Init
   useEffect(() => { initSession(); }, []);
 
+  // Browser back button interception
+  useEffect(() => {
+    const handlePopState = () => {
+      if (step === "price") {
+        setStep("address");
+        setResult(null);
+        setSelectedDeliveryDate(null);
+        setAllPitDistances([]);
+        setMatchedPit(null);
+        window.history.pushState(null, '', '/order');
+      } else if (step === "info") {
+        setStep("price");
+        window.history.pushState(null, '', '/order');
+      }
+    };
+    window.history.pushState(null, '', '/order');
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [step]);
+
   // Fetch GMB review URL
   useEffect(() => {
     supabase.from("global_settings").select("value").eq("key", "gmb_review_url").maybeSingle()
