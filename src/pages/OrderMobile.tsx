@@ -390,8 +390,9 @@ const OrderMobile = () => {
         verifyStripePayment(verifyOrderId, verifyToken).then(orderData => {
           setVerifyingPayment(false);
           if (orderData) {
-            setConfirmedOrderId(orderData.id || verifyOrderId);
-            setOrderNumber(orderData.order_number || returnedOrderNumber);
+              populateConfirmedTotals(orderData);
+              setConfirmedOrderId(orderData.id || verifyOrderId);
+              setOrderNumber(orderData.order_number || returnedOrderNumber);
             if (orderData.delivery_date) {
               const d = new Date(orderData.delivery_date + "T12:00:00");
               const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
