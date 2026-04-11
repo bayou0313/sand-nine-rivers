@@ -1030,33 +1030,41 @@ const Order = () => {
   }, [address, customerCoords, allPits, globalPricing]);
 
 
-  const buildOrderData = () => ({
-    customer_name: form.name.trim(),
-    customer_email: form.email.trim() || null,
-    customer_phone: form.phone.trim(),
-    delivery_address: address,
-    distance_miles: result!.distance,
-    price: totalPrice,
-    quantity,
-    notes: form.notes.trim() || null,
-    delivery_date: selectedDeliveryDate!.iso,
-    delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
-    saturday_surcharge: selectedDeliveryDate!.isSaturday,
-    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? effectiveSatSurcharge * quantity : 0,
-    sunday_surcharge: selectedDeliveryDate!.isSunday,
-    sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
-    pit_id: matchedPit?.id || null,
-    delivery_window: "8:00 AM – 5:00 PM",
-    same_day_requested: selectedDeliveryDate!.isSameDay,
-    tax_rate: taxInfo.rate,
-    tax_amount: taxAmount,
-    delivery_terms_accepted: deliveryTermsAccepted,
-    delivery_terms_timestamp: new Date().toISOString(),
-    card_authorization_accepted: cardAuthAccepted,
-    card_authorization_timestamp: cardAuthAccepted ? new Date().toISOString() : null,
-    company_name: form.companyName.trim() || null,
-    ...(leadReference ? { lead_reference: leadReference } : {}),
-  });
+  const buildOrderData = () => {
+    const distFee = result && effectivePricing
+      ? Math.max(0, Math.round((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * 100) / 100)
+      : 0;
+    return {
+      customer_name: form.name.trim(),
+      customer_email: form.email.trim() || null,
+      customer_phone: form.phone.trim(),
+      delivery_address: address,
+      distance_miles: result!.distance,
+      price: totalPrice,
+      quantity,
+      notes: form.notes.trim() || null,
+      delivery_date: selectedDeliveryDate!.iso,
+      delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
+      saturday_surcharge: selectedDeliveryDate!.isSaturday,
+      saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? effectiveSatSurcharge * quantity : 0,
+      sunday_surcharge: selectedDeliveryDate!.isSunday,
+      sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
+      pit_id: matchedPit?.id || null,
+      delivery_window: "8:00 AM – 5:00 PM",
+      same_day_requested: selectedDeliveryDate!.isSameDay,
+      tax_rate: taxInfo.rate,
+      tax_amount: taxAmount,
+      delivery_terms_accepted: deliveryTermsAccepted,
+      delivery_terms_timestamp: new Date().toISOString(),
+      card_authorization_accepted: cardAuthAccepted,
+      card_authorization_timestamp: cardAuthAccepted ? new Date().toISOString() : null,
+      company_name: form.companyName.trim() || null,
+      base_unit_price: effectivePricing.base_price,
+      distance_fee: distFee * quantity,
+      processing_fee: 0,
+      ...(leadReference ? { lead_reference: leadReference } : {}),
+    };
+  };
 
   const handleCodSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
@@ -1153,6 +1161,7 @@ const Order = () => {
         payment_method: "stripe-link",
         payment_status: "pending",
         price: totalWithProcessingFee,
+        processing_fee: processingFee,
       };
       const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
         p_data: orderData,
