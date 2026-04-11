@@ -357,6 +357,7 @@ const OrderMobile = () => {
       setVerifyingPayment(true);
       setStep("success");
       clearCart();
+      setSearchParams({}, { replace: true });
 
       if (verifyOrderId && verifyToken) {
         verifyStripePayment(verifyOrderId, verifyToken).then(orderData => {
@@ -411,6 +412,7 @@ const OrderMobile = () => {
 
   // Listen for cross-tab Stripe signals
   useEffect(() => {
+    if (stripeReturnHandled.current) return;
     const isSuccessStep = step === "success";
 
     const processSignal = (raw: string) => {
