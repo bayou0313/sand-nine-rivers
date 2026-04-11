@@ -6,7 +6,7 @@ import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
 import { formatProperName, formatSentence, formatEmail } from "@/lib/textFormat";
-import EmailInput from "@/components/EmailInput";
+
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -681,7 +681,7 @@ const OrderMobile = () => {
       return;
     }
     // Sync autocomplete value from DOM before validation
-    const emailInputEl = document.querySelector<HTMLInputElement>('#mobile-email-input input, input[name="email"]');
+    const emailInputEl = document.querySelector<HTMLInputElement>('input[type="email"][autocomplete="email"]');
     const currentEmail = emailInputEl?.value || form.email;
     if (currentEmail !== form.email) {
       setForm(f => ({ ...f, email: currentEmail }));
@@ -945,7 +945,7 @@ const OrderMobile = () => {
 
               {/* Date picker */}
               <div className="mb-6">
-                <h2 className="font-display text-lg text-foreground tracking-wider mb-3">SELECT DELIVERY DATE</h2>
+                
                 <DeliveryDatePicker
                   selectedDate={selectedDeliveryDate}
                   onSelect={handleDateSelect}
@@ -1103,15 +1103,20 @@ const OrderMobile = () => {
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
                   />
                 </div>
-                <div id="mobile-email-input">
+                <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                  <EmailInput
+                  <input
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
                     value={form.email}
-                    onBlur={v => setForm({ ...form, email: formatEmail(v) })}
-                    onChange={v => setForm({ ...form, email: formatEmail(v) })}
-                    required
-                    className="h-16 rounded-xl text-lg placeholder:text-black/35"
+                    onChange={e => setForm({ ...form, email: formatEmail(e.target.value) })}
+                    onBlur={e => setForm({ ...form, email: formatEmail(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                    placeholder="john@example.com"
+                    required
+                    enterKeyHint="done"
+                    className="h-16 rounded-xl text-lg w-full px-4 placeholder:text-black/35 border border-input"
                   />
                 </div>
 

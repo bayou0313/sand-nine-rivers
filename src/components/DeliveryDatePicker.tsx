@@ -377,10 +377,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
         </div>
       ) : (
         <>
-        <div className="flex items-center justify-between mb-2 px-1">
-          <span className="font-body text-xs text-muted-foreground">
-            Select delivery date
-          </span>
+        <div className="flex items-center justify-end mb-2 px-1">
           <button
             type="button"
             onClick={() => scrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' })}
