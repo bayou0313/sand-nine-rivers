@@ -186,10 +186,23 @@ const Order = () => {
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
   const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
   const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
+  const isBaked = pricingMode === "baked";
+  const isCOD = paymentMethod === "cash" || paymentMethod === "check";
+  // In baked mode, COD customers get a discount (reverse the baked fee)
+  const effectiveBaseForCalc = isBaked && isCOD && effectivePricing.base_price
+    ? getCODPrice(effectivePricing.base_price)
+    : effectivePricing.base_price;
+  const codSavingsPerLoad = isBaked ? effectivePricing.base_price - getCODPrice(effectivePricing.base_price) : 0;
+
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
-  const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
-  const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
-  const processingFee = totalPrice > 0
+  // In baked mode with COD, recalculate subtotal using COD base price
+  const codSubtotalAdjustment = isBaked && isCOD && result
+    ? (effectivePricing.base_price - effectiveBaseForCalc) * quantity
+    : 0;
+  const adjustedSubtotal = subtotal - codSubtotalAdjustment;
+  const taxAmount = parseFloat((adjustedSubtotal * taxInfo.rate).toFixed(2));
+  const totalPrice = parseFloat((adjustedSubtotal + taxAmount).toFixed(2));
+  const processingFee = !isBaked && totalPrice > 0
     ? parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2))
     : 0;
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
