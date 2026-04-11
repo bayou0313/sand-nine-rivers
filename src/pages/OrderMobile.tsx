@@ -781,7 +781,7 @@ const OrderMobile = () => {
                   SAME-DAY RIVER SAND DELIVERY
                 </h1>
                 <p className="font-body text-base text-white/80 text-center">
-                  Get your exact price in seconds — no account needed
+                  Get your exact price in seconds - no account needed
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-4 font-body text-xs text-white/60">
                   <span>✓ No minimums</span>
@@ -895,7 +895,7 @@ const OrderMobile = () => {
               <div className="text-center mb-8">
                 <p className="font-body text-xs uppercase tracking-wider text-muted-foreground mb-1">Per Load Starting At</p>
                 <p className="font-display text-7xl text-accent leading-none">{formatCurrency(result.price)}</p>
-                <p className="font-body text-sm text-muted-foreground mt-2">per 9 cu yd load · delivered curbside</p>
+                <p className="font-body text-sm text-muted-foreground mt-2">per 9 cu yd load - delivered curbside</p>
               </div>
 
               {/* Quantity selector */}
