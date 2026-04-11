@@ -7,8 +7,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index.tsx";
 import Order from "./pages/Order.tsx";
+import OrderMobile from "./pages/OrderMobile.tsx";
 import Admin from "./pages/Admin.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import Leads from "./pages/Leads.tsx";
@@ -17,6 +19,12 @@ import NotFound from "./pages/NotFound.tsx";
 import Review from "./pages/Review.tsx";
 
 const queryClient = new QueryClient();
+
+const OrderRouter = () => {
+  const isMobile = useIsMobile();
+  return isMobile ? <OrderMobile /> : <Order />;
+};
+
 
 const PageViewTracker = () => {
   const location = useLocation();
@@ -269,7 +277,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/products/river-sand" element={<Navigate to="/" replace />} />
-        <Route path="/order" element={<Order />} />
+        <Route path="/order" element={<OrderRouter />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/leads" element={<Leads />} />

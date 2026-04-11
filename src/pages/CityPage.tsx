@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -182,6 +183,7 @@ const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
 };
 
 const CityPage = () => {
+  const isMobile = useIsMobile();
   const { citySlug } = useParams<{ citySlug: string }>();
   const navigate = useNavigate();
   const FALLBACK_PRODUCT_IMAGE = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg";
@@ -295,6 +297,33 @@ const CityPage = () => {
   // Show waitlist page if status is waitlist
   if (isWaitlist) {
     return <WaitlistPage cityPage={cityPage} />;
+  }
+
+  // Mobile: stripped-down app experience with embedded estimator
+  if (isMobile) {
+    const mobileCanonicalUrl = `https://riversand.net/${cityPage.city_slug}/river-sand-delivery`;
+    return (
+      <div className="min-h-screen flex flex-col bg-primary">
+        <Helmet>
+          {cityPage.meta_title && <title>{cityPage.meta_title}</title>}
+          {cityPage.meta_description && <meta name="description" content={cityPage.meta_description} />}
+          <meta name="robots" content="index, follow" />
+          <link rel="canonical" href={mobileCanonicalUrl} />
+        </Helmet>
+        <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} />
+        <Hero
+          h1Override={cityPage.h1_text || `River Sand Delivery in ${cityPage.city_name}, ${cityPage.state}`}
+          subtitleOverride={
+            cityPage.hero_intro
+              ? cityPage.hero_intro.length > 100 ? cityPage.hero_intro.slice(0, 97) + "..." : cityPage.hero_intro
+              : `Same-day delivery to ${cityPage.city_name}.`
+          }
+          showEstimator={true}
+        />
+        <Footer />
+        <MobilePhoneBar />
+      </div>
+    );
   }
 
   const canonicalUrl = `https://riversand.net/${cityPage.city_slug}/river-sand-delivery`;
