@@ -854,7 +854,7 @@ const OrderMobile = () => {
                 const input = document.querySelector('#address-step-container input') as HTMLElement;
                 if (!input) return;
                 const rect = input.getBoundingClientRect();
-                const offset = rect.height * 1.5;
+                const offset = rect.height * 2.25;
                 window.scrollBy({ top: -(offset), behavior: 'smooth' });
               }, 350);
             }}
