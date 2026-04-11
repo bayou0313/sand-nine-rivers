@@ -99,12 +99,12 @@ const HomeMobile = () => {
         >
           📞 1-855-GOT-WAYS
         </a>
-        <div className="flex items-center justify-center gap-2 mt-3">
+        <div className="flex flex-col items-center gap-1 mt-3">
           <span className="font-body text-xs text-white/50">Operated by</span>
           <img 
-          src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/Ways_Sitewide_Logo_white.png"
+            src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/Ways_Sitewide_Logo_white.png"
             alt="WAYS®"
-            className="h-4 opacity-50"
+            className="h-8 opacity-50"
           />
         </div>
         <button
