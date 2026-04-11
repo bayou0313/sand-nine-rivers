@@ -1051,13 +1051,13 @@ serve(async (req) => {
       const leadHtml = `
 NEW OUT-OF-AREA DELIVERY LEAD
 ─────────────────────────────
-Address:  ${data.address || "N/A"}
+Address:  ${escapeHtml(data.address) || "N/A"}
 Distance: ${data.distance_miles || "?"} miles
 
 CONTACT
-Name:  ${data.customer_name || "N/A"}
-Email: ${data.customer_email || "Not provided"}
-Phone: ${data.customer_phone || "Not provided"}
+Name:  ${escapeHtml(data.customer_name) || "N/A"}
+Email: ${escapeHtml(data.customer_email) || "Not provided"}
+Phone: ${escapeHtml(data.customer_phone) || "Not provided"}
 
 Submitted: ${data.created_at ? new Date(data.created_at).toLocaleString("en-US") : "N/A"}
 ─────────────────────────────
@@ -1083,7 +1083,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         
         <div style="border:2px solid ${BRAND_GOLD};border-radius:12px;padding:24px;margin:24px 0;text-align:center">
           <p style="margin:0 0 8px;font-size:14px;color:#555;text-transform:uppercase;letter-spacing:1px">River Sand — 9 Cubic Yards</p>
-          <p style="margin:0 0 4px;font-size:13px;color:#777">Delivered to: ${data.delivery_address || ""}</p>
+          <p style="margin:0 0 4px;font-size:13px;color:#777">Delivered to: ${escapeHtml(data.delivery_address) || ""}</p>
           <p style="margin:16px 0 0;font-size:32px;font-weight:700;color:${BRAND_GOLD}">$${Number(data.new_price || 195).toFixed(2)}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#999">Your price, delivered</p>
         </div>
@@ -1133,7 +1133,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Order #</td><td>${data.order_number || "N/A"}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Payment method</td><td>${method}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Amount paid</td><td style="font-weight:700;color:${BRAND_GOLD}">$${total}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery address</td><td>${data.delivery_address || ""}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery address</td><td>${escapeHtml(data.delivery_address) || ""}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery date</td><td>${formatDate(data.delivery_date)}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Payment recorded</td><td>${recordedAt}</td></tr>
           </table>
@@ -1200,7 +1200,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
         <p style="font-size:15px;color:#555;line-height:1.6">Thank you for your interest in River Sand delivery. We've received your request for delivery to:</p>
         <div style="background:#F8F7F2;border-left:4px solid ${BRAND_GOLD};padding:16px 20px;border-radius:0 8px 8px 0;margin:16px 0">
-          <p style="margin:0;font-size:15px;font-weight:600;color:${BRAND_COLOR}">${data.delivery_address || "your address"}</p>
+          <p style="margin:0;font-size:15px;font-weight:600;color:${BRAND_COLOR}">${escapeHtml(data.delivery_address) || "your address"}</p>
         </div>
         <p style="font-size:15px;color:#555;line-height:1.6">Our delivery manager is reviewing your request and will get back to you within <strong>${responseTime} hours</strong> during business hours (${bizDays}, ${bizHours}).</p>
         <p style="font-size:15px;color:#555;line-height:1.6">If you have any questions in the meantime, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
