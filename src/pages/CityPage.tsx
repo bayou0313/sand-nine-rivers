@@ -359,21 +359,29 @@ const CityPage = () => {
                 priceCurrency: "USD",
               }
             : {}),
+          priceValidUntil: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split("T")[0],
           image: "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
           availability: "https://schema.org/InStock",
           areaServed: {
             "@type": "City",
             name: cityPage.city_name,
+            addressRegion: "LA",
           },
           hasMerchantReturnPolicy: {
             "@type": "MerchantReturnPolicy",
             applicableCountry: "US",
             returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+            returnMethod: "https://schema.org/ReturnNotSupported",
           },
           shippingDetails: {
             "@type": "OfferShippingDetails",
             shippingRate: { "@type": "MonetaryAmount", value: 0, currency: "USD" },
-            shippingDestination: { "@type": "DefinedRegion", addressCountry: "US" },
+            shippingDestination: { "@type": "DefinedRegion", addressCountry: "US", addressRegion: "LA" },
+            deliveryTime: {
+              "@type": "ShippingDeliveryTime",
+              handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+              transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+            },
           },
         },
       ],
