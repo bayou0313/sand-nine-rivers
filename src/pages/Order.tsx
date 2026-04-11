@@ -113,6 +113,8 @@ const Order = () => {
         const gp = parseGlobalSettings(settingsRes.data as any);
         setGlobalPricing(gp);
         setGlobalSaturdaySurcharge(gp.saturday_surcharge);
+        const modeRow = (settingsRes.data as any[]).find((r: any) => r.key === "pricing_mode");
+        if (modeRow?.value === "baked") setPricingMode("baked");
       }
       if (pitsRes.data) {
         setAllPits(pitsRes.data as any);
