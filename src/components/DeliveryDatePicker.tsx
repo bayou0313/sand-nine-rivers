@@ -127,7 +127,7 @@ export function getAvailableDeliveryDates(
 
   const dates: DeliveryDateWithPit[] = [];
 
-  for (let i = 0; dates.length < maxSlots && i < (maxSlots * 3); i++) {
+  for (let i = 0; dates.length < maxSlots && i < (maxSlots * 2); i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const dayOfWeek = d.getDay();
