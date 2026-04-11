@@ -23,7 +23,7 @@ import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCH
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
-import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
+import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING, getCODPrice } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -87,6 +87,7 @@ const Order = () => {
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+  const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("transparent");
 
   // Weekend PIT resolution state
   const [weekendPitMap, setWeekendPitMap] = useState<WeekendPitMap>({});
