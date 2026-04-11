@@ -52,7 +52,7 @@ function fmt(n: number): string {
   return n.toFixed(2);
 }
 
-function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): string {
+function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, pricingMode = "transparent"): string {
   const customerName = order.customer_name || "there";
   const companyName = order.company_name || "";
   const orderNumber = order.order_number || "N/A";
