@@ -681,7 +681,7 @@ const OrderMobile = () => {
       return;
     }
     // Sync autocomplete value from DOM before validation
-    const emailInputEl = document.querySelector<HTMLInputElement>('#mobile-email-input input, input[name="email"]');
+    const emailInputEl = document.querySelector<HTMLInputElement>('input[type="email"][autocomplete="email"]');
     const currentEmail = emailInputEl?.value || form.email;
     if (currentEmail !== form.email) {
       setForm(f => ({ ...f, email: currentEmail }));
