@@ -1128,20 +1128,17 @@ const OrderMobile = () => {
               </div>
 
               {/* Delivery & COD disclaimers */}
-              <div className="rounded-xl p-3 mb-3" style={{ 
-                backgroundColor: 'rgba(0,0,0,0.25)', 
-                border: '1px solid rgba(255,255,255,0.12)' 
-              }}>
-                <p className="font-body text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                  🚚 <strong style={{ color: 'white' }}>Delivery:</strong>{' '}
+              <div className="rounded-xl p-3 mb-3">
+                <p className="font-body text-xs leading-relaxed" style={{ color: '#0D2137' }}>
+                  <strong>Delivery:</strong>{' '}
                   Curbside only — curb to sidewalk/driveway edge. No private property entry. 
                   Customer must ensure clear, accessible delivery area before arrival. 
                   WAYS® Materials LLC not liable for damage to driveways, landscaping, or property. 
                   Customer or representative must be present at delivery.
                 </p>
                 {(paymentMethod === 'cash' || paymentMethod === 'check') && (
-                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                    💵 <strong style={{ color: 'white' }}>COD Payment:</strong>{' '}
+                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: '#0D2137' }}>
+                    <strong>COD Payment:</strong>{' '}
                     Cash or check due at time of delivery. Driver cannot accept partial payments. 
                     No card payments at door. Cancellation must be made before dispatch.
                   </p>
