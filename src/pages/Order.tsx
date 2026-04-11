@@ -1603,11 +1603,11 @@ const Order = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="order-name" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Full Name *</label>
-                        <Input id="order-name" name="name" autoComplete="name" placeholder="Your full name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: formatProperName(e.target.value) })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
+                        <Input id="order-name" name="name" autoComplete="name" placeholder="Your full name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: formatProperName(e.target.value) })} onBlur={(e) => setForm({ ...form, name: formatProperNameFinal(e.target.value) })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div>
                         <label htmlFor="order-company" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Company Name</label>
-                        <Input id="order-company" name="companyName" autoComplete="organization" placeholder="Optional" maxLength={100} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: formatProperName(e.target.value) })} className="h-[52px] rounded-lg text-base" />
+                        <Input id="order-company" name="companyName" autoComplete="organization" placeholder="Optional" maxLength={100} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: formatProperName(e.target.value) })} onBlur={(e) => setForm({ ...form, companyName: formatProperNameFinal(e.target.value) })} className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div>
                         <label htmlFor="order-phone" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Phone *</label>

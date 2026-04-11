@@ -1062,7 +1062,7 @@ const OrderMobile = () => {
                     <Input
                       placeholder="Company name (optional)"
                       value={form.companyName}
-                    onBlur={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
+                    onBlur={e => setForm({ ...form, companyName: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       inputMode="text"
@@ -1078,7 +1078,7 @@ const OrderMobile = () => {
                     placeholder="Your full name"
                     required
                     value={form.name}
-                    onBlur={e => setForm({ ...form, name: formatProperName(e.target.value) })}
+                    onBlur={e => setForm({ ...form, name: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, name: formatProperName(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}
