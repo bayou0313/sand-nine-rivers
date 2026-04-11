@@ -1409,7 +1409,7 @@ const Order = () => {
                         onPlaceSelect={handleOrderPlaceSelect}
                         onInputChange={(val) => setAddress(val)}
                         onEnterKey={calculateDistance}
-                        placeholder="Enter your delivery address..." className="placeholder:opacity-40"
+                        placeholder="Enter your delivery address..."
                         initialValue={address || undefined}
                         id="order-address"
                         containerClassName="place-autocomplete-order"
