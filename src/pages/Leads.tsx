@@ -176,7 +176,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -190,6 +190,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "cash_orders", label: "Orders", icon: DollarSign },
       { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
       { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
+      { id: "reviews" as NavPage, label: "Reviews", icon: Star },
     ],
   },
   {
