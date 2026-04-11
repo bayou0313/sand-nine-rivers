@@ -8,6 +8,7 @@ import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceR
 import { formatProperName, formatProperNameFinal, formatSentence, formatEmail } from "@/lib/textFormat";
 
 import OrderConfirmation from "@/components/OrderConfirmation";
+import OutOfAreaModal from "@/components/OutOfAreaModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -137,6 +138,10 @@ const OrderMobile = () => {
   const [showNotes, setShowNotes] = useState(false);
   const [gmbReviewUrl, setGmbReviewUrl] = useState<string | null>(null);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
+  const [outOfAreaAddress, setOutOfAreaAddress] = useState("");
+  const [outOfAreaDistance, setOutOfAreaDistance] = useState(0);
+  const [nearestPitInfo, setNearestPitInfo] = useState<{ id: string; name: string; distance: number } | null>(null);
 
   // Derived pricing
   const effectivePricing = useMemo(() => {
@@ -597,7 +602,14 @@ const OrderMobile = () => {
       if (allPits.length === 0) { setError("No delivery locations configured."); setLoading(false); return; }
       const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, 1);
       if (!bestResult) { setError("No delivery locations available."); setLoading(false); return; }
-      if (!bestResult.serviceable) { setError("That address is outside our delivery area. Call 1-855-GOT-WAYS for options."); setLoading(false); return; }
+      if (!bestResult.serviceable) {
+        setOutOfAreaAddress(currentAddress);
+        setOutOfAreaDistance(parseFloat(bestResult.distance.toFixed(1)));
+        setNearestPitInfo({ id: bestResult.pit.id, name: bestResult.pit.name, distance: bestResult.distance });
+        setShowOutOfAreaModal(true);
+        setLoading(false);
+        return;
+      }
 
       const schedule: PitSchedule = {
         operating_days: bestResult.pit.operating_days,
