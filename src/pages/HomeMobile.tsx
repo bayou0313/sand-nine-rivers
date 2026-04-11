@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import { setPendingPlace } from "@/lib/mobileHandoff";
 
 declare global {
   interface Window { google: any; }
@@ -15,12 +16,8 @@ const HomeMobile = () => {
   const { loaded: apiLoaded } = useGoogleMaps();
 
   const handlePlaceSelect = (result: PlaceSelectResult) => {
-    navigate("/order", {
-      state: {
-        prefillAddress: result.formattedAddress,
-        prefillPlace: result,
-      },
-    });
+    setPendingPlace(result);
+    navigate("/order");
   };
 
   const handleViewFullSite = () => {
