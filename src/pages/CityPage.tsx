@@ -410,7 +410,6 @@ const CityPage = () => {
         "@type": "MerchantReturnPolicy",
         applicableCountry: "US",
         returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
-        merchantReturnDays: 0,
         returnMethod: "https://schema.org/ReturnNotSupported",
       },
       shippingDetails: {
