@@ -1684,7 +1684,7 @@ const Order = () => {
 
                       <ReceiptRow label={`River Sand (9 cu yds × ${quantity})`} value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
                       <div className="border-b border-dashed border-border" />
-                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(effectivePricing.base_price * quantity)} />
+                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(effectiveBaseForCalc * quantity)} />
                       {result.distance > effectivePricing.free_miles && (
                         <>
                           <div className="border-b border-dashed border-border" />
