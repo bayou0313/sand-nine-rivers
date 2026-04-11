@@ -178,27 +178,37 @@ const OrderMobile = () => {
   // Init
   useEffect(() => { initSession(); }, []);
 
-  // Visual Viewport keyboard detection — works on all inputs across all steps
+  // Visual Viewport keyboard detection — waits for keyboard to fully open before repositioning
   useEffect(() => {
     if (!window.visualViewport) return;
+
+    let timeout: ReturnType<typeof setTimeout>;
+
     const handleViewportChange = () => {
-      const keyboardHeight = window.innerHeight - window.visualViewport!.height;
-      if (keyboardHeight > 100) {
-        setTimeout(() => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        const keyboardHeight = window.innerHeight - window.visualViewport!.height;
+        if (keyboardHeight > 100) {
           const activeEl = document.activeElement as HTMLElement;
           if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
             const rect = activeEl.getBoundingClientRect();
             const visibleHeight = window.visualViewport!.height;
-            if (rect.bottom > visibleHeight - 20) {
-              window.scrollBy({ top: rect.bottom - visibleHeight + 40, behavior: 'smooth' });
+            const viewportTop = window.visualViewport!.offsetTop;
+            const fieldBottom = rect.bottom - viewportTop;
+            if (fieldBottom > visibleHeight - 20) {
+              const scrollAmount = fieldBottom - visibleHeight + 60;
+              window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
             }
           }
-        }, 100);
-      }
+        }
+      }, 150);
     };
+
     window.visualViewport.addEventListener('resize', handleViewportChange);
     window.visualViewport.addEventListener('scroll', handleViewportChange);
+
     return () => {
+      clearTimeout(timeout);
       window.visualViewport?.removeEventListener('resize', handleViewportChange);
       window.visualViewport?.removeEventListener('scroll', handleViewportChange);
     };
@@ -1101,6 +1111,12 @@ const OrderMobile = () => {
                       value={form.companyName}
                     onBlur={e => setForm({ ...form, companyName: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
+                      onFocus={e => {
+                        const el = e.target;
+                        setTimeout(() => {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 300);
+                      }}
                       onKeyUp={e => { if (e.key === 'Enter') { e.preventDefault(); nameRef.current?.focus(); } }}
                       inputMode="text"
                       enterKeyHint="next"
@@ -1121,6 +1137,12 @@ const OrderMobile = () => {
                     value={form.name}
                     onBlur={e => setForm({ ...form, name: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, name: formatProperName(e.target.value) })}
+                    onFocus={e => {
+                      const el = e.target;
+                      setTimeout(() => {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 300);
+                    }}
                     onKeyUp={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}
                     inputMode="text"
                     enterKeyHint="next"
@@ -1146,6 +1168,12 @@ const OrderMobile = () => {
                         setTimeout(() => emailRef.current?.focus(), 50);
                       }
                     }}
+                    onFocus={e => {
+                      const el = e.target;
+                      setTimeout(() => {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 300);
+                    }}
                     onKeyUp={e => { if (e.key === "Enter") { e.preventDefault(); emailRef.current?.focus(); } }}
                     inputMode="tel"
                     enterKeyHint="next"
@@ -1164,6 +1192,12 @@ const OrderMobile = () => {
                     value={form.email}
                     onChange={e => setForm({ ...form, email: formatEmail(e.target.value) })}
                     onBlur={e => setForm({ ...form, email: formatEmail(e.target.value) })}
+                    onFocus={e => {
+                      const el = e.target;
+                      setTimeout(() => {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 300);
+                    }}
                     onKeyUp={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
                     placeholder="john@example.com"
                     required
@@ -1187,6 +1221,12 @@ const OrderMobile = () => {
                       rows={2}
                       value={form.notes}
                       onChange={e => setForm({ ...form, notes: formatSentence(e.target.value) })}
+                      onFocus={e => {
+                        const el = e.target;
+                        setTimeout(() => {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 300);
+                      }}
                       className="rounded-xl text-lg placeholder:text-black/35"
                     />
                     <p className="font-body text-xs text-right mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
