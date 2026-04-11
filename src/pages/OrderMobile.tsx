@@ -807,8 +807,11 @@ const OrderMobile = () => {
                 <h1 className="font-display text-5xl text-white tracking-wide leading-[1.1] mb-3">
                   SAME-DAY RIVER SAND DELIVERY
                 </h1>
-                <p className="font-body text-base text-white/80 text-center">
-                  Get your exact price in seconds - no account needed
+                <p className="font-body text-base text-center" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  Get your exact price in seconds.
+                </p>
+                <p className="font-body text-base text-center" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  No account needed.
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-4 font-body text-xs text-white/60">
                   <span>✓ No minimums</span>
