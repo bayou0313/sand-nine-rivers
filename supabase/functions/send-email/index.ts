@@ -621,7 +621,7 @@ function orderDispatchEmail(data: any): string {
         <td style="color:#4A7A9B;font-size:10px;">
           NOTES</td>
         <td style="color:#FCD34D;font-size:10px;">
-          ${data.notes}</td>
+          ${escapeHtml(data.notes)}</td>
       </tr>` : ""}
     </table>
   </td></tr>
@@ -765,7 +765,7 @@ function orderInternalEmail(order: any) {
   return emailWrapper(`
     <h2>New Order Received</h2>
     <table class="info-table">${tableRows}</table>
-    ${order.notes ? `<p><strong>Customer Notes:</strong> ${order.notes}</p>` : ""}
+    ${order.notes ? `<p><strong>Customer Notes:</strong> ${escapeHtml(order.notes)}</p>` : ""}
   `);
 }
 
@@ -1013,7 +1013,7 @@ serve(async (req) => {
         ["Requested Date", data.date || "Not specified"],
         ["Time Window", data.time_window || "ASAP"],
       ];
-      if (data.notes) rows.push(["Notes", data.notes]);
+      if (data.notes) rows.push(["Notes", escapeHtml(data.notes)]);
       const tableRows = rows.map(([k, v]: string[]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 
       const callbackHtml = `<!DOCTYPE html>
