@@ -405,7 +405,15 @@ const CityPage = () => {
       priceCurrency: "USD",
       priceValidUntil: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split("T")[0],
       availability: "https://schema.org/InStock",
-      areaServed: { "@type": "City", name: cityPage.city_name, addressRegion: "LA" },
+      areaServed: {
+        "@type": "City",
+        name: cityPage.city_name,
+        addressRegion: "LA",
+        containedInPlace: {
+          "@type": "AdministrativeArea",
+          name: cityPage.region || "Louisiana",
+        },
+      },
       hasMerchantReturnPolicy: {
         "@type": "MerchantReturnPolicy",
         applicableCountry: "US",
