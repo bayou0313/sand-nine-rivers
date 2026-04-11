@@ -743,10 +743,10 @@ function emailWrapper(body: string, bizOverrides?: { bizPhone?: string; bizEmail
 function orderInternalEmail(order: any) {
   const rows = [
     ["Order #", order.order_number || "N/A"],
-    ["Customer", order.customer_name],
-    ["Phone", order.customer_phone],
-    ["Email", order.customer_email || "Not provided"],
-    ["Delivery Address", order.delivery_address],
+    ["Customer", escapeHtml(order.customer_name)],
+    ["Phone", escapeHtml(order.customer_phone)],
+    ["Email", escapeHtml(order.customer_email) || "Not provided"],
+    ["Delivery Address", escapeHtml(order.delivery_address)],
     ["Distance", `${order.distance_miles} mi`],
     ["Quantity", `${order.quantity} load${order.quantity > 1 ? "s" : ""}`],
     ["Delivery Date", order.delivery_date || "TBD"],
