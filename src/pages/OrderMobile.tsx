@@ -1065,7 +1065,9 @@ const OrderMobile = () => {
                     onBlur={e => setForm({ ...form, companyName: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); nameRef.current?.focus(); } }}
                       inputMode="text"
+                      enterKeyHint="next"
                       className="h-16 rounded-xl text-lg placeholder:text-black/35"
                     />
                   </div>
@@ -1100,13 +1102,11 @@ const OrderMobile = () => {
                       const formatted = formatPhone(e.target.value);
                       setForm({ ...form, phone: formatted });
                       if (formatted.length >= 14) {
-                        setTimeout(() => {
-                          document.getElementById("mobile-email-input")?.querySelector("input")?.focus();
-                        }, 50);
+                        setTimeout(() => emailRef.current?.focus(), 50);
                       }
                     }}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("mobile-email-input")?.querySelector("input")?.focus(); } }}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); emailRef.current?.focus(); } }}
                     inputMode="tel"
                     enterKeyHint="next"
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
@@ -1115,6 +1115,7 @@ const OrderMobile = () => {
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
                   <input
+                    ref={emailRef}
                     type="email"
                     inputMode="email"
                     autoComplete="email"
@@ -1122,6 +1123,7 @@ const OrderMobile = () => {
                     onChange={e => setForm({ ...form, email: formatEmail(e.target.value) })}
                     onBlur={e => setForm({ ...form, email: formatEmail(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
                     placeholder="john@example.com"
                     required
                     enterKeyHint="done"
