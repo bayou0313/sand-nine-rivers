@@ -1082,9 +1082,29 @@ const OrderMobile = () => {
                       <span className="font-body text-sm text-primary-foreground/70">Payment</span>
                       <span className="font-body text-sm text-primary-foreground capitalize">{paymentMethod === "stripe-link" ? "Card — Paid" : "Pay at Delivery"}</span>
                     </div>
+                    {confirmedTotals && confirmedTotals.distanceFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Distance Fee</span>
+                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.distanceFee)}</span>
+                      </div>
+                    )}
+                    {confirmedTotals && confirmedTotals.saturdaySurcharge > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Saturday Surcharge</span>
+                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.saturdaySurcharge)}</span>
+                      </div>
+                    )}
+                    {confirmedTotals && confirmedTotals.processingFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Processing Fee</span>
+                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.processingFee)}</span>
+                      </div>
+                    )}
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '8px', paddingTop: '8px' }} className="flex justify-between">
                       <span className="font-body text-sm font-semibold text-primary-foreground">Total</span>
-                      <span className="font-display text-lg text-accent">{formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}</span>
+                      <span className="font-display text-lg text-accent">
+                        {confirmedTotals ? formatCurrency(confirmedTotals.total) : formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}
+                      </span>
                     </div>
                   </div>
                 </div>
