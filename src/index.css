@@ -182,3 +182,13 @@
   .print-confirmation > div { box-shadow: none !important; break-inside: avoid; }
   .print-confirmation img { max-width: 160px !important; }
 }
+
+/* Order form — lighter placeholder text */
+.place-autocomplete-order .place-autocomplete-input::placeholder,
+#order-name::placeholder,
+#order-company::placeholder,
+#order-phone::placeholder,
+#order-email::placeholder,
+#order-notes::placeholder {
+  opacity: 0.35;
+}
