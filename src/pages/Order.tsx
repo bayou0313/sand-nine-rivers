@@ -1856,7 +1856,11 @@ const Order = () => {
                       >
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1">
                           <p className="font-display text-xs tracking-wider text-amber-900">PAY AT DELIVERY</p>
-                          <p className="font-body text-sm text-amber-800 leading-relaxed">Cash or check is accepted on arrival. If payment cannot be collected, a secure card payment link will be sent with a {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee.</p>
+                          <p className="font-body text-sm text-amber-800 leading-relaxed">
+                            {isBaked
+                              ? `Cash or check accepted on arrival. You save ${formatCurrency(codSavingsPerLoad * quantity)} vs. card payment.`
+                              : `Cash or check is accepted on arrival. If payment cannot be collected, a secure card payment link will be sent with a ${globalPricing.card_processing_fee_percent}% + $${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee.`}
+                          </p>
                         </div>
                       </motion.div>
                     )}
