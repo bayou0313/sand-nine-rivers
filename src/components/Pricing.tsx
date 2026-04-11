@@ -50,8 +50,8 @@ const Pricing = () => {
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-14">
           <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">OUR SOURCE</motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="text-3xl md:text-4xl text-foreground font-display tracking-wide text-center">
-            From Our Pit to Your Property
+          <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="font-display text-4xl md:text-5xl tracking-wide text-foreground text-center">
+            FROM OUR PIT TO YOUR PROPERTY
           </motion.h2>
         </div>
 

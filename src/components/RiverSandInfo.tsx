@@ -21,9 +21,9 @@ const RiverSandInfo = ({ cityName = "New Orleans" }: { cityName?: string }) => {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl text-foreground"
+            className="font-display text-4xl md:text-5xl tracking-wide text-foreground"
           >
-            What Is River Sand and When Should You Use It?
+            KNOW YOUR MATERIAL
           </motion.h2>
         </div>
 
