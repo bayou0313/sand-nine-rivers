@@ -178,6 +178,24 @@ const OrderMobile = () => {
   // Init
   useEffect(() => { initSession(); }, []);
 
+  // Visual Viewport keyboard detection
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handleViewportChange = () => {
+      const keyboardHeight = window.innerHeight - window.visualViewport!.height;
+      const addressContainer = document.getElementById('address-step-container');
+      if (addressContainer) {
+        addressContainer.style.paddingBottom = keyboardHeight > 100 ? `${keyboardHeight + 20}px` : '0px';
+      }
+    };
+    window.visualViewport.addEventListener('resize', handleViewportChange);
+    window.visualViewport.addEventListener('scroll', handleViewportChange);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+    };
+  }, []);
+
   // Browser back button interception
   useEffect(() => {
     // Only intercept back button when we're actually on /order
