@@ -179,6 +179,9 @@ const OrderMobile = () => {
 
   // Browser back button interception
   useEffect(() => {
+    // Only intercept back button when we're actually on /order
+    if (window.location.pathname !== '/order') return;
+
     const handlePopState = () => {
       if (step === "price") {
         setStep("address");
@@ -192,6 +195,7 @@ const OrderMobile = () => {
         window.history.pushState(null, '', '/order');
       }
     };
+
     window.history.pushState(null, '', '/order');
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -907,7 +911,10 @@ const OrderMobile = () => {
                 >
                   −
                 </button>
-                <span className="font-display text-4xl text-white tracking-wide">
+                <span 
+                  className="font-display text-4xl tracking-wide" 
+                  style={{ color: '#0D2137', minWidth: '48px', textAlign: 'center' as const, display: 'block' }}
+                >
                   {quantity}
                 </span>
                 <button
