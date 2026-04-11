@@ -127,7 +127,7 @@ export function getAvailableDeliveryDates(
 
   const dates: DeliveryDateWithPit[] = [];
 
-  for (let i = 0; dates.length < maxSlots && i < (maxSlots * 3); i++) {
+  for (let i = 0; dates.length < maxSlots && i < (maxSlots * 2); i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const dayOfWeek = d.getDay();
@@ -238,7 +238,7 @@ type Props = {
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
-  const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 7, null, allPitDistances), [pitSchedule, allPitDistances]);
+  const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 60, null, allPitDistances), [pitSchedule, allPitDistances]);
 
   // Per-date surcharge helpers
   const getSatSurcharge = (d: DeliveryDateWithPit) => {

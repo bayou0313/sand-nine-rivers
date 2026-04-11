@@ -5,6 +5,7 @@ import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
+import { formatProperName, formatSentence, formatEmail } from "@/lib/textFormat";
 import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -919,7 +920,7 @@ const OrderMobile = () => {
                     <Input
                       placeholder="Company name (optional)"
                       value={form.companyName}
-                      onChange={e => setForm({ ...form, companyName: e.target.value })}
+                      onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       inputMode="text"
                       className="h-16 rounded-xl text-lg placeholder:text-black/35"
@@ -934,7 +935,7 @@ const OrderMobile = () => {
                     placeholder="Your full name"
                     required
                     value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    onChange={e => setForm({ ...form, name: formatProperName(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}
                     inputMode="text"
@@ -971,7 +972,7 @@ const OrderMobile = () => {
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
                   <EmailInput
                     value={form.email}
-                    onChange={v => setForm({ ...form, email: v })}
+                    onChange={v => setForm({ ...form, email: formatEmail(v) })}
                     required
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
@@ -989,7 +990,7 @@ const OrderMobile = () => {
                       maxLength={275}
                       rows={2}
                       value={form.notes}
-                      onChange={e => setForm({ ...form, notes: e.target.value })}
+                      onChange={e => setForm({ ...form, notes: formatSentence(e.target.value) })}
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       className="rounded-xl text-lg placeholder:text-black/35"
                     />
