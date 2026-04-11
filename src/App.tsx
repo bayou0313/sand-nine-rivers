@@ -22,8 +22,6 @@ const queryClient = new QueryClient();
 
 const OrderRouter = () => {
   const isMobile = useIsMobile();
-  // Render null briefly while detecting device to avoid flash
-  if (isMobile === undefined) return null;
   return isMobile ? <OrderMobile /> : <Order />;
 };
 
