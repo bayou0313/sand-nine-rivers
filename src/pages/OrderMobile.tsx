@@ -945,7 +945,7 @@ const OrderMobile = () => {
 
               {/* Date picker */}
               <div className="mb-6">
-                <h2 className="font-display text-lg text-foreground tracking-wider mb-3">SELECT DELIVERY DATE</h2>
+                
                 <DeliveryDatePicker
                   selectedDate={selectedDeliveryDate}
                   onSelect={handleDateSelect}
@@ -1103,15 +1103,22 @@ const OrderMobile = () => {
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
                   />
                 </div>
-                <div id="mobile-email-input">
+                <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                  <EmailInput
+                  <input
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
                     value={form.email}
-                    onBlur={v => setForm({ ...form, email: formatEmail(v) })}
-                    onChange={v => setForm({ ...form, email: formatEmail(v) })}
-                    required
-                    className="h-16 rounded-xl text-lg placeholder:text-black/35"
+                    onChange={e => setForm({ ...form, email: formatEmail(e.target.value) })}
+                    onBlur={e => setForm({ ...form, email: formatEmail(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                    placeholder="john@example.com"
+                    required
+                    enterKeyHint="done"
+                    className={`h-16 rounded-xl text-lg w-full px-4 placeholder:text-black/35 ${
+                      formAttempted && !form.email.trim() ? 'border-2 border-red-400' : ''
+                    }`}
                   />
                 </div>
 
