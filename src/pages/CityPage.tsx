@@ -299,7 +299,33 @@ const CityPage = () => {
     return <WaitlistPage cityPage={cityPage} />;
   }
 
-  const canonicalUrl = `https://riversand.net/${cityPage.city_slug}/river-sand-delivery`;
+  // Mobile: stripped-down app experience with embedded estimator
+  if (isMobile) {
+    const mobileCanonicalUrl = `https://riversand.net/${cityPage.city_slug}/river-sand-delivery`;
+    return (
+      <div className="min-h-screen flex flex-col bg-primary">
+        <Helmet>
+          {cityPage.meta_title && <title>{cityPage.meta_title}</title>}
+          {cityPage.meta_description && <meta name="description" content={cityPage.meta_description} />}
+          <meta name="robots" content="index, follow" />
+          <link rel="canonical" href={mobileCanonicalUrl} />
+        </Helmet>
+        <Navbar solid logoHref={`/${cityPage.city_slug}/river-sand-delivery`} />
+        <Hero
+          h1Override={cityPage.h1_text || `River Sand Delivery in ${cityPage.city_name}, ${cityPage.state}`}
+          subtitleOverride={
+            cityPage.hero_intro
+              ? cityPage.hero_intro.length > 100 ? cityPage.hero_intro.slice(0, 97) + "..." : cityPage.hero_intro
+              : `Same-day delivery to ${cityPage.city_name}.`
+          }
+          showEstimator={true}
+        />
+        <Footer />
+        <MobilePhoneBar />
+      </div>
+    );
+  }
+
 
   const breadcrumbSchema = JSON.stringify({
     "@context": "https://schema.org",
