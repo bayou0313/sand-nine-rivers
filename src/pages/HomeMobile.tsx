@@ -15,9 +15,12 @@ const HomeMobile = () => {
   const { loaded: apiLoaded } = useGoogleMaps();
 
   const handlePlaceSelect = (result: PlaceSelectResult) => {
-    sessionStorage.setItem("mobile_prefill_address", result.formattedAddress);
-    sessionStorage.setItem("mobile_prefill_place", JSON.stringify(result));
-    navigate("/order");
+    navigate("/order", {
+      state: {
+        prefillAddress: result.formattedAddress,
+        prefillPlace: result,
+      },
+    });
   };
 
   const handleViewFullSite = () => {

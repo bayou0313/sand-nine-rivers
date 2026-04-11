@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useLocation } from "react-router-dom";
 import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
@@ -103,6 +103,7 @@ const OrderMobile = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
 
+  const location = useLocation();
   const qtyParam = parseInt(searchParams.get("quantity") || searchParams.get("qty") || "1", 10);
   const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
   const [leadReference, setLeadReference] = useState<string | null>(null);
