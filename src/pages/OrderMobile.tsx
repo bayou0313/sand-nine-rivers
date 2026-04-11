@@ -835,7 +835,7 @@ const OrderMobile = () => {
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                  <EmailInput value={form.email} onChange={v => setForm({ ...form, email: v })} required className="h-14 rounded-xl text-base" onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} />
+                  <EmailInput value={form.email} onChange={v => setForm({ ...form, email: v })} required className="h-14 rounded-xl text-base" />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Instructions</label>
