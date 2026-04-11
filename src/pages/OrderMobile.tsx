@@ -652,11 +652,12 @@ const OrderMobile = () => {
       setOrderNumber(inserted?.order_number || null);
       setConfirmedOrderId(inserted?.id || null);
       setLookupToken(inserted?.lookup_token || null);
-      // Populate confirmedTotals from the order we just created
+      // Populate confirmedTotals from the order we just created — BEFORE setting success step
       if (inserted?.id) {
         const { data: orderRec } = await supabase.from("orders").select("price, base_unit_price, distance_fee, processing_fee, saturday_surcharge_amount, sunday_surcharge_amount, tax_amount").eq("id", inserted.id).maybeSingle();
         if (orderRec) populateConfirmedTotals(orderRec);
       }
+      // Only transition to success AFTER totals are populated
       setStep("success");
       clearCart();
       trackEvent("purchase", { transaction_id: inserted?.order_number || "", value: totalPrice, currency: "USD" });
@@ -1088,6 +1089,9 @@ const OrderMobile = () => {
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       className="rounded-xl text-lg placeholder:text-black/35"
                     />
+                    <p className="text-xs text-right mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                      {form.notes.length}/275
+                    </p>
                   </div>
                 )}
               </div>
@@ -1100,6 +1104,18 @@ const OrderMobile = () => {
                   <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="underline text-primary">delivery terms</a>
                 </span>
               </label>
+
+              {/* Delivery & COD disclaimers */}
+              <div className="rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="font-body text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  🚚 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Delivery:</strong> Curbside only — curb to sidewalk/driveway edge. No private property entry. Customer must ensure clear site access. WAYS® Materials LLC not liable for damage to driveways or landscaping.
+                </p>
+                {(paymentMethod === 'cash' || paymentMethod === 'check') && (
+                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    💵 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>COD Payment:</strong> Cash or check due at delivery. Driver cannot accept partial payments. No card payments at door.
+                  </p>
+                )}
+              </div>
 
               {/* Payment buttons — full width, stacked */}
               <div className="space-y-3 pb-4">

@@ -18,7 +18,19 @@ function escapeHtml(text: string | null | undefined): string {
     .replace(/'/g, '&#039;');
 }
 
-const BRAND_COLOR = "#0D2137";
+function fixDesignators(name: string): string {
+  const designators: Record<string, string> = {
+    'LLC': 'LLC', 'LCC': 'L.L.C.', 'LC': 'LC',
+    'INC': 'Inc.', 'CORP': 'Corp.', 'LTD': 'Ltd.',
+    'LLP': 'LLP', 'PLLC': 'PLLC', 'PC': 'PC', 'PA': 'PA',
+    'LP': 'LP',
+  };
+  return name.split(' ').map(word => {
+    const upper = word.replace(/[.,]/g, '').toUpperCase();
+    return designators[upper] || word;
+  }).join(' ');
+}
+
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
 // Module-level defaults — used by template functions defined outside serve()
@@ -64,7 +76,7 @@ function fmt(n: number): string {
 
 function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, pricingMode = "transparent"): string {
   const customerName = order.customer_name || "there";
-  const companyName = order.company_name || "";
+  const companyName = order.company_name ? fixDesignators(order.company_name) : "";
   const orderNumber = order.order_number || "N/A";
   const deliveryAddress = order.delivery_address || "";
   const deliveryDate = formatDate(order.delivery_date);

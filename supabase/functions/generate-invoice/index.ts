@@ -15,6 +15,19 @@ const GOLD = [200, 164, 74] as const;
 const GREEN = [22, 163, 74] as const;
 const LIGHT_GRAY = [200, 200, 200] as const;
 
+function fixDesignators(name: string): string {
+  const designators: Record<string, string> = {
+    'LLC': 'LLC', 'LCC': 'L.L.C.', 'LC': 'LC',
+    'INC': 'Inc.', 'CORP': 'Corp.', 'LTD': 'Ltd.',
+    'LLP': 'LLP', 'PLLC': 'PLLC', 'PC': 'PC', 'PA': 'PA',
+    'LP': 'LP',
+  };
+  return name.split(' ').map(word => {
+    const upper = word.replace(/[.,]/g, '').toUpperCase();
+    return designators[upper] || word;
+  }).join(' ');
+}
+
 function fmt(n: number): string {
   return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
@@ -266,7 +279,7 @@ serve(async (req) => {
     if (order.company_name) {
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...BLACK);
-      doc.text(order.company_name, colRight, yR); yR += 5;
+      doc.text(fixDesignators(order.company_name), colRight, yR); yR += 5;
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...DARK);
       doc.text(order.customer_name, colRight, yR); yR += 5;
