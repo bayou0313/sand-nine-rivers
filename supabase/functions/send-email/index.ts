@@ -62,20 +62,16 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
   const isStripePaid = order.payment_method === "stripe-link" || order.payment_method === "card";
   const customerEmail = order.customer_email || "";
 
-  const basePrice = 195;
-  const baseLine = basePrice * qty;
+  // Use stored pricing fields from order — no more hardcoded values
+  const baseUnitPrice = Number(order.base_unit_price) || 0;
+  const baseLine = baseUnitPrice > 0 ? baseUnitPrice * qty : 0;
+  const distanceFee = Number(order.distance_fee) || 0;
   const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
   const taxAmount = Number(order.tax_amount || 0);
   const taxParish = order.tax_parish || "";
   const taxRate = (Number(order.tax_rate || 0) * 100).toFixed(2);
+  const processingFeeAmt = Number(order.processing_fee) || 0;
   const totalPrice = fmt(Number(order.price || 0));
-
-  // Calculate processing fee for stripe
-  const subtotalBeforeFee = baseLine + satSurcharge + taxAmount;
-  const distanceMiles = Number(order.distance_miles || 0);
-  const distanceFee = distanceMiles > 15 ? (distanceMiles - 15) * 5.5 * qty : 0;
-  const subtotalWithDist = subtotalBeforeFee + distanceFee;
-  const processingFeeAmt = isStripePaid ? Math.max(0, Number(order.price) - subtotalWithDist) : 0;
   const processingFee = fmt(processingFeeAmt);
   const totalWithFee = fmt(Number(order.price || 0));
   const stripeReference = order.stripe_payment_id || "";
