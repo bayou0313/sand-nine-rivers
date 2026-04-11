@@ -28,6 +28,7 @@ function fixDesignators(name: string): string {
   }).join(' ');
 }
 
+function fmt(n: number): string {
   return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
