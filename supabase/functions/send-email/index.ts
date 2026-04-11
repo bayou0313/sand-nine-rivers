@@ -948,7 +948,7 @@ serve(async (req) => {
         ),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data, FEE_PERCENT, FEE_FIXED), attachments, FROM, REPLY_TO));
+        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data, FEE_PERCENT, FEE_FIXED, PRICING_MODE), attachments, FROM, REPLY_TO));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);
