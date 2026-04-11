@@ -247,7 +247,7 @@ function AppContent() {
 
   return (
     <div suppressHydrationWarning={true}>
-      <MobileDebug />
+      
       {typeof window !== "undefined" && stripeMode === "test" && !isAdminRoute && (
         <div id="stripe-test-banner" suppressHydrationWarning={true} className="hidden md:flex" style={{
           position: "fixed",
