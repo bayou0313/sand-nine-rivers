@@ -557,18 +557,17 @@ const OrderMobile = () => {
     finally { setLoading(false); }
   }, [address, customerCoords, allPits, globalPricing]);
 
-  const prefillHandled = useRef(false);
-
   useEffect(() => {
     const state = location.state as { prefillAddress?: string; prefillPlace?: PlaceSelectResult } | null;
     if (!state?.prefillPlace) return;
-    if (prefillHandled.current) return;
     if (!pitsLoaded || allPits.length === 0) return;
-    
-    prefillHandled.current = true;
+
+    // Use location.key to ensure this only fires once per navigation event
     handlePlaceSelect(state.prefillPlace);
+    
+    // Clear state immediately to prevent re-trigger
     window.history.replaceState({}, "", "/order");
-  }, [pitsLoaded, allPits.length]);
+  }, [location.key, pitsLoaded, allPits.length]);
 
   // Date selection with pit reassignment
   const handleDateSelect = useCallback((d: DeliveryDate) => {
