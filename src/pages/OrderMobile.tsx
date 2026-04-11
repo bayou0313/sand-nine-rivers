@@ -848,7 +848,20 @@ const OrderMobile = () => {
 
         {/* ── SCREEN 1: ADDRESS ── */}
         {step === "address" && (
-          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} id="address-step-container" className="min-h-dvh flex flex-col bg-primary">
+          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} id="address-step-container" className="min-h-dvh flex flex-col bg-primary"
+            onFocusCapture={() => {
+              setTimeout(() => {
+                const input = document.querySelector('#address-step-container input') as HTMLElement;
+                if (!input) return;
+                const rect = input.getBoundingClientRect();
+                const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+                const targetY = rect.top - (viewportHeight * 0.35);
+                if (targetY > 0) {
+                  window.scrollBy({ top: targetY, behavior: 'smooth' });
+                }
+              }, 300);
+            }}
+          >
             {/* Header */}
             <header className="flex items-center justify-center px-5 pt-5 pb-2">
               <img src={LOGO_HOME} alt="River Sand" className="object-contain" style={{ width: '50%', maxWidth: '200px' }} />
