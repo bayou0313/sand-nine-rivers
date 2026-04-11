@@ -1409,7 +1409,7 @@ const Order = () => {
                         onPlaceSelect={handleOrderPlaceSelect}
                         onInputChange={(val) => setAddress(val)}
                         onEnterKey={calculateDistance}
-                        placeholder="Enter your delivery address..."
+                        placeholder="Enter your delivery address..." className="placeholder:opacity-40"
                         initialValue={address || undefined}
                         id="order-address"
                         containerClassName="place-autocomplete-order"
@@ -1614,7 +1614,7 @@ const Order = () => {
                       </div>
                       <div>
                         <label htmlFor="order-email" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Email *</label>
-                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className={`h-[52px] rounded-lg text-base ${formAttempted && !form.email.trim() ? "border-destructive border-2" : ""}`} />
+                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className={`h-[52px] rounded-lg text-base placeholder:opacity-40 ${formAttempted && !form.email.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Instructions</label>
