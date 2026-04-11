@@ -196,7 +196,13 @@ const OrderMobile = () => {
         const keyboardHeight = window.innerHeight - window.visualViewport!.height;
         if (keyboardHeight > 100) {
           const activeEl = document.activeElement as HTMLElement;
-          if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+          // Exclude address input — it handles its own positioning
+          if (
+            activeEl &&
+            (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') &&
+            activeEl.id !== 'mobile-address' &&
+            !activeEl.closest('#address-step-container')
+          ) {
             const rect = activeEl.getBoundingClientRect();
             const visibleHeight = window.visualViewport!.height;
             const viewportTop = window.visualViewport!.offsetTop;
