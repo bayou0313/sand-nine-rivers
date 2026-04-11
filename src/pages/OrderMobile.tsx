@@ -9,6 +9,7 @@ import { formatProperName, formatProperNameFinal, formatSentence, formatEmail } 
 
 import OrderConfirmation from "@/components/OrderConfirmation";
 import OutOfAreaModal from "@/components/OutOfAreaModal";
+import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1191,27 +1192,18 @@ const OrderMobile = () => {
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                  <input
-                    ref={emailRef}
-                    type="email"
-                    name="email"
+                  <EmailInput
                     id="mobile-email"
-                    inputMode="email"
-                    autoComplete="email"
+                    name="email"
                     value={form.email}
-                    onChange={e => setForm({ ...form, email: formatEmail(e.target.value) })}
-                    onBlur={e => setForm({ ...form, email: formatEmail(e.target.value) })}
+                    onChange={v => setForm({ ...form, email: formatEmail(v) })}
+                    onBlur={v => setForm({ ...form, email: formatEmail(v) })}
+                    required
+                    className="h-16 rounded-xl text-lg placeholder:text-black/35"
                     onFocus={e => {
                       const el = e.target;
-                      setTimeout(() => {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }, 300);
+                      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                     }}
-                    onKeyUp={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
-                    placeholder="john@example.com"
-                    required
-                    enterKeyHint="done"
-                    className="h-16 rounded-xl text-lg w-full px-4 placeholder:text-black/35 border border-input"
                   />
                 </div>
 
