@@ -238,6 +238,7 @@ type Props = {
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 60, null, allPitDistances), [pitSchedule, allPitDistances]);
 
   // Per-date surcharge helpers
