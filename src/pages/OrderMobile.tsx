@@ -1214,6 +1214,35 @@ const OrderMobile = () => {
           </motion.div>
         )}
 
+        {/* ── DELIVERY TERMS MODAL ── */}
+        {showTermsModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="w-full rounded-t-2xl p-6 max-h-[70vh] overflow-y-auto" style={{ backgroundColor: 'white' }}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-display text-xl" style={{ color: '#0D2137' }}>DELIVERY TERMS</h3>
+                <button onClick={() => setShowTermsModal(false)} className="text-gray-400 text-xl">✕</button>
+              </div>
+              <div className="font-body text-sm text-gray-600 space-y-3">
+                <p>• Curbside delivery only — curb to sidewalk/driveway edge. No private property entry.</p>
+                <p>• Customer must ensure clear, accessible delivery area before arrival.</p>
+                <p>• WAYS® Materials LLC not liable for damage to driveways, landscaping, or property.</p>
+                <p>• Customer or representative must be present at delivery.</p>
+                <p>• Photo proof of completion at delivery serves as final confirmation of fulfillment.</p>
+                <p>• Same-day orders subject to dispatch confirmation within 30 minutes.</p>
+                <p>• Cancellations are penalty-free only if the truck has not been loaded. Once loaded, the order is non-refundable.</p>
+                <p>• All processing fees are non-refundable in all cases.</p>
+              </div>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="w-full h-12 rounded-2xl font-display text-lg mt-6"
+                style={{ backgroundColor: '#0D2137', color: 'white' }}
+              >
+                CLOSE
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── SCREEN 4: SUCCESS ── */}
         {step === "success" && (
           <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col">
@@ -1236,6 +1265,7 @@ const OrderMobile = () => {
                 customerEmail={form.email}
                 customerPhone={form.phone}
                 companyName={form.companyName || undefined}
+                pricingMode={pricingMode}
                 confirmedTotals={confirmedTotals ? {
                   totalPrice: confirmedTotals.total - (confirmedTotals.processingFee || 0),
                   totalWithProcessingFee: confirmedTotals.total,
