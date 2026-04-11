@@ -227,56 +227,42 @@ type LoadCounts = {
   max_daily_limit: number | null;
 };
 
-type WeekendPitInfo = {
-  pit: { id: string; name: string };
-  satSurcharge: number;
-  sunSurcharge: number;
-};
-
 type Props = {
   selectedDate: DeliveryDate | null;
   onSelect: (d: DeliveryDate) => void;
+  onPitAssigned?: (pit: PitDistanceEntry["pit"]) => void;
   pitSchedule?: PitSchedule | null;
   globalSaturdaySurcharge?: number;
   pitId?: string | null;
-  weekendPitMap?: Partial<Record<0 | 6, WeekendPitInfo>>;
-  weekdayPitName?: string;
+  allPitDistances?: PitDistanceEntry[];
 };
 
-const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturdaySurcharge, pitId, weekendPitMap, weekdayPitName }: Props) => {
-  const rawDates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 7, weekendPitMap), [pitSchedule, weekendPitMap]);
+const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
+  const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 7, null, allPitDistances), [pitSchedule, allPitDistances]);
 
-  // Filter out weekend dates where weekendPitMap has no serviceable PIT
-  const dates = useMemo(() => {
-    if (!weekendPitMap || Object.keys(weekendPitMap).length === 0) return rawDates;
-    return rawDates.filter(d => {
-      if (d.isSaturday && !(6 in weekendPitMap)) return false;
-      if (d.isSunday && !(0 in weekendPitMap)) return false;
-      return true;
-    });
-  }, [rawDates, weekendPitMap]);
-
-  const effectiveSatSurcharge = useMemo(() => {
-    if (weekendPitMap?.[6]) return weekendPitMap[6].satSurcharge;
+  // Per-date surcharge helpers
+  const getSatSurcharge = (d: DeliveryDateWithPit) => {
+    if (d.assignedPit?.pit.saturday_surcharge_override != null) return d.assignedPit.pit.saturday_surcharge_override;
     return getEffectiveSaturdaySurcharge(pitSchedule, globalSaturdaySurcharge);
-  }, [pitSchedule, globalSaturdaySurcharge, weekendPitMap]);
-  const effectiveSunSurcharge = useMemo(() => {
-    if (weekendPitMap?.[0]) return weekendPitMap[0].sunSurcharge;
+  };
+  const getSunSurcharge = (d: DeliveryDateWithPit) => {
+    if (d.assignedPit?.pit.sunday_surcharge != null) return d.assignedPit.pit.sunday_surcharge;
     return getEffectiveSundaySurcharge(pitSchedule);
-  }, [pitSchedule, weekendPitMap]);
+  };
+
+  // Global surcharges for selected date display
+  const effectiveSatSurcharge = selectedDate ? getSatSurcharge(dates.find(dd => dd.iso === selectedDate.iso) || dates[0] || {} as any) : getEffectiveSaturdaySurcharge(pitSchedule, globalSaturdaySurcharge);
+  const effectiveSunSurcharge = selectedDate ? getSunSurcharge(dates.find(dd => dd.iso === selectedDate.iso) || dates[0] || {} as any) : getEffectiveSundaySurcharge(pitSchedule);
+
   const [loadData, setLoadData] = useState<LoadCounts | null>(null);
 
-  // Fetch load counts for ALL visible dates (weekday + weekend)
+  // Fetch load counts using per-date assigned pits
   useEffect(() => {
     if (dates.length === 0) { setLoadData(null); return; }
 
-    // Build PIT-to-dates mapping for all visible dates
     const pitQueries: { pit_id: string; dates: string[] }[] = [];
     for (const d of dates) {
-      const isWeekend = d.isSaturday || d.isSunday;
-      const dayKey = d.isSaturday ? 6 : 0;
-      const wPit = isWeekend ? weekendPitMap?.[dayKey as 0 | 6] : null;
-      const effectivePitId = wPit ? wPit.pit.id : pitId;
+      const effectivePitId = (d as DeliveryDateWithPit).assignedPit?.pit.id || pitId;
       if (!effectivePitId) continue;
       const existing = pitQueries.find(q => q.pit_id === effectivePitId);
       if (existing) existing.dates.push(d.iso);
@@ -306,15 +292,13 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, pitSchedule, globalSaturda
         setLoadData(merged);
       } catch { /* silent */ }
     })();
-  }, [pitId, dates, weekendPitMap]);
+  }, [pitId, dates, allPitDistances]);
 
-  const isFullyBooked = (d: DeliveryDate & { blocked?: boolean }) => {
+  const isFullyBooked = (d: DeliveryDateWithPit) => {
     if (!loadData || d.blocked) return false;
     const count = loadData.counts[d.iso] || 0;
     const globalCount = loadData.global_counts[d.iso] || 0;
-    // Global limit uses cross-PIT count
     if (loadData.max_daily_limit != null && globalCount >= loadData.max_daily_limit) return true;
-    // PIT-specific weekend limits use per-PIT count
     if (d.isSaturday && loadData.saturday_load_limit != null && count >= loadData.saturday_load_limit) return true;
     if (d.isSunday && loadData.sunday_load_limit != null && count >= loadData.sunday_load_limit) return true;
     return false;
