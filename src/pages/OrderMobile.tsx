@@ -899,11 +899,24 @@ const OrderMobile = () => {
               </div>
 
               {/* Quantity selector */}
-              <div className="flex items-center justify-center gap-4 mb-8">
-                <span className="font-body text-sm text-muted-foreground">Loads:</span>
-                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-10 h-10 rounded-xl bg-accent text-accent-foreground flex items-center justify-center text-xl font-bold">−</button>
-                <span className="font-display text-2xl text-foreground w-8 text-center">{quantity}</span>
-                <button onClick={() => setQuantity(q => Math.min(10, q + 1))} className="w-10 h-10 rounded-xl bg-accent text-accent-foreground flex items-center justify-center text-xl font-bold">+</button>
+              <div className="flex items-center justify-center w-full gap-6 py-4">
+                <button
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold"
+                  style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--primary))' }}
+                >
+                  −
+                </button>
+                <span className="font-display text-4xl text-white tracking-wide">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity(q => Math.min(10, q + 1))}
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold"
+                  style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--primary))' }}
+                >
+                  +
+                </button>
               </div>
 
               {/* Date picker */}
