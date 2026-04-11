@@ -178,14 +178,22 @@ const OrderMobile = () => {
   // Init
   useEffect(() => { initSession(); }, []);
 
-  // Visual Viewport keyboard detection
+  // Visual Viewport keyboard detection — scroll-based, no padding manipulation
   useEffect(() => {
     if (!window.visualViewport) return;
     const handleViewportChange = () => {
       const keyboardHeight = window.innerHeight - window.visualViewport!.height;
-      const addressContainer = document.getElementById('address-step-container');
-      if (addressContainer) {
-        addressContainer.style.paddingBottom = keyboardHeight > 100 ? `${keyboardHeight + 20}px` : '0px';
+      if (keyboardHeight > 100) {
+        setTimeout(() => {
+          const input = document.querySelector('#address-step-container input') as HTMLElement;
+          if (input) {
+            const rect = input.getBoundingClientRect();
+            const visibleHeight = window.visualViewport!.height;
+            if (rect.bottom > visibleHeight - 20) {
+              window.scrollBy({ top: rect.bottom - visibleHeight + 40, behavior: 'smooth' });
+            }
+          }
+        }, 100);
       }
     };
     window.visualViewport.addEventListener('resize', handleViewportChange);
