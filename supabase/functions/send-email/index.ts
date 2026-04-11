@@ -541,7 +541,7 @@ function orderDispatchEmail(data: any): string {
       CUSTOMER</p>
     <p style="color:#FFFFFF;font-size:20px;
       font-weight:bold;margin:0 0 12px 0;">
-      ${data.customer_name || "—"}</p>
+      ${escapeHtml(data.customer_name) || "—"}</p>
     <a href="${telUrl}"
       style="display:inline-block;
       background:#C07A00;color:#FFFFFF;
@@ -553,7 +553,7 @@ function orderDispatchEmail(data: any): string {
     ${data.customer_email ? `
     <p style="color:#6B9DB8;font-size:11px;
       margin:10px 0 0 0;">
-      ${data.customer_email}</p>` : ""}
+      ${escapeHtml(data.customer_email)}</p>` : ""}
   </td></tr>
 
   <!-- DELIVERY -->
@@ -581,7 +581,7 @@ function orderDispatchEmail(data: any): string {
     </a>
     <p style="color:rgba(255,255,255,0.5);
       font-size:11px;margin:10px 0 0 0;">
-      ${data.delivery_address || "—"}</p>
+      ${escapeHtml(data.delivery_address) || "—"}</p>
   </td></tr>
 
   <!-- ORDER DETAILS -->
