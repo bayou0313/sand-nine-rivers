@@ -7,6 +7,7 @@ import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCir
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
 import { formatProperName, formatSentence, formatEmail } from "@/lib/textFormat";
 import EmailInput from "@/components/EmailInput";
+import OrderConfirmation from "@/components/OrderConfirmation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1015,7 +1016,8 @@ const OrderMobile = () => {
                     <Input
                       placeholder="Company name (optional)"
                       value={form.companyName}
-                      onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
+                    onBlur={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
+                    onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       inputMode="text"
                       className="h-16 rounded-xl text-lg placeholder:text-black/35"
@@ -1030,6 +1032,7 @@ const OrderMobile = () => {
                     placeholder="Your full name"
                     required
                     value={form.name}
+                    onBlur={e => setForm({ ...form, name: formatProperName(e.target.value) })}
                     onChange={e => setForm({ ...form, name: formatProperName(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}
@@ -1067,6 +1070,7 @@ const OrderMobile = () => {
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
                   <EmailInput
                     value={form.email}
+                    onBlur={v => setForm({ ...form, email: formatEmail(v) })}
                     onChange={v => setForm({ ...form, email: formatEmail(v) })}
                     required
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
@@ -1108,11 +1112,11 @@ const OrderMobile = () => {
               {/* Delivery & COD disclaimers */}
               <div className="rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <p className="font-body text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  🚚 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Delivery:</strong> Curbside only — curb to sidewalk/driveway edge. No private property entry. Customer must ensure clear site access. WAYS® Materials LLC not liable for damage to driveways or landscaping.
+                  🚚 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Delivery:</strong> Curbside only — curb to sidewalk/driveway edge. No private property entry. Customer must ensure clear, accessible delivery area before arrival. WAYS® Materials LLC not liable for damage to driveways, landscaping, or property. Customer or representative must be present at delivery.
                 </p>
                 {(paymentMethod === 'cash' || paymentMethod === 'check') && (
                   <p className="font-body text-xs leading-relaxed mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    💵 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>COD Payment:</strong> Cash or check due at delivery. Driver cannot accept partial payments. No card payments at door.
+                    💵 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>COD Payment:</strong> Cash or check due at time of delivery. Driver cannot accept partial payments. No card payments at door. Cancellation must be made before dispatch.
                   </p>
                 )}
               </div>
