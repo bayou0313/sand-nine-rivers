@@ -183,6 +183,7 @@ const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
 };
 
 const CityPage = () => {
+  const isMobile = useIsMobile();
   const { citySlug } = useParams<{ citySlug: string }>();
   const navigate = useNavigate();
   const FALLBACK_PRODUCT_IMAGE = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/river-sand-product-new-orleans.jpg";
