@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell, Star } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell, Star, Calendar } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
@@ -176,7 +176,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -191,6 +191,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
       { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
       { id: "reviews" as NavPage, label: "Reviews", icon: Star },
+      { id: "schedule" as NavPage, label: "Schedule", icon: Calendar },
     ],
   },
   {
@@ -411,6 +412,12 @@ const Leads = () => {
   const [deletingAll, setDeletingAll] = useState(false);
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
   const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
+
+  // Schedule state
+  const [scheduleDate, setScheduleDate] = useState(new Date());
+  const [scheduleOrders, setScheduleOrders] = useState<any[]>([]);
+  const [scheduleSummary, setScheduleSummary] = useState({ revenue: 0, loads: 0, orders: 0, pending: 0, paid: 0 });
+  const [weekCounts, setWeekCounts] = useState<Record<string, { orders: number; loads: number }>>({});
 
   // Pending review orders state
   const [pendingReviewOrders, setPendingReviewOrders] = useState<any[]>([]);
@@ -1489,6 +1496,43 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchCityPages]);
 
+  // Schedule fetch functions
+  const fetchScheduleOrders = useCallback(async (date: Date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    const { data } = await supabase.from("orders").select("*").eq("delivery_date", dateStr).order("created_at", { ascending: true });
+    const orders = data || [];
+    setScheduleOrders(orders);
+    setScheduleSummary({
+      revenue: orders.reduce((sum, o) => sum + (Number(o.price) || 0), 0),
+      loads: orders.reduce((sum, o) => sum + (Number(o.quantity) || 0), 0),
+      orders: orders.length,
+      pending: orders.filter(o => o.payment_status === "pending" || o.payment_method === "COD").length,
+      paid: orders.filter(o => o.payment_status === "paid").length,
+    });
+  }, []);
+
+  const fetchWeekCounts = useCallback(async () => {
+    const start = new Date(); start.setDate(start.getDate() - 3);
+    const end = new Date(); end.setDate(end.getDate() + 10);
+    const { data } = await supabase.from("orders").select("delivery_date, quantity").gte("delivery_date", start.toISOString().split("T")[0]).lte("delivery_date", end.toISOString().split("T")[0]);
+    const counts: Record<string, { orders: number; loads: number }> = {};
+    (data || []).forEach((o: any) => {
+      const d = o.delivery_date;
+      if (!d) return;
+      if (!counts[d]) counts[d] = { orders: 0, loads: 0 };
+      counts[d].orders++;
+      counts[d].loads += Number(o.quantity) || 0;
+    });
+    setWeekCounts(counts);
+  }, []);
+
+  useEffect(() => {
+    if (activePage === "schedule" && authenticated) {
+      fetchScheduleOrders(scheduleDate);
+      fetchWeekCounts();
+    }
+  }, [activePage, authenticated, scheduleDate, fetchScheduleOrders, fetchWeekCounts]);
+
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
       setter({ ...current, [field]: Math.round(value * 100) / 100 });
@@ -1880,6 +1924,7 @@ const Leads = () => {
     settings: { title: "GLOBAL SETTINGS" },
     pending_review: { title: "PENDING REVIEW", subtitle: `${pendingReviewOrders.length} orders to review` },
     reviews: { title: "REVIEWS", subtitle: "Customer feedback" },
+    schedule: { title: "DELIVERY SCHEDULE", subtitle: "Orders by delivery date" },
   };
 
   // Login screen
@@ -4859,6 +4904,95 @@ const Leads = () => {
               </div>
             )}
           </>
+        );
+      }
+
+      case "schedule": {
+        const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+            {/* Month nav + Today */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: BRAND_NAVY }}>←</button>
+                <span style={{ fontSize: "18px", fontWeight: 700, color: BRAND_NAVY }}>{scheduleDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() + 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: BRAND_NAVY }}>→</button>
+              </div>
+              <button onClick={() => setScheduleDate(new Date())} style={{ padding: "6px 14px", borderRadius: "6px", border: `1px solid ${CARD_BORDER}`, background: "white", fontSize: "13px", cursor: "pointer" }}>Today</button>
+            </div>
+
+            {/* Week strip */}
+            <div style={{ display: "flex", gap: "4px", overflowX: "auto", paddingBottom: "12px", marginBottom: "16px" }}>
+              {Array.from({ length: 14 }, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - 3 + i);
+                const dateStr = d.toISOString().split("T")[0];
+                const isSelected = dateStr === scheduleDate.toISOString().split("T")[0];
+                const isToday = dateStr === new Date().toISOString().split("T")[0];
+                const count = weekCounts[dateStr];
+                return (
+                  <button key={dateStr} onClick={() => setScheduleDate(new Date(d))} style={{ minWidth: "52px", padding: "8px 4px", borderRadius: "10px", border: "none", background: isSelected ? BRAND_NAVY : "transparent", cursor: "pointer", position: "relative", textAlign: "center" }}>
+                    <div style={{ fontSize: "11px", color: isSelected ? "white" : "#888", marginBottom: "2px" }}>{DAY_NAMES[d.getDay()]}</div>
+                    <div style={{ fontSize: "16px", fontWeight: 700, color: isSelected ? "white" : isToday ? BRAND_GOLD : BRAND_NAVY }}>{d.getDate()}</div>
+                    {count && count.orders > 0 && (
+                      <div style={{ position: "absolute", top: "4px", right: "6px", background: "#EF4444", color: "white", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{count.orders}</div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Day summary */}
+            <div style={{ padding: "16px", borderRadius: "12px", background: "white", border: `1px solid ${CARD_BORDER}`, marginBottom: "16px" }}>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: BRAND_NAVY, marginBottom: "12px" }}>
+                {scheduleDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                <span style={{ marginLeft: "12px", fontSize: "12px", color: "#888", fontWeight: 400 }}>{scheduleSummary.orders} orders · {scheduleSummary.loads} loads</span>
+              </div>
+              <div style={{ display: "flex", gap: "32px", flexWrap: "wrap" }}>
+                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Revenue</div><div style={{ fontSize: "20px", fontWeight: 700, color: "#16A34A" }}>${scheduleSummary.revenue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</div></div>
+                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Loads</div><div style={{ fontSize: "20px", fontWeight: 700, color: BRAND_NAVY }}>{scheduleSummary.loads}</div></div>
+                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Orders</div><div style={{ fontSize: "20px", fontWeight: 700, color: BRAND_NAVY }}>{scheduleSummary.orders}</div></div>
+                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>COD</div><div style={{ fontSize: "20px", fontWeight: 700, color: BRAND_GOLD }}>{scheduleSummary.pending}</div></div>
+                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Pre-Paid</div><div style={{ fontSize: "20px", fontWeight: 700, color: "#16A34A" }}>{scheduleSummary.paid}</div></div>
+              </div>
+            </div>
+
+            {/* Order cards */}
+            {scheduleOrders.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "#888" }}>
+                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p style={{ fontSize: "15px" }}>No orders scheduled for this day</p>
+              </div>
+            ) : (
+              scheduleOrders.map(order => {
+                const isPaid = order.payment_status === "paid";
+                const isCOD = order.payment_method === "COD" || order.payment_method === "PAY AT DELIVERY";
+                return (
+                  <div key={order.id} style={{ background: "white", border: `1px solid ${CARD_BORDER}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                      <div>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: BRAND_GOLD }}>#{order.order_number}</span>
+                        <div style={{ fontSize: "15px", fontWeight: 700, color: BRAND_NAVY, marginTop: "2px" }}>{order.customer_name}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: isPaid ? "#DCFCE7" : "#FEF9C3", color: isPaid ? "#16A34A" : "#92400E" }}>{isPaid ? "✓ Pre-Paid" : "$ COD"}</span>
+                        <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: order.status === "delivered" ? "#DCFCE7" : "#F3F4F6", color: order.status === "delivered" ? "#16A34A" : "#6B7280" }}>{order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}</span>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "13px", color: "#666", marginBottom: "10px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                      <span>📞 {order.customer_phone}</span>
+                      <span>📍 {order.delivery_address}</span>
+                      {order.notes && <span style={{ color: "#888", fontStyle: "italic" }}>📝 {order.notes}</span>}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${CARD_BORDER}` }}>
+                      <span style={{ fontSize: "13px", color: "#888" }}>{order.quantity} load{order.quantity > 1 ? "s" : ""} · 9 cu yds each</span>
+                      <span style={{ fontSize: "16px", fontWeight: 700, color: "#16A34A" }}>${Number(order.price).toFixed(2)}</span>
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#888", marginTop: "6px" }}>🕗 {order.delivery_window || "8:00 AM – 5:00 PM"}</div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         );
       }
 
