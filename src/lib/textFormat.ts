@@ -8,27 +8,30 @@ const CORPORATE_DESIGNATORS = new Set([
 ]);
 
 export function formatProperName(value: string): string {
+  const endsWithSpace = value.endsWith(' ');
   const words = value.split(' ');
+
   return words
     .map((word, index) => {
       if (!word) return word;
 
-      // Don't transform the last word unless it's followed by a space
       const isLastWord = index === words.length - 1;
-      const isComplete = !isLastWord || value.endsWith(' ');
+      const isBeingTyped = isLastWord && !endsWithSpace;
 
-      if (!isComplete) {
-        // Still typing — just capitalize first letter, don't force anything
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      }
-
-      // Word is complete — apply full formatting
-      const upper = word.replace(/[.,]/g, '').toUpperCase();
+      // Always check corporate designators first — even on last word
+      const cleaned = word.replace(/[.,]/g, '').toUpperCase();
       for (const d of CORPORATE_DESIGNATORS) {
-        if (d.replace(/[.,]/g, '').toUpperCase() === upper) {
+        if (d.replace(/[.,]/g, '').toUpperCase() === cleaned) {
           return d;
         }
       }
+
+      if (isBeingTyped) {
+        // Still typing — capitalize first letter, lowercase rest (handles Caps Lock)
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }
+
+      // Complete word — full title case enforcement
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
     .join(' ');
