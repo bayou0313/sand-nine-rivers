@@ -493,8 +493,13 @@ const OrderMobile = () => {
           const verifyTk = lookupToken || null;
           if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
           if (verifyOrderId && verifyTk) {
-            verifyStripePayment(verifyOrderId, verifyTk).then(() => {
+            verifyStripePayment(verifyOrderId, verifyTk).then((orderData) => {
               setVerifyingPayment(false);
+              if (orderData) {
+                populateConfirmedTotals(orderData);
+                setConfirmedOrderId(orderData.id || verifyOrderId);
+                setOrderNumber(orderData.order_number || signal.order_number);
+              }
               toast({ title: "Payment successful", description: `Order ${signal.order_number || ""} confirmed.` });
             });
           } else {
@@ -1143,49 +1148,30 @@ const OrderMobile = () => {
                 )}
               </div>
 
-              {/* Delivery Terms — single checkbox */}
-              <div className="flex items-start gap-3 mt-3">
-                <input
-                  type="checkbox"
-                  checked={deliveryTermsAccepted}
-                  onChange={e => setDeliveryTermsAccepted(e.target.checked)}
-                  className="mt-0.5 shrink-0"
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    accentColor: 'hsl(var(--accent))',
-                    cursor: 'pointer'
-                  }}
-                />
-                <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  I agree to the{' '}
-                  <a 
-                    href="/delivery-terms" 
-                    target="_blank"
-                    className="underline"
-                    style={{ color: 'hsl(var(--accent))' }}
-                  >
-                    delivery terms
-                  </a>
-                </p>
-              </div>
-
-              {/* Delivery & COD disclaimers */}
-              <div className="rounded-xl p-3 mb-3">
-                <p className="font-body text-xs leading-relaxed" style={{ color: '#0D2137' }}>
-                  <strong>Delivery:</strong>{' '}
-                  Curbside only - curb to sidewalk/driveway edge. No private property entry. 
-                  Customer must ensure clear, accessible delivery area before arrival. 
-                  WAYS® Materials LLC not liable for damage to driveways, landscaping, or property. 
-                  Customer or representative must be present at delivery.
+              {/* Disclaimer + checkbox in styled container */}
+              <div className="rounded-2xl p-4 mt-3" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB' }}>
+                <p className="font-body text-xs leading-relaxed" style={{ color: '#4B5563' }}>
+                  <strong style={{ color: '#0D2137' }}>Delivery Terms:</strong> Curbside only. No private property entry. Customer must ensure clear site access. WAYS® Materials LLC not liable for damage to driveways or landscaping. Customer must be present at delivery.
                 </p>
                 {(paymentMethod === 'cash' || paymentMethod === 'check') && (
-                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: '#0D2137' }}>
-                    <strong>COD Payment:</strong>{' '}
-                    Cash or check due at time of delivery. Driver cannot accept partial payments. 
-                    No card payments at door. Cancellation must be made before dispatch.
+                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: '#4B5563' }}>
+                    <strong style={{ color: '#0D2137' }}>COD Payment:</strong> Cash or check due at delivery. No partial payments. No card payments at door.
                   </p>
                 )}
+                <div className="flex items-start gap-3 mt-3 pt-3" style={{ borderTop: '1px solid #E5E7EB' }}>
+                  <input
+                    type="checkbox"
+                    checked={deliveryTermsAccepted}
+                    onChange={e => setDeliveryTermsAccepted(e.target.checked)}
+                    style={{ width: '20px', height: '20px', marginTop: '2px', accentColor: '#0D2137', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  <p className="font-body text-sm" style={{ color: '#0D2137' }}>
+                    I agree to the{' '}
+                    <button type="button" onClick={() => setShowTermsModal(true)} className="underline font-semibold" style={{ color: 'hsl(var(--accent))' }}>
+                      delivery terms
+                    </button>
+                  </p>
+                </div>
               </div>
 
               {/* Payment buttons — full width, stacked */}
