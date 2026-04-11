@@ -624,6 +624,11 @@ const OrderMobile = () => {
       setOrderNumber(inserted?.order_number || null);
       setConfirmedOrderId(inserted?.id || null);
       setLookupToken(inserted?.lookup_token || null);
+      // Populate confirmedTotals from the order we just created
+      if (inserted?.id) {
+        const { data: orderRec } = await supabase.from("orders").select("price, base_unit_price, distance_fee, processing_fee, saturday_surcharge_amount, sunday_surcharge_amount, tax_amount").eq("id", inserted.id).maybeSingle();
+        if (orderRec) populateConfirmedTotals(orderRec);
+      }
       setStep("success");
       clearCart();
       trackEvent("purchase", { transaction_id: inserted?.order_number || "", value: totalPrice, currency: "USD" });
