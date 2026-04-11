@@ -113,6 +113,16 @@ const OrderMobile = () => {
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
   const [stripePaymentId, setStripePaymentId] = useState<string | null>(null);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [confirmedTotals, setConfirmedTotals] = useState<{
+    basePrice: number;
+    distanceFee: number;
+    processingFee: number;
+    saturdaySurcharge: number;
+    sundaySurcharge: number;
+    tax: number;
+    total: number;
+    pricingMode: string;
+  } | null>(null);
   const [deliveryTermsAccepted, setDeliveryTermsAccepted] = useState(false);
   const [detectedParish, setDetectedParish] = useState<string | null>(null);
   const [showCompany, setShowCompany] = useState(false);
@@ -184,7 +194,24 @@ const OrderMobile = () => {
     fetchData();
   }, []);
 
-  // Verify Stripe payment
+  // Helper: populate confirmedTotals from a DB order record
+  const populateConfirmedTotals = useCallback((orderData: any) => {
+    if (!orderData) return;
+    const mode = pricingMode;
+    const isBkd = mode === "baked";
+    setConfirmedTotals({
+      basePrice: Number(orderData.base_unit_price ?? 0),
+      distanceFee: Number(orderData.distance_fee ?? 0),
+      processingFee: isBkd ? 0 : Number(orderData.processing_fee ?? 0),
+      saturdaySurcharge: Number(orderData.saturday_surcharge_amount ?? 0),
+      sundaySurcharge: Number(orderData.sunday_surcharge_amount ?? 0),
+      tax: Number(orderData.tax_amount ?? 0),
+      total: Number(orderData.price ?? 0),
+      pricingMode: mode,
+    });
+  }, [pricingMode]);
+
+
   const verifyStripePayment = useCallback(async (orderId: string, token: string): Promise<any | null> => {
     const MAX_ATTEMPTS = 8;
     const POLL_INTERVAL = 2500;
@@ -363,8 +390,9 @@ const OrderMobile = () => {
         verifyStripePayment(verifyOrderId, verifyToken).then(orderData => {
           setVerifyingPayment(false);
           if (orderData) {
-            setConfirmedOrderId(orderData.id || verifyOrderId);
-            setOrderNumber(orderData.order_number || returnedOrderNumber);
+              populateConfirmedTotals(orderData);
+              setConfirmedOrderId(orderData.id || verifyOrderId);
+              setOrderNumber(orderData.order_number || returnedOrderNumber);
             if (orderData.delivery_date) {
               const d = new Date(orderData.delivery_date + "T12:00:00");
               const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -597,6 +625,11 @@ const OrderMobile = () => {
       setOrderNumber(inserted?.order_number || null);
       setConfirmedOrderId(inserted?.id || null);
       setLookupToken(inserted?.lookup_token || null);
+      // Populate confirmedTotals from the order we just created
+      if (inserted?.id) {
+        const { data: orderRec } = await supabase.from("orders").select("price, base_unit_price, distance_fee, processing_fee, saturday_surcharge_amount, sunday_surcharge_amount, tax_amount").eq("id", inserted.id).maybeSingle();
+        if (orderRec) populateConfirmedTotals(orderRec);
+      }
       setStep("success");
       clearCart();
       trackEvent("purchase", { transaction_id: inserted?.order_number || "", value: totalPrice, currency: "USD" });
@@ -1049,9 +1082,29 @@ const OrderMobile = () => {
                       <span className="font-body text-sm text-primary-foreground/70">Payment</span>
                       <span className="font-body text-sm text-primary-foreground capitalize">{paymentMethod === "stripe-link" ? "Card — Paid" : "Pay at Delivery"}</span>
                     </div>
+                    {confirmedTotals && confirmedTotals.distanceFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Distance Fee</span>
+                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.distanceFee)}</span>
+                      </div>
+                    )}
+                    {confirmedTotals && confirmedTotals.saturdaySurcharge > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Saturday Surcharge</span>
+                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.saturdaySurcharge)}</span>
+                      </div>
+                    )}
+                    {confirmedTotals && confirmedTotals.processingFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Processing Fee</span>
+                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.processingFee)}</span>
+                      </div>
+                    )}
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '8px', paddingTop: '8px' }} className="flex justify-between">
                       <span className="font-body text-sm font-semibold text-primary-foreground">Total</span>
-                      <span className="font-display text-lg text-accent">{formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}</span>
+                      <span className="font-display text-lg text-accent">
+                        {confirmedTotals ? formatCurrency(confirmedTotals.total) : formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}
+                      </span>
                     </div>
                   </div>
                 </div>
