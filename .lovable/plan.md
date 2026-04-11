@@ -1,45 +1,83 @@
 
 
-## Status: Redirect code was never implemented
+## Plan: OrderMobile.tsx — Four Combined UX Fixes
 
-The `scripts/prerender-cities.mjs` file does **not** contain any redirect generation logic. There is no `LEGACY_REDIRECTS` array, no `buildRedirect()` function, and no redirect loop in `main()`. The previous planning conversations produced approved plans but the code was never actually written.
+**File modified:** `src/pages/OrderMobile.tsx` (only file touched)
 
-**Triggering a new build right now would change nothing** — the script would generate the same output as before.
+---
 
-## What needs to happen
+### FIX 1 — Phone field auto-advance (lines 873-874)
 
-**Single file change**: `scripts/prerender-cities.mjs`
+Change the phone `onChange` handler to detect when formatted length reaches 14 chars and auto-focus the email field:
 
-### 1. Add `LEGACY_REDIRECTS` array (after line 13)
-```javascript
-const LEGACY_REDIRECTS = [
-  { from: 'chalmette-la', to: 'chalmette' },
-  { from: 'bridge-city-la', to: 'bridge-city' },
-  { from: 'destrehan-la', to: 'destrehan' },
-  { from: 'kenner-la', to: 'kenner' },
-  { from: 'luling-la', to: 'luling' },
-  { from: 'meraux-la', to: 'meraux' },
-  { from: 'metairie-la', to: 'metairie' },
-  { from: 'new-orleans-la', to: 'new-orleans' },
-];
+```tsx
+onChange={e => {
+  const formatted = formatPhone(e.target.value);
+  setForm({ ...form, phone: formatted });
+  if (formatted.length >= 14) {
+    setTimeout(() => {
+      document.getElementById("mobile-email-input")?.querySelector("input")?.focus();
+    }, 50);
+  }
+}}
 ```
 
-### 2. Add `buildRedirect(fromSlug, toSlug)` function
-Generates minimal HTML with:
-- `<link rel="canonical">` pointing to new URL
-- `<meta http-equiv="refresh" content="0; url=...">` for instant redirect
-- `<script>window.location.replace(...)</script>` JS backup
-- Visible `<a>` link fallback
+### FIX 2 — Move address bar below Continue on price screen (lines 745-751, 814-823)
 
-### 3. Add redirect loop in `main()` after the city page loop
-Iterates `LEGACY_REDIRECTS`, creates `dist/{fromSlug}/river-sand-delivery/index.html` for each, logs count.
+Currently the address is displayed in the top bar of the price step (line 750). Remove it from the top bar and add it as a small gray confirmation line inside the scrollable content area, below the price breakdown and above the bottom CTA. The top bar keeps only the back arrow + a "YOUR QUOTE" label. The address line moves to the end of the scrollable content (after the price breakdown, around line 811):
 
-### Files NOT touched
-`src/App.tsx`, all edge functions, database, `pits.ts`, `google-maps.ts`, `CityPage.tsx`, `Order.tsx`, `Leads.tsx` — nothing else.
+```tsx
+<p className="font-body text-xs text-muted-foreground text-center mt-4 truncate">{address}</p>
+```
+
+### FIX 3 — Company name toggle moves above Name field (lines 849-908)
+
+Reorder the info step form fields so the company toggle/input appears first:
+
+1. Company name toggle (or expanded input)
+2. Full Name *
+3. Phone *
+4. Email *
+5. Delivery instructions toggle (stays at bottom)
+
+This is a pure JSX reorder — no logic changes.
+
+### FIX 4 — Review request on success screen (lines 988-1028)
+
+Add a state variable to fetch `gmb_review_url` from `global_settings`. On the success screen, between the invoice button and the "BACK TO HOME" link, insert a review request block. The block is conditionally rendered only if `gmb_review_url` has a value.
+
+New state: `const [gmbReviewUrl, setGmbReviewUrl] = useState<string | null>(null);`
+
+New useEffect fetching the setting:
+```tsx
+useEffect(() => {
+  supabase.from("global_settings").select("value").eq("key", "gmb_review_url").single()
+    .then(({ data }) => { if (data?.value) setGmbReviewUrl(data.value); });
+}, []);
+```
+
+Review block JSX inserted after the invoice button, before "BACK TO HOME":
+```tsx
+{gmbReviewUrl && (
+  <div className="mt-6 p-4 rounded-2xl text-center" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+    <p className="font-display text-xl text-white tracking-wide mb-1">HAPPY WITH YOUR ORDER?</p>
+    <p className="font-body text-sm text-white/60 mb-4">Your review helps other customers find us — it only takes 30 seconds.</p>
+    <a href={gmbReviewUrl} target="_blank" rel="noopener noreferrer"
+       className="block w-full h-12 rounded-2xl font-display text-lg tracking-wider flex items-center justify-center gap-2"
+       style={{ backgroundColor: '#C07A00', color: '#0D2137' }}>
+      ⭐ Leave a Google Review
+    </a>
+    <p className="font-body text-xs text-white/30 mt-3">Takes 30 seconds · Opens Google Maps</p>
+  </div>
+)}
+```
+
+---
+
+### Files NOT changed
+- Order.tsx, HomeMobile.tsx, Index.tsx, DeliveryDatePicker, pits.ts, format.ts, stripe-webhook, send-email, any edge function, any RLS/DB schema
 
 ### Risk
-None. Legacy slug directories don't exist in `dist/` today. Active city page generation is untouched.
-
-### After implementation
-The Lovable → GitHub sync will push the commit, triggering the Actions workflow automatically. After ~2-3 minutes, test `https://riversand.net/chalmette-la/river-sand-delivery`.
+- Low — all changes are UI-only within OrderMobile.tsx
+- No pricing, payment, or database logic affected
 
