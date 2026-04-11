@@ -975,7 +975,8 @@ const Order = () => {
       }
 
       console.log("[calculateDistance] calling findBestPitDriving, pits:", allPits.length);
-      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase);
+      // Default to Monday (1) for initial price calc — excludes Saturday-only pits
+      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, 1);
       console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {

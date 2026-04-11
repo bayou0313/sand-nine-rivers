@@ -1514,8 +1514,8 @@ const Leads = () => {
   const weekStripRef = useRef<HTMLDivElement>(null);
 
   const fetchWeekCounts = useCallback(async (centerDate: Date) => {
-    const start = new Date(centerDate); start.setDate(start.getDate() - 15);
-    const end = new Date(centerDate); end.setDate(end.getDate() + 15);
+    const start = new Date(centerDate); start.setDate(start.getDate() - 7);
+    const end = new Date(centerDate); end.setDate(end.getDate() + 83);
     const { data } = await supabase.from("orders").select("delivery_date, quantity").gte("delivery_date", start.toISOString().split("T")[0]).lte("delivery_date", end.toISOString().split("T")[0]);
     const counts: Record<string, { orders: number; loads: number }> = {};
     (data || []).forEach((o: any) => {
@@ -4936,19 +4936,25 @@ const Leads = () => {
             <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "16px" }}>
               <button onClick={() => { const d = new Date(scheduleDate); d.setDate(d.getDate() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: BRAND_NAVY, padding: "8px", flexShrink: 0 }}>‹</button>
               <div ref={weekStripRef} style={{ display: "flex", gap: "4px", overflowX: "auto", paddingBottom: "12px", flex: 1 }}>
-                {Array.from({ length: 30 }, (_, i) => {
-                  const stripStart = new Date(scheduleDate); stripStart.setDate(stripStart.getDate() - 15 + i);
+                {Array.from({ length: 90 }, (_, i) => {
+                  const stripStart = new Date(scheduleDate); stripStart.setDate(stripStart.getDate() - 7 + i);
                   const d = new Date(stripStart);
                   const dateStr = d.toISOString().split("T")[0];
                   const isSelected = dateStr === scheduleDate.toISOString().split("T")[0];
                   const isToday = dateStr === new Date().toISOString().split("T")[0];
                   const count = weekCounts[dateStr];
+                  const isFirstOfMonth = d.getDate() === 1;
                   return (
-                    <button key={dateStr} data-selected={isSelected ? "true" : "false"} onClick={() => setScheduleDate(new Date(d))} style={{ minWidth: "52px", padding: "8px 4px", borderRadius: "10px", border: "none", background: isSelected ? BRAND_NAVY : "transparent", cursor: "pointer", position: "relative", textAlign: "center", flexShrink: 0 }}>
+                    <button key={dateStr} data-selected={isSelected ? "true" : "false"} onClick={() => setScheduleDate(new Date(d))} style={{ minWidth: "52px", padding: "8px 4px", borderRadius: "10px", border: "none", background: isSelected ? BRAND_NAVY : "transparent", cursor: "pointer", position: "relative", textAlign: "center", flexShrink: 0, marginTop: isFirstOfMonth ? "18px" : "0" }}>
+                      {isFirstOfMonth && (
+                        <div style={{ position: "absolute", top: "-18px", left: "0", fontSize: "10px", color: BRAND_GOLD, fontWeight: 700, whiteSpace: "nowrap" }}>
+                          {d.toLocaleDateString("en-US", { month: "short" })}
+                        </div>
+                      )}
                       <div style={{ fontSize: "11px", color: isSelected ? "white" : "#888", marginBottom: "2px" }}>{DAY_NAMES[d.getDay()]}</div>
                       <div style={{ fontSize: "16px", fontWeight: 700, color: isSelected ? "white" : isToday ? BRAND_GOLD : BRAND_NAVY }}>{d.getDate()}</div>
                       {count && count.orders > 0 && (
-                        <div style={{ position: "absolute", top: "4px", right: "6px", background: "#EF4444", color: "white", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{count.orders}</div>
+                        <div style={{ position: "absolute", top: isFirstOfMonth ? "22px" : "4px", right: "6px", background: "#EF4444", color: "white", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{count.orders}</div>
                       )}
                     </button>
                   );
