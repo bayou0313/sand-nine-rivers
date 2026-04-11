@@ -1253,8 +1253,8 @@ const OrderMobile = () => {
                   ← BACK TO HOME
                 </Link>
 
-                <a href="tel:+18554689297" className="font-display text-sm tracking-wider text-accent/80 mt-6">
-                  📞 1-855-GOT-WAYS
+                <a href="tel:+18554689297" className="inline-flex items-center gap-1 font-display text-sm tracking-wider text-accent/80 mt-6">
+                  <Phone className="w-4 h-4" /> 1-855-GOT-WAYS
                 </a>
               </>
             )}
