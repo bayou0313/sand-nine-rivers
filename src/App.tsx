@@ -9,6 +9,7 @@ import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index.tsx";
+import HomeMobile from "./pages/HomeMobile.tsx";
 import Order from "./pages/Order.tsx";
 import OrderMobile from "./pages/OrderMobile.tsx";
 import Admin from "./pages/Admin.tsx";
