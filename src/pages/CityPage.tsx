@@ -355,7 +355,7 @@ const CityPage = () => {
           },
           ...(cityPage.base_price
             ? {
-                price: Number(cityPage.base_price).toFixed(2),
+                price: Number(cityPage.base_price),
                 priceCurrency: "USD",
               }
             : {}),
@@ -372,7 +372,7 @@ const CityPage = () => {
           },
           shippingDetails: {
             "@type": "OfferShippingDetails",
-            shippingRate: { "@type": "MonetaryAmount", value: "0", currency: "USD" },
+            shippingRate: { "@type": "MonetaryAmount", value: 0, currency: "USD" },
             shippingDestination: { "@type": "DefinedRegion", addressCountry: "US" },
           },
         },
@@ -393,7 +393,7 @@ const CityPage = () => {
     brand: { "@type": "Brand", name: "River Sand" },
     offers: {
       "@type": "Offer",
-      price: cityPage.base_price ? Number(cityPage.base_price).toFixed(2) : "195.00",
+      price: cityPage.base_price ? Number(cityPage.base_price) : 195,
       priceCurrency: "USD",
       priceValidUntil: "2027-12-31",
       availability: "https://schema.org/InStock",
@@ -404,42 +404,41 @@ const CityPage = () => {
         returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
         merchantReturnDays: 0,
         returnMethod: "https://schema.org/ReturnNotSupported",
-        returnFees: "https://schema.org/FreeReturn",
       },
       shippingDetails: {
         "@type": "OfferShippingDetails",
-        shippingRate: { "@type": "MonetaryAmount", value: "0", currency: "USD" },
+        shippingRate: { "@type": "MonetaryAmount", value: 0, currency: "USD" },
         shippingDestination: { "@type": "DefinedRegion", addressCountry: "US", addressRegion: "LA" },
         deliveryTime: {
           "@type": "ShippingDeliveryTime",
-          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4 },
-          transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4 },
+          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "HUR" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 4, unitCode: "HUR" },
         },
       },
     },
     aggregateRating: {
       "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "127",
-      bestRating: "5",
-      worstRating: "1",
+      ratingValue: 4.9,
+      reviewCount: 127,
+      bestRating: 5,
+      worstRating: 1,
     },
     review: [
       {
         "@type": "Review",
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        reviewRating: { "@type": "Rating", ratingValue: 5, bestRating: 5 },
         author: { "@type": "Person", name: "James R." },
         reviewBody: "Ordered at 9 AM and the load was in my driveway by noon. Exactly what I needed for my drainage project.",
       },
       {
         "@type": "Review",
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        reviewRating: { "@type": "Rating", ratingValue: 5, bestRating: 5 },
         author: { "@type": "Person", name: "Danielle F." },
         reviewBody: "Easiest way to get sand delivered. Typed my address, saw the price, paid online. Driver was on time and professional.",
       },
       {
         "@type": "Review",
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        reviewRating: { "@type": "Rating", ratingValue: 5, bestRating: 5 },
         author: { "@type": "Person", name: "Carlos M." },
         reviewBody: "Used them twice now for fill work in the backyard. Fair price and they actually show up when they say they will.",
       },
