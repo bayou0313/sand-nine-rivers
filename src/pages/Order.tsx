@@ -1993,7 +1993,7 @@ const Order = () => {
                         >
                           {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                             paymentMethod === "stripe-link"
-                              ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
+                              ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(isBaked ? totalPrice : totalWithProcessingFee)}</>
                               : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
                           )}
                         </Button>
