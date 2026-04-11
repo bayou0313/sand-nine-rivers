@@ -775,7 +775,7 @@ const OrderMobile = () => {
                 <p className="font-display text-sm text-accent tracking-widest uppercase mb-2 text-center">
                   DELIVERY ADDRESS
                 </p>
-                <div ref={addressContainerRef} className="min-h-[4rem] text-lg border-2 border-accent/30 focus-within:border-accent rounded-2xl transition-colors">
+                <div ref={addressContainerRef} className="min-h-[4rem] text-lg [&_input]:border-2 [&_input]:border-white/20 [&_input]:focus:border-accent [&_input]:rounded-2xl [&_input]:transition-colors">
                   {apiLoaded ? (
                     <PlaceAutocompleteInput
                       onPlaceSelect={handlePlaceSelect}
