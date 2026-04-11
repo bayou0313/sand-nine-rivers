@@ -795,6 +795,7 @@ const OrderMobile = () => {
             {/* Zone 3 — CTA pinned bottom */}
             <div className="pb-10 space-y-3 max-w-md mx-auto w-full">
               <Button
+                data-auto-calc
                 onClick={calculateDistance}
                 disabled={loading || !customerCoords}
                 className="w-full h-16 rounded-2xl font-display text-xl tracking-wider bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg disabled:opacity-40"
