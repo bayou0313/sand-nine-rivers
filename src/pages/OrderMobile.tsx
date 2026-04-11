@@ -1093,7 +1093,7 @@ const OrderMobile = () => {
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       className="rounded-xl text-lg placeholder:text-black/35"
                     />
-                    <p className="text-xs text-right mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <p className="font-body text-xs text-right mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
                       {form.notes.length}/275
                     </p>
                   </div>
@@ -1101,22 +1101,49 @@ const OrderMobile = () => {
               </div>
 
               {/* Delivery Terms — single checkbox */}
-              <label className="flex items-start gap-3 cursor-pointer mb-8">
-                <input type="checkbox" checked={deliveryTermsAccepted} onChange={e => setDeliveryTermsAccepted(e.target.checked)} className="mt-0.5 w-5 h-5 rounded accent-primary shrink-0" />
-                <span className="font-body text-sm text-foreground leading-relaxed">
-                  I agree to the{" "}
-                  <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="underline text-primary">delivery terms</a>
-                </span>
-              </label>
+              <div className="flex items-start gap-3 mt-3">
+                <input
+                  type="checkbox"
+                  checked={deliveryTermsAccepted}
+                  onChange={e => setDeliveryTermsAccepted(e.target.checked)}
+                  className="mt-0.5 shrink-0"
+                  style={{ 
+                    width: '20px', 
+                    height: '20px', 
+                    accentColor: 'hsl(var(--accent))',
+                    cursor: 'pointer'
+                  }}
+                />
+                <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  I agree to the{' '}
+                  <a 
+                    href="/delivery-terms" 
+                    target="_blank"
+                    className="underline"
+                    style={{ color: 'hsl(var(--accent))' }}
+                  >
+                    delivery terms
+                  </a>
+                </p>
+              </div>
 
               {/* Delivery & COD disclaimers */}
-              <div className="rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <p className="font-body text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  🚚 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Delivery:</strong> Curbside only — curb to sidewalk/driveway edge. No private property entry. Customer must ensure clear, accessible delivery area before arrival. WAYS® Materials LLC not liable for damage to driveways, landscaping, or property. Customer or representative must be present at delivery.
+              <div className="rounded-xl p-3 mb-3" style={{ 
+                backgroundColor: 'rgba(0,0,0,0.25)', 
+                border: '1px solid rgba(255,255,255,0.12)' 
+              }}>
+                <p className="font-body text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  🚚 <strong style={{ color: 'white' }}>Delivery:</strong>{' '}
+                  Curbside only — curb to sidewalk/driveway edge. No private property entry. 
+                  Customer must ensure clear, accessible delivery area before arrival. 
+                  WAYS® Materials LLC not liable for damage to driveways, landscaping, or property. 
+                  Customer or representative must be present at delivery.
                 </p>
                 {(paymentMethod === 'cash' || paymentMethod === 'check') && (
-                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    💵 <strong style={{ color: 'rgba(255,255,255,0.7)' }}>COD Payment:</strong> Cash or check due at time of delivery. Driver cannot accept partial payments. No card payments at door. Cancellation must be made before dispatch.
+                  <p className="font-body text-xs leading-relaxed mt-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    💵 <strong style={{ color: 'white' }}>COD Payment:</strong>{' '}
+                    Cash or check due at time of delivery. Driver cannot accept partial payments. 
+                    No card payments at door. Cancellation must be made before dispatch.
                   </p>
                 )}
               </div>
