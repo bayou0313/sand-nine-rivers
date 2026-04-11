@@ -431,12 +431,12 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
                 )}
                 {!isBlocked && !booked && d.isSaturday && (
                   <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-amber-400/20 text-amber-600 px-1.5 py-0.5 rounded-full">
-                    SAT +${effectiveSatSurcharge}
+                    SAT +${getSatSurcharge(d)}
                   </span>
                 )}
-                {!isBlocked && !booked && d.isSunday && effectiveSunSurcharge > 0 && (
+                {!isBlocked && !booked && d.isSunday && getSunSurcharge(d) > 0 && (
                   <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-indigo-400/20 text-indigo-600 px-1.5 py-0.5 rounded-full">
-                    SUN +${effectiveSunSurcharge}
+                    SUN +${getSunSurcharge(d)}
                   </span>
                 )}
               </motion.button>
