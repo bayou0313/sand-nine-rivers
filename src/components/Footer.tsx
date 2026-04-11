@@ -108,7 +108,6 @@ const Footer = () => {
           <p style={{ color: "#BBBBBB", fontSize: 10, fontStyle: "italic" }}>
             {biz.site_name}.  {biz.tagline}
           </p>
-          </p>
         </div>
       </div>
 
