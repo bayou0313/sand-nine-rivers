@@ -148,6 +148,7 @@ serve(async (req) => {
         "legal_name", "site_name", "phone", "website",
         "footer_address", "ein_number", "support_email",
         "card_processing_fee_percent", "card_processing_fee_fixed",
+        "pricing_mode",
       ]);
 
     const settings: Record<string, string> = {};
