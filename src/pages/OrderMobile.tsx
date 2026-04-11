@@ -171,7 +171,7 @@ const OrderMobile = () => {
 
   // Fetch GMB review URL
   useEffect(() => {
-    supabase.from("global_settings").select("value").eq("key", "gmb_review_url").single()
+    supabase.from("global_settings").select("value").eq("key", "gmb_review_url").maybeSingle()
       .then(({ data }) => { if (data?.value) setGmbReviewUrl(data.value); });
   }, []);
 
@@ -263,7 +263,7 @@ const OrderMobile = () => {
 
   // Read URL params
   useEffect(() => {
-    const paramAddress = searchParams.get("address");
+    const paramAddress = searchParams.get("address") || sessionStorage.getItem("mobile_prefill_address");
     const paramDistance = searchParams.get("distance");
     const paramPrice = searchParams.get("price");
     const paramPitId = searchParams.get("pit_id");
