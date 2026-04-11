@@ -1116,9 +1116,7 @@ const OrderMobile = () => {
                     placeholder="john@example.com"
                     required
                     enterKeyHint="done"
-                    className={`h-16 rounded-xl text-lg w-full px-4 placeholder:text-black/35 ${
-                      formAttempted && !form.email.trim() ? 'border-2 border-red-400' : ''
-                    }`}
+                    className="h-16 rounded-xl text-lg w-full px-4 placeholder:text-black/35 border border-input"
                   />
                 </div>
 
