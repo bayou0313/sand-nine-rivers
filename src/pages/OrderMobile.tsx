@@ -68,7 +68,9 @@ const OrderMobile = () => {
   const [searchParams] = useSearchParams();
   const { loaded: apiLoaded } = useGoogleMaps();
   const addressContainerRef = useRef<HTMLDivElement>(null);
-
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   // Step state: address → price → info → success
   const [step, setStep] = useState<"address" | "price" | "info" | "success">("address");
 
@@ -112,6 +114,8 @@ const OrderMobile = () => {
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [deliveryTermsAccepted, setDeliveryTermsAccepted] = useState(false);
   const [detectedParish, setDetectedParish] = useState<string | null>(null);
+  const [showCompany, setShowCompany] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
 
   // Derived pricing
   const effectivePricing = useMemo(() => {
