@@ -6,7 +6,7 @@ import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
 import { formatProperName, formatSentence, formatEmail } from "@/lib/textFormat";
-import EmailInput from "@/components/EmailInput";
+
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
