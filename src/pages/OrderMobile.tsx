@@ -687,8 +687,8 @@ const OrderMobile = () => {
 
       const isEmbedded = window.self !== window.top;
       const description = isBaked
-        ? `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds`
-        : `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
+        ? `River Sand Delivery - ${quantity} load${quantity > 1 ? "s" : ""} x 9 cu yds`
+        : `River Sand Delivery - ${quantity} load${quantity > 1 ? "s" : ""} x 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
           amount: Math.round(stripeTotal * 100), description,
