@@ -395,7 +395,7 @@ const CityPage = () => {
       "@type": "Offer",
       price: cityPage.base_price ? Number(cityPage.base_price) : 195,
       priceCurrency: "USD",
-      priceValidUntil: "2027-12-31",
+      priceValidUntil: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split("T")[0],
       availability: "https://schema.org/InStock",
       areaServed: { "@type": "City", name: cityPage.city_name, addressRegion: "LA" },
       hasMerchantReturnPolicy: {
