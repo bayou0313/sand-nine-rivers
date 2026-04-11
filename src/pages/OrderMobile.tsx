@@ -86,6 +86,7 @@ const OrderMobile = () => {
   // Pricing
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
   const [allPits, setAllPits] = useState<PitData[]>([]);
+  const [pitsLoaded, setPitsLoaded] = useState(false);
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("transparent");
