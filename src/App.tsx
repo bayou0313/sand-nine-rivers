@@ -284,7 +284,7 @@ function AppContent() {
       )}
       <PageViewTracker />
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<HomeRouter />} />
         <Route path="/products/river-sand" element={<Navigate to="/" replace />} />
         <Route path="/order" element={<OrderRouter />} />
         <Route path="/admin" element={<Admin />} />

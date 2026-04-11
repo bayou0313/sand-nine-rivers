@@ -95,8 +95,19 @@ const Footer = () => {
           <p style={{ color: "#AAAAAA", fontSize: 11 }}>
             {biz.support_email} · {biz.phone}
           </p>
+          <button
+            onClick={() => {
+              localStorage.removeItem("force_desktop");
+              window.location.href = "/";
+            }}
+            className="font-body text-xs hover:underline"
+            style={{ color: "#BBBBBB", background: "none", border: "none", cursor: "pointer" }}
+          >
+            📱 Mobile site →
+          </button>
           <p style={{ color: "#BBBBBB", fontSize: 10, fontStyle: "italic" }}>
             {biz.site_name}.  {biz.tagline}
+          </p>
           </p>
         </div>
       </div>
