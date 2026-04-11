@@ -83,14 +83,17 @@ const EmailInput = ({ value, onChange, placeholder = "john@example.com", require
         onFocus={(e) => { if (suggestions.length > 0) setShowSuggestions(true); onFocus?.(e); }}
         onBlur={(e) => {
           setShowSuggestions(false);
-          // Sync actual DOM value on blur — fixes browser autocomplete not triggering onChange
-          const domValue = e.currentTarget.value;
-          if (domValue && domValue !== value) {
-            onChange(domValue);
-            onBlur?.(domValue);
-          } else {
-            onBlur?.(value);
-          }
+          // Use setTimeout to let browser autocomplete finish filling the field
+          setTimeout(() => {
+            const inputEl = e.target as HTMLInputElement;
+            const domValue = inputEl.value;
+            if (domValue && domValue !== value) {
+              onChange(domValue);
+              onBlur?.(domValue);
+            } else {
+              onBlur?.(value);
+            }
+          }, 100);
         }}
         className={className}
       />
