@@ -671,13 +671,18 @@ const OrderMobile = () => {
 
         {/* ── SCREEN 1: ADDRESS ── */}
         {step === "address" && (
-          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} className="flex-1 flex flex-col bg-primary px-6 pt-12 pb-8">
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <img src={LOGO_WHITE} alt="River Sand" className="h-10 mb-10 opacity-90" />
-              <h1 className="font-display text-3xl text-primary-foreground tracking-wide text-center mb-2">WHERE DO YOU NEED SAND?</h1>
-              <p className="font-body text-sm text-primary-foreground/60 text-center mb-8">Get an instant delivery price — no account needed.</p>
+          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} className="min-h-screen flex flex-col bg-primary px-6">
+            {/* Zone 1 — Logo pinned top */}
+            <div className="pt-16 flex justify-center">
+              <img src={LOGO_WHITE} alt="River Sand" className="h-10 opacity-90" />
+            </div>
 
-              <div ref={addressContainerRef} className="w-full max-w-md">
+            {/* Zone 2 — Headline + Input centered */}
+            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+              <h1 className="font-display text-5xl text-primary-foreground tracking-wide text-center leading-none">WHERE DO YOU NEED SAND?</h1>
+              <p className="font-body text-base text-primary-foreground/60 text-center mt-2">Get an instant delivery price — no account needed.</p>
+
+              <div ref={addressContainerRef} className="w-full mt-8">
                 {apiLoaded ? (
                   <PlaceAutocompleteInput
                     onPlaceSelect={handlePlaceSelect}
@@ -688,7 +693,7 @@ const OrderMobile = () => {
                     containerClassName="place-autocomplete-embedded"
                   />
                 ) : (
-                  <div className="h-14 rounded-2xl border border-white/20 bg-white/10 animate-pulse" />
+                  <div className="h-16 rounded-2xl border border-white/20 bg-white/10 animate-pulse" />
                 )}
               </div>
 
@@ -697,7 +702,8 @@ const OrderMobile = () => {
               )}
             </div>
 
-            <div className="mt-auto space-y-3 max-w-md mx-auto w-full">
+            {/* Zone 3 — CTA pinned bottom */}
+            <div className="pb-10 space-y-3 max-w-md mx-auto w-full">
               <Button
                 onClick={calculateDistance}
                 disabled={loading || !customerCoords}
@@ -705,7 +711,7 @@ const OrderMobile = () => {
               >
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "GET MY PRICE →"}
               </Button>
-              <a href="tel:+18554689297" className="block text-center font-display text-sm tracking-wider text-accent/80">
+              <a href="tel:+18554689297" className="block text-center font-display text-sm tracking-wider text-accent/80 mt-3">
                 📞 1-855-GOT-WAYS
               </a>
             </div>
