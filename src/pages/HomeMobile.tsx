@@ -33,6 +33,8 @@ const HomeMobile = () => {
         <img src={LOGO_WHITE} alt="River Sand" className="object-contain" style={{ width: '50%', maxWidth: '200px' }} />
       </header>
 
+      <div className="mx-auto w-3/4 h-px bg-accent/40 my-2" />
+
       {/* Hero */}
       <div className="flex-1 flex flex-col justify-center px-5 pb-4">
         <div className="text-center mb-8">
