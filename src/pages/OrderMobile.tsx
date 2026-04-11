@@ -1175,7 +1175,11 @@ const OrderMobile = () => {
                       const formatted = formatPhone(e.target.value);
                       setForm({ ...form, phone: formatted });
                       if (formatted.length >= 14) {
-                        setTimeout(() => emailRef.current?.focus(), 50);
+                        setTimeout(() => {
+                          const emailInput = document.getElementById('mobile-email')?.querySelector('input') 
+                            ?? document.getElementById('mobile-email') as HTMLInputElement;
+                          emailInput?.focus();
+                        }, 50);
                       }
                     }}
                     onFocus={e => {
