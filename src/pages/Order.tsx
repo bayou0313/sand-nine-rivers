@@ -1188,10 +1188,12 @@ const Order = () => {
       const insertedOrder = rpcResult as any;
 
       const isEmbedded = window.self !== window.top;
-      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
+      const description = isBaked
+        ? `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds`
+        : `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
-          amount: Math.round(totalWithProcessingFee * 100),
+          amount: Math.round(stripeTotal * 100),
           description,
           customer_name: form.name.trim(),
           customer_email: form.email.trim() || null,
