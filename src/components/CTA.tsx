@@ -19,14 +19,15 @@ const CTA = ({ cityName }: { cityName?: string }) => {
   return (
     <section className="py-24 bg-muted/50 relative overflow-hidden">
       <div className="container mx-auto px-6 text-center space-y-8 relative z-10">
+        <motion.p initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="text-accent font-display text-lg tracking-widest mb-3">READY?</motion.p>
         <motion.h2
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-3xl md:text-5xl text-foreground"
+          className="font-display text-4xl md:text-5xl tracking-wide text-foreground"
         >
-          Get your sand delivered{cityName ? ` to ${cityName}` : ""} today.
+          ORDER NOW
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 15 }}

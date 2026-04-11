@@ -14,7 +14,7 @@ const HowItWorks = () => (
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-3xl md:text-4xl font-display text-foreground tracking-wide text-center mb-4 pt-[24px]"
+        className="font-display text-4xl md:text-5xl tracking-wide text-foreground text-center mb-4 pt-[24px]"
       >
         HOW IT WORKS
       </motion.h2>
