@@ -1816,6 +1816,10 @@ const Order = () => {
                         <p className={`font-display text-base tracking-wider ${isWeekendDate ? "text-muted-foreground" : "text-foreground"}`}>PAY AT DELIVERY</p>
                         {isWeekendDate ? (
                           <p className="font-body text-xs text-amber-600 mt-1">Not available for weekend delivery</p>
+                        ) : isBaked ? (
+                          <p className="font-body text-xs mt-1" style={{ color: "#16A34A", fontWeight: 600 }}>
+                            💵 Save {formatCurrency(codSavingsPerLoad * quantity)} — Pay {formatCurrency(getCODPrice(effectivePricing.base_price))}/load
+                          </p>
                         ) : (
                           <p className="font-body text-xs text-muted-foreground mt-1">No card processing fee</p>
                         )}
