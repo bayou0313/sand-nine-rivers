@@ -116,6 +116,7 @@ const OrderMobile = () => {
   const [detectedParish, setDetectedParish] = useState<string | null>(null);
   const [showCompany, setShowCompany] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [gmbReviewUrl, setGmbReviewUrl] = useState<string | null>(null);
 
   // Derived pricing
   const effectivePricing = useMemo(() => {
@@ -747,7 +748,8 @@ const OrderMobile = () => {
               <button onClick={() => setStep("address")} className="p-2 -ml-2">
                 <ArrowLeft className="w-5 h-5 text-foreground" />
               </button>
-              <p className="flex-1 font-body text-xs text-muted-foreground text-center truncate px-2">{address}</p>
+              <p className="flex-1 font-display text-sm text-foreground text-center tracking-wider">YOUR QUOTE</p>
+              <div className="w-9" />
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 pt-6 pb-32">
@@ -809,6 +811,7 @@ const OrderMobile = () => {
                   </div>
                 </motion.div>
               )}
+              <p className="font-body text-xs text-muted-foreground text-center mt-4 truncate">{address}</p>
             </div>
 
             {/* Bottom CTA */}
@@ -847,6 +850,23 @@ const OrderMobile = () => {
               {/* Your Info */}
               <h2 className="font-display text-lg text-foreground tracking-wider mb-3">YOUR INFO</h2>
               <div className="space-y-3 mb-6">
+                {/* Company name — collapsed toggle */}
+                {!showCompany ? (
+                  <button type="button" onClick={() => setShowCompany(true)} className="font-body text-sm text-primary hover:underline">+ Add company name</button>
+                ) : (
+                  <div>
+                    <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Company Name</label>
+                    <Input
+                      placeholder="Company name (optional)"
+                      value={form.companyName}
+                      onChange={e => setForm({ ...form, companyName: e.target.value })}
+                      onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                      inputMode="text"
+                      className="h-16 rounded-xl text-lg placeholder:text-black/35"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
                   <Input
@@ -871,7 +891,15 @@ const OrderMobile = () => {
                     required
                     maxLength={14}
                     value={form.phone}
-                    onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })}
+                    onChange={e => {
+                      const formatted = formatPhone(e.target.value);
+                      setForm({ ...form, phone: formatted });
+                      if (formatted.length >= 14) {
+                        setTimeout(() => {
+                          document.getElementById("mobile-email-input")?.querySelector("input")?.focus();
+                        }, 50);
+                      }
+                    }}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("mobile-email-input")?.querySelector("input")?.focus(); } }}
                     inputMode="tel"
@@ -889,23 +917,6 @@ const OrderMobile = () => {
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                   />
                 </div>
-
-                {/* Company name — collapsed toggle */}
-                {!showCompany ? (
-                  <button type="button" onClick={() => setShowCompany(true)} className="font-body text-sm text-primary hover:underline">+ Add company name</button>
-                ) : (
-                  <div>
-                    <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Company Name</label>
-                    <Input
-                      placeholder="Company name (optional)"
-                      value={form.companyName}
-                      onChange={e => setForm({ ...form, companyName: e.target.value })}
-                      onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
-                      inputMode="text"
-                      className="h-16 rounded-xl text-lg placeholder:text-black/35"
-                    />
-                  </div>
-                )}
 
                 {/* Notes — collapsed toggle */}
                 {!showNotes ? (
@@ -1016,6 +1027,19 @@ const OrderMobile = () => {
                     {downloadingInvoice ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     VIEW INVOICE
                   </Button>
+                )}
+
+                {gmbReviewUrl && (
+                  <div className="mt-6 p-4 rounded-2xl text-center" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <p className="font-display text-xl text-primary-foreground tracking-wide mb-1">HAPPY WITH YOUR ORDER?</p>
+                    <p className="font-body text-sm text-primary-foreground/60 mb-4">Your review helps other customers find us — it only takes 30 seconds.</p>
+                    <a href={gmbReviewUrl} target="_blank" rel="noopener noreferrer"
+                       className="block w-full h-12 rounded-2xl font-display text-lg tracking-wider flex items-center justify-center gap-2"
+                       style={{ backgroundColor: '#C07A00', color: '#0D2137' }}>
+                      ⭐ Leave a Google Review
+                    </a>
+                    <p className="font-body text-xs text-primary-foreground/30 mt-3">Takes 30 seconds · Opens Google Maps</p>
+                  </div>
                 )}
 
                 <Link to="/" className="font-display text-sm tracking-wider text-primary-foreground/50 hover:text-primary-foreground/70 transition-colors mt-4">
