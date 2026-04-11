@@ -8,6 +8,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const BRAND_COLOR = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
@@ -531,7 +541,7 @@ function orderDispatchEmail(data: any): string {
       CUSTOMER</p>
     <p style="color:#FFFFFF;font-size:20px;
       font-weight:bold;margin:0 0 12px 0;">
-      ${data.customer_name || "—"}</p>
+      ${escapeHtml(data.customer_name) || "—"}</p>
     <a href="${telUrl}"
       style="display:inline-block;
       background:#C07A00;color:#FFFFFF;
@@ -543,7 +553,7 @@ function orderDispatchEmail(data: any): string {
     ${data.customer_email ? `
     <p style="color:#6B9DB8;font-size:11px;
       margin:10px 0 0 0;">
-      ${data.customer_email}</p>` : ""}
+      ${escapeHtml(data.customer_email)}</p>` : ""}
   </td></tr>
 
   <!-- DELIVERY -->
@@ -571,7 +581,7 @@ function orderDispatchEmail(data: any): string {
     </a>
     <p style="color:rgba(255,255,255,0.5);
       font-size:11px;margin:10px 0 0 0;">
-      ${data.delivery_address || "—"}</p>
+      ${escapeHtml(data.delivery_address) || "—"}</p>
   </td></tr>
 
   <!-- ORDER DETAILS -->
@@ -611,7 +621,7 @@ function orderDispatchEmail(data: any): string {
         <td style="color:#4A7A9B;font-size:10px;">
           NOTES</td>
         <td style="color:#FCD34D;font-size:10px;">
-          ${data.notes}</td>
+          ${escapeHtml(data.notes)}</td>
       </tr>` : ""}
     </table>
   </td></tr>
@@ -733,10 +743,10 @@ function emailWrapper(body: string, bizOverrides?: { bizPhone?: string; bizEmail
 function orderInternalEmail(order: any) {
   const rows = [
     ["Order #", order.order_number || "N/A"],
-    ["Customer", order.customer_name],
-    ["Phone", order.customer_phone],
-    ["Email", order.customer_email || "Not provided"],
-    ["Delivery Address", order.delivery_address],
+    ["Customer", escapeHtml(order.customer_name)],
+    ["Phone", escapeHtml(order.customer_phone)],
+    ["Email", escapeHtml(order.customer_email) || "Not provided"],
+    ["Delivery Address", escapeHtml(order.delivery_address)],
     ["Distance", `${order.distance_miles} mi`],
     ["Quantity", `${order.quantity} load${order.quantity > 1 ? "s" : ""}`],
     ["Delivery Date", order.delivery_date || "TBD"],
@@ -755,7 +765,7 @@ function orderInternalEmail(order: any) {
   return emailWrapper(`
     <h2>New Order Received</h2>
     <table class="info-table">${tableRows}</table>
-    ${order.notes ? `<p><strong>Customer Notes:</strong> ${order.notes}</p>` : ""}
+    ${order.notes ? `<p><strong>Customer Notes:</strong> ${escapeHtml(order.notes)}</p>` : ""}
   `);
 }
 
@@ -998,12 +1008,12 @@ serve(async (req) => {
 
     } else if (type === "callback") {
       const rows = [
-        ["Name", data.name || "Not provided"],
-        ["Phone", data.phone || "Not provided"],
+        ["Name", escapeHtml(data.name) || "Not provided"],
+        ["Phone", escapeHtml(data.phone) || "Not provided"],
         ["Requested Date", data.date || "Not specified"],
         ["Time Window", data.time_window || "ASAP"],
       ];
-      if (data.notes) rows.push(["Notes", data.notes]);
+      if (data.notes) rows.push(["Notes", escapeHtml(data.notes)]);
       const tableRows = rows.map(([k, v]: string[]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 
       const callbackHtml = `<!DOCTYPE html>
@@ -1041,13 +1051,13 @@ serve(async (req) => {
       const leadHtml = `
 NEW OUT-OF-AREA DELIVERY LEAD
 ─────────────────────────────
-Address:  ${data.address || "N/A"}
+Address:  ${escapeHtml(data.address) || "N/A"}
 Distance: ${data.distance_miles || "?"} miles
 
 CONTACT
-Name:  ${data.customer_name || "N/A"}
-Email: ${data.customer_email || "Not provided"}
-Phone: ${data.customer_phone || "Not provided"}
+Name:  ${escapeHtml(data.customer_name) || "N/A"}
+Email: ${escapeHtml(data.customer_email) || "Not provided"}
+Phone: ${escapeHtml(data.customer_phone) || "Not provided"}
 
 Submitted: ${data.created_at ? new Date(data.created_at).toLocaleString("en-US") : "N/A"}
 ─────────────────────────────
@@ -1073,7 +1083,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         
         <div style="border:2px solid ${BRAND_GOLD};border-radius:12px;padding:24px;margin:24px 0;text-align:center">
           <p style="margin:0 0 8px;font-size:14px;color:#555;text-transform:uppercase;letter-spacing:1px">River Sand — 9 Cubic Yards</p>
-          <p style="margin:0 0 4px;font-size:13px;color:#777">Delivered to: ${data.delivery_address || ""}</p>
+          <p style="margin:0 0 4px;font-size:13px;color:#777">Delivered to: ${escapeHtml(data.delivery_address) || ""}</p>
           <p style="margin:16px 0 0;font-size:32px;font-weight:700;color:${BRAND_GOLD}">$${Number(data.new_price || 195).toFixed(2)}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#999">Your price, delivered</p>
         </div>
@@ -1123,7 +1133,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Order #</td><td>${data.order_number || "N/A"}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Payment method</td><td>${method}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Amount paid</td><td style="font-weight:700;color:${BRAND_GOLD}">$${total}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery address</td><td>${data.delivery_address || ""}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery address</td><td>${escapeHtml(data.delivery_address) || ""}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Delivery date</td><td>${formatDate(data.delivery_date)}</td></tr>
             <tr><td style="padding:6px 0;font-weight:600;color:${BRAND_COLOR}">Payment recorded</td><td>${recordedAt}</td></tr>
           </table>
@@ -1190,7 +1200,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
         <p style="font-size:15px;color:#555;line-height:1.6">Thank you for your interest in River Sand delivery. We've received your request for delivery to:</p>
         <div style="background:#F8F7F2;border-left:4px solid ${BRAND_GOLD};padding:16px 20px;border-radius:0 8px 8px 0;margin:16px 0">
-          <p style="margin:0;font-size:15px;font-weight:600;color:${BRAND_COLOR}">${data.delivery_address || "your address"}</p>
+          <p style="margin:0;font-size:15px;font-weight:600;color:${BRAND_COLOR}">${escapeHtml(data.delivery_address) || "your address"}</p>
         </div>
         <p style="font-size:15px;color:#555;line-height:1.6">Our delivery manager is reviewing your request and will get back to you within <strong>${responseTime} hours</strong> during business hours (${bizDays}, ${bizHours}).</p>
         <p style="font-size:15px;color:#555;line-height:1.6">If you have any questions in the meantime, call us at <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
@@ -1322,7 +1332,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
             </p>
             <div style="margin:0 0 24px;">${starsHtml}</div>
             <p style="font-size:12px;color:#999;">
-              Order ${order.order_number || "N/A"} · ${order.delivery_address || ""}
+              Order ${escapeHtml(order.order_number) || "N/A"} · ${escapeHtml(order.delivery_address) || ""}
             </p>
           </div>
         `,
