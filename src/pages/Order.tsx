@@ -6,7 +6,7 @@ import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Ph
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { useCountdown } from "@/hooks/use-countdown";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
-import { formatProperName, formatSentence, formatEmail } from "@/lib/textFormat";
+import { formatProperName, formatProperNameFinal, formatSentence, formatEmail } from "@/lib/textFormat";
 import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
