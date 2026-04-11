@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -238,6 +238,7 @@ type Props = {
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 60, null, allPitDistances), [pitSchedule, allPitDistances]);
 
   // Per-date surcharge helpers
@@ -375,7 +376,20 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
           )}
         </div>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        <>
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="font-body text-xs text-muted-foreground">
+            Select delivery date
+          </span>
+          <button
+            type="button"
+            onClick={() => scrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' })}
+            className="font-body text-xs text-accent underline"
+          >
+            ← Today
+          </button>
+        </div>
+        <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {dates.map((d, i) => {
             const isSelected = selectedDate?.iso === d.iso;
             const isBlocked = d.blocked || isFullyBooked(d);
@@ -443,6 +457,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
             );
           })}
         </div>
+        </>
       )}
 
       {selectedDate?.isSaturday && (

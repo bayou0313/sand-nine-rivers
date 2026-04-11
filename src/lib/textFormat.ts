@@ -8,10 +8,21 @@ const CORPORATE_DESIGNATORS = new Set([
 ]);
 
 export function formatProperName(value: string): string {
-  return value
-    .split(' ')
-    .map(word => {
+  const words = value.split(' ');
+  return words
+    .map((word, index) => {
       if (!word) return word;
+
+      // Don't transform the last word unless it's followed by a space
+      const isLastWord = index === words.length - 1;
+      const isComplete = !isLastWord || value.endsWith(' ');
+
+      if (!isComplete) {
+        // Still typing — just capitalize first letter, don't force anything
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+
+      // Word is complete — apply full formatting
       const upper = word.replace(/[.,]/g, '').toUpperCase();
       for (const d of CORPORATE_DESIGNATORS) {
         if (d.replace(/[.,]/g, '').toUpperCase() === upper) {
