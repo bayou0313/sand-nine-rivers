@@ -1193,7 +1193,6 @@ const OrderMobile = () => {
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
                   <EmailInput
-                    ref={emailRef}
                     id="mobile-email"
                     name="email"
                     value={form.email}
