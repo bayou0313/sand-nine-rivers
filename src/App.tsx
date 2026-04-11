@@ -9,6 +9,7 @@ import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index.tsx";
+import HomeMobile from "./pages/HomeMobile.tsx";
 import Order from "./pages/Order.tsx";
 import OrderMobile from "./pages/OrderMobile.tsx";
 import Admin from "./pages/Admin.tsx";
@@ -20,34 +21,16 @@ import Review from "./pages/Review.tsx";
 
 const queryClient = new QueryClient();
 
-const MobileDebug = () => {
+const HomeRouter = () => {
+  const forceDesktop = typeof window !== 'undefined' && localStorage.getItem("force_desktop") === "true";
   const isMobile = useIsMobile();
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      zIndex: 99999,
-      background: 'rgba(0,0,0,0.85)',
-      color: 'white',
-      fontSize: '11px',
-      padding: '6px 10px',
-      fontFamily: 'monospace',
-      lineHeight: '1.6',
-      maxWidth: '100vw',
-      wordBreak: 'break-all' as const
-    }}>
-      <div>innerWidth: {typeof window !== 'undefined' ? window.innerWidth : '?'}</div>
-      <div>touchPoints: {typeof navigator !== 'undefined' ? navigator.maxTouchPoints : '?'}</div>
-      <div>agent: {typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 60) : '?'}</div>
-      <div>isMobile: {String(isMobile)}</div>
-    </div>
-  );
+  return (!forceDesktop && isMobile) ? <HomeMobile /> : <Index />;
 };
 
 const OrderRouter = () => {
+  const forceDesktop = typeof window !== 'undefined' && localStorage.getItem("force_desktop") === "true";
   const isMobile = useIsMobile();
-  return isMobile ? <OrderMobile /> : <Order />;
+  return (!forceDesktop && isMobile) ? <OrderMobile /> : <Order />;
 };
 
 
@@ -264,7 +247,7 @@ function AppContent() {
 
   return (
     <div suppressHydrationWarning={true}>
-      <MobileDebug />
+      
       {typeof window !== "undefined" && stripeMode === "test" && !isAdminRoute && (
         <div id="stripe-test-banner" suppressHydrationWarning={true} className="hidden md:flex" style={{
           position: "fixed",
@@ -301,7 +284,7 @@ function AppContent() {
       )}
       <PageViewTracker />
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<HomeRouter />} />
         <Route path="/products/river-sand" element={<Navigate to="/" replace />} />
         <Route path="/order" element={<OrderRouter />} />
         <Route path="/admin" element={<Admin />} />
