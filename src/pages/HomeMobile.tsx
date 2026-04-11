@@ -104,7 +104,7 @@ const HomeMobile = () => {
           <img 
             src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/Ways_Sitewide_Logo_white.png"
             alt="WAYS®"
-            className="h-8 opacity-50"
+            className="h-8"
           />
         </div>
         <button
