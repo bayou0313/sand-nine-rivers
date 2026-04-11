@@ -1239,9 +1239,12 @@ const OrderMobile = () => {
               </form>
 
               {/* Disclaimer + checkbox in styled container */}
-              <div className="rounded-2xl p-4 mt-3" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB' }}>
+              <div className="rounded-2xl p-4 mt-3 mb-4" style={{ backgroundColor: 'white', border: '1px solid #E5E7EB' }}>
+                <p className="font-body text-xs font-semibold mb-2" style={{ color: '#0D2137' }}>
+                  BEFORE YOU ORDER
+                </p>
                 <p className="font-body text-xs leading-relaxed" style={{ color: '#4B5563' }}>
-                  <strong style={{ color: '#0D2137' }}>Delivery Terms:</strong> Curbside only. No private property entry. Customer must ensure clear site access. WAYS® Materials LLC not liable for damage to driveways or landscaping. Customer must be present at delivery.
+                  Curbside only. No private property entry. Customer must ensure clear site access. WAYS® Materials LLC not liable for damage to driveways or landscaping. Customer must be present at delivery.
                 </p>
                 {(paymentMethod === 'cash' || paymentMethod === 'check') && (
                   <p className="font-body text-xs leading-relaxed mt-2" style={{ color: '#4B5563' }}>
