@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, Link, useLocation } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
@@ -36,6 +36,7 @@ import {
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
+import { consumePendingPlace } from "@/lib/mobileHandoff";
 
 declare global {
   interface Window { google: any; }
@@ -104,7 +105,6 @@ const OrderMobile = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
 
-  const location = useLocation();
   const qtyParam = parseInt(searchParams.get("quantity") || searchParams.get("qty") || "1", 10);
   const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
   const [leadReference, setLeadReference] = useState<string | null>(null);
@@ -558,16 +558,11 @@ const OrderMobile = () => {
   }, [address, customerCoords, allPits, globalPricing]);
 
   useEffect(() => {
-    const state = location.state as { prefillAddress?: string; prefillPlace?: PlaceSelectResult } | null;
-    if (!state?.prefillPlace) return;
     if (!pitsLoaded || allPits.length === 0) return;
-
-    // Use location.key to ensure this only fires once per navigation event
-    handlePlaceSelect(state.prefillPlace);
-    
-    // Clear state immediately to prevent re-trigger
-    window.history.replaceState({}, "", "/order");
-  }, [location.key, pitsLoaded, allPits.length]);
+    const place = consumePendingPlace();
+    if (!place) return;
+    handlePlaceSelect(place);
+  }, [pitsLoaded, allPits.length]);
 
   // Date selection with pit reassignment
   const handleDateSelect = useCallback((d: DeliveryDate) => {
