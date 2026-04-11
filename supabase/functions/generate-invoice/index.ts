@@ -148,6 +148,7 @@ serve(async (req) => {
         "legal_name", "site_name", "phone", "website",
         "footer_address", "ein_number", "support_email",
         "card_processing_fee_percent", "card_processing_fee_fixed",
+        "pricing_mode",
       ]);
 
     const settings: Record<string, string> = {};
@@ -198,6 +199,7 @@ serve(async (req) => {
     }
     const feeRate = Number(settings.card_processing_fee_percent || 3.5) / 100;
     const feeFixed = Number(settings.card_processing_fee_fixed || 0.30);
+    const isBakedMode = settings.pricing_mode === "baked";
 
     // ─── HEADER ───
     y = 18;
@@ -347,11 +349,11 @@ serve(async (req) => {
     const taxAmount = Number(order.tax_amount || 0);
     const combinedRate = Number(order.tax_rate || 0);
     const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + sunSurcharge - discountAmount + taxAmount;
-    // Reverse-calculate processing fee from stored total using the known fee rate
-    const processingFee = isCard
+    // In baked mode, no processing fee line — fee is included in base price
+    const processingFee = !isBakedMode && isCard
       ? parseFloat((subtotalBeforeFee * feeRate + feeFixed).toFixed(2))
       : 0;
-    console.log("[invoice] pricing breakdown:", { basePrice, baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, feeRate, feeFixed, orderPrice: order.price });
+    console.log("[invoice] pricing breakdown:", { basePrice, baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, feeRate, feeFixed, orderPrice: order.price, isBakedMode });
 
     // Parish detection for tax breakdown
     const PARISH_TAX_RATES: Record<string, number> = {
@@ -434,7 +436,7 @@ serve(async (req) => {
       const parishLabel = parishName ? `${parishName} Parish Tax (${parishRatePct}%)` : `Local Parish Tax (${parishRatePct}%)`;
       priceLines.push({ desc: parishLabel, amt: fmt(parishAmt) });
     }
-    if (isCard && processingFee > 0.01) priceLines.push({ desc: "Card Processing Fee (3.5% + $0.30/transaction)", amt: fmt(processingFee) });
+    if (!isBakedMode && isCard && processingFee > 0.01) priceLines.push({ desc: "Card Processing Fee (3.5% + $0.30/transaction)", amt: fmt(processingFee) });
 
     doc.setFontSize(9);
     priceLines.forEach((line) => {

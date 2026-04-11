@@ -135,6 +135,14 @@ export function calcPitPrice(effective: EffectivePricing, distance: number, qty:
 }
 
 /**
+ * Reverse the baked 3.5% fee to get COD price.
+ * Used when pricing_mode is "baked" and customer selects PAY AT DELIVERY.
+ */
+export function getCODPrice(bakedPrice: number, discountPercent = 3.5): number {
+  return Math.round(bakedPrice / (1 + discountPercent / 100));
+}
+
+/**
  * Calculate final price including Saturday surcharge.
  */
 export function calcFinalPrice(effective: EffectivePricing, distance: number, qty: number, isSaturday: boolean): number {

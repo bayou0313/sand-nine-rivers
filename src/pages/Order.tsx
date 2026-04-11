@@ -23,7 +23,7 @@ import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCH
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
-import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
+import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING, getCODPrice } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -87,6 +87,7 @@ const Order = () => {
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+  const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("transparent");
 
   // Weekend PIT resolution state
   const [weekendPitMap, setWeekendPitMap] = useState<WeekendPitMap>({});
@@ -112,6 +113,8 @@ const Order = () => {
         const gp = parseGlobalSettings(settingsRes.data as any);
         setGlobalPricing(gp);
         setGlobalSaturdaySurcharge(gp.saturday_surcharge);
+        const modeRow = (settingsRes.data as any[]).find((r: any) => r.key === "pricing_mode");
+        if (modeRow?.value === "baked") setPricingMode("baked");
       }
       if (pitsRes.data) {
         setAllPits(pitsRes.data as any);
@@ -183,10 +186,23 @@ const Order = () => {
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
   const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
   const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
+  const isBaked = pricingMode === "baked";
+  const isCOD = paymentMethod === "cash" || paymentMethod === "check";
+  // In baked mode, COD customers get a discount (reverse the baked fee)
+  const effectiveBaseForCalc = isBaked && isCOD && effectivePricing.base_price
+    ? getCODPrice(effectivePricing.base_price)
+    : effectivePricing.base_price;
+  const codSavingsPerLoad = isBaked ? effectivePricing.base_price - getCODPrice(effectivePricing.base_price) : 0;
+
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
-  const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
-  const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
-  const processingFee = totalPrice > 0
+  // In baked mode with COD, recalculate subtotal using COD base price
+  const codSubtotalAdjustment = isBaked && isCOD && result
+    ? (effectivePricing.base_price - effectiveBaseForCalc) * quantity
+    : 0;
+  const adjustedSubtotal = subtotal - codSubtotalAdjustment;
+  const taxAmount = parseFloat((adjustedSubtotal * taxInfo.rate).toFixed(2));
+  const totalPrice = parseFloat((adjustedSubtotal + taxAmount).toFixed(2));
+  const processingFee = !isBaked && totalPrice > 0
     ? parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2))
     : 0;
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
@@ -1156,12 +1172,13 @@ const Order = () => {
 
     setSubmitting(true);
     try {
+      const stripeTotal = isBaked ? totalPrice : totalWithProcessingFee;
       const orderData = {
         ...buildOrderData(),
         payment_method: "stripe-link",
         payment_status: "pending",
-        price: totalWithProcessingFee,
-        processing_fee: processingFee,
+        price: stripeTotal,
+        processing_fee: isBaked ? 0 : processingFee,
       };
       const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
         p_data: orderData,
@@ -1171,10 +1188,12 @@ const Order = () => {
       const insertedOrder = rpcResult as any;
 
       const isEmbedded = window.self !== window.top;
-      const description = `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
+      const description = isBaked
+        ? `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds`
+        : `River Sand Delivery — ${quantity} load${quantity > 1 ? "s" : ""} × 9 cu yds (incl. 3.5% processing fee)`;
       const { data, error } = await supabase.functions.invoke("create-checkout-link", {
         body: {
-          amount: Math.round(totalWithProcessingFee * 100),
+          amount: Math.round(stripeTotal * 100),
           description,
           customer_name: form.name.trim(),
           customer_email: form.email.trim() || null,
@@ -1665,7 +1684,7 @@ const Order = () => {
 
                       <ReceiptRow label={`River Sand (9 cu yds × ${quantity})`} value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
                       <div className="border-b border-dashed border-border" />
-                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(effectivePricing.base_price * quantity)} />
+                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(effectiveBaseForCalc * quantity)} />
                       {result.distance > effectivePricing.free_miles && (
                         <>
                           <div className="border-b border-dashed border-border" />
@@ -1797,6 +1816,10 @@ const Order = () => {
                         <p className={`font-display text-base tracking-wider ${isWeekendDate ? "text-muted-foreground" : "text-foreground"}`}>PAY AT DELIVERY</p>
                         {isWeekendDate ? (
                           <p className="font-body text-xs text-amber-600 mt-1">Not available for weekend delivery</p>
+                        ) : isBaked ? (
+                          <p className="font-body text-xs mt-1" style={{ color: "#16A34A", fontWeight: 600 }}>
+                            💵 Save {formatCurrency(codSavingsPerLoad * quantity)} — Pay {formatCurrency(getCODPrice(effectivePricing.base_price))}/load
+                          </p>
                         ) : (
                           <p className="font-body text-xs text-muted-foreground mt-1">No card processing fee</p>
                         )}
@@ -1833,7 +1856,11 @@ const Order = () => {
                       >
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1">
                           <p className="font-display text-xs tracking-wider text-amber-900">PAY AT DELIVERY</p>
-                          <p className="font-body text-sm text-amber-800 leading-relaxed">Cash or check is accepted on arrival. If payment cannot be collected, a secure card payment link will be sent with a {globalPricing.card_processing_fee_percent}% + ${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee.</p>
+                          <p className="font-body text-sm text-amber-800 leading-relaxed">
+                            {isBaked
+                              ? `Cash or check accepted on arrival. You save ${formatCurrency(codSavingsPerLoad * quantity)} vs. card payment.`
+                              : `Cash or check is accepted on arrival. If payment cannot be collected, a secure card payment link will be sent with a ${globalPricing.card_processing_fee_percent}% + $${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee.`}
+                          </p>
                         </div>
                       </motion.div>
                     )}
@@ -1852,7 +1879,19 @@ const Order = () => {
                           <span className="text-muted-foreground">Order Total</span>
                           <span className="text-foreground font-medium">{formatCurrency(totalPrice)}</span>
                         </div>
-                        {paymentMethod === "stripe-link" ? (
+                        {isBaked ? (
+                          <>
+                            <div className="border-t border-border pt-2 flex justify-between">
+                              <span className="font-display tracking-wider text-foreground">TOTAL DUE</span>
+                              <span className="font-display text-lg font-bold text-foreground">{formatCurrency(totalPrice)}</span>
+                            </div>
+                            {isCOD && codSavingsPerLoad > 0 && (
+                              <p className="font-body text-xs" style={{ color: "#16A34A" }}>
+                                💵 You save {formatCurrency(codSavingsPerLoad * quantity)} by paying at delivery
+                              </p>
+                            )}
+                          </>
+                        ) : paymentMethod === "stripe-link" ? (
                           <>
                             <div className="flex justify-between font-body text-sm">
                               <span className="text-muted-foreground">Card Processing Fee (3.5% + $0.30/txn)</span>
@@ -1954,7 +1993,7 @@ const Order = () => {
                         >
                           {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                             paymentMethod === "stripe-link"
-                              ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(totalWithProcessingFee)}</>
+                              ? <><Lock className="w-4 h-4 mr-2" /> PAY {formatCurrency(isBaked ? totalPrice : totalWithProcessingFee)}</>
                               : <><CheckCircle2 className="w-4 h-4 mr-2" /> PLACE ORDER — {formatCurrency(totalPrice)}</>
                           )}
                         </Button>

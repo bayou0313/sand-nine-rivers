@@ -52,7 +52,7 @@ function fmt(n: number): string {
   return n.toFixed(2);
 }
 
-function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): string {
+function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, pricingMode = "transparent"): string {
   const customerName = order.customer_name || "there";
   const companyName = order.company_name || "";
   const orderNumber = order.order_number || "N/A";
@@ -99,8 +99,9 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
                       </td>
                     </tr>` : "";
 
-  // Processing fee row (stripe only) — uses dynamic fee settings
-  const feeRow = isStripePaid && processingFeeAmt > 0.01 ? `
+  // Processing fee row (stripe only) — hidden in baked pricing mode
+  const isBaked = pricingMode === "baked";
+  const feeRow = !isBaked && isStripePaid && processingFeeAmt > 0.01 ? `
                     <tr>
                       <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
                         Processing Fee
@@ -865,7 +866,7 @@ serve(async (req) => {
         "card_processing_fee_percent", "card_processing_fee_fixed",
         "legal_name", "site_name", "phone", "website",
         "support_email", "tagline", "copyright_year",
-        "sender_name", "sender_title",
+        "sender_name", "sender_title", "pricing_mode",
       ]);
 
     const emailCfg: Record<string, string> = {};
@@ -879,6 +880,7 @@ serve(async (req) => {
     const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
     const FEE_PERCENT = parseFloat(emailCfg.card_processing_fee_percent || "3.5");
     const FEE_FIXED = parseFloat(emailCfg.card_processing_fee_fixed || "0.30");
+    const PRICING_MODE = emailCfg.pricing_mode || "transparent";
     // Update module-level vars so template functions pick up runtime settings
     PHONE = emailCfg.phone || "1-855-GOT-WAYS";
     WEBSITE = emailCfg.website?.replace(/^https?:\/\//, "") || "riversand.net";
@@ -946,7 +948,7 @@ serve(async (req) => {
         ),
       ];
       if (customerEmail) {
-        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data, FEE_PERCENT, FEE_FIXED), attachments, FROM, REPLY_TO));
+        promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data, FEE_PERCENT, FEE_FIXED, PRICING_MODE), attachments, FROM, REPLY_TO));
       }
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);

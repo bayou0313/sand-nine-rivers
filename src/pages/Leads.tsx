@@ -3674,6 +3674,42 @@ const Leads = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Pricing Mode */}
+                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: BRAND_NAVY }}>Pricing Display Mode</h4>
+                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                    <strong>Transparent:</strong> Processing fee shown as separate line item.{" "}
+                    <strong>Baked In:</strong> Fee included in base price; COD customers get a discount.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Pricing Mode</label>
+                      <select
+                        value={editSettings.pricing_mode || "transparent"}
+                        onChange={e => setEditSettings({ ...editSettings, pricing_mode: e.target.value })}
+                        className="h-9 w-full rounded border px-3 text-sm"
+                        style={{ borderColor: CARD_BORDER }}
+                      >
+                        <option value="transparent">Transparent — Show fee separately</option>
+                        <option value="baked">Baked In — Fee in base price, COD gets discount</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">COD Discount %</label>
+                      <div className="relative">
+                        <Input className="pr-8 h-9" value={editSettings.cod_discount_percent || "3.5"} onChange={e => setEditSettings({ ...editSettings, cod_discount_percent: e.target.value })} placeholder="3.5" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                      </div>
+                    </div>
+                  </div>
+                  {editSettings.pricing_mode === "baked" && (
+                    <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: "#FEF3C7", border: "1px solid #F59E0B" }}>
+                      <p className="text-xs" style={{ color: "#92400E" }}>
+                        ⚠️ Baked mode is active. Pit base prices include the processing fee. Switching to Transparent will require manually adjusting pit prices.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
