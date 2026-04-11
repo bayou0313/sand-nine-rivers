@@ -948,6 +948,9 @@ const OrderMobile = () => {
                   +
                 </button>
               </div>
+              <p className="font-body text-xs text-center mt-1" style={{ color: 'rgba(0,0,0,0.4)' }}>
+                {quantity === 1 ? '9 cu yds' : `${quantity * 9} cu yds total`}
+              </p>
 
               {/* Date picker */}
               <div className="mb-6">
