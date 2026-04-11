@@ -809,7 +809,7 @@ const OrderMobile = () => {
               <div className="w-9" />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-40">
+            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-8">
               {/* Order summary mini */}
               <div className="flex items-center justify-between bg-primary/10 rounded-xl px-4 py-3 mb-6">
                 <div className="min-w-0">
@@ -827,19 +827,19 @@ const OrderMobile = () => {
               <div className="space-y-3 mb-8">
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
-                  <Input placeholder="Your full name" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-14 rounded-xl text-base" />
+                  <Input placeholder="Your full name" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base" />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone *</label>
-                  <Input type="tel" placeholder="(555) 555-5555" required maxLength={14} value={form.phone} onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-14 rounded-xl text-base" />
+                  <Input type="tel" placeholder="(555) 555-5555" required maxLength={14} value={form.phone} onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base" />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                  <EmailInput value={form.email} onChange={v => setForm({ ...form, email: v })} required className="h-14 rounded-xl text-base" />
+                  <EmailInput value={form.email} onChange={v => setForm({ ...form, email: v })} required className="h-14 rounded-xl text-base" onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Instructions</label>
-                  <Textarea placeholder="Gate code, landmark, or special instructions..." maxLength={275} rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="rounded-xl text-base" />
+                  <Textarea placeholder="Gate code, landmark, or special instructions..." maxLength={275} rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="rounded-xl text-base" />
                 </div>
               </div>
 
@@ -859,43 +859,43 @@ const OrderMobile = () => {
 
               {/* How to Pay */}
               <h2 className="font-display text-lg text-foreground tracking-wider mb-3">HOW TO PAY</h2>
-            </div>
 
-            {/* Bottom payment buttons */}
-            <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-6 py-4 space-y-3 safe-area-inset-bottom">
-              <Button
-                onClick={() => {
-                  if (!isFormValid) { toast({ title: "Missing fields", description: "Please fill name, phone, and email.", variant: "destructive" }); return; }
-                  if (!deliveryTermsAccepted) { toast({ title: "Terms required", description: "Please accept delivery terms.", variant: "destructive" }); return; }
-                  setPaymentMethod("stripe-link");
-                  handleStripeLink();
-                }}
-                disabled={submitting}
-                className="w-full h-14 rounded-2xl font-display text-base tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
-              >
-                {submitting && paymentMethod === "stripe-link" ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Lock className="w-4 h-4 mr-2" /> PAY NOW — Secure Checkout</>}
-              </Button>
-
-              {!isWeekendDate && (
+              {/* Payment buttons — in flow, not fixed */}
+              <div className="space-y-3 pb-8">
                 <Button
-                  variant="outline"
                   onClick={() => {
                     if (!isFormValid) { toast({ title: "Missing fields", description: "Please fill name, phone, and email.", variant: "destructive" }); return; }
                     if (!deliveryTermsAccepted) { toast({ title: "Terms required", description: "Please accept delivery terms.", variant: "destructive" }); return; }
-                    setPaymentMethod("cash");
-                    setCodSubOption("cash");
-                    handleCodSubmit();
+                    setPaymentMethod("stripe-link");
+                    handleStripeLink();
                   }}
                   disabled={submitting}
-                  className="w-full h-14 rounded-2xl font-display text-base tracking-wider border-2 border-primary text-primary"
+                  className="w-full h-14 rounded-2xl font-display text-base tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
                 >
-                  {submitting && paymentMethod === "cash" ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Banknote className="w-4 h-4 mr-2" /> PAY AT DELIVERY — Cash or Check</>}
+                  {submitting && paymentMethod === "stripe-link" ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Lock className="w-4 h-4 mr-2" /> PAY NOW — Secure Checkout</>}
                 </Button>
-              )}
 
-              {isWeekendDate && (
-                <p className="font-body text-xs text-amber-600 text-center">Card payment required for weekend deliveries.</p>
-              )}
+                {!isWeekendDate && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (!isFormValid) { toast({ title: "Missing fields", description: "Please fill name, phone, and email.", variant: "destructive" }); return; }
+                      if (!deliveryTermsAccepted) { toast({ title: "Terms required", description: "Please accept delivery terms.", variant: "destructive" }); return; }
+                      setPaymentMethod("cash");
+                      setCodSubOption("cash");
+                      handleCodSubmit();
+                    }}
+                    disabled={submitting}
+                    className="w-full h-14 rounded-2xl font-display text-base tracking-wider border-2 border-primary text-primary"
+                  >
+                    {submitting && paymentMethod === "cash" ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Banknote className="w-4 h-4 mr-2" /> PAY AT DELIVERY — Cash or Check</>}
+                  </Button>
+                )}
+
+                {isWeekendDate && (
+                  <p className="font-body text-xs text-amber-600 text-center">Card payment required for weekend deliveries.</p>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
