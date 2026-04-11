@@ -1,12 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { useCountdown } from "@/hooks/use-countdown";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+
+declare global {
+  interface Window { google: any; }
+}
 
 const LOGO_WHITE = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png";
 
 const HomeMobile = () => {
   const navigate = useNavigate();
   const { timeLeft, label } = useCountdown();
+  const { loaded: apiLoaded } = useGoogleMaps();
 
   const handlePlaceSelect = (result: PlaceSelectResult) => {
     sessionStorage.setItem("mobile_prefill_address", result.formattedAddress);
@@ -49,11 +55,17 @@ const HomeMobile = () => {
           <p className="font-display text-xs text-accent tracking-[0.2em] uppercase mb-2 text-center">
             DELIVERY ADDRESS
           </p>
-          <PlaceAutocompleteInput
-            onPlaceSelect={handlePlaceSelect}
-            placeholder="Enter your delivery address..."
-            className="!h-16 !text-lg !rounded-2xl !bg-white !text-foreground"
-          />
+          {apiLoaded ? (
+            <PlaceAutocompleteInput
+              onPlaceSelect={handlePlaceSelect}
+              onInputChange={() => {}}
+              placeholder="Enter your delivery address"
+              id="home-mobile-address"
+              containerClassName="place-autocomplete-embedded"
+            />
+          ) : (
+            <div className="h-16 rounded-2xl border border-white/20 bg-white/10 animate-pulse" />
+          )}
           <p className="font-body text-xs text-white/40 text-center mt-2">
             Serving New Orleans, Metairie, Chalmette &amp; surrounding areas
           </p>
