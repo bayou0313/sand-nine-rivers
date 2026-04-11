@@ -320,6 +320,8 @@ const OrderMobile = () => {
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (!paymentStatus) return;
+    if (stripeReturnHandled.current) return;
+    stripeReturnHandled.current = true;
 
     const returnedOrderNumber = searchParams.get("order_number");
     const returnedSessionId = searchParams.get("session_id");
