@@ -23,7 +23,7 @@ import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCH
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
-import { type PitData, type GlobalPricing, findBestPitDriving, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING, getCODPrice } from "@/lib/pits";
+import { type PitData, type GlobalPricing, type FindBestPitResult, findBestPitDriving, findAllPitDistances, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING, getCODPrice } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -45,6 +45,7 @@ type EstimateResult = {
 
 type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
 
+// Legacy types kept for cart restoration compatibility
 export type WeekendPitEntry = {
   pit: PitData;
   distance: number;
