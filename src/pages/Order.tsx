@@ -1549,18 +1549,19 @@ const Order = () => {
                         setDateError("");
                       }}
                       onPitAssigned={(pit) => {
-                        const schedule: PitSchedule = {
-                          operating_days: pit.operating_days,
-                          saturday_surcharge_override: pit.saturday_surcharge_override != null ? Number(pit.saturday_surcharge_override) : null,
-                          sunday_surcharge: pit.sunday_surcharge != null ? Number(pit.sunday_surcharge) : null,
-                          same_day_cutoff: pit.same_day_cutoff,
-                        };
-                        // Find distance info from allPitDistances
+                        // Find the full PitData from allPitDistances
                         const pitDist = allPitDistances.find(pd => pd.pit.id === pit.id);
-                        setMatchedPit(pit);
+                        const fullPit = pitDist?.pit || pit;
+                        const schedule: PitSchedule = {
+                          operating_days: fullPit.operating_days,
+                          saturday_surcharge_override: fullPit.saturday_surcharge_override != null ? Number(fullPit.saturday_surcharge_override) : null,
+                          sunday_surcharge: fullPit.sunday_surcharge != null ? Number(fullPit.sunday_surcharge) : null,
+                          same_day_cutoff: fullPit.same_day_cutoff,
+                        };
+                        setMatchedPit(fullPit as PitData);
                         setMatchedPitSchedule(schedule);
                         if (pitDist) {
-                          const effective = getEffectivePrice(pit, globalPricing);
+                          const effective = getEffectivePrice(fullPit as PitData, globalPricing);
                           const price = calcPitPrice(effective, pitDist.distance, 1);
                           setResult(prev => prev ? {
                             ...prev,
@@ -1568,9 +1569,8 @@ const Order = () => {
                             price,
                             address: `${pitDist.distance.toFixed(1)} mi away`,
                           } : prev);
-                          if (weekdayPit && pit.id !== weekdayPit.id) {
-                            const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
-                            toast({ title: `Price updated for ${dayName} delivery`, description: `Delivering from ${pit.name}.` });
+                          if (weekdayPit && fullPit.id !== weekdayPit.id) {
+                            toast({ title: "Price updated for this delivery date", description: `Delivering from ${fullPit.name}.` });
                           }
                         }
                       }}
