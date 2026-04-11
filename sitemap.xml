@@ -37,18 +37,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/chalmette/river-sand-delivery</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/avondale/river-sand-delivery</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://riversand.net/montz/river-sand-delivery</loc>
     <lastmod>2026-04-11</lastmod>
     <changefreq>monthly</changefreq>
@@ -109,6 +97,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://riversand.net/avondale/river-sand-delivery</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://riversand.net/estelle/river-sand-delivery</loc>
     <lastmod>2026-04-11</lastmod>
     <changefreq>monthly</changefreq>
@@ -116,6 +110,12 @@
   </url>
   <url>
     <loc>https://riversand.net/violet/river-sand-delivery</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/chalmette/river-sand-delivery</loc>
     <lastmod>2026-04-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
