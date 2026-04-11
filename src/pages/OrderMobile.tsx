@@ -158,6 +158,12 @@ const OrderMobile = () => {
   // Init
   useEffect(() => { initSession(); }, []);
 
+  // Fetch GMB review URL
+  useEffect(() => {
+    supabase.from("global_settings").select("value").eq("key", "gmb_review_url").single()
+      .then(({ data }) => { if (data?.value) setGmbReviewUrl(data.value); });
+  }, []);
+
   // Fetch settings + pits
   useEffect(() => {
     const fetchData = async () => {
