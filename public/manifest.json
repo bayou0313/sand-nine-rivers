@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_-_ICON_-_512.png",
+      "src": "/favicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

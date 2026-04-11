@@ -853,10 +853,10 @@ const OrderMobile = () => {
             <div className="px-5 pb-6 space-y-3 mt-4">
               <a
                 href="tel:+18554689297"
-                className="flex items-center justify-center w-full h-14 rounded-2xl font-display text-xl tracking-wide"
+                className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl font-display text-xl tracking-wide"
                 style={{ backgroundColor: "hsl(var(--accent))", color: "hsl(var(--primary))" }}
               >
-                📞 1-855-GOT-WAYS
+                <Phone className="w-5 h-5" style={{ color: "hsl(var(--primary))" }} /> 1-855-GOT-WAYS
               </a>
               <div className="flex flex-col items-center gap-1 mt-3">
                 <span className="font-body text-xs text-white/50">Operated by</span>
