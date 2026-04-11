@@ -86,6 +86,7 @@ const OrderMobile = () => {
   // Pricing
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
   const [allPits, setAllPits] = useState<PitData[]>([]);
+  const [pitsLoaded, setPitsLoaded] = useState(false);
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("transparent");
@@ -189,7 +190,7 @@ const OrderMobile = () => {
         const modeRow = (settingsRes.data as any[]).find((r: any) => r.key === "pricing_mode");
         if (modeRow?.value === "baked") setPricingMode("baked");
       }
-      if (pitsRes.data) setAllPits(pitsRes.data as any);
+      if (pitsRes.data) { setAllPits(pitsRes.data as any); setPitsLoaded(true); }
     };
     fetchData();
   }, []);
@@ -797,10 +798,10 @@ const OrderMobile = () => {
               <Button
                 data-auto-calc
                 onClick={calculateDistance}
-                disabled={loading || !customerCoords}
+                disabled={loading || !customerCoords || !pitsLoaded}
                 className="w-full h-16 rounded-2xl font-display text-xl tracking-wider bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg disabled:opacity-40"
               >
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "GET MY PRICE →"}
+                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : !pitsLoaded ? "Loading..." : "GET MY PRICE →"}
               </Button>
               <a href="tel:+18554689297" className="block text-center font-display text-sm tracking-wider text-accent/80 mt-3">
                 📞 1-855-GOT-WAYS
