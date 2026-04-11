@@ -178,6 +178,24 @@ const OrderMobile = () => {
   // Init
   useEffect(() => { initSession(); }, []);
 
+  // Visual Viewport keyboard detection
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handleViewportChange = () => {
+      const keyboardHeight = window.innerHeight - window.visualViewport!.height;
+      const addressContainer = document.getElementById('address-step-container');
+      if (addressContainer) {
+        addressContainer.style.paddingBottom = keyboardHeight > 100 ? `${keyboardHeight + 20}px` : '0px';
+      }
+    };
+    window.visualViewport.addEventListener('resize', handleViewportChange);
+    window.visualViewport.addEventListener('scroll', handleViewportChange);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+    };
+  }, []);
+
   // Browser back button interception
   useEffect(() => {
     // Only intercept back button when we're actually on /order
@@ -793,7 +811,7 @@ const OrderMobile = () => {
 
         {/* ── SCREEN 1: ADDRESS ── */}
         {step === "address" && (
-          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} className="min-h-dvh flex flex-col bg-primary">
+          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} id="address-step-container" className="min-h-dvh flex flex-col bg-primary">
             {/* Header */}
             <header className="flex items-center justify-center px-5 pt-5 pb-2">
               <img src={LOGO_HOME} alt="River Sand" className="object-contain" style={{ width: '50%', maxWidth: '200px' }} />
@@ -802,7 +820,7 @@ const OrderMobile = () => {
             <div className="mx-auto w-3/4 h-px bg-accent/40 my-2" />
 
             {/* Hero */}
-            <div className="flex-1 flex flex-col justify-center px-5 pb-4" style={{ paddingBottom: '420px' }}>
+            <div className="flex-1 flex flex-col justify-center px-5 pb-4">
               <div className="text-center mb-8">
                 <h1 className="font-display text-5xl text-white tracking-wide leading-[1.1] mb-3">
                   SAME-DAY RIVER SAND DELIVERY
@@ -830,8 +848,8 @@ const OrderMobile = () => {
                 <div ref={addressContainerRef} className="min-h-[4rem] text-lg [&_input]:border-2 [&_input]:border-white/20 [&_input]:focus:border-accent [&_input]:rounded-2xl [&_input]:transition-colors"
                   onFocusCapture={() => setTimeout(() => {
                     const input = document.querySelector('#mobile-address input') as HTMLElement;
-                    input?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 200)}
+                    input?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }, 300)}
                 >
                   {apiLoaded ? (
                     <PlaceAutocompleteInput
