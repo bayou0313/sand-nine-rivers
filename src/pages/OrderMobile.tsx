@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useLocation } from "react-router-dom";
 import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
@@ -103,6 +103,7 @@ const OrderMobile = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
   const [codSubOption, setCodSubOption] = useState<"cash" | "check">("cash");
 
+  const location = useLocation();
   const qtyParam = parseInt(searchParams.get("quantity") || searchParams.get("qty") || "1", 10);
   const [quantity, setQuantity] = useState(Math.max(1, Math.min(10, isNaN(qtyParam) ? 1 : qtyParam)));
   const [leadReference, setLeadReference] = useState<string | null>(null);
@@ -306,53 +307,29 @@ const OrderMobile = () => {
       }
       setStep("price");
     } else if (!searchParams.get("payment")) {
-      // Check for prefilled address from HomeMobile
-      const prefillAddress = sessionStorage.getItem("mobile_prefill_address");
-      const prefillPlace = sessionStorage.getItem("mobile_prefill_place");
-      if (prefillAddress && prefillPlace) {
-        try {
-          const placeData = JSON.parse(prefillPlace);
-          sessionStorage.removeItem("mobile_prefill_address");
-          sessionStorage.removeItem("mobile_prefill_place");
-          setAddress(placeData.formattedAddress || prefillAddress);
-          if (placeData.lat && placeData.lng) {
-            setCustomerCoords({ lat: placeData.lat, lng: placeData.lng });
-          }
-          // Auto-trigger distance calculation after state settles
-          setTimeout(() => {
-            const btn = document.querySelector('[data-auto-calc]') as HTMLButtonElement;
-            if (btn) btn.click();
-          }, 300);
-        } catch {
-          setAddress(prefillAddress);
-          sessionStorage.removeItem("mobile_prefill_address");
-          sessionStorage.removeItem("mobile_prefill_place");
+      const savedCart = loadCart();
+      if (savedCart) {
+        setAddress(savedCart.address);
+        setResult({ distance: savedCart.distance, price: savedCart.price, address: `${savedCart.distance} miles away`, duration: "~30 min" });
+        setQuantity(savedCart.quantity);
+        if (savedCart.operatingDays.length > 0 || savedCart.satSurcharge) {
+          setMatchedPitSchedule({
+            operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null,
+            saturday_surcharge_override: savedCart.satSurcharge || null,
+            sunday_surcharge: null,
+            same_day_cutoff: savedCart.sameDayCutoff || null,
+          });
         }
-      } else {
-        const savedCart = loadCart();
-        if (savedCart) {
-          setAddress(savedCart.address);
-          setResult({ distance: savedCart.distance, price: savedCart.price, address: `${savedCart.distance} miles away`, duration: "~30 min" });
-          setQuantity(savedCart.quantity);
-          if (savedCart.operatingDays.length > 0 || savedCart.satSurcharge) {
-            setMatchedPitSchedule({
-              operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null,
-              saturday_surcharge_override: savedCart.satSurcharge || null,
-              sunday_surcharge: null,
-              same_day_cutoff: savedCart.sameDayCutoff || null,
-            });
-          }
-          if (savedCart.pitId) {
-            setMatchedPit({
-              id: savedCart.pitId, name: savedCart.pitName, address: "", lat: 0, lon: 0, status: "active",
-              base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null,
-              operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null,
-              saturday_surcharge_override: savedCart.satSurcharge || null,
-              same_day_cutoff: savedCart.sameDayCutoff || null, sunday_surcharge: null,
-            } as PitData);
-          }
-          setStep("price");
+        if (savedCart.pitId) {
+          setMatchedPit({
+            id: savedCart.pitId, name: savedCart.pitName, address: "", lat: 0, lon: 0, status: "active",
+            base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null,
+            operating_days: savedCart.operatingDays.length > 0 ? savedCart.operatingDays : null,
+            saturday_surcharge_override: savedCart.satSurcharge || null,
+            same_day_cutoff: savedCart.sameDayCutoff || null, sunday_surcharge: null,
+          } as PitData);
         }
+        setStep("price");
       }
     }
   }, [searchParams]);
@@ -578,6 +555,19 @@ const OrderMobile = () => {
     } catch { setError("Something went wrong. Please try again."); }
     finally { setLoading(false); }
   }, [address, customerCoords, allPits, globalPricing]);
+
+  useEffect(() => {
+    const state = location.state as { prefillAddress?: string; prefillPlace?: PlaceSelectResult } | null;
+    if (state?.prefillPlace && pitsLoaded && allPits.length > 0) {
+      handlePlaceSelect(state.prefillPlace);
+      setTimeout(() => {
+        calculateDistance();
+      }, 0);
+      window.history.replaceState({}, "", "/order");
+    } else if (state?.prefillAddress) {
+      setAddress(state.prefillAddress);
+    }
+  }, [location.state, pitsLoaded, allPits, handlePlaceSelect, calculateDistance]);
 
   // Date selection with pit reassignment
   const handleDateSelect = useCallback((d: DeliveryDate) => {
