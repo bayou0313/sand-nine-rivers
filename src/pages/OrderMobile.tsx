@@ -853,13 +853,8 @@ const OrderMobile = () => {
               setTimeout(() => {
                 const input = document.querySelector('#address-step-container input') as HTMLElement;
                 if (!input) return;
-                const rect = input.getBoundingClientRect();
-                const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-                const targetY = rect.top - (viewportHeight * 0.35);
-                if (targetY > 0) {
-                  window.scrollBy({ top: targetY, behavior: 'smooth' });
-                }
-              }, 300);
+                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 350);
             }}
           >
             {/* Header */}
