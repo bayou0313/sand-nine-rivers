@@ -1302,6 +1302,38 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
       await sendMail(resend, ownerEmail, `Capture Summary — ${captured} captured, ${failed} failed`, summaryHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Capture summary sent to:", ownerEmail);
 
+    } else if (type === "review_request") {
+      const order = data;
+      const firstName = (order.customer_name || "").split(" ")[0] || "there";
+      const reviewBaseUrl = `https://${WEBSITE}/review`;
+
+      const starsHtml = [1, 2, 3, 4, 5].map(star =>
+        `<a href="${reviewBaseUrl}?order_id=${order.id}&token=${order.lookup_token}&rating=${star}" style="display:inline-block;font-size:32px;text-decoration:none;padding:4px 6px;">⭐</a>`
+      ).join("");
+
+      const reviewHtml = brandedEmailWrapper({
+        content: `
+          <div style="text-align:center;padding:24px 0;">
+            <p style="font-size:24px;font-weight:700;color:${BRAND_COLOR};margin:0 0 8px;">How did we do?</p>
+            <p style="font-size:14px;color:#666;margin:0 0 24px;line-height:1.6;">
+              Your river sand was delivered yesterday. We'd love to hear how it went.
+            </p>
+            <div style="margin:0 0 24px;">${starsHtml}</div>
+            <p style="font-size:12px;color:#999;">
+              Order ${order.order_number || "N/A"} · ${order.delivery_address || ""}
+            </p>
+          </div>
+        `,
+        ctaText: "RATE YOUR DELIVERY",
+        ctaUrl: `${reviewBaseUrl}?order_id=${order.id}&token=${order.lookup_token}`,
+      });
+
+      const subject = `How was your River Sand delivery, ${firstName}?`;
+      if (order.customer_email) {
+        await sendMail(resend, order.customer_email, subject, reviewHtml, undefined, FROM, REPLY_TO);
+        console.log("[email] Review request sent to:", order.customer_email);
+      }
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),
