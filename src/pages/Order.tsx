@@ -90,8 +90,8 @@ const Order = () => {
   const [recalculating, setRecalculating] = useState(false);
   const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("transparent");
 
-  // Weekend PIT resolution state
-  const [weekendPitMap, setWeekendPitMap] = useState<WeekendPitMap>({});
+  // Per-date pit assignment: all pits with distances, sorted closest-first
+  const [allPitDistances, setAllPitDistances] = useState<FindBestPitResult[]>([]);
   const [weekdayPit, setWeekdayPit] = useState<PitData | null>(null);
   const [weekdayResult, setWeekdayResult] = useState<EstimateResult | null>(null);
   const [weekdayPitSchedule, setWeekdayPitSchedule] = useState<PitSchedule | null>(null);
