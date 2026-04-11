@@ -41,7 +41,7 @@ const HomeMobile = () => {
           <h1 className="font-display text-5xl text-white tracking-wide leading-[1.1] mb-3">
             SAME-DAY RIVER SAND DELIVERY
           </h1>
-          <p className="font-body text-base text-accent">
+          <p className="font-body text-base text-white/80 text-center">
             Get your exact price in seconds — no account needed
           </p>
           <div className="flex items-center justify-center gap-3 mt-4 font-body text-xs text-white/60">
@@ -55,17 +55,19 @@ const HomeMobile = () => {
 
         {/* Address input */}
         <div className="mb-6">
-          <p className="font-display text-xs text-accent tracking-[0.2em] uppercase mb-2 text-center">
+          <p className="font-display text-sm text-accent tracking-widest uppercase mb-2 text-center">
             DELIVERY ADDRESS
           </p>
           {apiLoaded ? (
-            <PlaceAutocompleteInput
-              onPlaceSelect={handlePlaceSelect}
-              onInputChange={() => {}}
-              placeholder="Enter your delivery address"
-              id="home-mobile-address"
-              containerClassName="place-autocomplete-embedded"
-            />
+            <div className="min-h-[4rem] text-lg border-2 border-accent/30 focus-within:border-accent rounded-2xl transition-colors">
+              <PlaceAutocompleteInput
+                onPlaceSelect={handlePlaceSelect}
+                onInputChange={() => {}}
+                placeholder="Enter your delivery address"
+                id="home-mobile-address"
+                containerClassName="place-autocomplete-embedded"
+              />
+            </div>
           ) : (
             <div className="h-16 rounded-2xl border border-white/20 bg-white/10 animate-pulse" />
           )}
@@ -84,7 +86,7 @@ const HomeMobile = () => {
         )}
 
         {/* Social proof */}
-        <div className="flex items-center justify-center gap-0 font-body text-xs text-white/70 text-center">
+        <div className="flex items-center justify-center gap-0 font-body text-xs text-white/70 text-center mb-4">
           <span>15,000+ Loads</span>
           <span className="mx-2 text-accent/50">|</span>
           <span>Same-Day Available</span>
@@ -94,13 +96,13 @@ const HomeMobile = () => {
       </div>
 
       {/* Footer */}
-      <div className="px-5 pb-6 space-y-3">
+      <div className="px-5 pb-6 space-y-3 mt-4">
         <a
           href="tel:+18554689297"
           className="flex items-center justify-center w-full h-14 rounded-2xl font-display text-xl tracking-wide"
           style={{ backgroundColor: "hsl(var(--accent))", color: "hsl(var(--primary))" }}
         >
-          📞 1-855-GOT-WAYS
+          <span style={{ color: "hsl(var(--primary))" }}>📞</span> 1-855-GOT-WAYS
         </a>
         <div className="flex flex-col items-center gap-1 mt-3">
           <span className="font-body text-xs text-white/50">Operated by</span>
