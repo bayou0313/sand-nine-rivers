@@ -5,7 +5,7 @@ import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
-import { formatProperName, formatSentence, formatEmail } from "@/lib/textFormat";
+import { formatProperName, formatProperNameFinal, formatSentence, formatEmail } from "@/lib/textFormat";
 
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { Button } from "@/components/ui/button";
@@ -1062,7 +1062,7 @@ const OrderMobile = () => {
                     <Input
                       placeholder="Company name (optional)"
                       value={form.companyName}
-                    onBlur={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
+                    onBlur={e => setForm({ ...form, companyName: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
                       onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       inputMode="text"
@@ -1078,7 +1078,7 @@ const OrderMobile = () => {
                     placeholder="Your full name"
                     required
                     value={form.name}
-                    onBlur={e => setForm({ ...form, name: formatProperName(e.target.value) })}
+                    onBlur={e => setForm({ ...form, name: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, name: formatProperName(e.target.value) })}
                     onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}

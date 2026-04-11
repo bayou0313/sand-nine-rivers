@@ -37,6 +37,21 @@ export function formatProperName(value: string): string {
     .join(' ');
 }
 
+export function formatProperNameFinal(value: string): string {
+  return value.split(' ').map(word => {
+    if (!word) return word;
+    const cleaned = word.replace(/[.,]/g, '').toUpperCase();
+    if (cleaned.length >= 2) {
+      for (const d of CORPORATE_DESIGNATORS) {
+        if (d.replace(/[.,]/g, '').toUpperCase() === cleaned) {
+          return d;
+        }
+      }
+    }
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
+}
+
 export function formatSentence(value: string): string {
   return value.replace(/(^\s*\w|[.!?]\s+\w)/g, char => char.toUpperCase());
 }
