@@ -413,6 +413,12 @@ const Leads = () => {
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
   const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
 
+  // Schedule state
+  const [scheduleDate, setScheduleDate] = useState(new Date());
+  const [scheduleOrders, setScheduleOrders] = useState<any[]>([]);
+  const [scheduleSummary, setScheduleSummary] = useState({ revenue: 0, loads: 0, orders: 0, pending: 0, paid: 0 });
+  const [weekCounts, setWeekCounts] = useState<Record<string, { orders: number; loads: number }>>({});
+
   // Pending review orders state
   const [pendingReviewOrders, setPendingReviewOrders] = useState<any[]>([]);
   const [pendingReviewLoading, setPendingReviewLoading] = useState(false);
@@ -1881,6 +1887,7 @@ const Leads = () => {
     settings: { title: "GLOBAL SETTINGS" },
     pending_review: { title: "PENDING REVIEW", subtitle: `${pendingReviewOrders.length} orders to review` },
     reviews: { title: "REVIEWS", subtitle: "Customer feedback" },
+    schedule: { title: "DELIVERY SCHEDULE", subtitle: "Orders by delivery date" },
   };
 
   // Login screen
