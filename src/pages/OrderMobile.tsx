@@ -178,16 +178,16 @@ const OrderMobile = () => {
   // Init
   useEffect(() => { initSession(); }, []);
 
-  // Visual Viewport keyboard detection — scroll-based, no padding manipulation
+  // Visual Viewport keyboard detection — works on all inputs across all steps
   useEffect(() => {
     if (!window.visualViewport) return;
     const handleViewportChange = () => {
       const keyboardHeight = window.innerHeight - window.visualViewport!.height;
       if (keyboardHeight > 100) {
         setTimeout(() => {
-          const input = document.querySelector('#address-step-container input') as HTMLElement;
-          if (input) {
-            const rect = input.getBoundingClientRect();
+          const activeEl = document.activeElement as HTMLElement;
+          if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+            const rect = activeEl.getBoundingClientRect();
             const visibleHeight = window.visualViewport!.height;
             if (rect.bottom > visibleHeight - 20) {
               window.scrollBy({ top: rect.bottom - visibleHeight + 40, behavior: 'smooth' });
@@ -1098,8 +1098,7 @@ const OrderMobile = () => {
                       value={form.companyName}
                     onBlur={e => setForm({ ...form, companyName: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, companyName: formatProperName(e.target.value) })}
-                      onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); nameRef.current?.focus(); } }}
+                      onKeyUp={e => { if (e.key === 'Enter') { e.preventDefault(); nameRef.current?.focus(); } }}
                       inputMode="text"
                       enterKeyHint="next"
                       className="h-16 rounded-xl text-lg placeholder:text-black/35"
@@ -1116,8 +1115,7 @@ const OrderMobile = () => {
                     value={form.name}
                     onBlur={e => setForm({ ...form, name: formatProperNameFinal(e.target.value) })}
                     onChange={e => setForm({ ...form, name: formatProperName(e.target.value) })}
-                    onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}
+                    onKeyUp={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}
                     inputMode="text"
                     enterKeyHint="next"
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
@@ -1139,8 +1137,7 @@ const OrderMobile = () => {
                         setTimeout(() => emailRef.current?.focus(), 50);
                       }
                     }}
-                    onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); emailRef.current?.focus(); } }}
+                    onKeyUp={e => { if (e.key === "Enter") { e.preventDefault(); emailRef.current?.focus(); } }}
                     inputMode="tel"
                     enterKeyHint="next"
                     className="h-16 rounded-xl text-lg placeholder:text-black/35"
@@ -1156,8 +1153,7 @@ const OrderMobile = () => {
                     value={form.email}
                     onChange={e => setForm({ ...form, email: formatEmail(e.target.value) })}
                     onBlur={e => setForm({ ...form, email: formatEmail(e.target.value) })}
-                    onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+                    onKeyUp={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
                     placeholder="john@example.com"
                     required
                     enterKeyHint="done"
@@ -1177,7 +1173,6 @@ const OrderMobile = () => {
                       rows={2}
                       value={form.notes}
                       onChange={e => setForm({ ...form, notes: formatSentence(e.target.value) })}
-                      onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
                       className="rounded-xl text-lg placeholder:text-black/35"
                     />
                     <p className="font-body text-xs text-right mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
