@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
-import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock } from "lucide-react";
+import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,9 @@ const OrderMobile = () => {
   const [searchParams] = useSearchParams();
   const { loaded: apiLoaded } = useGoogleMaps();
   const addressContainerRef = useRef<HTMLDivElement>(null);
-
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   // Step state: address → price → info → success
   const [step, setStep] = useState<"address" | "price" | "info" | "success">("address");
 
@@ -112,6 +114,8 @@ const OrderMobile = () => {
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [deliveryTermsAccepted, setDeliveryTermsAccepted] = useState(false);
   const [detectedParish, setDetectedParish] = useState<string | null>(null);
+  const [showCompany, setShowCompany] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
 
   // Derived pricing
   const effectivePricing = useMemo(() => {
@@ -832,59 +836,107 @@ const OrderMobile = () => {
               <div className="w-9" />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-8">
-              {/* Order summary mini */}
-              <div className="flex items-center justify-between bg-primary/10 rounded-xl px-4 py-3 mb-6">
-                <div className="min-w-0">
-                  <p className="font-display text-xs tracking-wider text-primary">DELIVERY CONFIRMED</p>
-                  <p className="font-body text-xs text-muted-foreground truncate">{address.length > 35 ? address.slice(0, 32) + "…" : address}</p>
-                </div>
-                <div className="text-right shrink-0 ml-3">
-                  <p className="font-display text-xl text-primary">{formatCurrency(totalPrice)}</p>
-                  <p className="font-body text-[10px] text-muted-foreground">{quantity} load{quantity > 1 ? "s" : ""} · {selectedDeliveryDate?.dateStr}</p>
-                </div>
+            <div className="flex-1 overflow-y-auto px-6 pt-4 pb-8" style={{ paddingBottom: '320px' }}>
+              {/* Order summary — single line */}
+              <div className="bg-primary/10 rounded-xl px-4 py-3 mb-6">
+                <p className="font-body text-sm text-foreground text-center">
+                  {quantity} load{quantity > 1 ? "s" : ""} · {formatCurrency(totalPrice)} · {selectedDeliveryDate?.label} {selectedDeliveryDate?.dateStr}
+                </p>
               </div>
 
               {/* Your Info */}
               <h2 className="font-display text-lg text-foreground tracking-wider mb-3">YOUR INFO</h2>
-              <div className="space-y-3 mb-8">
+              <div className="space-y-3 mb-6">
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Full Name *</label>
-                  <Input placeholder="Your full name" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base placeholder:text-black/35" />
+                  <Input
+                    ref={nameRef}
+                    placeholder="Your full name"
+                    required
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); phoneRef.current?.focus(); } }}
+                    inputMode="text"
+                    enterKeyHint="next"
+                    className="h-16 rounded-xl text-lg placeholder:text-black/35"
+                  />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone *</label>
-                  <Input type="tel" placeholder="(555) 555-5555" required maxLength={14} value={form.phone} onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-14 rounded-xl text-base placeholder:text-black/35" />
+                  <Input
+                    ref={phoneRef}
+                    type="tel"
+                    placeholder="(555) 555-5555"
+                    required
+                    maxLength={14}
+                    value={form.phone}
+                    onChange={e => setForm({ ...form, phone: formatPhone(e.target.value) })}
+                    onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("mobile-email-input")?.querySelector("input")?.focus(); } }}
+                    inputMode="tel"
+                    enterKeyHint="next"
+                    className="h-16 rounded-xl text-lg placeholder:text-black/35"
+                  />
                 </div>
-                <div>
+                <div id="mobile-email-input">
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                  <EmailInput value={form.email} onChange={v => setForm({ ...form, email: v })} required className="h-14 rounded-xl text-base placeholder:text-black/35" onFocus={(e) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} />
+                  <EmailInput
+                    value={form.email}
+                    onChange={v => setForm({ ...form, email: v })}
+                    required
+                    className="h-16 rounded-xl text-lg placeholder:text-black/35"
+                    onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                  />
                 </div>
-                <div>
-                  <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Instructions</label>
-                  <Textarea placeholder="Gate code, landmark, or special instructions..." maxLength={275} rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} onFocus={e => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} className="rounded-xl text-base placeholder:text-black/35" />
-                </div>
+
+                {/* Company name — collapsed toggle */}
+                {!showCompany ? (
+                  <button type="button" onClick={() => setShowCompany(true)} className="font-body text-sm text-primary hover:underline">+ Add company name</button>
+                ) : (
+                  <div>
+                    <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Company Name</label>
+                    <Input
+                      placeholder="Company name (optional)"
+                      value={form.companyName}
+                      onChange={e => setForm({ ...form, companyName: e.target.value })}
+                      onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                      inputMode="text"
+                      className="h-16 rounded-xl text-lg placeholder:text-black/35"
+                    />
+                  </div>
+                )}
+
+                {/* Notes — collapsed toggle */}
+                {!showNotes ? (
+                  <button type="button" onClick={() => setShowNotes(true)} className="font-body text-sm text-primary hover:underline">+ Add delivery instructions</button>
+                ) : (
+                  <div>
+                    <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Instructions</label>
+                    <Textarea
+                      placeholder="Gate code, landmark, or special instructions..."
+                      maxLength={275}
+                      rows={2}
+                      value={form.notes}
+                      onChange={e => setForm({ ...form, notes: e.target.value })}
+                      onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "nearest" }), 150)}
+                      className="rounded-xl text-lg placeholder:text-black/35"
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Delivery Terms */}
-              <div className="bg-muted/50 border border-border rounded-xl p-4 mb-6">
-                <p className="font-display text-xs tracking-wider text-foreground mb-2">DELIVERY TERMS</p>
-                <p className="font-body text-xs text-muted-foreground leading-relaxed mb-3">
-                  Curbside delivery only. Customer ensures clear access. WAYS® Materials LLC is not responsible for property damage. Photo taken as proof of delivery. Orders may be canceled only before truck is loaded.
-                </p>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={deliveryTermsAccepted} onChange={e => setDeliveryTermsAccepted(e.target.checked)} className="mt-0.5 w-5 h-5 rounded accent-primary" />
-                  <span className="font-body text-xs text-foreground leading-relaxed">
-                    I agree to the delivery terms and cancellation policy.
-                  </span>
-                </label>
-              </div>
+              {/* Delivery Terms — single checkbox */}
+              <label className="flex items-start gap-3 cursor-pointer mb-8">
+                <input type="checkbox" checked={deliveryTermsAccepted} onChange={e => setDeliveryTermsAccepted(e.target.checked)} className="mt-0.5 w-5 h-5 rounded accent-primary shrink-0" />
+                <span className="font-body text-sm text-foreground leading-relaxed">
+                  I agree to the{" "}
+                  <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="underline text-primary">delivery terms</a>
+                </span>
+              </label>
 
-              {/* How to Pay */}
-              <h2 className="font-display text-lg text-foreground tracking-wider mb-3">HOW TO PAY</h2>
-
-              {/* Payment buttons — in flow, not fixed */}
-              <div className="space-y-3 pb-8">
+              {/* Payment buttons — full width, stacked */}
+              <div className="space-y-3 pb-4">
                 <Button
                   onClick={() => {
                     if (!isFormValid) { toast({ title: "Missing fields", description: "Please fill name, phone, and email.", variant: "destructive" }); return; }
@@ -893,9 +945,9 @@ const OrderMobile = () => {
                     handleStripeLink();
                   }}
                   disabled={submitting}
-                  className="w-full h-14 rounded-2xl font-display text-base tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+                  className="w-full h-14 rounded-2xl font-display text-lg tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
                 >
-                  {submitting && paymentMethod === "stripe-link" ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Lock className="w-4 h-4 mr-2" /> PAY NOW — Secure Checkout</>}
+                  {submitting && paymentMethod === "stripe-link" ? <Loader2 className="w-5 h-5 animate-spin" /> : "PAY NOW"}
                 </Button>
 
                 {!isWeekendDate && (
@@ -909,9 +961,9 @@ const OrderMobile = () => {
                       handleCodSubmit();
                     }}
                     disabled={submitting}
-                    className="w-full h-14 rounded-2xl font-display text-base tracking-wider border-2 border-primary text-primary"
+                    className="w-full h-14 rounded-2xl font-display text-lg tracking-wider border-2 border-primary text-primary"
                   >
-                    {submitting && paymentMethod === "cash" ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Banknote className="w-4 h-4 mr-2" /> PAY AT DELIVERY — Cash or Check</>}
+                    {submitting && paymentMethod === "cash" ? <Loader2 className="w-5 h-5 animate-spin" /> : "PAY AT DELIVERY"}
                   </Button>
                 )}
 
