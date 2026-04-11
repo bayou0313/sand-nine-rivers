@@ -136,6 +136,7 @@ const OrderMobile = () => {
   const [showCompany, setShowCompany] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [gmbReviewUrl, setGmbReviewUrl] = useState<string | null>(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Derived pricing
   const effectivePricing = useMemo(() => {
