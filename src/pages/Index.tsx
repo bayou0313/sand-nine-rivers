@@ -170,13 +170,12 @@ const Index = () => {
           "highPrice": priceRange.high,
           "priceCurrency": "USD",
           "offerCount": priceRange.count,
-          "priceValidUntil": "2027-12-31",
+          "priceValidUntil": new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split("T")[0],
           "availability": "https://schema.org/InStock",
           "hasMerchantReturnPolicy": {
             "@type": "MerchantReturnPolicy",
             "applicableCountry": "US",
             "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted",
-            "merchantReturnDays": 0,
             "returnMethod": "https://schema.org/ReturnNotSupported",
           },
           "shippingDetails": {
