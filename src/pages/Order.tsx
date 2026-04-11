@@ -1409,7 +1409,7 @@ const Order = () => {
                         onPlaceSelect={handleOrderPlaceSelect}
                         onInputChange={(val) => setAddress(val)}
                         onEnterKey={calculateDistance}
-                        placeholder="Enter your delivery address..." className="placeholder:opacity-40"
+                        placeholder="Enter your delivery address..."
                         initialValue={address || undefined}
                         id="order-address"
                         containerClassName="place-autocomplete-order"
@@ -1602,23 +1602,23 @@ const Order = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="order-name" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Full Name *</label>
-                        <Input id="order-name" name="name" autoComplete="name" placeholder="Your full name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`h-[52px] rounded-lg text-base placeholder:opacity-40 ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
+                        <Input id="order-name" name="name" autoComplete="name" placeholder="Your full name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div>
                         <label htmlFor="order-company" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Company Name</label>
-                        <Input id="order-company" name="companyName" autoComplete="organization" placeholder="Optional" maxLength={100} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="h-[52px] rounded-lg text-base placeholder:opacity-40" />
+                        <Input id="order-company" name="companyName" autoComplete="organization" placeholder="Optional" maxLength={100} value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="h-[52px] rounded-lg text-base" />
                       </div>
                       <div>
                         <label htmlFor="order-phone" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Phone *</label>
-                        <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(555) 555-5555" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className={`h-[52px] rounded-lg text-base placeholder:opacity-40 ${formAttempted && !form.phone.trim() ? "border-destructive border-2" : ""}`} />
+                        <Input id="order-phone" name="phone" type="tel" autoComplete="tel" placeholder="(555) 555-5555" required maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.phone.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div>
                         <label htmlFor="order-email" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Email *</label>
-                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className={`h-[52px] rounded-lg text-base placeholder:opacity-40 ${formAttempted && !form.email.trim() ? "border-destructive border-2" : ""}`} />
+                        <EmailInput id="order-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className={`h-[52px] rounded-lg text-base ${formAttempted && !form.email.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Instructions</label>
-                        <Textarea id="order-notes" name="notes" placeholder="Gate code, landmark, or special drop-off instructions for the driver..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base placeholder:opacity-40" />
+                        <Textarea id="order-notes" name="notes" placeholder="Gate code, landmark, or special drop-off instructions for the driver..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
                         <p className="text-xs text-muted-foreground mt-1 text-right font-body">{form.notes.length}/275</p>
                       </div>
                     </div>
