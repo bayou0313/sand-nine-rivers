@@ -326,6 +326,7 @@ const CityPage = () => {
     );
   }
 
+  const canonicalUrl = `https://riversand.net/${cityPage.city_slug}/river-sand-delivery`;
 
   const breadcrumbSchema = JSON.stringify({
     "@context": "https://schema.org",
