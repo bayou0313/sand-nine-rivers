@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { updateSession, initSession } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
@@ -36,7 +36,9 @@ import {
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
-import { consumePendingPlace } from "@/lib/mobileHandoff";
+import { useCountdown } from "@/hooks/use-countdown";
+
+const LOGO_HOME = "/lovable-uploads/riversand-logo_WHITE-2.png";
 
 declare global {
   interface Window { google: any; }
@@ -74,6 +76,8 @@ const OrderMobile = () => {
   const nameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const { timeLeft, label } = useCountdown();
   // Step state: address → price → info → success
   const [step, setStep] = useState<"address" | "price" | "info" | "success">("address");
 
@@ -557,13 +561,6 @@ const OrderMobile = () => {
     finally { setLoading(false); }
   }, [address, customerCoords, allPits, globalPricing]);
 
-  useEffect(() => {
-    if (!pitsLoaded || allPits.length === 0) return;
-    const place = consumePendingPlace();
-    if (!place) return;
-    handlePlaceSelect(place);
-  }, [pitsLoaded, allPits.length]);
-
   // Date selection with pit reassignment
   const handleDateSelect = useCallback((d: DeliveryDate) => {
     setSelectedDeliveryDate(d);
@@ -747,50 +744,114 @@ const OrderMobile = () => {
 
         {/* ── SCREEN 1: ADDRESS ── */}
         {step === "address" && (
-          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} className="min-h-screen flex flex-col bg-primary px-6">
-            {/* Zone 1 — Logo pinned top */}
-            <div className="pt-16 flex justify-center">
-              <img src={LOGO_WHITE} alt="River Sand" className="h-10 opacity-90" />
-            </div>
+          <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} className="min-h-dvh flex flex-col bg-primary">
+            {/* Header */}
+            <header className="flex items-center justify-center px-5 pt-5 pb-2">
+              <img src={LOGO_HOME} alt="River Sand" className="object-contain" style={{ width: '50%', maxWidth: '200px' }} />
+            </header>
 
-            {/* Zone 2 — Headline + Input centered */}
-            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
-              <h1 className="font-display text-5xl text-primary-foreground tracking-wide text-center leading-none">WHERE DO YOU NEED SAND?</h1>
-              <p className="font-body text-base text-primary-foreground/60 text-center mt-2">Get an instant delivery price — no account needed.</p>
+            <div className="mx-auto w-3/4 h-px bg-accent/40 my-2" />
 
-              <div ref={addressContainerRef} className="w-full mt-8">
-                {apiLoaded ? (
-                  <PlaceAutocompleteInput
-                    onPlaceSelect={handlePlaceSelect}
-                    onInputChange={(val) => { setAddress(val); setCustomerCoords(null); }}
-                    onEnterKey={calculateDistance}
-                    placeholder="Enter your delivery address"
-                    id="mobile-address"
-                    containerClassName="place-autocomplete-embedded"
-                  />
-                ) : (
-                  <div className="h-16 rounded-2xl border border-white/20 bg-white/10 animate-pulse" />
-                )}
+            {/* Hero */}
+            <div className="flex-1 flex flex-col justify-center px-5 pb-4">
+              <div className="text-center mb-8">
+                <h1 className="font-display text-5xl text-white tracking-wide leading-[1.1] mb-3">
+                  SAME-DAY RIVER SAND DELIVERY
+                </h1>
+                <p className="font-body text-base text-white/80 text-center">
+                  Get your exact price in seconds — no account needed
+                </p>
+                <div className="flex items-center justify-center gap-3 mt-4 font-body text-xs text-white/60">
+                  <span>✓ No minimums</span>
+                  <span>·</span>
+                  <span>✓ Cash or card</span>
+                  <span>·</span>
+                  <span>✓ Gulf South</span>
+                </div>
+              </div>
+
+              {/* Address input */}
+              <div className="mb-6">
+                <p className="font-display text-sm text-accent tracking-widest uppercase mb-2 text-center">
+                  DELIVERY ADDRESS
+                </p>
+                <div ref={addressContainerRef} className="min-h-[4rem] text-lg border-2 border-accent/30 focus-within:border-accent rounded-2xl transition-colors">
+                  {apiLoaded ? (
+                    <PlaceAutocompleteInput
+                      onPlaceSelect={handlePlaceSelect}
+                      onInputChange={(val) => { setAddress(val); setCustomerCoords(null); }}
+                      onEnterKey={calculateDistance}
+                      placeholder="Enter your delivery address"
+                      id="mobile-address"
+                      containerClassName="place-autocomplete-embedded"
+                    />
+                  ) : (
+                    <div className="h-16 rounded-2xl bg-white/10 animate-pulse" />
+                  )}
+                </div>
+                <p className="font-body text-xs text-white/40 text-center mt-2">
+                  Serving New Orleans, Metairie, Chalmette &amp; surrounding areas
+                </p>
               </div>
 
               {error && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-body text-sm text-destructive mt-4 text-center px-4">{error}</motion.p>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-body text-sm text-destructive mt-2 mb-4 text-center px-4">{error}</motion.p>
               )}
+
+              {/* Get My Price button */}
+              <div className="mb-4 max-w-md mx-auto w-full">
+                <Button
+                  data-auto-calc
+                  onClick={calculateDistance}
+                  disabled={loading || !customerCoords || !pitsLoaded}
+                  className="w-full h-16 rounded-2xl font-display text-xl tracking-wider bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg disabled:opacity-40"
+                >
+                  {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : !pitsLoaded ? "Loading..." : "GET MY PRICE →"}
+                </Button>
+              </div>
+
+              {/* Countdown */}
+              {label && (
+                <div className="text-center mb-4">
+                  <p className="font-body text-sm text-accent">
+                    {label} <span className="font-semibold">{timeLeft}</span>
+                  </p>
+                </div>
+              )}
+
+              {/* Social proof */}
+              <div className="flex items-center justify-center gap-0 font-body text-xs text-white/70 text-center mb-4">
+                <span>15,000+ Loads</span>
+                <span className="mx-2 text-accent/50">|</span>
+                <span>Same-Day Available</span>
+                <span className="mx-2 text-accent/50">|</span>
+                <span>⭐ 4.9 Rating</span>
+              </div>
             </div>
 
-            {/* Zone 3 — CTA pinned bottom */}
-            <div className="pb-10 space-y-3 max-w-md mx-auto w-full">
-              <Button
-                data-auto-calc
-                onClick={calculateDistance}
-                disabled={loading || !customerCoords || !pitsLoaded}
-                className="w-full h-16 rounded-2xl font-display text-xl tracking-wider bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg disabled:opacity-40"
+            {/* Footer */}
+            <div className="px-5 pb-6 space-y-3 mt-4">
+              <a
+                href="tel:+18554689297"
+                className="flex items-center justify-center w-full h-14 rounded-2xl font-display text-xl tracking-wide"
+                style={{ backgroundColor: "hsl(var(--accent))", color: "hsl(var(--primary))" }}
               >
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : !pitsLoaded ? "Loading..." : "GET MY PRICE →"}
-              </Button>
-              <a href="tel:+18554689297" className="block text-center font-display text-sm tracking-wider text-accent/80 mt-3">
                 📞 1-855-GOT-WAYS
               </a>
+              <div className="flex flex-col items-center gap-1 mt-3">
+                <span className="font-body text-xs text-white/50">Operated by</span>
+                <img
+                  src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/Ways_Sitewide_Logo_white.png"
+                  alt="WAYS®"
+                  className="h-8"
+                />
+              </div>
+              <button
+                onClick={() => { localStorage.setItem("force_desktop", "true"); navigate("/"); window.location.reload(); }}
+                className="w-full text-center font-body text-xs text-white/40 py-2"
+              >
+                View full site →
+              </button>
             </div>
           </motion.div>
         )}
