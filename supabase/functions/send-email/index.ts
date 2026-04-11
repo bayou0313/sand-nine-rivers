@@ -866,7 +866,7 @@ serve(async (req) => {
         "card_processing_fee_percent", "card_processing_fee_fixed",
         "legal_name", "site_name", "phone", "website",
         "support_email", "tagline", "copyright_year",
-        "sender_name", "sender_title",
+        "sender_name", "sender_title", "pricing_mode",
       ]);
 
     const emailCfg: Record<string, string> = {};
@@ -880,6 +880,7 @@ serve(async (req) => {
     const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
     const FEE_PERCENT = parseFloat(emailCfg.card_processing_fee_percent || "3.5");
     const FEE_FIXED = parseFloat(emailCfg.card_processing_fee_fixed || "0.30");
+    const PRICING_MODE = emailCfg.pricing_mode || "transparent";
     // Update module-level vars so template functions pick up runtime settings
     PHONE = emailCfg.phone || "1-855-GOT-WAYS";
     WEBSITE = emailCfg.website?.replace(/^https?:\/\//, "") || "riversand.net";
