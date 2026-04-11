@@ -835,7 +835,7 @@ const OrderMobile = () => {
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Email *</label>
-                  <EmailInput value={form.email} onChange={v => setForm({ ...form, email: v })} required className="h-14 rounded-xl text-base" />
+                  <EmailInput value={form.email} onChange={v => setForm({ ...form, email: v })} required className="h-14 rounded-xl text-base" onFocus={(e) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} />
                 </div>
                 <div>
                   <label className="font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Delivery Instructions</label>
