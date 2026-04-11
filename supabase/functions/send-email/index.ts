@@ -76,7 +76,7 @@ function fmt(n: number): string {
 
 function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, pricingMode = "transparent"): string {
   const customerName = order.customer_name || "there";
-  const companyName = order.company_name || "";
+  const companyName = order.company_name ? fixDesignators(order.company_name) : "";
   const orderNumber = order.order_number || "N/A";
   const deliveryAddress = order.delivery_address || "";
   const deliveryDate = formatDate(order.delivery_date);
