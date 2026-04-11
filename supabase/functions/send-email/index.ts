@@ -62,20 +62,16 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30): stri
   const isStripePaid = order.payment_method === "stripe-link" || order.payment_method === "card";
   const customerEmail = order.customer_email || "";
 
-  const basePrice = 195;
-  const baseLine = basePrice * qty;
+  // Use stored pricing fields from order — no more hardcoded values
+  const baseUnitPrice = Number(order.base_unit_price) || 0;
+  const baseLine = baseUnitPrice > 0 ? baseUnitPrice * qty : 0;
+  const distanceFee = Number(order.distance_fee) || 0;
   const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
   const taxAmount = Number(order.tax_amount || 0);
   const taxParish = order.tax_parish || "";
   const taxRate = (Number(order.tax_rate || 0) * 100).toFixed(2);
+  const processingFeeAmt = Number(order.processing_fee) || 0;
   const totalPrice = fmt(Number(order.price || 0));
-
-  // Calculate processing fee for stripe
-  const subtotalBeforeFee = baseLine + satSurcharge + taxAmount;
-  const distanceMiles = Number(order.distance_miles || 0);
-  const distanceFee = distanceMiles > 15 ? (distanceMiles - 15) * 5.5 * qty : 0;
-  const subtotalWithDist = subtotalBeforeFee + distanceFee;
-  const processingFeeAmt = isStripePaid ? Math.max(0, Number(order.price) - subtotalWithDist) : 0;
   const processingFee = fmt(processingFeeAmt);
   const totalWithFee = fmt(Number(order.price || 0));
   const stripeReference = order.stripe_payment_id || "";
@@ -1305,6 +1301,38 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
       });
       await sendMail(resend, ownerEmail, `Capture Summary — ${captured} captured, ${failed} failed`, summaryHtml, undefined, FROM, REPLY_TO);
       console.log("[email] Capture summary sent to:", ownerEmail);
+
+    } else if (type === "review_request") {
+      const order = data;
+      const firstName = (order.customer_name || "").split(" ")[0] || "there";
+      const reviewBaseUrl = `https://${WEBSITE}/review`;
+
+      const starsHtml = [1, 2, 3, 4, 5].map(star =>
+        `<a href="${reviewBaseUrl}?order_id=${order.id}&token=${order.lookup_token}&rating=${star}" style="display:inline-block;font-size:32px;text-decoration:none;padding:4px 6px;">⭐</a>`
+      ).join("");
+
+      const reviewHtml = brandedEmailWrapper({
+        content: `
+          <div style="text-align:center;padding:24px 0;">
+            <p style="font-size:24px;font-weight:700;color:${BRAND_COLOR};margin:0 0 8px;">How did we do?</p>
+            <p style="font-size:14px;color:#666;margin:0 0 24px;line-height:1.6;">
+              Your river sand was delivered yesterday. We'd love to hear how it went.
+            </p>
+            <div style="margin:0 0 24px;">${starsHtml}</div>
+            <p style="font-size:12px;color:#999;">
+              Order ${order.order_number || "N/A"} · ${order.delivery_address || ""}
+            </p>
+          </div>
+        `,
+        ctaText: "RATE YOUR DELIVERY",
+        ctaUrl: `${reviewBaseUrl}?order_id=${order.id}&token=${order.lookup_token}`,
+      });
+
+      const subject = `How was your River Sand delivery, ${firstName}?`;
+      if (order.customer_email) {
+        await sendMail(resend, order.customer_email, subject, reviewHtml, undefined, FROM, REPLY_TO);
+        console.log("[email] Review request sent to:", order.customer_email);
+      }
 
     } else {
       return new Response(

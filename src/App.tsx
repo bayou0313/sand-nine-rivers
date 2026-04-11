@@ -14,6 +14,7 @@ import AdminLogin from "./pages/AdminLogin.tsx";
 import Leads from "./pages/Leads.tsx";
 import CityPage from "./pages/CityPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Review from "./pages/Review.tsx";
 
 const queryClient = new QueryClient();
 
@@ -272,6 +273,7 @@ function AppContent() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/leads" element={<Leads />} />
+        <Route path="/review" element={<Review />} />
         <Route path="/chalmette-la/river-sand-delivery" element={<Navigate to="/chalmette/river-sand-delivery" replace />} />
         <Route path="/bridge-city-la/river-sand-delivery" element={<Navigate to="/bridge-city/river-sand-delivery" replace />} />
         <Route path="/destrehan-la/river-sand-delivery" element={<Navigate to="/destrehan/river-sand-delivery" replace />} />

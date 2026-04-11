@@ -3327,6 +3327,44 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── SEND REVIEW REQUESTS (scheduled daily) ──
+    if (action === "send_review_requests") {
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: enabledSetting } = await sb.from("global_settings").select("value").eq("key", "review_request_enabled").maybeSingle();
+      if (enabledSetting?.value !== "true") {
+        return new Response(JSON.stringify({ success: true, sent: 0, message: "Review requests disabled" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yDate = yesterday.toISOString().split("T")[0];
+      const { data: orders } = await sb.from("orders").select("*")
+        .eq("delivery_date", yDate).in("payment_status", ["paid", "pending"]).eq("review_request_sent", false)
+        .not("customer_email", "is", null);
+      let sent = 0;
+      const emailUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`;
+      for (const order of orders || []) {
+        try {
+          await fetch(emailUrl, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}` },
+            body: JSON.stringify({ type: "review_request", data: order }) });
+          await sb.from("orders").update({ review_request_sent: true, review_request_sent_at: new Date().toISOString() } as any).eq("id", order.id);
+          sent++;
+          await new Promise(r => setTimeout(r, 1000));
+        } catch (err: any) { console.error("[review_request] Failed:", order.order_number, err); }
+      }
+      return new Response(JSON.stringify({ success: true, sent }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── LIST REVIEWS (password required) ──
+    if (action === "list_reviews") {
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data, error } = await sb.from("reviews").select("*").order("created_at", { ascending: false }).limit(100);
+      if (error) throw error;
+      return new Response(JSON.stringify({ reviews: data }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

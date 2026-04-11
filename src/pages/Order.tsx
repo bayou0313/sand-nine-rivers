@@ -1030,33 +1030,41 @@ const Order = () => {
   }, [address, customerCoords, allPits, globalPricing]);
 
 
-  const buildOrderData = () => ({
-    customer_name: form.name.trim(),
-    customer_email: form.email.trim() || null,
-    customer_phone: form.phone.trim(),
-    delivery_address: address,
-    distance_miles: result!.distance,
-    price: totalPrice,
-    quantity,
-    notes: form.notes.trim() || null,
-    delivery_date: selectedDeliveryDate!.iso,
-    delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
-    saturday_surcharge: selectedDeliveryDate!.isSaturday,
-    saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? effectiveSatSurcharge * quantity : 0,
-    sunday_surcharge: selectedDeliveryDate!.isSunday,
-    sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
-    pit_id: matchedPit?.id || null,
-    delivery_window: "8:00 AM – 5:00 PM",
-    same_day_requested: selectedDeliveryDate!.isSameDay,
-    tax_rate: taxInfo.rate,
-    tax_amount: taxAmount,
-    delivery_terms_accepted: deliveryTermsAccepted,
-    delivery_terms_timestamp: new Date().toISOString(),
-    card_authorization_accepted: cardAuthAccepted,
-    card_authorization_timestamp: cardAuthAccepted ? new Date().toISOString() : null,
-    company_name: form.companyName.trim() || null,
-    ...(leadReference ? { lead_reference: leadReference } : {}),
-  });
+  const buildOrderData = () => {
+    const distFee = result && effectivePricing
+      ? Math.max(0, Math.round((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * 100) / 100)
+      : 0;
+    return {
+      customer_name: form.name.trim(),
+      customer_email: form.email.trim() || null,
+      customer_phone: form.phone.trim(),
+      delivery_address: address,
+      distance_miles: result!.distance,
+      price: totalPrice,
+      quantity,
+      notes: form.notes.trim() || null,
+      delivery_date: selectedDeliveryDate!.iso,
+      delivery_day_of_week: selectedDeliveryDate!.dayOfWeek,
+      saturday_surcharge: selectedDeliveryDate!.isSaturday,
+      saturday_surcharge_amount: selectedDeliveryDate!.isSaturday ? effectiveSatSurcharge * quantity : 0,
+      sunday_surcharge: selectedDeliveryDate!.isSunday,
+      sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
+      pit_id: matchedPit?.id || null,
+      delivery_window: "8:00 AM – 5:00 PM",
+      same_day_requested: selectedDeliveryDate!.isSameDay,
+      tax_rate: taxInfo.rate,
+      tax_amount: taxAmount,
+      delivery_terms_accepted: deliveryTermsAccepted,
+      delivery_terms_timestamp: new Date().toISOString(),
+      card_authorization_accepted: cardAuthAccepted,
+      card_authorization_timestamp: cardAuthAccepted ? new Date().toISOString() : null,
+      company_name: form.companyName.trim() || null,
+      base_unit_price: effectivePricing.base_price,
+      distance_fee: distFee * quantity,
+      processing_fee: 0,
+      ...(leadReference ? { lead_reference: leadReference } : {}),
+    };
+  };
 
   const handleCodSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
@@ -1153,6 +1161,7 @@ const Order = () => {
         payment_method: "stripe-link",
         payment_status: "pending",
         price: totalWithProcessingFee,
+        processing_fee: processingFee,
       };
       const { data: rpcResult, error: insertError } = await supabase.rpc("create_order", {
         p_data: orderData,
@@ -1603,10 +1612,11 @@ const Order = () => {
                   {/* Customer Info Section */}
                   <div className="p-6">
                     <SectionHeading icon={User} title="YOUR INFORMATION" />
+                    <p className="text-xs text-muted-foreground mb-3 -mt-1">Enter your delivery contact details. Our driver will call 30 minutes before arrival.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="order-name" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Full Name *</label>
-                        <Input id="order-name" name="name" autoComplete="name" placeholder="John Smith" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
+                        <Input id="order-name" name="name" autoComplete="name" placeholder="Your full name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`h-[52px] rounded-lg text-base ${formAttempted && !form.name.trim() ? "border-destructive border-2" : ""}`} />
                       </div>
                       <div>
                         <label htmlFor="order-company" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Company Name</label>
@@ -1622,7 +1632,7 @@ const Order = () => {
                       </div>
                       <div className="sm:col-span-2">
                         <label htmlFor="order-notes" className="font-body text-sm text-muted-foreground uppercase tracking-wider mb-1.5 block">Delivery Instructions</label>
-                        <Textarea id="order-notes" name="notes" placeholder="Where to drop the sand, gate code, landmark, or any special instructions for the driver..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
+                        <Textarea id="order-notes" name="notes" placeholder="Gate code, landmark, or special drop-off instructions for the driver..." maxLength={275} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-lg text-base" />
                         <p className="text-xs text-muted-foreground mt-1 text-right font-body">{form.notes.length}/275</p>
                       </div>
                     </div>

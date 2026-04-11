@@ -318,6 +318,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          base_unit_price: number | null
           billing_address: string | null
           billing_country: string | null
           billing_matches_delivery: boolean | null
@@ -347,6 +348,7 @@ export type Database = {
           delivery_terms_timestamp: string | null
           delivery_window: string
           discount_amount: number | null
+          distance_fee: number | null
           distance_miles: number
           fraud_score: number | null
           fraud_signals: Json | null
@@ -361,9 +363,12 @@ export type Database = {
           payment_status: string
           pit_id: string | null
           price: number
+          processing_fee: number | null
           quantity: number
           reschedule_token: string | null
           reschedule_token_used: boolean | null
+          review_request_sent: boolean | null
+          review_request_sent_at: string | null
           review_status: string | null
           same_day_requested: boolean
           saturday_surcharge: boolean
@@ -378,6 +383,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_unit_price?: number | null
           billing_address?: string | null
           billing_country?: string | null
           billing_matches_delivery?: boolean | null
@@ -407,6 +413,7 @@ export type Database = {
           delivery_terms_timestamp?: string | null
           delivery_window?: string
           discount_amount?: number | null
+          distance_fee?: number | null
           distance_miles: number
           fraud_score?: number | null
           fraud_signals?: Json | null
@@ -421,9 +428,12 @@ export type Database = {
           payment_status?: string
           pit_id?: string | null
           price: number
+          processing_fee?: number | null
           quantity?: number
           reschedule_token?: string | null
           reschedule_token_used?: boolean | null
+          review_request_sent?: boolean | null
+          review_request_sent_at?: string | null
           review_status?: string | null
           same_day_requested?: boolean
           saturday_surcharge?: boolean
@@ -438,6 +448,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_unit_price?: number | null
           billing_address?: string | null
           billing_country?: string | null
           billing_matches_delivery?: boolean | null
@@ -467,6 +478,7 @@ export type Database = {
           delivery_terms_timestamp?: string | null
           delivery_window?: string
           discount_amount?: number | null
+          distance_fee?: number | null
           distance_miles?: number
           fraud_score?: number | null
           fraud_signals?: Json | null
@@ -481,9 +493,12 @@ export type Database = {
           payment_status?: string
           pit_id?: string | null
           price?: number
+          processing_fee?: number | null
           quantity?: number
           reschedule_token?: string | null
           reschedule_token_used?: boolean | null
+          review_request_sent?: boolean | null
+          review_request_sent_at?: string | null
           review_status?: string | null
           same_day_requested?: boolean
           saturday_surcharge?: boolean
@@ -608,6 +623,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string | null
+          feedback: string | null
+          id: string
+          order_id: string | null
+          order_number: string | null
+          rating: number | null
+          review_request_sent_at: string | null
+          review_submitted_at: string | null
+          sent_to_gmb: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          feedback?: string | null
+          id?: string
+          order_id?: string | null
+          order_number?: string | null
+          rating?: number | null
+          review_request_sent_at?: string | null
+          review_submitted_at?: string | null
+          sent_to_gmb?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          feedback?: string | null
+          id?: string
+          order_id?: string | null
+          order_number?: string | null
+          rating?: number | null
+          review_request_sent_at?: string | null
+          review_submitted_at?: string | null
+          sent_to_gmb?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
