@@ -1163,120 +1163,50 @@ const OrderMobile = () => {
 
         {/* ── SCREEN 4: SUCCESS ── */}
         {step === "success" && (
-          <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col bg-primary items-center justify-center px-6 py-12 text-center">
+          <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col">
             {verifyingPayment ? (
-              <>
+              <div className="flex-1 flex flex-col bg-primary items-center justify-center px-6 py-12 text-center">
                 <Loader2 className="w-12 h-12 animate-spin text-accent mb-6" />
                 <h2 className="font-display text-2xl text-primary-foreground tracking-wider mb-2">Confirming Payment...</h2>
                 <p className="font-body text-sm text-primary-foreground/60">This usually takes a few seconds.</p>
-              </>
+              </div>
             ) : (
-              <>
-                <AnimatedCheckmark />
-
-                <h2 className="font-display text-3xl text-accent tracking-wider mt-6 mb-2">
-                  {orderNumber || "ORDER CONFIRMED"}
-                </h2>
-
-                {selectedDeliveryDate && (
-                  <p className="font-body text-base text-primary-foreground mb-1">
-                    {selectedDeliveryDate.fullLabel}
-                  </p>
-                )}
-
-                <div className="w-full rounded-2xl p-4 mt-4 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <p className="font-display text-sm tracking-widest text-primary-foreground/50 mb-3">ORDER SUMMARY</p>
-                  <div className="space-y-2">
-                    {orderNumber && (
-                      <div className="flex justify-between">
-                        <span className="font-body text-sm text-primary-foreground/70">Order</span>
-                        <span className="font-body text-sm text-primary-foreground font-semibold">{orderNumber}</span>
-                      </div>
-                    )}
-                    {selectedDeliveryDate && (
-                      <div className="flex justify-between">
-                        <span className="font-body text-sm text-primary-foreground/70">Delivery</span>
-                        <span className="font-body text-sm text-primary-foreground">{selectedDeliveryDate.label} {selectedDeliveryDate.dateStr}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="font-body text-sm text-primary-foreground/70">Quantity</span>
-                      <span className="font-body text-sm text-primary-foreground">{quantity} load{quantity > 1 ? "s" : ""} × 9 cu yds</span>
-                    </div>
-                    {address && (
-                      <div className="flex justify-between">
-                        <span className="font-body text-sm text-primary-foreground/70">Address</span>
-                        <span className="font-body text-sm text-primary-foreground text-right max-w-[60%] truncate">{address}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="font-body text-sm text-primary-foreground/70">Payment</span>
-                      <span className="font-body text-sm text-primary-foreground capitalize">{paymentMethod === "stripe-link" ? "Card — Paid" : "Pay at Delivery"}</span>
-                    </div>
-                    {confirmedTotals && confirmedTotals.distanceFee > 0 && (
-                      <div className="flex justify-between">
-                        <span className="font-body text-sm text-primary-foreground/70">Distance Fee</span>
-                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.distanceFee)}</span>
-                      </div>
-                    )}
-                    {confirmedTotals && confirmedTotals.saturdaySurcharge > 0 && (
-                      <div className="flex justify-between">
-                        <span className="font-body text-sm text-primary-foreground/70">Saturday Surcharge</span>
-                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.saturdaySurcharge)}</span>
-                      </div>
-                    )}
-                    {confirmedTotals && confirmedTotals.processingFee > 0 && (
-                      <div className="flex justify-between">
-                        <span className="font-body text-sm text-primary-foreground/70">Processing Fee</span>
-                        <span className="font-body text-sm text-primary-foreground">{formatCurrency(confirmedTotals.processingFee)}</span>
-                      </div>
-                    )}
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '8px', paddingTop: '8px' }} className="flex justify-between">
-                      <span className="font-body text-sm font-semibold text-primary-foreground">Total</span>
-                      <span className="font-display text-lg text-accent">
-                        {confirmedTotals ? formatCurrency(confirmedTotals.total) : formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="font-body text-xs text-primary-foreground/40 mb-4">
-                  Our driver will call 30 minutes before arrival.
-                </p>
-
-                {confirmedOrderId && lookupToken && (
-                  <Button
-                    onClick={handleDownloadInvoice}
-                    disabled={downloadingInvoice}
-                    variant="outline"
-                    className="mb-4 font-display tracking-wider border-accent text-accent hover:bg-accent/10 rounded-xl"
-                  >
-                    {downloadingInvoice ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    VIEW INVOICE
-                  </Button>
-                )}
-
-                {gmbReviewUrl && (
-                  <div className="mt-6 p-4 rounded-2xl text-center" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <p className="font-display text-xl text-primary-foreground tracking-wide mb-1">HAPPY WITH YOUR ORDER?</p>
-                    <p className="font-body text-sm text-primary-foreground/60 mb-4">Your review helps other customers find us — it only takes 30 seconds.</p>
-                    <a href={gmbReviewUrl} target="_blank" rel="noopener noreferrer"
-                       className="block w-full h-12 rounded-2xl font-display text-lg tracking-wider flex items-center justify-center gap-2"
-                       style={{ backgroundColor: '#C07A00', color: '#0D2137' }}>
-                      ⭐ Leave a Google Review
-                    </a>
-                    <p className="font-body text-xs text-primary-foreground/30 mt-3">Takes 30 seconds · Opens Google Maps</p>
-                  </div>
-                )}
-
-                <Link to="/" className="font-display text-sm tracking-wider text-primary-foreground/50 hover:text-primary-foreground/70 transition-colors mt-4">
-                  ← BACK TO HOME
-                </Link>
-
-                <a href="tel:+18554689297" className="inline-flex items-center gap-1 font-display text-sm tracking-wider text-accent/80 mt-6">
-                  <Phone className="w-4 h-4" /> 1-855-GOT-WAYS
-                </a>
-              </>
+              <OrderConfirmation
+                orderNumber={orderNumber}
+                address={address}
+                deliveryDateLabel={selectedDeliveryDate ? `${selectedDeliveryDate.label} ${selectedDeliveryDate.dateStr}` : ""}
+                quantity={quantity}
+                paymentMethod={paymentMethod}
+                codSubOption={codSubOption}
+                stripePaymentId={stripePaymentId}
+                customerName={form.name}
+                customerEmail={form.email}
+                customerPhone={form.phone}
+                companyName={form.companyName || undefined}
+                confirmedTotals={confirmedTotals ? {
+                  totalPrice: confirmedTotals.total - (confirmedTotals.processingFee || 0),
+                  totalWithProcessingFee: confirmedTotals.total,
+                  processingFee: confirmedTotals.processingFee,
+                  taxAmount: confirmedTotals.tax,
+                  subtotal: confirmedTotals.total - confirmedTotals.tax - (confirmedTotals.processingFee || 0),
+                  saturdaySurchargeTotal: confirmedTotals.saturdaySurcharge,
+                  distanceFee: confirmedTotals.distanceFee,
+                  taxInfo,
+                } : null}
+                totalPrice={totalPrice}
+                totalWithProcessingFee={totalWithProcessingFee}
+                processingFee={processingFee}
+                taxAmount={taxAmount}
+                saturdaySurchargeTotal={saturdaySurchargeTotal}
+                taxInfo={taxInfo}
+                basePricePerLoad={result?.price ?? effectivePricing.base_price}
+                distanceFee={result ? Math.max(0, Math.round((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * 100) / 100) * quantity : 0}
+                onDownloadInvoice={handleDownloadInvoice}
+                downloadingInvoice={downloadingInvoice}
+                canDownload={!!confirmedOrderId}
+                confirmedOrderId={confirmedOrderId}
+                lookupToken={lookupToken}
+              />
             )}
           </motion.div>
         )}
