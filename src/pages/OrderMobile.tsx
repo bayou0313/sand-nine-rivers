@@ -802,7 +802,7 @@ const OrderMobile = () => {
             <div className="mx-auto w-3/4 h-px bg-accent/40 my-2" />
 
             {/* Hero */}
-            <div className="flex-1 flex flex-col justify-center px-5 pb-4">
+            <div className="flex-1 flex flex-col justify-center px-5 pb-4" style={{ paddingBottom: '420px' }}>
               <div className="text-center mb-8">
                 <h1 className="font-display text-5xl text-white tracking-wide leading-[1.1] mb-3">
                   SAME-DAY RIVER SAND DELIVERY
@@ -827,7 +827,12 @@ const OrderMobile = () => {
                 <p className="font-display text-sm text-accent tracking-widest uppercase mb-2 text-center">
                   DELIVERY ADDRESS
                 </p>
-                <div ref={addressContainerRef} className="min-h-[4rem] text-lg [&_input]:border-2 [&_input]:border-white/20 [&_input]:focus:border-accent [&_input]:rounded-2xl [&_input]:transition-colors">
+                <div ref={addressContainerRef} className="min-h-[4rem] text-lg [&_input]:border-2 [&_input]:border-white/20 [&_input]:focus:border-accent [&_input]:rounded-2xl [&_input]:transition-colors"
+                  onFocusCapture={() => setTimeout(() => {
+                    const input = document.querySelector('#mobile-address input') as HTMLElement;
+                    input?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 200)}
+                >
                   {apiLoaded ? (
                     <PlaceAutocompleteInput
                       onPlaceSelect={handlePlaceSelect}
