@@ -7,8 +7,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index.tsx";
 import Order from "./pages/Order.tsx";
+import OrderMobile from "./pages/OrderMobile.tsx";
 import Admin from "./pages/Admin.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import Leads from "./pages/Leads.tsx";
@@ -17,6 +19,14 @@ import NotFound from "./pages/NotFound.tsx";
 import Review from "./pages/Review.tsx";
 
 const queryClient = new QueryClient();
+
+const OrderRouter = () => {
+  const isMobile = useIsMobile();
+  // Render null briefly while detecting device to avoid flash
+  if (isMobile === undefined) return null;
+  return isMobile ? <OrderMobile /> : <Order />;
+};
+
 
 const PageViewTracker = () => {
   const location = useLocation();
