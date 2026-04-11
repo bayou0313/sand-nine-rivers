@@ -556,6 +556,19 @@ const OrderMobile = () => {
     finally { setLoading(false); }
   }, [address, customerCoords, allPits, globalPricing]);
 
+  useEffect(() => {
+    const state = location.state as { prefillAddress?: string; prefillPlace?: PlaceSelectResult } | null;
+    if (state?.prefillPlace && pitsLoaded && allPits.length > 0) {
+      handlePlaceSelect(state.prefillPlace);
+      setTimeout(() => {
+        calculateDistance();
+      }, 0);
+      window.history.replaceState({}, "", "/order");
+    } else if (state?.prefillAddress) {
+      setAddress(state.prefillAddress);
+    }
+  }, [location.state, pitsLoaded, allPits, handlePlaceSelect, calculateDistance]);
+
   // Date selection with pit reassignment
   const handleDateSelect = useCallback((d: DeliveryDate) => {
     setSelectedDeliveryDate(d);
