@@ -65,7 +65,8 @@ const AnimatedCheckmark = () => (
 const OrderMobile = () => {
   useBrandPalette();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stripeReturnHandled = useRef(false);
   const { loaded: apiLoaded } = useGoogleMaps();
   const addressContainerRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -319,6 +320,8 @@ const OrderMobile = () => {
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (!paymentStatus) return;
+    if (stripeReturnHandled.current) return;
+    stripeReturnHandled.current = true;
 
     const returnedOrderNumber = searchParams.get("order_number");
     const returnedSessionId = searchParams.get("session_id");
@@ -354,6 +357,7 @@ const OrderMobile = () => {
       setVerifyingPayment(true);
       setStep("success");
       clearCart();
+      setSearchParams({}, { replace: true });
 
       if (verifyOrderId && verifyToken) {
         verifyStripePayment(verifyOrderId, verifyToken).then(orderData => {
@@ -408,6 +412,7 @@ const OrderMobile = () => {
 
   // Listen for cross-tab Stripe signals
   useEffect(() => {
+    if (stripeReturnHandled.current) return;
     const isSuccessStep = step === "success";
 
     const processSignal = (raw: string) => {
@@ -1015,11 +1020,43 @@ const OrderMobile = () => {
                   </p>
                 )}
 
-                <p className="font-body text-sm text-primary-foreground/60 mb-2">
-                  {quantity} load{quantity > 1 ? "s" : ""} · {formatCurrency(totalPrice)}
-                </p>
+                <div className="w-full rounded-2xl p-4 mt-4 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <p className="font-display text-sm tracking-widest text-primary-foreground/50 mb-3">ORDER SUMMARY</p>
+                  <div className="space-y-2">
+                    {orderNumber && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Order</span>
+                        <span className="font-body text-sm text-primary-foreground font-semibold">{orderNumber}</span>
+                      </div>
+                    )}
+                    {selectedDeliveryDate && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Delivery</span>
+                        <span className="font-body text-sm text-primary-foreground">{selectedDeliveryDate.label} {selectedDeliveryDate.dateStr}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="font-body text-sm text-primary-foreground/70">Quantity</span>
+                      <span className="font-body text-sm text-primary-foreground">{quantity} load{quantity > 1 ? "s" : ""} × 9 cu yds</span>
+                    </div>
+                    {address && (
+                      <div className="flex justify-between">
+                        <span className="font-body text-sm text-primary-foreground/70">Address</span>
+                        <span className="font-body text-sm text-primary-foreground text-right max-w-[60%] truncate">{address}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="font-body text-sm text-primary-foreground/70">Payment</span>
+                      <span className="font-body text-sm text-primary-foreground capitalize">{paymentMethod === "stripe-link" ? "Card — Paid" : "Pay at Delivery"}</span>
+                    </div>
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '8px', paddingTop: '8px' }} className="flex justify-between">
+                      <span className="font-body text-sm font-semibold text-primary-foreground">Total</span>
+                      <span className="font-display text-lg text-accent">{formatCurrency(paymentMethod === "stripe-link" ? totalWithProcessingFee : totalPrice)}</span>
+                    </div>
+                  </div>
+                </div>
 
-                <p className="font-body text-xs text-primary-foreground/40 mb-8">
+                <p className="font-body text-xs text-primary-foreground/40 mb-4">
                   Our driver will call 30 minutes before arrival.
                 </p>
 

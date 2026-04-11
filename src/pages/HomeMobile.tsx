@@ -102,7 +102,7 @@ const HomeMobile = () => {
         <div className="flex items-center justify-center gap-2 mt-3">
           <span className="font-body text-xs text-white/50">Operated by</span>
           <img 
-            src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_Dark.png"
+          src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO.png.png"
             alt="WAYS®"
             className="h-4 opacity-50"
           />
