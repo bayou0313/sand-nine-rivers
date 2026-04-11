@@ -1144,7 +1144,7 @@ const OrderMobile = () => {
               <div className="rounded-xl p-3 mb-3">
                 <p className="font-body text-xs leading-relaxed" style={{ color: '#0D2137' }}>
                   <strong>Delivery:</strong>{' '}
-                  Curbside only — curb to sidewalk/driveway edge. No private property entry. 
+                  Curbside only - curb to sidewalk/driveway edge. No private property entry. 
                   Customer must ensure clear, accessible delivery area before arrival. 
                   WAYS® Materials LLC not liable for damage to driveways, landscaping, or property. 
                   Customer or representative must be present at delivery.
