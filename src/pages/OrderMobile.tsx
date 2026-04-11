@@ -1148,6 +1148,8 @@ const OrderMobile = () => {
                   <input
                     ref={emailRef}
                     type="email"
+                    name="email"
+                    id="mobile-email"
                     inputMode="email"
                     autoComplete="email"
                     value={form.email}
