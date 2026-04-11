@@ -7,7 +7,7 @@ declare global {
   interface Window { google: any; }
 }
 
-const LOGO_WHITE = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png";
+const LOGO_WHITE = "/lovable-uploads/riversand-logo_WHITE-2.png";
 
 const HomeMobile = () => {
   const navigate = useNavigate();
@@ -99,6 +99,14 @@ const HomeMobile = () => {
         >
           📞 1-855-GOT-WAYS
         </a>
+        <div className="flex items-center justify-center gap-2 mt-3">
+          <span className="font-body text-xs text-white/50">Operated by</span>
+          <img 
+            src="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_Dark.png"
+            alt="WAYS®"
+            className="h-4 opacity-50"
+          />
+        </div>
         <button
           onClick={handleViewFullSite}
           className="w-full text-center font-body text-xs text-white/40 py-2"
