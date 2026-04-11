@@ -228,3 +228,49 @@ export async function findBestPitDriving(
     return null;
   }
 }
+
+/**
+ * Get driving distances for ALL active (non-pickup) pits to a customer address.
+ * Returns the full ranked array sorted by distance ascending.
+ * Used by the per-date pit assignment calendar.
+ */
+export async function findAllPitDistances(
+  pits: PitData[],
+  customerAddress: string,
+  globalFees: GlobalFees | GlobalPricing,
+  supabaseClient?: any,
+): Promise<FindBestPitResult[]> {
+  const activePits = pits.filter(p => p.status === "active" && !p.is_pickup_only);
+  if (activePits.length === 0 || !supabaseClient) return [];
+
+  try {
+    const { data, error } = await supabaseClient.functions.invoke("leads-auth", {
+      body: {
+        action: "calculate_distances",
+        origins: activePits.map(p => p.address),
+        destination: customerAddress,
+      },
+    });
+    if (error) throw error;
+
+    const drivingDistances: (number | null)[] = data.distances || [];
+
+    const results = activePits
+      .map((pit, i) => {
+        const distance = drivingDistances[i];
+        if (distance === null || distance === undefined) return null;
+        const effective = getEffectivePrice(pit, globalFees);
+        const price = calcPitPrice(effective, distance, 1);
+        const serviceable = distance <= effective.max_distance;
+        return { pit, distance, price, serviceable };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+
+    results.sort((a, b) => a.distance - b.distance);
+    console.log("[findAllPitDistances] results:", results.map(r => `${r.pit.name}: ${r.distance.toFixed(1)}mi`));
+    return results;
+  } catch (err: any) {
+    console.error("[findAllPitDistances] failed:", err.message);
+    return [];
+  }
+}
