@@ -861,7 +861,7 @@ const OrderMobile = () => {
           <motion.div key="price" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} className="flex-1 flex flex-col bg-background">
             {/* Top bar */}
             <div className="flex items-center px-4 py-3 border-b border-border">
-              <button onClick={() => setStep("address")} className="p-2 -ml-2">
+              <button onClick={() => { setStep("address"); setResult(null); setSelectedDeliveryDate(null); setAllPitDistances([]); setMatchedPit(null); }} className="p-2 -ml-2">
                 <ArrowLeft className="w-5 h-5 text-foreground" />
               </button>
               <p className="flex-1 font-display text-sm text-foreground text-center tracking-wider">YOUR QUOTE</p>
@@ -975,6 +975,11 @@ const OrderMobile = () => {
                 <p className="font-body text-sm text-foreground text-center">
                   {quantity} load{quantity > 1 ? "s" : ""} · {formatCurrency(totalPrice)} · {selectedDeliveryDate?.label} {selectedDeliveryDate?.dateStr}
                 </p>
+              </div>
+              <div className="text-center -mt-4 mb-6">
+                <button onClick={() => setStep("price")} className="font-body text-xs text-accent underline">
+                  ← Edit date or quantity
+                </button>
               </div>
 
               {/* Your Info */}
