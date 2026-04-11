@@ -311,7 +311,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
   useEffect(() => {
     if (!allBlocked || !pitId) { setNextAvailable(null); return; }
     // Scan up to 21 days out
-    const extended = getAvailableDeliveryDates(pitSchedule, 21);
+    const extended = getAvailableDeliveryDates(pitSchedule, 21, null, allPitDistances);
     // Filter to dates beyond the initial set
     const lastShownIso = dates.length > 0 ? dates[dates.length - 1].iso : "";
     const candidates = extended.filter(d => d.iso > lastShownIso && !d.blocked);
