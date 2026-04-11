@@ -1008,8 +1008,8 @@ serve(async (req) => {
 
     } else if (type === "callback") {
       const rows = [
-        ["Name", data.name || "Not provided"],
-        ["Phone", data.phone || "Not provided"],
+        ["Name", escapeHtml(data.name) || "Not provided"],
+        ["Phone", escapeHtml(data.phone) || "Not provided"],
         ["Requested Date", data.date || "Not specified"],
         ["Time Window", data.time_window || "ASAP"],
       ];
@@ -1332,7 +1332,7 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
             </p>
             <div style="margin:0 0 24px;">${starsHtml}</div>
             <p style="font-size:12px;color:#999;">
-              Order ${order.order_number || "N/A"} · ${order.delivery_address || ""}
+              Order ${escapeHtml(order.order_number) || "N/A"} · ${escapeHtml(order.delivery_address) || ""}
             </p>
           </div>
         `,
