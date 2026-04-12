@@ -169,6 +169,48 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          email: string
+          first_order_date: string | null
+          id: string
+          last_order_date: string | null
+          name: string | null
+          phone: string | null
+          total_orders: number | null
+          total_spent: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          email: string
+          first_order_date?: string | null
+          id?: string
+          last_order_date?: string | null
+          name?: string | null
+          phone?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          email?: string
+          first_order_date?: string | null
+          id?: string
+          last_order_date?: string | null
+          name?: string | null
+          phone?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       delivery_leads: {
         Row: {
           address: string
@@ -339,6 +381,7 @@ export type Database = {
           confirmation_token: string
           created_at: string
           customer_email: string | null
+          customer_id: string | null
           customer_name: string
           customer_phone: string
           delivery_address: string
@@ -408,6 +451,7 @@ export type Database = {
           confirmation_token?: string
           created_at?: string
           customer_email?: string | null
+          customer_id?: string | null
           customer_name: string
           customer_phone: string
           delivery_address: string
@@ -477,6 +521,7 @@ export type Database = {
           confirmation_token?: string
           created_at?: string
           customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string
           delivery_address?: string
@@ -524,7 +569,15 @@ export type Database = {
           tax_rate?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_events: {
         Row: {
