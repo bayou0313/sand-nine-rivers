@@ -6356,6 +6356,11 @@ const Leads = () => {
 
                     toast({ title: "Email updated & sent", description: `Confirmation resent to ${editEmailValue.trim()}` });
                     setEditEmailOrder(null);
+                    setCashOrders(prev => prev.map(o =>
+                      o.id === editEmailOrder.id
+                        ? { ...o, customer_email: editEmailValue.trim(), last_confirmation_sent_at: new Date().toISOString() }
+                        : o
+                    ));
                     fetchCashOrders();
                   } catch (err: any) {
                     toast({ title: "Error", description: err.message || "Failed to update email", variant: "destructive" });
