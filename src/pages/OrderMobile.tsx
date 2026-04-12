@@ -855,7 +855,7 @@ const OrderMobile = () => {
                 if (!input) return;
                 const rect = input.getBoundingClientRect();
                 const keyboardHeight = window.innerHeight - (window.visualViewport?.height ?? window.innerHeight);
-                const targetPosition = (window.visualViewport?.height ?? window.innerHeight) - keyboardHeight - rect.height - 200;
+                const targetPosition = (window.visualViewport?.height ?? window.innerHeight) - keyboardHeight - rect.height - 120;
                 window.scrollTo({ top: rect.top + window.scrollY - targetPosition, behavior: 'smooth' });
               }, 350);
             }}
