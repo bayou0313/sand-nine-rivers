@@ -35,13 +35,16 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
 
-    const { data: modeData } = await supabase
+    const { data: settingsRows } = await supabase
       .from("global_settings")
-      .select("value")
-      .eq("key", "stripe_mode")
-      .maybeSingle();
+      .select("key, value")
+      .in("key", ["stripe_mode", "pricing_mode"]);
 
-    const stripeMode = modeData?.value || "live";
+    const settingsMap: Record<string, string> = {};
+    (settingsRows || []).forEach((r: any) => { settingsMap[r.key] = r.value; });
+
+    const stripeMode = settingsMap["stripe_mode"] || "live";
+    const pricingMode = settingsMap["pricing_mode"] || "transparent";
     const stripeKey = stripeMode === "test"
       ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
       : Deno.env.get("STRIPE_SECRET_KEY");
@@ -91,7 +94,9 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: description || "River Sand Delivery — Processing fees non-refundable. Cancel 2+ hrs before delivery for full refund.",
+              name: pricingMode === "baked"
+                ? (description || "River Sand Delivery").replace(/\s*\(incl\..*?fee\)/i, "").replace(/\s*—\s*Processing fees non-refundable\.?/i, "").trim()
+                : description || "River Sand Delivery — Processing fees non-refundable. Cancel 2+ hrs before delivery for full refund.",
             },
             unit_amount: amount, // in cents
           },
