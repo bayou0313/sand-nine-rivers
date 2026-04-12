@@ -407,7 +407,7 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, prici
                          Cancellation Policy
                        </p>
                        <p style="font-size:12px;color:#666666;margin:0;line-height:1.6;">
-                         Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.
+                         Orders canceled a day before scheduled delivery will be refunded in full.${!isBaked ? " Processing fees are non-refundable." : ""}
                        </p>
                     </td>
                   </tr>
