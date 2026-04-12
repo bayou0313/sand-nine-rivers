@@ -1785,12 +1785,8 @@ const Order = () => {
                         <p className={`font-display text-base tracking-wider ${isWeekendDate ? "text-muted-foreground" : "text-foreground"}`}>PAY AT DELIVERY</p>
                         {isWeekendDate ? (
                           <p className="font-body text-xs text-amber-600 mt-1">Not available for weekend delivery</p>
-                        ) : isBaked ? (
-                          <p className="font-body text-xs mt-1" style={{ color: "#16A34A", fontWeight: 600 }}>
-                            💵 Save {formatCurrency(codSavingsPerLoad * quantity)} — Pay {formatCurrency(getCODPrice(effectivePricing.base_price))}/load
-                          </p>
                         ) : (
-                          <p className="font-body text-xs text-muted-foreground mt-1">No card processing fee</p>
+                          <p className="font-body text-xs text-muted-foreground mt-1">💵 Cash or Check</p>
                         )}
                       </button>
                     </div>
@@ -1826,9 +1822,7 @@ const Order = () => {
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1">
                           <p className="font-display text-xs tracking-wider text-amber-900">PAY AT DELIVERY</p>
                           <p className="font-body text-sm text-amber-800 leading-relaxed">
-                            {isBaked
-                              ? `Cash or check accepted on arrival. You save ${formatCurrency(codSavingsPerLoad * quantity)} vs. card payment.`
-                              : `Cash or check is accepted on arrival. If payment cannot be collected, a secure card payment link will be sent with a ${globalPricing.card_processing_fee_percent}% + $${globalPricing.card_processing_fee_fixed.toFixed(2)} processing fee.`}
+                            {`Cash or check accepted on arrival. If payment cannot be collected, a secure card payment link will be sent.`}
                           </p>
                         </div>
                       </motion.div>
@@ -1854,7 +1848,7 @@ const Order = () => {
                               <span className="font-display tracking-wider text-foreground">TOTAL DUE</span>
                               <span className="font-display text-lg font-bold text-foreground">{formatCurrency(totalPrice)}</span>
                             </div>
-                            {isCOD && codSavingsPerLoad > 0 && (
+                            {isCOD && codSavingsPerLoad > 0 && !isBaked && (
                               <p className="font-body text-xs" style={{ color: "#16A34A" }}>
                                 💵 You save {formatCurrency(codSavingsPerLoad * quantity)} by paying at delivery
                               </p>
