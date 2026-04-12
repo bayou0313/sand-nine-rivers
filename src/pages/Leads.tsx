@@ -1508,8 +1508,9 @@ const Leads = () => {
   useEffect(() => {
     if (activePage === "customers" && authenticated) {
       fetchCustomers();
+      fetchCashOrders();
     }
-  }, [activePage, authenticated, fetchCustomers]);
+  }, [activePage, authenticated, fetchCustomers, fetchCashOrders]);
 
   // Fetch city pages
   const fetchCityPages = useCallback(async () => {
