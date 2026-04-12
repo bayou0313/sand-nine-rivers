@@ -202,10 +202,14 @@ serve(async (req) => {
     let basePrice = 195;
     let baseMiles = 15;
     let perMileExtra = 5.0;
+    // Prefer stored order.base_unit_price (captures price at time of order)
+    if (order.base_unit_price) {
+      basePrice = Number(order.base_unit_price);
+    }
     if (order.pit_id) {
       const { data: pit } = await supabase.from("pits").select("base_price, free_miles, price_per_extra_mile").eq("id", order.pit_id).maybeSingle();
       if (pit) {
-        basePrice = Number(pit.base_price) || basePrice;
+        if (!order.base_unit_price) basePrice = Number(pit.base_price) || basePrice;
         baseMiles = Number(pit.free_miles) || baseMiles;
         perMileExtra = Number(pit.price_per_extra_mile) || perMileExtra;
       }
