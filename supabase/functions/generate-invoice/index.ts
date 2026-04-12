@@ -514,7 +514,7 @@ serve(async (req) => {
       "WAYS® Materials LLC not liable for damage to driveways, landscaping, or property.",
       "Customer or representative must be present at delivery.",
       "Same-day orders subject to dispatch confirmation within 30 minutes.",
-      "Cancellation Policy: Orders canceled a day before scheduled delivery are fully refunded. Processing fees are non-refundable.",
+      `Cancellation Policy: Orders canceled a day before scheduled delivery are fully refunded.${!isBakedMode ? " Processing fees are non-refundable." : ""}`,
     ];
 
     const hasCODBox = !effectivelyPaid;
