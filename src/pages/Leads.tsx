@@ -433,6 +433,11 @@ const Leads = () => {
   const [offerPrice, setOfferPrice] = useState("");
   const [offerResult, setOfferResult] = useState<{ payment_url: string; order_number: string } | null>(null);
 
+  // Edit email & resend state
+  const [editEmailOrder, setEditEmailOrder] = useState<any | null>(null);
+  const [editEmailValue, setEditEmailValue] = useState("");
+  const [editEmailSaving, setEditEmailSaving] = useState(false);
+
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
     try {
@@ -4539,7 +4544,7 @@ const Leads = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ backgroundColor: BRAND_NAVY }}>
-                      {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action"].map(h => (
+                      {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action", "Email"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -4604,11 +4609,17 @@ const Leads = () => {
                               </div>
                             )}
                           </td>
+                          <td className="px-3 py-2">
+                            <Button size="sm" variant="outline" onClick={() => { setEditEmailOrder(o); setEditEmailValue(o.customer_email || ""); }} className="h-7 text-[10px] px-2" style={{ borderColor: "#6B7280", color: "#6B7280" }}>
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              Email
+                            </Button>
+                          </td>
                         </tr>
                       );
                     })}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No orders found</td></tr>
+                      <tr><td colSpan={10} className="px-3 py-8 text-center text-gray-400">No orders found</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -6199,7 +6210,79 @@ const Leads = () => {
         </div>
       )}
 
-      {/* Print styles for cash daily schedule */}
+      {/* ─── EDIT EMAIL & RESEND MODAL ─── */}
+      {editEmailOrder && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !editEmailSaving && setEditEmailOrder(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Edit Customer Email</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2 text-sm">
+                <p><strong style={{ color: BRAND_NAVY }}>Order #:</strong> {editEmailOrder.order_number || "—"}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {editEmailOrder.customer_name}</p>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "#666" }}>Email address</label>
+                <Input
+                  type="email"
+                  value={editEmailValue}
+                  onChange={e => setEditEmailValue(e.target.value)}
+                  placeholder="customer@example.com"
+                  className="h-10 text-sm"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+              <Button
+                onClick={async () => {
+                  if (!editEmailValue.trim() || !editEmailValue.includes("@")) {
+                    toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+                    return;
+                  }
+                  setEditEmailSaving(true);
+                  try {
+                    // 1. Update order email
+                    const { error: orderErr } = await supabase.from("orders").update({ customer_email: editEmailValue.trim() }).eq("id", editEmailOrder.id);
+                    if (orderErr) throw orderErr;
+
+                    // 2. Update customer email if customer_id exists
+                    if (editEmailOrder.customer_id) {
+                      await supabase.from("customers").update({ email: editEmailValue.trim() }).eq("id", editEmailOrder.customer_id);
+                    }
+
+                    // 3. Fetch full order data for email
+                    const { data: fullOrder } = await supabase.from("orders").select("*").eq("id", editEmailOrder.id).single();
+
+                    // 4. Resend confirmation email
+                    if (fullOrder) {
+                      await supabase.functions.invoke("send-email", {
+                        body: { type: "order_confirmation", data: { ...fullOrder, customer_email: editEmailValue.trim() } },
+                      });
+                    }
+
+                    toast({ title: "Email updated & sent", description: `Confirmation resent to ${editEmailValue.trim()}` });
+                    setEditEmailOrder(null);
+                    fetchCashOrders();
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message || "Failed to update email", variant: "destructive" });
+                  } finally {
+                    setEditEmailSaving(false);
+                  }
+                }}
+                disabled={editEmailSaving}
+                className="flex-1 h-10"
+                style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+              >
+                {editEmailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Save & Resend
+              </Button>
+              <Button onClick={() => setEditEmailOrder(null)} disabled={editEmailSaving} variant="outline" className="flex-1">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @media print {
           body * { visibility: hidden; }
