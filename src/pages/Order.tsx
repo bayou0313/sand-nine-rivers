@@ -89,7 +89,7 @@ const Order = () => {
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [recalculating, setRecalculating] = useState(false);
-  const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("transparent");
+  const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("baked");
 
   // Per-date pit assignment: all pits with distances, sorted closest-first
   const [allPitDistances, setAllPitDistances] = useState<FindBestPitResult[]>([]);
