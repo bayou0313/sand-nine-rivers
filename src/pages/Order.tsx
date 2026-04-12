@@ -2036,7 +2036,7 @@ const Order = () => {
       nearestPit={nearestPitInfo}
       calculatedPrice={null}
     />
-    <RefundPolicyModal open={showRefundPolicy} onClose={() => setShowRefundPolicy(false)} />
+    <RefundPolicyModal open={showRefundPolicy} onClose={() => setShowRefundPolicy(false)} pricingMode={pricingMode} />
   </>
   );
 };
