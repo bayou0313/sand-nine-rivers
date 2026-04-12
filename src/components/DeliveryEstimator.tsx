@@ -415,7 +415,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               const subtotal = result.price * quantity;
               const taxInfo = getTaxRateFromAddress(address);
               const taxAmount = subtotal * taxInfo.rate;
-              const processingFee = subtotal * 0.035;
+              const processingFee = pricingMode !== "baked" ? subtotal * 0.035 : 0;
               const total = subtotal + taxAmount + processingFee;
               const muted = embedded ? "text-primary-foreground/50" : "text-muted-foreground";
               const text = embedded ? "text-primary-foreground" : "text-foreground";
@@ -429,10 +429,12 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                     <span className={muted}>Sales Tax <span className="ml-1 text-xs">({(taxInfo.rate * 100).toFixed(2)}%)</span></span>
                     <span className="text-accent">{formatCurrency(taxAmount)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className={muted}>Processing Fee (3.5% card) · Waived if paying cash at delivery</span>
-                    <span className="text-accent">{formatCurrency(processingFee)}</span>
-                  </div>
+                  {pricingMode !== "baked" && (
+                    <div className="flex justify-between">
+                      <span className={muted}>Processing Fee (3.5% card) · Waived if paying cash at delivery</span>
+                      <span className="text-accent">{formatCurrency(processingFee)}</span>
+                    </div>
+                  )}
                   <div className={`border-t ${embedded ? "border-white/20" : "border-border"} pt-2 flex justify-between`}>
                     <span className={`font-display tracking-wider ${text}`}>Total Estimated</span>
                     <span className={`font-display text-lg font-bold ${text}`}>{formatCurrency(total)}</span>
