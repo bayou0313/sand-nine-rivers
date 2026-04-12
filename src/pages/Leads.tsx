@@ -6210,7 +6210,79 @@ const Leads = () => {
         </div>
       )}
 
-      {/* Print styles for cash daily schedule */}
+      {/* ─── EDIT EMAIL & RESEND MODAL ─── */}
+      {editEmailOrder && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !editEmailSaving && setEditEmailOrder(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Edit Customer Email</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2 text-sm">
+                <p><strong style={{ color: BRAND_NAVY }}>Order #:</strong> {editEmailOrder.order_number || "—"}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {editEmailOrder.customer_name}</p>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "#666" }}>Email address</label>
+                <Input
+                  type="email"
+                  value={editEmailValue}
+                  onChange={e => setEditEmailValue(e.target.value)}
+                  placeholder="customer@example.com"
+                  className="h-10 text-sm"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+              <Button
+                onClick={async () => {
+                  if (!editEmailValue.trim() || !editEmailValue.includes("@")) {
+                    toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+                    return;
+                  }
+                  setEditEmailSaving(true);
+                  try {
+                    // 1. Update order email
+                    const { error: orderErr } = await supabase.from("orders").update({ customer_email: editEmailValue.trim() }).eq("id", editEmailOrder.id);
+                    if (orderErr) throw orderErr;
+
+                    // 2. Update customer email if customer_id exists
+                    if (editEmailOrder.customer_id) {
+                      await supabase.from("customers").update({ email: editEmailValue.trim() }).eq("id", editEmailOrder.customer_id);
+                    }
+
+                    // 3. Fetch full order data for email
+                    const { data: fullOrder } = await supabase.from("orders").select("*").eq("id", editEmailOrder.id).single();
+
+                    // 4. Resend confirmation email
+                    if (fullOrder) {
+                      await supabase.functions.invoke("send-email", {
+                        body: { type: "order_confirmation", data: { ...fullOrder, customer_email: editEmailValue.trim() } },
+                      });
+                    }
+
+                    toast({ title: "Email updated & sent", description: `Confirmation resent to ${editEmailValue.trim()}` });
+                    setEditEmailOrder(null);
+                    fetchCashOrders();
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message || "Failed to update email", variant: "destructive" });
+                  } finally {
+                    setEditEmailSaving(false);
+                  }
+                }}
+                disabled={editEmailSaving}
+                className="flex-1 h-10"
+                style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+              >
+                {editEmailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Save & Resend
+              </Button>
+              <Button onClick={() => setEditEmailOrder(null)} disabled={editEmailSaving} variant="outline" className="flex-1">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @media print {
           body * { visibility: hidden; }
