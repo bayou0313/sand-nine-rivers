@@ -31,6 +31,7 @@ function fixDesignators(name: string): string {
   }).join(' ');
 }
 
+const BRAND_COLOR = "#0D2137";
 const BRAND_GOLD = "#C07A00";
 const BRAND_RED = "#C21F32";
 // Module-level defaults — used by template functions defined outside serve()
