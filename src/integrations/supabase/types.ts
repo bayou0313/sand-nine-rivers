@@ -358,6 +358,8 @@ export type Database = {
           lookup_token_used: boolean
           notes: string | null
           order_number: string | null
+          parish_tax_amount: number | null
+          parish_tax_rate: number | null
           payment_attempts: number | null
           payment_method: string
           payment_status: string
@@ -373,6 +375,8 @@ export type Database = {
           same_day_requested: boolean
           saturday_surcharge: boolean
           saturday_surcharge_amount: number
+          state_tax_amount: number | null
+          state_tax_rate: number | null
           status: string
           stripe_customer_id: string | null
           stripe_payment_id: string | null
@@ -423,6 +427,8 @@ export type Database = {
           lookup_token_used?: boolean
           notes?: string | null
           order_number?: string | null
+          parish_tax_amount?: number | null
+          parish_tax_rate?: number | null
           payment_attempts?: number | null
           payment_method?: string
           payment_status?: string
@@ -438,6 +444,8 @@ export type Database = {
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
+          state_tax_amount?: number | null
+          state_tax_rate?: number | null
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null
@@ -488,6 +496,8 @@ export type Database = {
           lookup_token_used?: boolean
           notes?: string | null
           order_number?: string | null
+          parish_tax_amount?: number | null
+          parish_tax_rate?: number | null
           payment_attempts?: number | null
           payment_method?: string
           payment_status?: string
@@ -503,6 +513,8 @@ export type Database = {
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
+          state_tax_amount?: number | null
+          state_tax_rate?: number | null
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null

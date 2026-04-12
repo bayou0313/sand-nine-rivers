@@ -1039,6 +1039,7 @@ const Order = () => {
       same_day_requested: selectedDeliveryDate!.isSameDay,
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,
+      tax_parish: taxInfo.parish,
       delivery_terms_accepted: deliveryTermsAccepted,
       delivery_terms_timestamp: new Date().toISOString(),
       card_authorization_accepted: cardAuthAccepted,
