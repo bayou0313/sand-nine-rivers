@@ -94,7 +94,9 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: description || "River Sand Delivery — Processing fees non-refundable. Cancel 2+ hrs before delivery for full refund.",
+              name: pricingMode === "baked"
+                ? (description || "River Sand Delivery").replace(/\s*\(incl\..*?fee\)/i, "").replace(/\s*—\s*Processing fees non-refundable\.?/i, "").trim()
+                : description || "River Sand Delivery — Processing fees non-refundable. Cancel 2+ hrs before delivery for full refund.",
             },
             unit_amount: amount, // in cents
           },
