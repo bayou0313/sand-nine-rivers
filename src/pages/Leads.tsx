@@ -4683,6 +4683,68 @@ const Leads = () => {
         );
       }
 
+      case "customers": {
+        const filteredCustomers = customersData.filter(c => {
+          if (!customersSearch) return true;
+          const s = customersSearch.toLowerCase();
+          return (c.name || "").toLowerCase().includes(s) || (c.email || "").toLowerCase().includes(s) || (c.phone || "").includes(s) || (c.company || "").toLowerCase().includes(s);
+        });
+        return (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-500">{customersData.length} customers</p>
+                <Button size="sm" variant="outline" onClick={fetchCustomers} disabled={customersLoading} className="h-7 text-xs px-2">
+                  {customersLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  <span className="ml-1">Refresh</span>
+                </Button>
+              </div>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <Input value={customersSearch} onChange={e => setCustomersSearch(e.target.value)} placeholder="Search customers..." className="pl-8 h-8 text-xs" />
+              </div>
+            </div>
+            {customersLoading && customersData.length === 0 ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : (
+              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      {["Name", "Email", "Phone", "Company", "Total Orders", "Total Spent", "First Order", "Last Order", "Actions"].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCustomers.map(c => (
+                      <tr key={c.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
+                        <td className="px-3 py-2 text-xs font-medium">{c.name || "—"}</td>
+                        <td className="px-3 py-2 text-xs">{c.email}</td>
+                        <td className="px-3 py-2 text-xs">{c.phone || "—"}</td>
+                        <td className="px-3 py-2 text-xs">{c.company || "—"}</td>
+                        <td className="px-3 py-2 text-xs font-bold text-center">{c.total_orders || 0}</td>
+                        <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(c.total_spent || 0).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap">{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2">
+                          <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}>
+                            View Orders
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredCustomers.length === 0 && (
+                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No customers found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        );
+      }
+
       case "abandoned":
         return (
           <>
