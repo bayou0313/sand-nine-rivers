@@ -1339,7 +1339,7 @@ const OrderMobile = () => {
                 <p>• Photo proof of completion at delivery serves as final confirmation of fulfillment.</p>
                 <p>• Same-day orders subject to dispatch confirmation within 30 minutes.</p>
                 <p>• Cancellations are penalty-free only if the truck has not been loaded. Once loaded, the order is non-refundable.</p>
-                <p>• All processing fees are non-refundable in all cases.</p>
+                {!isBaked && <p>• All processing fees are non-refundable in all cases.</p>}
               </div>
               <button
                 onClick={() => setShowTermsModal(false)}
