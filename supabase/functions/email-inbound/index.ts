@@ -43,12 +43,12 @@ serve(async (req) => {
         from: "info@riversand.net",
         to: ["cmo@haulogix.com"],
         subject: `FWD [${to}]: ${subject} [from ${from}]`,
-        html: `
+          html: `
           <p><strong>To:</strong> ${to}</p>
           <p><strong>From:</strong> ${from}</p>
           <p><strong>Subject:</strong> ${subject}</p>
           <hr>
-          ${html}
+          ${htmlContent}
         `,
         reply_to: from,
       }),
