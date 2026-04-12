@@ -5,12 +5,11 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("Inbound payload:", JSON.stringify(payload));
 
-    // Resend wraps email data inside payload.data
     const emailData = payload.data || payload;
     const from = emailData.from || "unknown@unknown.com";
+    const to = Array.isArray(emailData.to) ? emailData.to.join(", ") : emailData.to || "info@riversand.net";
     const subject = emailData.subject || "(no subject)";
     const html = emailData.html || `<p>${emailData.text || "No content"}</p>`;
-    const replyTo = from;
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -21,9 +20,15 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "info@riversand.net",
         to: ["cmo@haulogix.com"],
-        subject: `FWD: ${subject} [from ${from}]`,
-        html: html,
-        reply_to: replyTo,
+        subject: `FWD [${to}]: ${subject} [from ${from}]`,
+        html: `
+          <p><strong>To:</strong> ${to}</p>
+          <p><strong>From:</strong> ${from}</p>
+          <p><strong>Subject:</strong> ${subject}</p>
+          <hr>
+          ${html}
+        `,
+        reply_to: from,
       }),
     });
 
