@@ -1498,9 +1498,11 @@ const Leads = () => {
   const fetchCustomers = useCallback(async () => {
     setCustomersLoading(true);
     try {
-      const { data, error } = await supabase.from("customers").select("*").order("last_order_date", { ascending: false });
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { action: "get_customers", password: sessionStorage.getItem("leads_pw") || "" }
+      });
       if (error) throw error;
-      setCustomersData(data || []);
+      setCustomersData(data?.customers || []);
     } catch (err) { console.warn("Failed to fetch customers:", err); }
     finally { setCustomersLoading(false); }
   }, []);
