@@ -6345,9 +6345,10 @@ const Leads = () => {
 
                     // 4. Resend confirmation email
                     if (fullOrder) {
-                      await supabase.functions.invoke("send-email", {
+                      const { error: emailErr } = await supabase.functions.invoke("send-email", {
                         body: { type: "order_confirmation", data: { ...fullOrder, customer_email: editEmailValue.trim() } },
                       });
+                      if (emailErr) throw new Error(`Email send failed: ${emailErr.message}`);
                     }
 
                     // 5. Update audit timestamp
