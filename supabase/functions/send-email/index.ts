@@ -302,11 +302,19 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, prici
                         ${satRow}
                         ${distRow}
                         <tr>
-                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;${satSurcharge > 0 ? '' : 'background-color:#F8F7F2;'}">
-                            Tax (${taxParish} ${taxRate}%)
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
+                            Louisiana State Tax (${(Number(order.state_tax_rate || 0.05) * 100).toFixed(2)}%)
                           </td>
-                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;${satSurcharge > 0 ? '' : 'background-color:#F8F7F2;'}">
-                            $${fmt(taxAmount)}
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">
+                            $${fmt(Number(order.state_tax_amount || 0))}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;background-color:#F8F7F2;">
+                            ${taxParish || "Parish"} Tax (${(Number(order.parish_tax_rate || 0) * 100).toFixed(2)}%)
+                          </td>
+                          <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;background-color:#F8F7F2;">
+                            $${fmt(Number(order.parish_tax_amount || 0))}
                           </td>
                         </tr>
                         ${feeRow}
