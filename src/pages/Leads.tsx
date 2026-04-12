@@ -433,6 +433,11 @@ const Leads = () => {
   const [offerPrice, setOfferPrice] = useState("");
   const [offerResult, setOfferResult] = useState<{ payment_url: string; order_number: string } | null>(null);
 
+  // Edit email & resend state
+  const [editEmailOrder, setEditEmailOrder] = useState<any | null>(null);
+  const [editEmailValue, setEditEmailValue] = useState("");
+  const [editEmailSaving, setEditEmailSaving] = useState(false);
+
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
     try {
