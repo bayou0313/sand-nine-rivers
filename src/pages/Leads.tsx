@@ -6331,28 +6331,33 @@ const Leads = () => {
                   }
                   setEditEmailSaving(true);
                   try {
-                    // 1. Update order email
+                    console.log("Step 1: Updating order email to", editEmailValue.trim(), "for order", editEmailOrder.id);
                     const { error: orderErr } = await supabase.from("orders").update({ customer_email: editEmailValue.trim() }).eq("id", editEmailOrder.id);
+                    console.log("Step 1 result:", orderErr ? "ERROR: " + orderErr.message : "SUCCESS");
                     if (orderErr) throw orderErr;
 
-                    // 2. Update customer email if customer_id exists
+                    console.log("Step 2: Updating customer email, customer_id:", editEmailOrder.customer_id);
                     if (editEmailOrder.customer_id) {
-                      await supabase.from("customers").update({ email: editEmailValue.trim() }).eq("id", editEmailOrder.customer_id);
+                      const { error: custErr } = await supabase.from("customers").update({ email: editEmailValue.trim() }).eq("id", editEmailOrder.customer_id);
+                      console.log("Step 2 result:", custErr ? "ERROR: " + custErr.message : "SUCCESS");
                     }
 
-                    // 3. Fetch full order data for email
-                    const { data: fullOrder } = await supabase.from("orders").select("*").eq("id", editEmailOrder.id).single();
+                    console.log("Step 3: Fetching full order");
+                    const { data: fullOrder, error: fetchErr } = await supabase.from("orders").select("*").eq("id", editEmailOrder.id).single();
+                    console.log("Step 3 result:", fetchErr ? "ERROR: " + fetchErr.message : "SUCCESS", "email in fullOrder:", fullOrder?.customer_email);
 
-                    // 4. Resend confirmation email
+                    console.log("Step 4: Invoking send-email");
                     if (fullOrder) {
                       const { error: emailErr } = await supabase.functions.invoke("send-email", {
                         body: { type: "order_confirmation", data: { ...fullOrder, customer_email: editEmailValue.trim() } },
                       });
+                      console.log("Step 4 result:", emailErr ? "ERROR: " + emailErr.message : "SUCCESS");
                       if (emailErr) throw new Error(`Email send failed: ${emailErr.message}`);
                     }
 
-                    // 5. Update audit timestamp
+                    console.log("Step 5: Updating audit timestamp");
                     await supabase.from("orders").update({ last_confirmation_sent_at: new Date().toISOString() }).eq("id", editEmailOrder.id);
+                    console.log("Step 5 result: SUCCESS");
 
                     toast({ title: "Email updated & sent", description: `Confirmation resent to ${editEmailValue.trim()}` });
                     setEditEmailOrder(null);
@@ -6363,6 +6368,7 @@ const Leads = () => {
                     ));
                     fetchCashOrders();
                   } catch (err: any) {
+                    console.error("CAUGHT ERROR:", err.message);
                     toast({ title: "Error", description: err.message || "Failed to update email", variant: "destructive" });
                   } finally {
                     setEditEmailSaving(false);
