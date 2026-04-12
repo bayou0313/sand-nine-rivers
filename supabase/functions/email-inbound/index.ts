@@ -7,6 +7,15 @@ serve(async (req) => {
 
     const emailData = payload.data || payload;
     const from = emailData.from || "unknown@unknown.com";
+
+    // Ignore internal emails to prevent forwarding loops
+    if (from.includes('@riversand.net') || from.includes('@haulogix.com')) {
+      console.log("Skipping internal email from:", from);
+      return new Response(JSON.stringify({ skipped: true, reason: "internal sender" }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     const to = Array.isArray(emailData.to) ? emailData.to.join(", ") : emailData.to || "info@riversand.net";
     const subject = emailData.subject || "(no subject)";
     const html = emailData.html || `<p>${emailData.text || "No content"}</p>`;
