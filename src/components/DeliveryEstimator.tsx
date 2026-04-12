@@ -52,6 +52,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [volumeSubmitting, setVolumeSubmitting] = useState(false);
   const [volumeSuccess, setVolumeSuccess] = useState(false);
   const [volumeError, setVolumeError] = useState("");
+  const [pricingMode, setPricingMode] = useState("baked");
 
   useEffect(() => {
     const fetchData = async () => {
