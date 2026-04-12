@@ -742,6 +742,45 @@ export type Database = {
           },
         ]
       }
+      tax_rates: {
+        Row: {
+          combined_rate: number
+          county_parish: string
+          effective_date: string
+          id: string
+          jurisdiction_type: string
+          local_rate: number
+          state_code: string
+          state_name: string
+          state_rate: number
+          updated_at: string | null
+        }
+        Insert: {
+          combined_rate: number
+          county_parish: string
+          effective_date: string
+          id?: string
+          jurisdiction_type?: string
+          local_rate: number
+          state_code: string
+          state_name: string
+          state_rate: number
+          updated_at?: string | null
+        }
+        Update: {
+          combined_rate?: number
+          county_parish?: string
+          effective_date?: string
+          id?: string
+          jurisdiction_type?: string
+          local_rate?: number
+          state_code?: string
+          state_name?: string
+          state_rate?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
