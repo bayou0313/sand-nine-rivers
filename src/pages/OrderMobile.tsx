@@ -849,16 +849,6 @@ const OrderMobile = () => {
         {/* ── SCREEN 1: ADDRESS ── */}
         {step === "address" && (
           <motion.div key="address" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -40 }} id="address-step-container" className="min-h-dvh flex flex-col bg-primary"
-            onFocusCapture={() => {
-              setTimeout(() => {
-                const input = document.querySelector('#address-step-container input') as HTMLElement;
-                if (!input) return;
-                const rect = input.getBoundingClientRect();
-                const keyboardHeight = window.innerHeight - (window.visualViewport?.height ?? window.innerHeight);
-                const targetPosition = (window.visualViewport?.height ?? window.innerHeight) - keyboardHeight - rect.height - 120;
-                window.scrollTo({ top: rect.top + window.scrollY - targetPosition, behavior: 'smooth' });
-              }, 350);
-            }}
           >
             {/* Header */}
             <header className="flex items-center justify-center px-5 pt-5 pb-2">
