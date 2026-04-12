@@ -959,10 +959,8 @@ serve(async (req) => {
         }
       }
 
-      const STATE_TAX_RATE = parseFloat(emailCfg.state_tax_rate || "0.0445");
-
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `New Order ${orderNumber}`.trim(), orderInternalEmail(data, STATE_TAX_RATE), undefined, FROM, REPLY_TO),
+        sendMail(resend, ownerEmail, `New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
       ];
       if (customerEmail) {
         promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data, FEE_PERCENT, FEE_FIXED, PRICING_MODE), attachments, FROM, REPLY_TO));
