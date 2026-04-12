@@ -396,6 +396,7 @@ export type Database = {
           fraud_score: number | null
           fraud_signals: Json | null
           id: string
+          last_confirmation_sent_at: string | null
           lead_reference: string | null
           lookup_token: string | null
           lookup_token_used: boolean
@@ -466,6 +467,7 @@ export type Database = {
           fraud_score?: number | null
           fraud_signals?: Json | null
           id?: string
+          last_confirmation_sent_at?: string | null
           lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
@@ -536,6 +538,7 @@ export type Database = {
           fraud_score?: number | null
           fraud_signals?: Json | null
           id?: string
+          last_confirmation_sent_at?: string | null
           lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
