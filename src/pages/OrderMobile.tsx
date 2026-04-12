@@ -98,7 +98,7 @@ const OrderMobile = () => {
   const [pitsLoaded, setPitsLoaded] = useState(false);
   const [matchedPit, setMatchedPit] = useState<PitData | null>(null);
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("transparent");
+  const [pricingMode, setPricingMode] = useState<"transparent" | "baked">("baked");
   const [allPitDistances, setAllPitDistances] = useState<FindBestPitResult[]>([]);
   const [weekdayPit, setWeekdayPit] = useState<PitData | null>(null);
   const [weekdayResult, setWeekdayResult] = useState<EstimateResult | null>(null);
