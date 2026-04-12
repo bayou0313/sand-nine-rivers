@@ -176,7 +176,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -188,6 +188,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "overview", label: "Overview", icon: BarChart3 },
       { id: "live" as NavPage, label: "Live Visitors", icon: Users },
       { id: "cash_orders", label: "Orders", icon: DollarSign },
+      { id: "customers" as NavPage, label: "Customers", icon: Users },
       { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
       { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
       { id: "reviews" as NavPage, label: "Reviews", icon: Star },
@@ -333,6 +334,11 @@ const Leads = () => {
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
   const [savingProfile, setSavingProfile] = useState(false);
   const { loaded: googleLoaded } = useGoogleMaps();
+
+  // Customers state
+  const [customersData, setCustomersData] = useState<any[]>([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [customersSearch, setCustomersSearch] = useState("");
 
   // Waitlist state
   const [waitlistData, setWaitlistData] = useState<any[]>([]);
@@ -1483,6 +1489,23 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchCashOrders]);
 
+  // Fetch customers
+  const fetchCustomers = useCallback(async () => {
+    setCustomersLoading(true);
+    try {
+      const { data, error } = await supabase.from("customers").select("*").order("last_order_date", { ascending: false });
+      if (error) throw error;
+      setCustomersData(data || []);
+    } catch (err) { console.warn("Failed to fetch customers:", err); }
+    finally { setCustomersLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (activePage === "customers" && authenticated) {
+      fetchCustomers();
+    }
+  }, [activePage, authenticated, fetchCustomers]);
+
   // Fetch city pages
   const fetchCityPages = useCallback(async () => {
     setCityPagesLoading(true);
@@ -1932,6 +1955,7 @@ const Leads = () => {
     abandoned: { title: "ABANDONED SESSIONS", subtitle: "Checkout drop-offs" },
     live: { title: "LIVE VISITORS", subtitle: `${liveVisitors.length} active now` },
     cash_orders: { title: "ORDERS", subtitle: `${cashOrders.length} orders` },
+    customers: { title: "CUSTOMERS", subtitle: `${customersData.length} customers` },
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
     waitlist: { title: "WAITLIST", subtitle: "Coming soon areas" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
@@ -4544,7 +4568,7 @@ const Leads = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ backgroundColor: BRAND_NAVY }}>
-                      {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action", "Email"].map(h => (
+                      {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action", "Email", "Last Email Sent"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -4615,11 +4639,14 @@ const Leads = () => {
                               Email
                             </Button>
                           </td>
+                          <td className="px-3 py-2 text-[10px] text-gray-500 whitespace-nowrap">
+                            {o.last_confirmation_sent_at ? new Date(o.last_confirmation_sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—"}
+                          </td>
                         </tr>
                       );
                     })}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={10} className="px-3 py-8 text-center text-gray-400">No orders found</td></tr>
+                      <tr><td colSpan={11} className="px-3 py-8 text-center text-gray-400">No orders found</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -6260,6 +6287,9 @@ const Leads = () => {
                         body: { type: "order_confirmation", data: { ...fullOrder, customer_email: editEmailValue.trim() } },
                       });
                     }
+
+                    // 5. Update audit timestamp
+                    await supabase.from("orders").update({ last_confirmation_sent_at: new Date().toISOString() }).eq("id", editEmailOrder.id);
 
                     toast({ title: "Email updated & sent", description: `Confirmation resent to ${editEmailValue.trim()}` });
                     setEditEmailOrder(null);
