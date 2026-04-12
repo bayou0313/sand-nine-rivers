@@ -14,7 +14,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "info@riversand.net",
-        to: ["cmo@halogix.com"],
+        to: ["cmo@haulogix.com"],
         subject: `FWD: ${subject || "No subject"} [from ${from}]`,
         html: html || `<p>${text || "No content"}</p>`,
         reply_to: from,
