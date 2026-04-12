@@ -6342,18 +6342,13 @@ const Leads = () => {
                       console.log("Step 2 result:", custErr ? "ERROR: " + custErr.message : "SUCCESS");
                     }
 
-                    console.log("Step 3: Fetching full order");
-                    const { data: fullOrder, error: fetchErr } = await supabase.from("orders").select("*").eq("id", editEmailOrder.id).single();
-                    console.log("Step 3 result:", fetchErr ? "ERROR: " + fetchErr.message : "SUCCESS", "email in fullOrder:", fullOrder?.customer_email);
-
-                    console.log("Step 4: Invoking send-email");
-                    if (fullOrder) {
-                      const { error: emailErr } = await supabase.functions.invoke("send-email", {
-                        body: { type: "order_confirmation", data: { ...fullOrder, customer_email: editEmailValue.trim() } },
-                      });
-                      console.log("Step 4 result:", emailErr ? "ERROR: " + emailErr.message : "SUCCESS");
-                      if (emailErr) throw new Error(`Email send failed: ${emailErr.message}`);
-                    }
+                    // 3 & 4. Resend confirmation using existing order data (no re-fetch needed)
+                    const orderDataForEmail = { ...editEmailOrder, customer_email: editEmailValue.trim() };
+                    const { error: emailErr } = await supabase.functions.invoke("send-email", {
+                      body: { type: "order_confirmation", data: orderDataForEmail },
+                    });
+                    console.log("Step 4 result:", emailErr ? "ERROR: " + emailErr.message : "SUCCESS");
+                    if (emailErr) throw new Error(`Email send failed: ${emailErr.message}`);
 
                     console.log("Step 5: Updating audit timestamp");
                     await supabase.from("orders").update({ last_confirmation_sent_at: new Date().toISOString() }).eq("id", editEmailOrder.id);
