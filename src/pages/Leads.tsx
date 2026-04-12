@@ -444,6 +444,11 @@ const Leads = () => {
   const [editEmailValue, setEditEmailValue] = useState("");
   const [editEmailSaving, setEditEmailSaving] = useState(false);
 
+  // Edit customer email from Customers tab
+  const [editCustomerEmail, setEditCustomerEmail] = useState<any | null>(null);
+  const [editCustomerEmailValue, setEditCustomerEmailValue] = useState("");
+  const [editCustomerEmailSaving, setEditCustomerEmailSaving] = useState(false);
+
   const sendPaymentLink = useCallback(async (order: any) => {
     setSendingPaymentLink(order.id);
     try {
@@ -4727,9 +4732,13 @@ const Leads = () => {
                         <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(c.total_spent || 0).toFixed(2)}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 flex gap-1">
                           <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}>
                             View Orders
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { setEditCustomerEmail(c); setEditCustomerEmailValue(c.email || ""); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}>
+                            <Edit2 className="w-3 h-3 mr-1" />
+                            Edit Email
                           </Button>
                         </td>
                       </tr>
@@ -6186,6 +6195,121 @@ const Leads = () => {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── EDIT CUSTOMER EMAIL MODAL (from Customers tab) ─── */}
+      {editCustomerEmail && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !editCustomerEmailSaving && setEditCustomerEmail(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+              <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Edit Customer Email</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2 text-sm">
+                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {editCustomerEmail.name || "—"}</p>
+                <p><strong style={{ color: BRAND_NAVY }}>Current Email:</strong> {editCustomerEmail.email}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={{ color: BRAND_NAVY }}>New Email</label>
+                <Input type="email" value={editCustomerEmailValue} onChange={e => setEditCustomerEmailValue(e.target.value)} placeholder="customer@example.com" className="h-10 text-sm" />
+              </div>
+              <div className="flex gap-2">
+                {/* Save & Resend Last Order */}
+                <Button
+                  onClick={async () => {
+                    if (!editCustomerEmailValue.trim() || !editCustomerEmailValue.includes("@")) {
+                      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+                      return;
+                    }
+                    setEditCustomerEmailSaving(true);
+                    try {
+                      // 1. Update customers table
+                      const { error: custErr } = await supabase.from("customers").update({ email: editCustomerEmailValue.trim() }).eq("id", editCustomerEmail.id);
+                      if (custErr) throw custErr;
+
+                      // 2. Update all orders for this customer
+                      const { error: ordersErr } = await supabase.from("orders").update({ customer_email: editCustomerEmailValue.trim() }).eq("customer_id", editCustomerEmail.id);
+                      if (ordersErr) throw ordersErr;
+
+                      // 3. Find most recent order from cashOrders in memory
+                      const customerOrders = cashOrders.filter(o => o.customer_id === editCustomerEmail.id);
+                      const latestOrder = customerOrders.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+                      if (!latestOrder) {
+                        toast({ title: "No orders found", description: "Could not find an order to resend. Email was saved.", variant: "destructive" });
+                        setEditCustomerEmail(null);
+                        fetchCustomers();
+                        return;
+                      }
+
+                      // 4. Send confirmation email
+                      const orderDataForEmail = { ...latestOrder, customer_email: editCustomerEmailValue.trim() };
+                      const { error: emailErr } = await supabase.functions.invoke("send-email", {
+                        body: { type: "order_confirmation", data: orderDataForEmail },
+                      });
+                      if (emailErr) throw new Error(`Email send failed: ${emailErr.message}`);
+
+                      // 5. Audit timestamp
+                      await supabase.from("orders").update({ last_confirmation_sent_at: new Date().toISOString() }).eq("id", latestOrder.id);
+
+                      toast({ title: "Email updated & sent", description: `Confirmation resent to ${editCustomerEmailValue.trim()} for order ${latestOrder.order_number || latestOrder.id}` });
+                      setEditCustomerEmail(null);
+                      setCustomersData(prev => prev.map(c => c.id === editCustomerEmail.id ? { ...c, email: editCustomerEmailValue.trim() } : c));
+                      setCashOrders(prev => prev.map(o => o.customer_id === editCustomerEmail.id ? { ...o, customer_email: editCustomerEmailValue.trim() } : o));
+                      fetchCustomers();
+                    } catch (err: any) {
+                      console.error("Customer email update error:", err);
+                      toast({ title: "Error", description: err.message || "Failed to update email", variant: "destructive" });
+                    } finally {
+                      setEditCustomerEmailSaving(false);
+                    }
+                  }}
+                  disabled={editCustomerEmailSaving}
+                  className="flex-1 h-10 text-xs"
+                  style={{ backgroundColor: BRAND_GOLD, color: "white" }}
+                >
+                  {editCustomerEmailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                  Save & Resend Last Order
+                </Button>
+                {/* Save Only */}
+                <Button
+                  onClick={async () => {
+                    if (!editCustomerEmailValue.trim() || !editCustomerEmailValue.includes("@")) {
+                      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+                      return;
+                    }
+                    setEditCustomerEmailSaving(true);
+                    try {
+                      const { error: custErr } = await supabase.from("customers").update({ email: editCustomerEmailValue.trim() }).eq("id", editCustomerEmail.id);
+                      if (custErr) throw custErr;
+                      const { error: ordersErr } = await supabase.from("orders").update({ customer_email: editCustomerEmailValue.trim() }).eq("customer_id", editCustomerEmail.id);
+                      if (ordersErr) throw ordersErr;
+
+                      toast({ title: "Email updated", description: `Customer email changed to ${editCustomerEmailValue.trim()}` });
+                      setEditCustomerEmail(null);
+                      setCustomersData(prev => prev.map(c => c.id === editCustomerEmail.id ? { ...c, email: editCustomerEmailValue.trim() } : c));
+                      setCashOrders(prev => prev.map(o => o.customer_id === editCustomerEmail.id ? { ...o, customer_email: editCustomerEmailValue.trim() } : o));
+                      fetchCustomers();
+                    } catch (err: any) {
+                      console.error("Customer email save error:", err);
+                      toast({ title: "Error", description: err.message || "Failed to update email", variant: "destructive" });
+                    } finally {
+                      setEditCustomerEmailSaving(false);
+                    }
+                  }}
+                  disabled={editCustomerEmailSaving}
+                  variant="outline"
+                  className="flex-1 h-10 text-xs"
+                  style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}
+                >
+                  {editCustomerEmailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                  Save Only
+                </Button>
+              </div>
+              <Button onClick={() => setEditCustomerEmail(null)} disabled={editCustomerEmailSaving} variant="outline" className="w-full">Cancel</Button>
             </div>
           </div>
         </div>
