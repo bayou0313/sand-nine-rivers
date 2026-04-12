@@ -753,7 +753,15 @@ function emailWrapper(body: string, bizOverrides?: { bizPhone?: string; bizEmail
   return brandedEmailWrapper({ content: body, ...bizOverrides });
 }
 
-function orderInternalEmail(order: any) {
+function orderInternalEmail(order: any, stateTaxRate = 0.0445) {
+  const totalTax = Number(order.tax_amount || 0);
+  const taxableBase = Number(order.base_unit_price || 0) * (order.quantity || 1) + Number(order.distance_fee || 0) + (order.saturday_surcharge ? Number(order.saturday_surcharge_amount || 0) : 0);
+  const stateTax = taxableBase * stateTaxRate;
+  const parishTax = totalTax - stateTax;
+  const stateRateLabel = (stateTaxRate * 100).toFixed(2);
+  const parishRateLabel = ((Number(order.tax_rate || 0) - stateTaxRate) * 100).toFixed(2);
+  const parishName = order.tax_parish || "Local";
+
   const rows = [
     ["Order #", order.order_number || "N/A"],
     ["Customer", escapeHtml(order.customer_name)],
@@ -767,7 +775,8 @@ function orderInternalEmail(order: any) {
     ["Window", order.delivery_window || "8:00 AM – 5:00 PM"],
     ["Saturday Surcharge", order.saturday_surcharge ? `Yes ($${order.saturday_surcharge_amount})` : "No"],
     ["Same-Day", order.same_day_requested ? "Yes" : "No"],
-    ["Tax", `$${Number(order.tax_amount || 0).toFixed(2)} (${(Number(order.tax_rate || 0) * 100).toFixed(2)}% — ${order.tax_parish || "N/A"})`],
+    ["LA State Tax (" + stateRateLabel + "%)", `$${stateTax.toFixed(2)}`],
+    ["" + parishName + " Tax (" + parishRateLabel + "%)", `$${parishTax.toFixed(2)}`],
     ["Total Price", `$${Number(order.price).toFixed(2)}`],
     ["Payment", order.payment_method],
     ["Payment Status", order.payment_status || "pending"],
@@ -889,7 +898,7 @@ serve(async (req) => {
         "card_processing_fee_percent", "card_processing_fee_fixed",
         "legal_name", "site_name", "phone", "website",
         "support_email", "tagline", "copyright_year",
-        "sender_name", "sender_title", "pricing_mode",
+        "sender_name", "sender_title", "pricing_mode", "state_tax_rate",
       ]);
 
     const emailCfg: Record<string, string> = {};
@@ -952,23 +961,10 @@ serve(async (req) => {
         }
       }
 
-      // Build dispatch subject with payment status
-      const isPaidForSubject = data.payment_status === "paid" || data.payment_method === "stripe-link" || data.payment_method === "stripe";
-      const dispatchDeliveryDate = data.delivery_date
-        ? new Date(data.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
-        : "—";
-      const dispatchSubject = `[${isPaidForSubject ? 'PAID' : 'COD'}] ${orderNumber} — ${data.customer_name || "Customer"} — ${dispatchDeliveryDate}`;
+      const STATE_TAX_RATE = parseFloat(emailCfg.state_tax_rate || "0.0445");
 
       const promises: Promise<void>[] = [
-        sendMail(resend, ownerEmail, `New Order ${orderNumber}`.trim(), orderInternalEmail(data), undefined, FROM, REPLY_TO),
-        // Dispatch notification
-        sendMail(
-          resend,
-          DISPATCH_EMAIL,
-          dispatchSubject,
-          orderDispatchEmail(data),
-          undefined, FROM, REPLY_TO
-        ),
+        sendMail(resend, ownerEmail, `New Order ${orderNumber}`.trim(), orderInternalEmail(data, STATE_TAX_RATE), undefined, FROM, REPLY_TO),
       ];
       if (customerEmail) {
         promises.push(sendMail(resend, customerEmail, subject, orderCustomerEmail(data, FEE_PERCENT, FEE_FIXED, PRICING_MODE), attachments, FROM, REPLY_TO));
@@ -976,7 +972,6 @@ serve(async (req) => {
       await Promise.all(promises);
       console.log("[email] Customer email sent to:", customerEmail);
       console.log("[email] Owner email sent to:", ownerEmail);
-      console.log("[email] Dispatch email sent to:", DISPATCH_EMAIL);
 
     } else if (type === "order_notification") {
       // Standalone dispatch notification
