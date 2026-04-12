@@ -753,14 +753,12 @@ function emailWrapper(body: string, bizOverrides?: { bizPhone?: string; bizEmail
   return brandedEmailWrapper({ content: body, ...bizOverrides });
 }
 
-function orderInternalEmail(order: any, stateTaxRate = 0.0445) {
-  const totalTax = Number(order.tax_amount || 0);
-  const taxableBase = Number(order.base_unit_price || 0) * (order.quantity || 1) + Number(order.distance_fee || 0) + (order.saturday_surcharge ? Number(order.saturday_surcharge_amount || 0) : 0);
-  const stateTax = taxableBase * stateTaxRate;
-  const parishTax = totalTax - stateTax;
-  const stateRateLabel = (stateTaxRate * 100).toFixed(2);
-  const parishRateLabel = ((Number(order.tax_rate || 0) - stateTaxRate) * 100).toFixed(2);
+function orderInternalEmail(order: any) {
   const parishName = order.tax_parish || "Local";
+  const stateRate = Number(order.state_tax_rate || 0.05);
+  const stateAmt = Number(order.state_tax_amount || 0);
+  const parishRate = Number(order.parish_tax_rate || 0);
+  const parishAmt = Number(order.parish_tax_amount || 0);
 
   const rows = [
     ["Order #", order.order_number || "N/A"],
@@ -775,8 +773,8 @@ function orderInternalEmail(order: any, stateTaxRate = 0.0445) {
     ["Window", order.delivery_window || "8:00 AM – 5:00 PM"],
     ["Saturday Surcharge", order.saturday_surcharge ? `Yes ($${order.saturday_surcharge_amount})` : "No"],
     ["Same-Day", order.same_day_requested ? "Yes" : "No"],
-    ["LA State Tax (" + stateRateLabel + "%)", `$${stateTax.toFixed(2)}`],
-    ["" + parishName + " Tax (" + parishRateLabel + "%)", `$${parishTax.toFixed(2)}`],
+    ["LA State Tax (" + (stateRate * 100).toFixed(2) + "%)", `$${stateAmt.toFixed(2)}`],
+    ["" + parishName + " Tax (" + (parishRate * 100).toFixed(2) + "%)", `$${parishAmt.toFixed(2)}`],
     ["Total Price", `$${Number(order.price).toFixed(2)}`],
     ["Payment", order.payment_method],
     ["Payment Status", order.payment_status || "pending"],

@@ -46,7 +46,7 @@ serve(async (req) => {
     // Look up order by lookup_token (and optionally order_id)
     let query = supabase
       .from("orders")
-      .select("id, status, payment_status, order_number, delivery_date, delivery_day_of_week, delivery_window, quantity, price, delivery_address, customer_name, customer_phone, customer_email, company_name, payment_method, distance_miles, tax_amount, tax_rate, saturday_surcharge, saturday_surcharge_amount, sunday_surcharge, sunday_surcharge_amount, same_day_requested, stripe_payment_id, discount_amount, card_last4, card_brand, lookup_token, base_unit_price, distance_fee, processing_fee")
+      .select("id, status, payment_status, order_number, delivery_date, delivery_day_of_week, delivery_window, quantity, price, delivery_address, customer_name, customer_phone, customer_email, company_name, payment_method, distance_miles, tax_amount, tax_rate, state_tax_rate, state_tax_amount, parish_tax_rate, parish_tax_amount, saturday_surcharge, saturday_surcharge_amount, sunday_surcharge, sunday_surcharge_amount, same_day_requested, stripe_payment_id, discount_amount, card_last4, card_brand, lookup_token, base_unit_price, distance_fee, processing_fee")
       .eq("lookup_token", lookup_token);
 
     if (order_id) {
