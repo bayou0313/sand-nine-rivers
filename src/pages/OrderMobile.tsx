@@ -452,13 +452,17 @@ const OrderMobile = () => {
 
       let verifyOrderId = returnedOrderId || pendingOrderId || null;
       let verifyToken = lookupToken || null;
-      if (!verifyToken || !verifyOrderId) {
-        try {
-          const snap = JSON.parse(sessionStorage.getItem("pending_order_snapshot") || "{}");
-          if (!verifyOrderId) verifyOrderId = snap.pendingOrderId || null;
-          if (!verifyToken) verifyToken = snap.lookupToken || null;
-        } catch {}
-      }
+      // Restore snapshot state immediately (address, date, form, etc.)
+      try {
+        const snap = JSON.parse(sessionStorage.getItem("pending_order_snapshot") || "{}");
+        if (!verifyOrderId) verifyOrderId = snap.pendingOrderId || null;
+        if (!verifyToken) verifyToken = snap.lookupToken || null;
+        if (snap.address && !address) setAddress(snap.address);
+        if (snap.form) setForm(prev => ({ ...prev, ...snap.form }));
+        if (snap.quantity) setQuantity(snap.quantity);
+        if (snap.result) setResult(snap.result);
+        if (snap.selectedDeliveryDate) setSelectedDeliveryDate(snap.selectedDeliveryDate);
+      } catch {}
       if (verifyToken) setLookupToken(verifyToken);
       if (verifyOrderId) setConfirmedOrderId(verifyOrderId);
 
