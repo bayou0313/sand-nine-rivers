@@ -23,7 +23,7 @@ export function formatCurrency(amount: number): string {
 }
 
 // Louisiana state tax rate
-export const LA_STATE_TAX_RATE = 0.0445;
+export const LA_STATE_TAX_RATE = 0.05;
 
 // Parish-based Louisiana sales tax rates (state + local combined)
 const PARISH_TAX_RATES: Record<string, number> = {
