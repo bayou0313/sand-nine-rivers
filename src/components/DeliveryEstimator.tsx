@@ -52,6 +52,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [volumeSubmitting, setVolumeSubmitting] = useState(false);
   const [volumeSuccess, setVolumeSuccess] = useState(false);
   const [volumeError, setVolumeError] = useState("");
+  const [pricingMode, setPricingMode] = useState("baked");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,7 +60,11 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
         supabase.from("global_settings").select("key, value"),
         supabase.from("pits").select("id, name, address, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff").eq("status", "active"),
       ]);
-      if (settingsRes.data) setGlobalPricing(parseGlobalSettings(settingsRes.data as any));
+      if (settingsRes.data) {
+        setGlobalPricing(parseGlobalSettings(settingsRes.data as any));
+        const modeRow = settingsRes.data.find((r: any) => r.key === "pricing_mode");
+        if (modeRow) setPricingMode((modeRow as any).value);
+      }
       if (pitsRes.data) setPits(pitsRes.data as any);
     };
     fetchData();
@@ -410,7 +415,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
               const subtotal = result.price * quantity;
               const taxInfo = getTaxRateFromAddress(address);
               const taxAmount = subtotal * taxInfo.rate;
-              const processingFee = subtotal * 0.035;
+              const processingFee = pricingMode !== "baked" ? subtotal * 0.035 : 0;
               const total = subtotal + taxAmount + processingFee;
               const muted = embedded ? "text-primary-foreground/50" : "text-muted-foreground";
               const text = embedded ? "text-primary-foreground" : "text-foreground";
@@ -424,10 +429,12 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                     <span className={muted}>Sales Tax <span className="ml-1 text-xs">({(taxInfo.rate * 100).toFixed(2)}%)</span></span>
                     <span className="text-accent">{formatCurrency(taxAmount)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className={muted}>Processing Fee (3.5% card) · Waived if paying cash at delivery</span>
-                    <span className="text-accent">{formatCurrency(processingFee)}</span>
-                  </div>
+                  {pricingMode !== "baked" && (
+                    <div className="flex justify-between">
+                      <span className={muted}>Processing Fee (3.5% card) · Waived if paying cash at delivery</span>
+                      <span className="text-accent">{formatCurrency(processingFee)}</span>
+                    </div>
+                  )}
                   <div className={`border-t ${embedded ? "border-white/20" : "border-border"} pt-2 flex justify-between`}>
                     <span className={`font-display tracking-wider ${text}`}>Total Estimated</span>
                     <span className={`font-display text-lg font-bold ${text}`}>{formatCurrency(total)}</span>
