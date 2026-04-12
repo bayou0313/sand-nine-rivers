@@ -48,7 +48,7 @@ const DEFAULT_FROM_NAME = "River Sand";
 const DEFAULT_FROM_EMAIL = "no_reply@riversand.net";
 const DEFAULT_REPLY_TO = "orders@riversand.net";
 const DEFAULT_INTERNAL_EMAIL = "cmo@haulogix.com";
-const DEFAULT_DISPATCH_EMAIL = "cmo@halogix.com";
+const DEFAULT_DISPATCH_EMAIL = "cmo@haulogix.com";
 
 const RIVERSAND_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
 const WAYS_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
