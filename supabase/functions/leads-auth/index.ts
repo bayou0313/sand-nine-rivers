@@ -1874,6 +1874,24 @@ serve(async (req) => {
       }
     }
 
+    // ── LIST CUSTOMERS ──
+    if (action === "get_customers") {
+      try {
+        const { data, error } = await supabase
+          .from("customers")
+          .select("*")
+          .order("last_order_date", { ascending: false, nullsFirst: false });
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ customers: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (err) {
+        console.error("[leads-auth] get_customers error:", err);
+        throw err;
+      }
+    }
+
     // ── SYNC STRIPE PAYMENT ──
     if (action === "sync_stripe_payment") {
       if (!order_id) {
