@@ -4609,6 +4609,12 @@ const Leads = () => {
                               </div>
                             )}
                           </td>
+                          <td className="px-3 py-2">
+                            <Button size="sm" variant="outline" onClick={() => { setEditEmailOrder(o); setEditEmailValue(o.customer_email || ""); }} className="h-7 text-[10px] px-2" style={{ borderColor: "#6B7280", color: "#6B7280" }}>
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              Email
+                            </Button>
+                          </td>
                         </tr>
                       );
                     })}
