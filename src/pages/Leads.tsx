@@ -4257,7 +4257,7 @@ const Leads = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Dispatch Notification Email</label>
-                  <Input className="h-9" value={profileSettings.email_dispatch || ""} onChange={e => setProfileSettings({ ...profileSettings, email_dispatch: e.target.value })} placeholder="cmo@halogix.com" />
+                  <Input className="h-9" value={profileSettings.email_dispatch || ""} onChange={e => setProfileSettings({ ...profileSettings, email_dispatch: e.target.value })} placeholder="cmo@haulogix.com" />
                   <p className="text-xs text-gray-400 mt-1">Admin email that receives new order notifications</p>
                 </div>
                 <div>
