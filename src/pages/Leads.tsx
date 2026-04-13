@@ -5400,7 +5400,7 @@ const Leads = () => {
       {/* Sidebar */}
       <aside
         className={`fixed md:sticky top-0 left-0 z-50 md:z-auto h-screen flex flex-col transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ width: 220, minWidth: 220, backgroundColor: BRAND_NAVY }}
+        style={{ width: 220, minWidth: 220, backgroundColor: SIDEBAR_BG, borderRight: `1px solid ${CARD_BORDER}` }}
       >
         <div className="px-4 py-4">
           <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>LMT</h2>
@@ -5433,16 +5433,17 @@ const Leads = () => {
                     <button
                       key={item.id}
                       onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
-                      className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
+                      className="w-full flex items-center gap-3 px-3 rounded-md text-left transition-colors"
                       style={{
                         height: 36,
                         fontSize: 13,
-                        color: isActive ? BRAND_GOLD : "white",
-                        backgroundColor: isActive ? SIDEBAR_HOVER : "transparent",
-                        borderLeft: isActive ? `3px solid ${BRAND_GOLD}` : "3px solid transparent",
+                        fontWeight: isActive ? 600 : 400,
+                        color: isActive ? BRAND_GOLD : BRAND_NAVY,
+                        backgroundColor: isActive ? SIDEBAR_ACTIVE_BG : "transparent",
+                        borderRadius: 6,
                       }}
                       onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
-                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? SIDEBAR_ACTIVE_BG : "transparent"; }}
                     >
                       <Icon className="w-[16px] h-[16px]" />
                       <span>{item.label}</span>
@@ -5485,8 +5486,11 @@ const Leads = () => {
               <Menu className="w-5 h-5" style={{ color: BRAND_NAVY }} />
             </button>
             <div>
-              <h1 className="text-lg font-medium tracking-wider" style={{ color: BRAND_GOLD }}>{currentPage.title}</h1>
-              {currentPage.subtitle && <p className="text-xs text-gray-500">{currentPage.subtitle}</p>}
+              <div className="flex items-center gap-1" style={{ fontSize: 11 }}>
+                <span style={{ color: SECTION_LABEL }}>LMT ›</span>
+                <span style={{ color: BRAND_GOLD, fontWeight: 600 }}>{currentPage.title}</span>
+              </div>
+              {currentPage.subtitle && <p className="text-[10px] mt-0.5" style={{ color: SECTION_LABEL }}>{currentPage.subtitle}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
