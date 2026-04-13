@@ -909,6 +909,7 @@ serve(async (req) => {
         "legal_name", "site_name", "phone", "website",
         "support_email", "tagline", "copyright_year",
         "sender_name", "sender_title", "pricing_mode", "state_tax_rate",
+        "stripe_mode",
       ]);
 
     const emailCfg: Record<string, string> = {};
@@ -938,15 +939,26 @@ serve(async (req) => {
     const bizOverrides = { bizPhone: PHONE, bizEmail: SUPPORT_EMAIL, bizWebsite: WEBSITE, bizLegalName: LEGAL_NAME };
     const wrapEmail = (body: string) => emailWrapper(body, bizOverrides);
 
-
     const resendKey = Deno.env.get("RESEND_API_KEY");
     console.log("[send-email] RESEND_API_KEY set:", !!resendKey);
+
+    const { type, data } = await req.json();
+    console.log("[send-email] Email type:", type);
+
+    // Test mode guard — suppress all emails
+    if (emailCfg.stripe_mode === "test") {
+      console.log(`[send-email] TEST MODE — suppressing ${type} email`);
+      return new Response(
+        JSON.stringify({ success: true, test_mode: true, suppressed: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!resendKey) {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
     const resend = new Resend(resendKey);
-    const { type, data } = await req.json();
     console.log("[send-email] Email type:", type);
 
     const ownerEmail = Deno.env.get("GMAIL_USER") || DEFAULT_INTERNAL_EMAIL;
