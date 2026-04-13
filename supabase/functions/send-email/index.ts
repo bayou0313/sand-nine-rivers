@@ -939,6 +939,15 @@ serve(async (req) => {
     const bizOverrides = { bizPhone: PHONE, bizEmail: SUPPORT_EMAIL, bizWebsite: WEBSITE, bizLegalName: LEGAL_NAME };
     const wrapEmail = (body: string) => emailWrapper(body, bizOverrides);
 
+    // Test mode guard — suppress all emails
+    if (emailCfg.stripe_mode === "test") {
+      const { type: emailType } = await req.json();
+      console.log(`[send-email] TEST MODE — suppressing ${emailType} email`);
+      return new Response(
+        JSON.stringify({ success: true, test_mode: true, suppressed: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
     console.log("[send-email] RESEND_API_KEY set:", !!resendKey);
