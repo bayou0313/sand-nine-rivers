@@ -14,6 +14,23 @@ const corsHeaders = {
 };
 
 /**
+ * Northshore phantom miles — adds 3 miles to billed distance for deliveries
+ * crossing Lake Pontchartrain (Causeway toll recovery).
+ * Customer sees actual distance; pricing uses billed distance.
+ */
+const NORTHSHORE_ZIPS = new Set([
+  '70433','70434','70435','70436','70437','70438',
+  '70441','70443','70444','70445','70446','70447',
+  '70448','70449','70458','70459','70460','70461',
+  '70462','70463','70464','70465','70466','70467',
+  '70469','70470','70471'
+]);
+const NORTHSHORE_PARISHES = new Set(['St. Tammany Parish']);
+const isNorthshoreZip = (zip: string) => NORTHSHORE_ZIPS.has(zip);
+const isNorthshoreRegion = (region: string) => NORTHSHORE_PARISHES.has(region);
+const PHANTOM_MILES = 3;
+
+/**
  * Server-side canonical distance function.
  * Mirror of getDrivingDistanceBatch in src/lib/pits.ts — keep in sync.
  * Roads only. No haversine fallback. Nulls mean skip, not approximate.
@@ -338,9 +355,18 @@ serve(async (req) => {
         }
         return null;
       });
+
+      // Northshore phantom miles — add 3 mi to billed distance for toll recovery
+      const destZip = body.zip_code || '';
+      const northshore = isNorthshoreZip(destZip);
+      const billedDistances = distances.map((d: number | null) =>
+        d != null && northshore ? d + PHANTOM_MILES : d
+      );
+
       console.log("[calculate_distances] raw distances (miles):", JSON.stringify(distances));
+      if (northshore) console.log("[calculate_distances] Northshore ZIP detected:", destZip, "→ +3 phantom miles");
       return new Response(
-        JSON.stringify({ distances }),
+        JSON.stringify({ distances, billed_distances: billedDistances, is_northshore: northshore }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -2442,7 +2468,10 @@ serve(async (req) => {
           continue;
         }
 
-        const extraMiles = Math.max(0, closestDistance - effFM);
+        // Northshore phantom miles for toll recovery (region-based)
+        const cityIsNorthshore = isNorthshoreRegion(city.region || '');
+        const billedDistance = cityIsNorthshore ? closestDistance + PHANTOM_MILES : closestDistance;
+        const extraMiles = Math.max(0, billedDistance - effFM);
         const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
 
         // Multi-PIT coverage detection
