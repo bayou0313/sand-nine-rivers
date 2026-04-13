@@ -62,9 +62,12 @@ const Index = () => {
   useEffect(() => {
     const init = async () => {
       await initSession();
-      await incrementVisitCount();
-      await updateSession({ stage: "visited" });
-      const s = await getSession();
+      // Run remaining session calls in parallel to shorten the critical chain
+      const [, , s] = await Promise.all([
+        incrementVisitCount(),
+        updateSession({ stage: "visited" }),
+        getSession(),
+      ]);
       setSession(s);
     };
     init();
