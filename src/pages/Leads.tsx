@@ -2170,7 +2170,7 @@ const Leads = () => {
                 {STAGES.map(stage => {
                   const count = parsedLeads.filter((l: any) => l.stage === stage).length;
                   return (
-                    <div key={stage} className="rounded-lg overflow-hidden border" style={{ borderColor: STAGE_COLORS[stage] + "30" }}>
+                    <div key={stage} onClick={() => setActivePage("pipeline")} className="rounded-lg overflow-hidden border cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: STAGE_COLORS[stage] + "30" }}>
                       <div className="px-2 py-1.5 text-center" style={{ backgroundColor: STAGE_COLORS[stage] }}>
                         <span className="text-white text-xs font-bold uppercase">{stage}</span>
                       </div>
@@ -2187,17 +2187,17 @@ const Leads = () => {
             <div className="mb-6">
               <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>SEO</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                <div className="rounded-xl p-3 bg-white border shadow-sm text-center" style={{ borderColor: BRAND_NAVY + "20" }}>
+                <div onClick={() => setActivePage("city_pages")} className="rounded-xl p-3 bg-white border shadow-sm text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
                   <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{activeCityPages.length}</p>
                   <p className="text-xs text-gray-500">Active Pages</p>
                 </div>
-                <div className="rounded-xl p-3 bg-white border shadow-sm text-center" style={{ borderColor: BRAND_NAVY + "20" }}>
+                <div onClick={() => setActivePage("city_pages")} className="rounded-xl p-3 bg-white border shadow-sm text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
                   <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{totalViews.toLocaleString()}</p>
                   <p className="text-xs text-gray-500">Total Views</p>
                 </div>
               </div>
               {topCities.length > 0 && (
-                <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: BRAND_NAVY + "20" }}>
+                <div onClick={() => setActivePage("city_pages")} className="bg-white rounded-xl border shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ backgroundColor: BRAND_NAVY }}>
@@ -2227,7 +2227,7 @@ const Leads = () => {
                   <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>RECENT ORDERS</h2>
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => setActivePage("cash_orders")}>View All</Button>
                 </div>
-                <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: BRAND_NAVY + "20" }}>
+                <div onClick={() => setActivePage("cash_orders")} className="bg-white rounded-xl border shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ backgroundColor: BRAND_NAVY }}>
