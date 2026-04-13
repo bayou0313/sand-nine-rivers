@@ -5138,14 +5138,14 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                       <tr key={c.id} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}` }}
                         onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
                         onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? T.cardBg : T.tableStripeBg)}>
-                        <td className="px-3 py-2 text-xs font-medium">{c.name || "—"}</td>
-                        <td className="px-3 py-2 text-xs">{c.email}</td>
-                        <td className="px-3 py-2 text-xs">{c.phone || "—"}</td>
-                        <td className="px-3 py-2 text-xs">{c.company || "—"}</td>
-                        <td className="px-3 py-2 text-xs font-bold text-center">{c.total_orders || 0}</td>
+                        <td className="px-3 py-2 text-xs font-medium" style={{ color: T.textPrimary }}>{c.name || "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: T.textPrimary }}>{c.email}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.phone || "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.company || "—"}</td>
+                        <td className="px-3 py-2 text-xs font-bold text-center" style={{ color: T.textPrimary }}>{c.total_orders || 0}</td>
                         <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(c.total_spent || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap">{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap">{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond }}>{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond }}>{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 flex gap-1">
                           <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
                             View Orders
