@@ -1438,6 +1438,7 @@ const Order = () => {
                     {apiLoaded ? (
                       <PlaceAutocompleteInput
                         onPlaceSelect={handleOrderPlaceSelect}
+                        onAddressMismatch={handleAddressMismatch}
                         onInputChange={(val) => setAddress(val)}
                         onEnterKey={calculateDistance}
                         placeholder="Enter your delivery address..."
