@@ -1440,7 +1440,10 @@ const Leads = () => {
       const flaggedCount = pagesRegen + pricesUpdated + pagesReassigned + reactReassigned + reactUnwaitlisted;
       if (flaggedCount > 0) {
         toast({ title: "Auto-regenerating affected city pages...", description: `${flaggedCount} pages queued.` });
-        setTimeout(() => runRegenQueue(), 3000);
+        // Only trigger regen after modal closes to avoid re-renders during editing
+        setTimeout(() => {
+          if (!editingPitId) runRegenQueue();
+        }, 3000);
       }
 
       setEditingPitId(null);
@@ -6062,7 +6065,7 @@ const Leads = () => {
                     ? "No schedule set — all days currently available"
                     : "Check the days this PIT is open. Leave all unchecked to allow all days."}
                 </p>
-                {(() => { console.log("[EditPIT] editPitData.operating_days:", editPitData.operating_days); return null; })()}
+                
                 <div className="flex flex-wrap gap-2 mb-3">
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
                     const rawDays = (editPitData.operating_days as (number | string)[] | null) || [];
