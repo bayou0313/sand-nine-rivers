@@ -2127,33 +2127,33 @@ const Leads = () => {
                 <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>⚠️ ACTION ITEMS</h2>
                 <div className="space-y-2">
                   {uncollectedCOD.length > 0 && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ backgroundColor: "#FEF3C7", borderColor: "#F59E0B40" }}>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md" style={{ backgroundColor: "#FEF3C7", borderColor: "#F59E0B40" }}>
                       <span className="text-lg">💵</span>
                       <div>
                         <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{uncollectedCOD.length} COD order{uncollectedCOD.length > 1 ? "s" : ""} not collected</p>
                         <p className="text-xs text-gray-600">${uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} outstanding</p>
                       </div>
-                      <Button size="sm" variant="outline" className="ml-auto text-xs" onClick={() => setActivePage("cash_orders")}>View</Button>
+                      <span className="ml-auto text-xs font-bold" style={{ color: BRAND_GOLD }}>→</span>
                     </div>
                   )}
                   {captureIssues.length > 0 && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ backgroundColor: "#FEE2E2", borderColor: "#EF444440" }}>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md" style={{ backgroundColor: "#FEE2E2", borderColor: "#EF444440" }}>
                       <span className="text-lg">🔴</span>
                       <div>
                         <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{captureIssues.length} payment capture failed</p>
                         <p className="text-xs text-gray-600">Requires manual capture in Orders tab</p>
                       </div>
-                      <Button size="sm" variant="outline" className="ml-auto text-xs" onClick={() => setActivePage("cash_orders")}>Fix</Button>
+                      <span className="ml-auto text-xs font-bold" style={{ color: BRAND_GOLD }}>→</span>
                     </div>
                   )}
                   {outOfAreaLeads.length > 0 && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ backgroundColor: "#DBEAFE", borderColor: "#3B82F640" }}>
+                    <div onClick={() => setActivePage("all")} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md" style={{ backgroundColor: "#DBEAFE", borderColor: "#3B82F640" }}>
                       <span className="text-lg">📍</span>
                       <div>
                         <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{outOfAreaLeads.length} out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""}</p>
                         <p className="text-xs text-gray-600">No pit assigned — needs attention</p>
                       </div>
-                      <Button size="sm" variant="outline" className="ml-auto text-xs" onClick={() => setActivePage("all")}>Review</Button>
+                      <span className="ml-auto text-xs font-bold" style={{ color: BRAND_GOLD }}>→</span>
                     </div>
                   )}
                 </div>
