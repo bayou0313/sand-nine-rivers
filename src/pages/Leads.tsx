@@ -1317,7 +1317,7 @@ const Leads = () => {
   useEffect(() => {
     if (!authenticated) return;
     runRegenQueue();
-    const interval = setInterval(runRegenQueue, 30000);
+    const interval = setInterval(runRegenQueue, 10000);
     return () => clearInterval(interval);
   }, [authenticated, runRegenQueue]);
 
