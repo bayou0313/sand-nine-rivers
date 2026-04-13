@@ -1499,13 +1499,8 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchPendingReview]);
 
-  // Fetch overview data when overview tab loads
-  useEffect(() => {
-    if (activePage === "overview" && authenticated) {
-      fetchCashOrders();
-      fetchCityPages();
-    }
-  }, [activePage, authenticated, fetchCashOrders, fetchCityPages]);
+
+
 
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
