@@ -172,15 +172,28 @@ CRITICAL RULES:
       retries++;
     }
 
+    // Helper: mark page for retry on failure so it re-enters the queue
+    const markForRetry = async (reason: string) => {
+      if (city_page_id) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const sb = createClient(supabaseUrl, serviceRoleKey);
+        await sb.from("city_pages").update({ needs_regen: true, status: "draft", regen_reason: reason }).eq("id", city_page_id);
+        console.log(`[generate-city-page] Marked ${city_name} for retry: ${reason}`);
+      }
+    };
+
     if (!response.ok) {
       const errText = await response.text();
       console.error("Anthropic API error:", response.status, errText);
       if (response.status === 429) {
+        await markForRetry("rate_limited");
         return new Response(JSON.stringify({ error: "Rate limited, please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      await markForRetry("api_error_" + response.status);
       return new Response(JSON.stringify({ error: "AI generation failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -204,6 +217,7 @@ CRITICAL RULES:
       generated = JSON.parse(cleanText);
     } catch (parseErr) {
       console.error("Failed to parse AI JSON:", cleanText);
+      await markForRetry("json_parse_error");
       return new Response(JSON.stringify({ error: "AI did not return valid JSON" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
