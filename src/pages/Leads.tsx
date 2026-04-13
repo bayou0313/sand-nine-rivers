@@ -5530,7 +5530,7 @@ const Leads = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(parishBreakdown).sort((a, b) => b[1].tax - a[1].tax).map(([parish, data], i) => (
+                  {(Object.entries(parishBreakdown) as [string, { tax: number; orders: number; rate: number }][]).sort((a, b) => b[1].tax - a[1].tax).map(([parish, data], i) => (
                     <tr key={parish} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}` }}>
                       <td className="px-4 py-2" style={{ color: T.textPrimary, fontWeight: 500 }}>{parish}</td>
                       <td className="px-4 py-2 text-right" style={{ color: T.textSecond }}>{(data.rate * 100).toFixed(2)}%</td>
