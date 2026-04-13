@@ -1451,6 +1451,12 @@ const OrderMobile = () => {
         nearestPit={nearestPitInfo}
         calculatedPrice={null}
       />
+      <AddressMismatchDialog
+        data={mismatchData}
+        onUseResolved={handleMismatchUseResolved}
+        onKeepTyped={handleMismatchKeepTyped}
+        onChangeAddress={handleMismatchChange}
+      />
     </div>
   );
 };
