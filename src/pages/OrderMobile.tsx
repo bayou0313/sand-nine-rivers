@@ -49,9 +49,11 @@ declare global {
 
 type EstimateResult = {
   distance: number;
+  billedDistance?: number;
   price: number;
   address: string;
   duration: string;
+  isNorthshore?: boolean;
 };
 
 type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
@@ -677,9 +679,11 @@ const OrderMobile = () => {
 
       const estimateResult: EstimateResult = {
         distance: parseFloat(bestResult.distance.toFixed(1)),
+        billedDistance: bestResult.billedDistance,
         price: bestResult.price,
         address: `${bestResult.distance.toFixed(1)} mi away`,
         duration: "~30 min",
+        isNorthshore: bestResult.isNorthshore,
       };
       setWeekdayResult(estimateResult);
       setResult(estimateResult);
