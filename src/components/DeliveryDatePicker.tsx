@@ -413,7 +413,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
                   transition={{ delay: i * 0.04 }}
                   onClick={() => { if (!isBlocked) { onSelect(d); if ((d as DeliveryDateWithPit).assignedPit && onPitAssigned) onPitAssigned((d as DeliveryDateWithPit).assignedPit!.pit); } }}
                   disabled={isBlocked}
-                  className={`flex-shrink-0 w-[88px] rounded-xl p-3 text-center border-2 transition-all duration-200 ${
+                  className={`flex-shrink-0 w-[88px] min-h-[96px] rounded-xl p-3 text-center border-2 transition-all duration-200 ${
                     isBlocked
                       ? "border-border bg-muted/50 opacity-50 cursor-not-allowed"
                       : isSelected && d.isSunday
