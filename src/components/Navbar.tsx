@@ -57,8 +57,17 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
   const navigate = useNavigate();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(solid || window.scrollY > 50);
-    window.addEventListener("scroll", onScroll);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(solid || window.scrollY > 50);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [solid]);
 
