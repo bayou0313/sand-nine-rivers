@@ -79,17 +79,23 @@ export default function PlaceAutocompleteInput({
             const resolvedAddress = place.formatted_address || "";
             const typedAddress = inputRef.current?.value || "";
 
-            // Extract ZIP from Google's address_components
-            const resolvedZip = place.address_components?.find(
-              (c: any) => c.types.includes("postal_code")
-            )?.short_name || "";
+            // Extract city from Google's address_components
+            const resolvedCity = place.address_components?.find(
+              (c: any) => c.types.includes("locality")
+            )?.short_name?.toLowerCase() || "";
 
-            // Extract ZIP from typed input
-            const typedZip = typedAddress.match(/\b\d{5}\b/)?.[0] || "";
+            // Extract city from typed address (second comma segment, e.g. "123 Main St, New Orleans, LA")
+            const typedParts = typedAddress.split(',');
+            const typedCity = (typedParts[1] || "").trim().toLowerCase();
 
-            // Only flag mismatch if ZIP codes actually differ
-            const zipMismatch = !!(typedZip && resolvedZip && typedZip !== resolvedZip);
-            console.log("[PlaceAutocompleteInput] ZIP check", { typedZip, resolvedZip, zipMismatch, typedAddress, resolvedAddress });
+            // Only flag mismatch if cities differ significantly
+            const cityMismatch = !!(
+              resolvedCity &&
+              typedCity &&
+              !resolvedCity.includes(typedCity) &&
+              !typedCity.includes(resolvedCity)
+            );
+            console.log("[PlaceAutocompleteInput] City check", { typedCity, resolvedCity, cityMismatch, typedAddress, resolvedAddress });
 
             // ALWAYS use Google's resolved address for pricing/tax
             resolvedAddressRef.current = resolvedAddress;
@@ -102,9 +108,9 @@ export default function PlaceAutocompleteInput({
               addressComponents: place.address_components || [],
             });
 
-            // Show confirmation dialog only when ZIP codes differ
-            if (zipMismatch && onAddressMismatchRef.current) {
-              console.log("[PlaceAutocompleteInput] ZIP mismatch detected", { typedZip, resolvedZip, typed: typedAddress, resolved: resolvedAddress });
+            // Show confirmation dialog only when cities differ
+            if (cityMismatch && onAddressMismatchRef.current) {
+              console.log("[PlaceAutocompleteInput] City mismatch detected", { typedCity, resolvedCity, typed: typedAddress, resolved: resolvedAddress });
               onAddressMismatchRef.current({
                 typed: typedAddress,
                 resolved: resolvedAddress,
