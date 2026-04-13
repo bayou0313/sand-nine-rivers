@@ -5646,61 +5646,61 @@ const Leads = () => {
             </div>
 
             {/* Section 2 — Processing Fees */}
-            <div style={SECTION_LABEL}>PROCESSING FEES</div>
+            <div style={SECTION_LABEL_F}>PROCESSING FEES</div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: ALERT_RED }}>{fmtD(feesCalculated)}</div>
-                <div style={METRIC_LABEL}>Stripe Fees Paid</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: ALERT_RED }}>{fmtD(feesCalculated)}</div>
+                <div style={METRIC_LABEL_F}>Stripe Fees Paid</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: POSITIVE }}>{fmtD(feesSavedCOD)}</div>
-                <div style={METRIC_LABEL}>Fees Saved (COD)</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: POSITIVE }}>{fmtD(feesSavedCOD)}</div>
+                <div style={METRIC_LABEL_F}>Fees Saved (COD)</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: feesSavedCOD - feesCalculated > 0 ? POSITIVE : ALERT_RED }}>{fmtD(feesSavedCOD - feesCalculated)}</div>
-                <div style={METRIC_LABEL}>Net Fee Impact</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: feesSavedCOD - feesCalculated > 0 ? POSITIVE : ALERT_RED }}>{fmtD(feesSavedCOD - feesCalculated)}</div>
+                <div style={METRIC_LABEL_F}>Net Fee Impact</div>
               </div>
-              <div style={METRIC_CARD}>
+              <div style={METRIC_CARD_F}>
                 <div style={{ fontSize: 14, color: T.textPrimary }}>
                   <span style={{ fontWeight: 700 }}>{pctCard}%</span> Card · <span style={{ fontWeight: 700 }}>{pctCOD}%</span> COD
                 </div>
-                <div style={METRIC_LABEL}>Payment Split ({cardOrders.length} / {codOrders.length})</div>
+                <div style={METRIC_LABEL_F}>Payment Split ({cardOrders.length} / {codOrders.length})</div>
               </div>
             </div>
 
             {/* Section 3 — Operations Metrics */}
-            <div style={SECTION_LABEL}>OPERATIONS METRICS</div>
+            <div style={SECTION_LABEL_F}>OPERATIONS METRICS</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{totalMiles.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                <div style={METRIC_LABEL}>Total Miles Driven</div>
+              <div style={METRIC_CARD_F}>
+                <div style={METRIC_NUM_F}>{totalMiles.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                <div style={METRIC_LABEL_F}>Total Miles Driven</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{avgMiles.toFixed(1)}</div>
-                <div style={METRIC_LABEL}>Avg Miles / Order</div>
+              <div style={METRIC_CARD_F}>
+                <div style={METRIC_NUM_F}>{avgMiles.toFixed(1)}</div>
+                <div style={METRIC_LABEL_F}>Avg Miles / Order</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(distanceFeeRevenue)}</div>
-                <div style={METRIC_LABEL}>Distance Fee Revenue</div>
+              <div style={METRIC_CARD_F}>
+                <div style={METRIC_NUM_F}>{fmtD(distanceFeeRevenue)}</div>
+                <div style={METRIC_LABEL_F}>Distance Fee Revenue</div>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: ALERT_RED }}>{fmtD(fuelCostEst)}</div>
-                <div style={METRIC_LABEL}>Fuel Cost Est. ($0.87/mi RT)</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: ALERT_RED }}>{fmtD(fuelCostEst)}</div>
+                <div style={METRIC_LABEL_F}>Fuel Cost Est. ($0.87/mi RT)</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: netDistanceFees >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netDistanceFees)}</div>
-                <div style={METRIC_LABEL}>Net on Distance Fees</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: netDistanceFees >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netDistanceFees)}</div>
+                <div style={METRIC_LABEL_F}>Net on Distance Fees</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: BRAND_GOLD }}>{fmtD(saturdayRevenue)}</div>
-                <div style={METRIC_LABEL}>Saturday Surcharge Revenue</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: BRAND_GOLD }}>{fmtD(saturdayRevenue)}</div>
+                <div style={METRIC_LABEL_F}>Saturday Surcharge Revenue</div>
               </div>
             </div>
 
             {/* Section 4 — Revenue Breakdown */}
-            <div style={SECTION_LABEL}>REVENUE BREAKDOWN</div>
+            <div style={SECTION_LABEL_F}>REVENUE BREAKDOWN</div>
             <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '24px 28px' }}>
               <div className="space-y-3">
                 <div className="flex justify-between items-center" style={{ borderBottom: `1px solid ${T.cardBorder}`, paddingBottom: 10 }}>
@@ -5721,7 +5721,7 @@ const Leads = () => {
                 </div>
               </div>
               <div style={{ marginTop: 24, borderTop: `1px solid ${T.cardBorder}`, paddingTop: 16 }}>
-                <div style={{ ...SECTION_LABEL, marginBottom: 8 }}>REVENUE COMPONENTS</div>
+                <div style={{ ...SECTION_LABEL_F, marginBottom: 8 }}>REVENUE COMPONENTS</div>
                 <div className="space-y-2">
                   <div className="flex justify-between" style={{ fontSize: 13 }}>
                     <span style={{ color: T.textSecond }}>Sand Base Revenue</span>
@@ -5740,7 +5740,7 @@ const Leads = () => {
             </div>
             {/* ── SECTION 5 — Revenue Recovery ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL}>ABANDONED REVENUE</div>
+              <div style={SECTION_LABEL_F}>ABANDONED REVENUE</div>
               {(() => {
                 const sessionsWithPrice = abandonedSessions.filter((s: any) => Number(s.calculated_price || 0) > 0);
                 const abandonedValue = sessionsWithPrice.reduce((s: number, sess: any) => s + Number(sess.calculated_price || 0), 0);
@@ -5749,21 +5749,21 @@ const Leads = () => {
                 return (
                   <>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div style={METRIC_CARD}>
-                        <div style={METRIC_NUM}>{abandonedSessions.length}</div>
-                        <div style={METRIC_LABEL}>Total Abandoned</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={METRIC_NUM_F}>{abandonedSessions.length}</div>
+                        <div style={METRIC_LABEL_F}>Total Abandoned</div>
                       </div>
-                      <div style={METRIC_CARD}>
-                        <div style={METRIC_NUM}>{sessionsWithPrice.length}</div>
-                        <div style={METRIC_LABEL}>Got a Price</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={METRIC_NUM_F}>{sessionsWithPrice.length}</div>
+                        <div style={METRIC_LABEL_F}>Got a Price</div>
                       </div>
-                      <div style={METRIC_CARD}>
-                        <div style={{ ...METRIC_NUM, color: BRAND_GOLD }}>{fmtD(abandonedValue)}</div>
-                        <div style={METRIC_LABEL}>Abandoned Value</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={{ ...METRIC_NUM_F, color: BRAND_GOLD }}>{fmtD(abandonedValue)}</div>
+                        <div style={METRIC_LABEL_F}>Abandoned Value</div>
                       </div>
-                      <div style={METRIC_CARD}>
-                        <div style={METRIC_NUM}>{emailsSent}</div>
-                        <div style={METRIC_LABEL}>Recovery Emails Sent</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={METRIC_NUM_F}>{emailsSent}</div>
+                        <div style={METRIC_LABEL_F}>Recovery Emails Sent</div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2">
@@ -5788,7 +5788,7 @@ const Leads = () => {
 
             {/* ── SECTION 6 — ZIP Conversion Intelligence ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL}>ZIP SESSION INTELLIGENCE</div>
+              <div style={SECTION_LABEL_F}>ZIP SESSION INTELLIGENCE</div>
               {(() => {
                 const zipStats = abandonedSessions.reduce((acc: Record<string, { sessions: number; withPrice: number; totalPrice: number; stages: Record<string, number> }>, s: any) => {
                   const zip = s.geo_zip || 'Unknown';
@@ -5852,7 +5852,7 @@ const Leads = () => {
 
             {/* ── SECTION 7 — Daily P&L Estimate ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL}>TODAY'S P&L ESTIMATE</div>
+              <div style={SECTION_LABEL_F}>TODAY'S P&L ESTIMATE</div>
               {(() => {
                 const todayStr = new Date().toDateString();
                 const todayOrders = cashOrders.filter((o: any) => new Date(o.created_at).toDateString() === todayStr);
