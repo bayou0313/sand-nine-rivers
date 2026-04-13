@@ -2664,7 +2664,7 @@ serve(async (req) => {
         }
         console.log(`[bulk] Sampling ${samplePoints.length} points for PIT ${pit.name}`);
 
-        const pitCityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
+        const pitCityMap = new Map<string, { name: string; state: string; lat: number; lng: number; region: string }>();
         const BATCH_SIZE = 10;
         for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
           const batch = samplePoints.slice(i, i + BATCH_SIZE);
@@ -2684,12 +2684,16 @@ serve(async (req) => {
               const components = result.address_components || [];
               let cityName = "";
               let stateCode = "";
+              let regionName = "";
               for (const prio of VALID_TYPES) {
                 const comp = components.find((c: any) => c.types?.includes(prio));
                 if (comp && !cityName) cityName = comp.long_name;
               }
               const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
               if (stateComp) stateCode = stateComp.short_name;
+              // Extract parish/county for Northshore detection
+              const parishComp = components.find((c: any) => c.types?.includes("administrative_area_level_2"));
+              if (parishComp) regionName = parishComp.long_name;
               if (!cityName) continue;
               cityName = cleanCityName(cityName);
               if (!isValidCityName(cityName)) continue;
@@ -2697,7 +2701,7 @@ serve(async (req) => {
               if (!loc) continue;
               const key = cityName.toLowerCase();
               if (!pitCityMap.has(key)) {
-                pitCityMap.set(key, { name: cityName, state: stateCode || "LA", lat: loc.lat, lng: loc.lng });
+                pitCityMap.set(key, { name: cityName, state: stateCode || "LA", lat: loc.lat, lng: loc.lng, region: regionName });
               }
             }
           }
