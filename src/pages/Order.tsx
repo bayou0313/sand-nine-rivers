@@ -24,7 +24,7 @@ import DeliveryDatePicker, { type DeliveryDate, type PitSchedule, SATURDAY_SURCH
 import OutOfAreaModal from "@/components/OutOfAreaModal";
 import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
-import { type PitData, type GlobalPricing, type FindBestPitResult, findBestPitDriving, findAllPitDistances, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING, getCODPrice } from "@/lib/pits";
+import { type PitData, type GlobalPricing, type FindBestPitResult, findBestPitDriving, findAllPitDistances, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -190,20 +190,10 @@ const Order = () => {
   const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
   const isBaked = pricingMode === "baked";
   const isCOD = paymentMethod === "cash" || paymentMethod === "check";
-  // In baked mode, COD customers get a discount (reverse the baked fee)
-  const effectiveBaseForCalc = isBaked && isCOD && effectivePricing.base_price
-    ? getCODPrice(effectivePricing.base_price)
-    : effectivePricing.base_price;
-  const codSavingsPerLoad = isBaked ? effectivePricing.base_price - getCODPrice(effectivePricing.base_price) : 0;
-
+  // In baked mode, everyone pays the same price — no COD discount
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal - effectiveDiscount : 0;
-  // In baked mode with COD, recalculate subtotal using COD base price
-  const codSubtotalAdjustment = isBaked && isCOD && result
-    ? (effectivePricing.base_price - effectiveBaseForCalc) * quantity
-    : 0;
-  const adjustedSubtotal = subtotal - codSubtotalAdjustment;
-  const taxAmount = parseFloat((adjustedSubtotal * taxInfo.rate).toFixed(2));
-  const totalPrice = parseFloat((adjustedSubtotal + taxAmount).toFixed(2));
+  const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
+  const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
   const processingFee = !isBaked && totalPrice > 0
     ? parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2))
     : 0;
@@ -1653,7 +1643,7 @@ const Order = () => {
 
                       <ReceiptRow label={`River Sand (9 cu yds × ${quantity})`} value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
                       <div className="border-b border-dashed border-border" />
-                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency(effectiveBaseForCalc * quantity)} />
+                      <ReceiptRow label={`Base delivery × ${quantity}`} value={formatCurrency((result?.price ?? effectivePricing.base_price) * quantity)} />
                       {result.distance > effectivePricing.free_miles && (
                         <>
                           <div className="border-b border-dashed border-border" />
@@ -1848,11 +1838,6 @@ const Order = () => {
                               <span className="font-display tracking-wider text-foreground">TOTAL DUE</span>
                               <span className="font-display text-lg font-bold text-foreground">{formatCurrency(totalPrice)}</span>
                             </div>
-                            {isCOD && codSavingsPerLoad > 0 && !isBaked && (
-                              <p className="font-body text-xs" style={{ color: "#16A34A" }}>
-                                💵 You save {formatCurrency(codSavingsPerLoad * quantity)} by paying at delivery
-                              </p>
-                            )}
                           </>
                         ) : paymentMethod === "stripe-link" ? (
                           <>
@@ -2013,13 +1998,14 @@ const Order = () => {
                   taxAmount={taxAmount}
                   saturdaySurchargeTotal={saturdaySurchargeTotal}
                   taxInfo={taxInfo}
-                  basePricePerLoad={effectivePricing.base_price}
+                  basePricePerLoad={result?.price ?? effectivePricing.base_price}
                   distanceFee={result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0}
                   onDownloadInvoice={handleDownloadInvoice}
                   downloadingInvoice={downloadingInvoice}
                   canDownload={!!confirmedOrderId}
                   confirmedOrderId={confirmedOrderId}
                   lookupToken={lookupToken}
+                  pricingMode={pricingMode}
                 />
                 )}
               </motion.div>
