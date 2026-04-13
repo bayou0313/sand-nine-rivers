@@ -54,6 +54,7 @@ const DEFAULT_DISPATCH_EMAIL = "cmo@haulogix.com";
 const RIVERSAND_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
 const WAYS_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
 const RIVERSAND_ICON = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/RIVERSAND_-_ICON_-_512.png.png";
+const WAYS_ICON = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_-_ICON_-_512.png.png";
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "TBD";
@@ -191,9 +192,14 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, prici
                 </table>
               </td>
             </tr>
+            <!-- WAYS ICON -->
+            <tr>
+              <td style="background-color:#FFFFFF;text-align:center;padding:20px 0 12px 0;">
+                <img src="${WAYS_ICON}" alt="WAYS" style="height:48px;width:48px;border-radius:8px;" />
+              </td>
+            </tr>
 
-            <!-- GOLD DIVIDER -->
-            <tr><td style="height:3px;background-color:${BRAND_GOLD};"></td></tr>
+
 
             <!-- PAYMENT STATUS BANNER -->
             <tr>
