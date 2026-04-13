@@ -5,7 +5,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
-import { updateSession, initSession, isNoTrackIP } from "@/lib/session";
+import { updateSession, initSession, isNoTrackIP, getSessionToken } from "@/lib/session";
 import { getPaletteForSlug, deriveCssVars } from "@/lib/palettes";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -220,6 +220,11 @@ const CityPage = () => {
         state: data.state,
         page_price: data.base_price,
         is_waitlist: data.status === "waitlist",
+        rs_city: data.city_name,
+        rs_slug: citySlug,
+        rs_price: data.base_price,
+        rs_parish: data.region,
+        rs_session_id: getSessionToken(),
       });
 
       // Track session entry from city page
