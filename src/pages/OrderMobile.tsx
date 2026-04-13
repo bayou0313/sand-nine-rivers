@@ -583,12 +583,19 @@ const OrderMobile = () => {
     };
   }, [toast, verifyStripePayment, pendingOrderId, lookupToken, step]);
   const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
+  const [detectedZip, setDetectedZip] = useState('');
 
   // Address selection
   const handlePlaceSelect = useCallback((res: PlaceSelectResult) => {
     setAddress(res.formattedAddress);
     setCustomerCoords({ lat: res.lat, lng: res.lng });
-    if (res.addressComponents) setDetectedParish(getParishFromPlaceResult(res.addressComponents));
+    if (res.addressComponents) {
+      setDetectedParish(getParishFromPlaceResult(res.addressComponents));
+      const zipComponent = res.addressComponents.find(
+        (c: any) => c.types.includes('postal_code')
+      );
+      setDetectedZip(zipComponent?.short_name || '');
+    }
     updateSession({ stage: "entered_address", delivery_address: res.formattedAddress, address_lat: res.lat, address_lng: res.lng });
   }, []);
 
@@ -729,6 +736,7 @@ const OrderMobile = () => {
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,
       tax_parish: taxInfo.parish,
+      zip_code: detectedZip,
       delivery_terms_accepted: deliveryTermsAccepted,
       delivery_terms_timestamp: new Date().toISOString(),
       card_authorization_accepted: paymentMethod === "stripe-link",
