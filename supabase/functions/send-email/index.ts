@@ -1380,6 +1380,73 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
         console.log("[email] Review request sent to:", order.customer_email);
       }
 
+    } else if (type === "order_cancelled") {
+      const firstName = (data.customer_name || "").split(" ")[0] || "there";
+      const orderNum = data.order_number || "N/A";
+      const isCard = data.payment_method === "stripe-link" || data.payment_method === "card";
+      const cancelledHtml = brandedEmailWrapper({
+        content: `
+          <div style="text-align:center;margin-bottom:24px;">
+            <p style="font-size:24px;font-weight:700;color:${BRAND_COLOR};margin:0 0 4px;">ORDER CANCELLED</p>
+            <p style="font-size:16px;color:${BRAND_GOLD};font-weight:600;font-family:monospace;margin:0;">${orderNum}</p>
+          </div>
+          <p style="font-size:16px;color:#555;line-height:1.6">Hi ${firstName},</p>
+          <p style="font-size:15px;color:#555;line-height:1.6">Your river sand delivery scheduled for <strong>${formatDate(data.delivery_date)}</strong> has been cancelled.</p>
+          
+          <div style="background:#F8F7F2;border:1px solid #E8E5DD;border-radius:8px;padding:20px;margin:20px 0;">
+            <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:1px;">WHAT HAPPENS NEXT</p>
+            ${isCard 
+              ? '<p style="margin:0;font-size:14px;color:#555;line-height:1.8;">• Your card authorization has been released — <strong>no charge was made</strong>. Allow 3–5 business days for the hold to clear.</p>'
+              : '<p style="margin:0;font-size:14px;color:#555;line-height:1.8;">• This was a cash-on-delivery order — <strong>no payment was collected</strong>. Nothing further needed.</p>'
+            }
+          </div>
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;border:1px solid #E8E5DD;border-radius:8px;overflow:hidden;">
+            <tr><td style="background-color:#F8F7F2;padding:12px 16px;border-bottom:1px solid #E8E5DD;">
+              <p style="margin:0;font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1px;text-transform:uppercase;">DELIVERY DETAILS</p>
+            </td></tr>
+            <tr><td style="padding:0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Address</td>
+                  <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">${escapeHtml(data.delivery_address) || "N/A"}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">Date</td>
+                  <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;border-bottom:1px solid #E8E5DD;">${formatDate(data.delivery_date)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 16px;font-size:14px;color:#555;">Amount</td>
+                  <td style="padding:10px 16px;font-size:14px;color:#333;text-align:right;font-weight:600;">$${fmt(Number(data.price || 0))}</td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+
+          <p style="font-size:14px;color:#555;line-height:1.8;">If you cancelled by mistake or want to reschedule, place a new order at <a href="https://${WEBSITE}" style="color:${BRAND_GOLD};font-weight:600">${WEBSITE}</a> or call <a href="tel:+18554689297" style="color:${BRAND_GOLD};font-weight:600">${PHONE}</a>.</p>
+          <p style="font-size:14px;color:#555;line-height:1.6;">We hope to serve you again soon.</p>
+        `,
+      });
+      if (!data.customer_email) {
+        return new Response(JSON.stringify({ error: "No customer email" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      await sendMail(resend, data.customer_email, `Your RiverSand Order Has Been Cancelled — ${orderNum}`, cancelledHtml, undefined, FROM, REPLY_TO);
+      // Admin notification
+      const adminCancelHtml = brandedEmailWrapper({
+        content: `
+          <h2 style="color:${BRAND_COLOR};margin:0 0 16px;font-size:20px;">Order Cancelled</h2>
+          <p style="font-size:15px;color:#555;">Order <strong>${orderNum}</strong> for ${escapeHtml(data.customer_name)} has been cancelled.</p>
+          <p style="font-size:14px;color:#555;">Address: ${escapeHtml(data.delivery_address)}</p>
+          <p style="font-size:14px;color:#555;">Amount: $${fmt(Number(data.price || 0))}</p>
+          <p style="font-size:14px;color:#555;">Payment: ${isCard ? 'Card — hold released' : 'COD — no charge'}</p>
+        `,
+        ctaText: "OPEN DASHBOARD",
+        ctaUrl: "https://riversand.net/leads",
+      });
+      await sendMail(resend, ownerEmail, `⛔ Order Cancelled — ${orderNum}`, adminCancelHtml, undefined, FROM, REPLY_TO);
+      console.log("[email] Order cancelled email sent to:", data.customer_email);
+
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid email type" }),
