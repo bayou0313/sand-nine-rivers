@@ -1434,9 +1434,14 @@ const Leads = () => {
       } else {
         toast({ title: "PIT updated" });
       }
-      // Always refresh city pages after save + delayed refresh for queue-processed flags
+      // Always refresh city pages after save
       fetchCityPages();
-      setTimeout(() => fetchCityPages(), 15000);
+      // Auto-trigger regen queue immediately if pages were flagged
+      const flaggedCount = pagesRegen + pricesUpdated + pagesReassigned + reactReassigned + reactUnwaitlisted;
+      if (flaggedCount > 0) {
+        toast({ title: "Auto-regenerating affected city pages...", description: `${flaggedCount} pages queued.` });
+        setTimeout(() => runRegenQueue(), 3000);
+      }
 
       setEditingPitId(null);
       setEditPitData({});
