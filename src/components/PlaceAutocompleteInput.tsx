@@ -89,6 +89,7 @@ export default function PlaceAutocompleteInput({
 
             // Only flag mismatch if ZIP codes actually differ
             const zipMismatch = !!(typedZip && resolvedZip && typedZip !== resolvedZip);
+            console.log("[PlaceAutocompleteInput] ZIP check", { typedZip, resolvedZip, zipMismatch, typedAddress, resolvedAddress });
 
             // ALWAYS use Google's resolved address for pricing/tax
             resolvedAddressRef.current = resolvedAddress;
