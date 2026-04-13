@@ -824,6 +824,10 @@ export type Database = {
           geo_zip: string | null
           id: string
           ip_address: string | null
+          ip_city: string | null
+          ip_is_business: boolean | null
+          ip_org: string | null
+          ip_zip: string | null
           last_seen_at: string | null
           nearest_pit_id: string | null
           nearest_pit_name: string | null
@@ -862,6 +866,10 @@ export type Database = {
           geo_zip?: string | null
           id?: string
           ip_address?: string | null
+          ip_city?: string | null
+          ip_is_business?: boolean | null
+          ip_org?: string | null
+          ip_zip?: string | null
           last_seen_at?: string | null
           nearest_pit_id?: string | null
           nearest_pit_name?: string | null
@@ -900,6 +908,10 @@ export type Database = {
           geo_zip?: string | null
           id?: string
           ip_address?: string | null
+          ip_city?: string | null
+          ip_is_business?: boolean | null
+          ip_org?: string | null
+          ip_zip?: string | null
           last_seen_at?: string | null
           nearest_pit_id?: string | null
           nearest_pit_name?: string | null
