@@ -2102,19 +2102,19 @@ const Leads = () => {
             <div className="mb-6">
               <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>REVENUE</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
                   <p className="text-xs text-gray-500 mb-1">Today (Captured)</p>
                   <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${todayCapturedRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
-                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
                   <p className="text-xs text-gray-500 mb-1">Month-to-Date</p>
                   <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${mtdRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
-                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
                   <p className="text-xs text-gray-500 mb-1">Avg Order Value</p>
                   <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${avgOrder.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
-                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
                   <p className="text-xs text-gray-500 mb-1">Total Orders</p>
                   <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{cashOrders.length}</p>
                 </div>
