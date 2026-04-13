@@ -361,6 +361,7 @@ export type Database = {
       orders: {
         Row: {
           base_unit_price: number | null
+          billed_distance_miles: number | null
           billing_address: string | null
           billing_country: string | null
           billing_matches_delivery: boolean | null
@@ -396,6 +397,7 @@ export type Database = {
           fraud_score: number | null
           fraud_signals: Json | null
           id: string
+          is_northshore: boolean | null
           last_confirmation_sent_at: string | null
           lead_reference: string | null
           lookup_token: string | null
@@ -432,6 +434,7 @@ export type Database = {
         }
         Insert: {
           base_unit_price?: number | null
+          billed_distance_miles?: number | null
           billing_address?: string | null
           billing_country?: string | null
           billing_matches_delivery?: boolean | null
@@ -467,6 +470,7 @@ export type Database = {
           fraud_score?: number | null
           fraud_signals?: Json | null
           id?: string
+          is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
           lead_reference?: string | null
           lookup_token?: string | null
@@ -503,6 +507,7 @@ export type Database = {
         }
         Update: {
           base_unit_price?: number | null
+          billed_distance_miles?: number | null
           billing_address?: string | null
           billing_country?: string | null
           billing_matches_delivery?: boolean | null
@@ -538,6 +543,7 @@ export type Database = {
           fraud_score?: number | null
           fraud_signals?: Json | null
           id?: string
+          is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
           lead_reference?: string | null
           lookup_token?: string | null
