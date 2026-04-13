@@ -353,6 +353,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
             {apiLoaded ? (
               <PlaceAutocompleteInput
                 onPlaceSelect={handlePlaceSelect}
+                onAddressMismatch={handleAddressMismatch}
                 onInputChange={(val) => { setAddress(val); setCustomerCoords(null); }}
                 onEnterKey={calculateDistance}
                 placeholder="Enter your delivery address for an instant price"
