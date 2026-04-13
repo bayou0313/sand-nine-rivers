@@ -3209,6 +3209,19 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // TEMPORARY: Bootstrap cron password into global_settings
+    if (action === "bootstrap_cron_password") {
+      const pw = Deno.env.get("LEADS_PASSWORD");
+      if (!pw) {
+        return new Response(JSON.stringify({ error: "LEADS_PASSWORD not set" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error: upsertErr } = await supabase.from("global_settings").upsert({ key: "leads_password_cron", value: pw, description: "Leads password for cron auth", is_public: false }, { onConflict: "key" });
+      if (upsertErr) {
+        return new Response(JSON.stringify({ error: upsertErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ success: true, message: "Cron password stored in global_settings" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     if (action === "process_regen_queue") {
       const { data: draftPages } = await supabase
         .from("city_pages")
