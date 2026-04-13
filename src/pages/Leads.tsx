@@ -2356,7 +2356,7 @@ const Leads = () => {
                     </div>
                     <div className="bg-gray-50 p-2 space-y-2 min-h-[200px] max-h-[500px] overflow-y-auto">
                       {stageLeads.map(l => (
-                        <div key={l.id} onClick={() => openDetail(l)} className="bg-white rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                        <div key={l.id} onClick={() => openDetail(l)} className="rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                           <p className="font-mono text-xs mb-1" style={{ color: BRAND_GOLD }}>{l.lead_number || "—"}</p>
                           <p className="font-bold text-sm" style={{ color: T.textPrimary }}>{l.customer_name}</p>
                           <p className="text-xs text-gray-500">{l.zip} • {l.distance_miles?.toFixed(1) || "?"} mi</p>
@@ -5557,7 +5557,7 @@ const Leads = () => {
 
               {/* Notification panel */}
               {showNotifPanel && (
-                <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border z-50" style={{ borderColor: T.cardBorder }}>
+                <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl shadow-2xl border z-50" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                   <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: T.cardBorder }}>
                     <h3 className="text-sm font-bold" style={{ color: T.textPrimary }}>Notifications</h3>
                     <button onClick={() => setShowNotifPanel(false)} className="text-gray-400 hover:text-gray-600">
