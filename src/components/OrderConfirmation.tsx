@@ -42,7 +42,7 @@ const DELIVERY_TERMS = [
   },
   {
     title: "Cancellation Policy",
-    body: "Orders canceled a day before scheduled delivery will be refunded in full. Processing fees are non-refundable.",
+    body: "__DYNAMIC_CANCELLATION__",
   },
 ];
 
