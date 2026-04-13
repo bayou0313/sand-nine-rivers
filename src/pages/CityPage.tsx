@@ -231,7 +231,7 @@ const CityPage = () => {
         entry_city_name: data.city_name,
       });
 
-      if (data.status === "active") {
+      if (data.status === "active" && !isNoTrack()) {
         try {
           await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });
         } catch { /* ignore */ }
