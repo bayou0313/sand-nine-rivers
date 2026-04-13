@@ -32,7 +32,7 @@ export default function PlaceAutocompleteInput({
 }: PlaceAutocompleteInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
-  const justSelectedRef = useRef(false);
+  const resolvedAddressRef = useRef<string | null>(null);
   const [hasValue, setHasValue] = useState(
     !!(initialValue && initialValue.length > 0)
   );
@@ -64,16 +64,16 @@ export default function PlaceAutocompleteInput({
           const lat = place.geometry?.location?.lat();
           const lng = place.geometry?.location?.lng();
           if (lat != null && lng != null) {
-            justSelectedRef.current = true;
+            const resolvedAddress = place.formatted_address || "";
+            resolvedAddressRef.current = resolvedAddress;
             setHasValue(true);
-            onInputChangeRef.current?.(place.formatted_address || "");
+            onInputChangeRef.current?.(resolvedAddressRef.current);
             onPlaceSelectRef.current({
-              formattedAddress: place.formatted_address || "",
+              formattedAddress: resolvedAddressRef.current,
               lat,
               lng,
               addressComponents: place.address_components || [],
             });
-            setTimeout(() => { justSelectedRef.current = false; }, 300);
           }
         });
 
@@ -102,10 +102,14 @@ export default function PlaceAutocompleteInput({
   }, []);
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (justSelectedRef.current) return;
     const val = e.target.value;
     setHasValue(val.length > 0);
-    onInputChangeRef.current?.(val);
+    if (resolvedAddressRef.current && val !== resolvedAddressRef.current) {
+      resolvedAddressRef.current = null;
+    }
+    if (!resolvedAddressRef.current) {
+      onInputChangeRef.current?.(val);
+    }
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
