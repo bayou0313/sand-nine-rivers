@@ -1998,8 +1998,12 @@ const Order = () => {
                   taxAmount={taxAmount}
                   saturdaySurchargeTotal={saturdaySurchargeTotal}
                   taxInfo={taxInfo}
-                  basePricePerLoad={result?.price ?? effectivePricing.base_price}
-                  distanceFee={result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0}
+                  basePricePerLoad={isBaked
+                    ? Math.round((result?.price ?? effectivePricing.base_price) * 1.035)
+                    : effectivePricing.base_price}
+                  distanceFee={isBaked
+                    ? 0
+                    : (result ? Math.max(0, (result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity) : 0)}
                   onDownloadInvoice={handleDownloadInvoice}
                   downloadingInvoice={downloadingInvoice}
                   canDownload={!!confirmedOrderId}

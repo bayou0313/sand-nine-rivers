@@ -357,9 +357,13 @@ serve(async (req) => {
 
     // Calculate pricing
     const qty = order.quantity || 1;
-    const baseLine = basePrice * qty;
     const dist = Number(order.distance_miles || 0);
-    const distanceFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * qty : 0;
+    const rawDistanceFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * qty : 0;
+    // In baked mode, combine base + distance into one line item
+    const baseLine = isBakedMode
+      ? (basePrice + rawDistanceFee / qty) * qty
+      : basePrice * qty;
+    const distanceFee = isBakedMode ? 0 : rawDistanceFee;
     const satSurcharge = order.saturday_surcharge ? (order.saturday_surcharge_amount || 0) : 0;
     const sunSurcharge = order.sunday_surcharge ? (order.sunday_surcharge_amount || 0) : 0;
     const discountAmount = Number(order.discount_amount || 0);
