@@ -5649,7 +5649,7 @@ const Leads = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: "#FAFAF9" }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: T.pageBg }}>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
