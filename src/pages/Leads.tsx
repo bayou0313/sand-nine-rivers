@@ -2130,7 +2130,7 @@ const Leads = () => {
           >
             <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: T.textSecond }}>{label}</p>
             <p className="text-[28px] md:text-[32px] font-bold leading-none">
-              <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accentColor === BRAND_GOLD ? BRAND_NAVY : accentColor} />
+              <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accentColor === BRAND_GOLD ? T.textPrimary : accentColor} />
             </p>
             <p className="text-[11px] mt-1.5" style={{ color: T.textSecond }}>{sub}</p>
           </div>
@@ -3357,7 +3357,7 @@ const Leads = () => {
                           )}
                         </td>
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
-                        <td className="px-3 py-2 text-xs" style={{ color: cp.region ? BRAND_NAVY : "#ccc" }}>{cp.region || "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: cp.region ? T.textPrimary : T.textSecond }}>{cp.region || "—"}</td>
                         <td className="px-3 py-2 text-xs">
                           <a href={`https://riversand.net/${cp.city_slug}/river-sand-delivery`} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: BRAND_GOLD }}>
                             /{cp.city_slug}/river-sand-delivery
@@ -4219,7 +4219,7 @@ const Leads = () => {
                               saveChecklist(u);
                             }} className="w-4 h-4 mt-0.5 rounded accent-current" style={{ accentColor: BRAND_GOLD }} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm" style={{ color: state.done ? "#22C55E" : BRAND_NAVY, textDecoration: state.done ? "line-through" : "none" }}>{item.label}</p>
+                              <p className="text-sm" style={{ color: state.done ? "#22C55E" : T.textPrimary, textDecoration: state.done ? "line-through" : "none" }}>{item.label}</p>
                               <input type="text" placeholder="Add notes..." value={state.notes} onChange={e => {
                                 const u = { ...seoChecklist, [item.id]: { ...state, notes: e.target.value } };
                                 saveChecklist(u);
@@ -4620,7 +4620,7 @@ const Leads = () => {
               <p className="text-xs font-medium text-gray-500 mb-3">Manual overrides</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {([
-                  { label: "Primary color", key: "brand_primary", fallbackKey: "primary_color", fallback: BRAND_NAVY, extra: "primary_color" },
+                  { label: "Primary color", key: "brand_primary", fallbackKey: "primary_color", fallback: "#0D2137", extra: "primary_color" },
                   { label: "Accent color", key: "brand_accent", fallbackKey: "accent_color", fallback: BRAND_GOLD, extra: "accent_color" },
                   { label: "Background color", key: "brand_background", fallbackKey: "", fallback: "#F2EDE4", extra: "" },
                 ] as const).map(({ label, key, fallbackKey, fallback, extra }) => {
@@ -4895,7 +4895,7 @@ const Leads = () => {
                                 <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                                   Mark Paid
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: T.textPrimary }}>
+                                <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
                                   {sendingPaymentLink === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link className="w-3 h-3 mr-1" />}
                                   Pay Link
                                 </Button>
@@ -4997,7 +4997,7 @@ const Leads = () => {
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 flex gap-1">
-                          <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: T.textPrimary }}>
+                          <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
                             View Orders
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => { setEditCustomerEmail(c); setEditCustomerEmailValue(c.email || ""); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}>
@@ -5325,7 +5325,7 @@ const Leads = () => {
                         </div>
                       )}
                       <div style={{ fontSize: "11px", color: isSelected ? "white" : "#888", marginBottom: "2px" }}>{DAY_NAMES[d.getDay()]}</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: isSelected ? "white" : isToday ? BRAND_GOLD : BRAND_NAVY }}>{d.getDate()}</div>
+                      <div style={{ fontSize: "16px", fontWeight: 700, color: isSelected ? "white" : isToday ? BRAND_GOLD : T.textPrimary }}>{d.getDate()}</div>
                       {count && count.orders > 0 && (
                         <div style={{ position: "absolute", top: isFirstOfMonth ? "22px" : "4px", right: "6px", background: "#EF4444", color: "white", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{count.orders}</div>
                       )}
@@ -5444,7 +5444,7 @@ const Leads = () => {
                         height: 36,
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 400,
-                        color: isActive ? BRAND_GOLD : BRAND_NAVY,
+                        color: isActive ? BRAND_GOLD : T.textPrimary,
                         backgroundColor: isActive ? SIDEBAR_ACTIVE_BG : "transparent",
                         borderRadius: 6,
                       }}
@@ -5584,7 +5584,7 @@ const Leads = () => {
       {selectedLead && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelectedLead(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4 border-b" style={{ backgroundColor: T.tableHeaderBg }}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-mono text-sm" style={{ color: BRAND_GOLD }}>{selectedLead.lead_number || "—"}</p>
@@ -5736,7 +5736,7 @@ const Leads = () => {
       {showProposal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !sendingProposals && setShowProposal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4 border-b" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Send Proposals</h2>
               <p className="text-white/60 text-sm">{simSelected.size} leads selected</p>
             </div>
@@ -5787,7 +5787,7 @@ const Leads = () => {
       {quickProposalLead && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !qpSending && setQuickProposalLead(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4 border-b" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Send Delivery Offer</h2>
               <p className="text-white/60 text-sm">{quickProposalLead.lead_number || "—"} — {quickProposalLead.customer_name}</p>
             </div>
@@ -6571,7 +6571,7 @@ const Leads = () => {
                   disabled={editCustomerEmailSaving}
                   variant="outline"
                   className="flex-1 h-10 text-xs"
-                  style={{ borderColor: BRAND_NAVY, color: T.textPrimary }}
+                  style={{ borderColor: T.cardBorder, color: T.textPrimary }}
                 >
                   {editCustomerEmailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
                   Save Only
