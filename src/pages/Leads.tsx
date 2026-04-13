@@ -175,7 +175,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: "#0D2137", called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -187,6 +187,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "overview", label: "Overview", icon: BarChart3 },
       { id: "live" as NavPage, label: "Live Visitors", icon: Users },
       { id: "cash_orders", label: "Orders", icon: DollarSign },
+      { id: "finances" as NavPage, label: "Finances", icon: DollarSign },
       { id: "customers" as NavPage, label: "Customers", icon: Users },
       { id: "pending_review" as NavPage, label: "Pending Review", icon: AlertTriangle },
       { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
@@ -328,6 +329,7 @@ const Leads = () => {
   // Sidebar nav
   const [activePage, setActivePage] = useState<NavPage>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [financeRange, setFinanceRange] = useState<'mtd' | 'qtd' | 'ytd'>('mtd');
 
   // Business profile state
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
@@ -764,6 +766,18 @@ const Leads = () => {
       fetchNotifications(saved);
     }
   }, [fetchLeads, fetchSettings, fetchPits, fetchNotifications]);
+
+  // Sync body background for full-page dark mode coverage
+  useEffect(() => {
+    const dark = globalSettings?.dashboard_theme === 'dark';
+    const bg = dark ? '#0A0F1E' : '#FAFAF9';
+    document.body.style.backgroundColor = bg;
+    document.documentElement.style.backgroundColor = bg;
+    return () => {
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.backgroundColor = '';
+    };
+  }, [globalSettings?.dashboard_theme]);
 
   // Realtime subscription for notifications
   useEffect(() => {
@@ -1999,6 +2013,7 @@ const Leads = () => {
     pending_review: { title: "PENDING REVIEW", subtitle: `${pendingReviewOrders.length} orders to review` },
     reviews: { title: "REVIEWS", subtitle: "Customer feedback" },
     schedule: { title: "DELIVERY SCHEDULE", subtitle: "Orders by delivery date" },
+    finances: { title: "TAXES & FINANCIALS", subtitle: "Tax liability, fees & revenue" },
   };
 
   // Login screen
@@ -3334,7 +3349,7 @@ const Leads = () => {
                   </thead>
                   <tbody>
                     {filteredCityPages.map((cp: any, i: number) => (
-                      <tr key={cp.id} style={{ backgroundColor: selectedCityPages.has(cp.id) ? BRAND_GOLD + "10" : i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                      <tr key={cp.id} style={{ backgroundColor: selectedCityPages.has(cp.id) ? BRAND_GOLD + "10" : i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
                         <td className="px-3 py-2">
                           <input
                             type="checkbox"
@@ -3437,7 +3452,7 @@ const Leads = () => {
                       </thead>
                       <tbody>
                         {discoveredCities.map((c, i) => (
-                          <tr key={i} style={{ backgroundColor: c.duplicate ? "#F9F9F9" : "white", opacity: c.duplicate ? 0.5 : 1 }}>
+                          <tr key={i} style={{ backgroundColor: c.duplicate ? T.tableStripeBg : T.cardBg, opacity: c.duplicate ? 0.5 : 1 }}>
                             <td className="px-2 py-2">
                               {!c.duplicate && <input type="checkbox" checked={discoverChecked.has(i)} onChange={e => { const s = new Set(discoverChecked); e.target.checked ? s.add(i) : s.delete(i); setDiscoverChecked(s); }} />}
                             </td>
@@ -5396,7 +5411,7 @@ const Leads = () => {
                 const isPaid = order.payment_status === "paid";
                 const isCOD = order.payment_method === "COD" || order.payment_method === "PAY AT DELIVERY";
                 return (
-                  <div key={order.id} style={{ background: "white", border: `1px solid ${T.cardBorder}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
+                  <div key={order.id} style={{ background: T.cardBg, border: `1px solid ${T.cardBorder}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                       <div>
                         <span style={{ fontSize: "13px", fontWeight: 700, color: BRAND_GOLD }}>#{order.order_number}</span>
@@ -5425,13 +5440,228 @@ const Leads = () => {
         );
       }
 
+      case "finances": {
+        const now = new Date();
+        const filterOrders = (orders: any[]) => orders.filter(o => {
+          const d = new Date(o.created_at);
+          if (financeRange === 'mtd') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+          if (financeRange === 'qtd') return Math.floor(d.getMonth()/3) === Math.floor(now.getMonth()/3) && d.getFullYear() === now.getFullYear();
+          return d.getFullYear() === now.getFullYear();
+        });
+        const rangeOrders = filterOrders(cashOrders);
+        const stateTaxCollected = rangeOrders.reduce((s: number, o: any) => s + Number(o.state_tax_amount || 0), 0);
+        const parishTaxCollected = rangeOrders.reduce((s: number, o: any) => s + Number(o.parish_tax_amount || 0), 0);
+        const totalTaxCollected = stateTaxCollected + parishTaxCollected;
+
+        // Parish breakdown from delivery address
+        const parishBreakdown = rangeOrders.reduce((acc: Record<string, { tax: number; orders: number; rate: number }>, o: any) => {
+          // Try to extract parish-like info from address
+          const addr = o.delivery_address || '';
+          const parishMatch = addr.match(/,\s*([^,]+?)\s*,\s*LA/i);
+          const parish = parishMatch ? parishMatch[1].trim() : 'Unknown';
+          if (!acc[parish]) acc[parish] = { tax: 0, orders: 0, rate: Number(o.parish_tax_rate || o.tax_rate || 0) };
+          acc[parish].tax += Number(o.parish_tax_amount || 0) + Number(o.state_tax_amount || 0);
+          acc[parish].orders += 1;
+          return acc;
+        }, {});
+
+        const cardOrders = rangeOrders.filter((o: any) => o.payment_method === 'stripe-link');
+        const codOrders = rangeOrders.filter((o: any) => o.payment_method !== 'stripe-link');
+        const feesCalculated = cardOrders.reduce((s: number, o: any) => s + Number(o.processing_fee || (Number(o.price || 0) * 0.035)), 0);
+        const feesSavedCOD = codOrders.reduce((s: number, o: any) => s + (Number(o.price || 0) * 0.035), 0);
+
+        const totalMiles = rangeOrders.reduce((s: number, o: any) => s + Number(o.distance_miles || 0), 0);
+        const avgMiles = rangeOrders.length ? totalMiles / rangeOrders.length : 0;
+        const distanceFeeRevenue = rangeOrders.reduce((s: number, o: any) => s + Number(o.distance_fee || 0), 0);
+        const fuelCostEst = totalMiles * 2 * 0.867;
+        const netDistanceFees = distanceFeeRevenue - fuelCostEst;
+
+        const grossRevenue = rangeOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const saturdayRevenue = rangeOrders.reduce((s: number, o: any) => s + Number(o.saturday_surcharge_amount || 0), 0);
+        const baseRevenue = grossRevenue - distanceFeeRevenue - saturdayRevenue;
+        const netRevenue = grossRevenue - totalTaxCollected - feesCalculated;
+        const fmtD = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const pctCard = rangeOrders.length ? ((cardOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
+        const pctCOD = rangeOrders.length ? ((codOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
+
+        const SECTION_LABEL: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: T.textSecond, marginBottom: 12 };
+        const METRIC_CARD: React.CSSProperties = { ...CARD_STYLE_T, borderRadius: 10, padding: '16px 20px', borderLeft: `3px solid ${BRAND_GOLD}` };
+        const METRIC_NUM: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: T.textPrimary };
+        const METRIC_LABEL: React.CSSProperties = { fontSize: 12, color: T.textSecond, marginTop: 2 };
+
+        return (
+          <div>
+            {/* Range toggle */}
+            <div className="flex gap-2 mb-6">
+              {(['mtd', 'qtd', 'ytd'] as const).map(r => (
+                <button
+                  key={r}
+                  onClick={() => setFinanceRange(r)}
+                  style={{
+                    padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    backgroundColor: financeRange === r ? BRAND_GOLD : T.cardBg,
+                    color: financeRange === r ? '#fff' : T.textPrimary,
+                    border: `1px solid ${financeRange === r ? BRAND_GOLD : T.cardBorder}`,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {r.toUpperCase()}
+                </button>
+              ))}
+              <span style={{ fontSize: 12, color: T.textSecond, alignSelf: 'center', marginLeft: 8 }}>
+                {rangeOrders.length} orders in range
+              </span>
+            </div>
+
+            {/* Section 1 — Tax Liability */}
+            <div style={SECTION_LABEL}>TAX LIABILITY</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div style={METRIC_CARD}>
+                <div style={METRIC_NUM}>{fmtD(stateTaxCollected)}</div>
+                <div style={METRIC_LABEL}>State Tax Collected</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={METRIC_NUM}>{fmtD(parishTaxCollected)}</div>
+                <div style={METRIC_LABEL}>Parish Tax Collected</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={METRIC_NUM}>{fmtD(totalTaxCollected)}</div>
+                <div style={METRIC_LABEL}>Total Tax to Remit</div>
+              </div>
+            </div>
+            {/* Parish breakdown table */}
+            <div style={{ ...CARD_STYLE_T, borderRadius: 10, overflow: 'hidden', marginBottom: 24 }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
+                    <th className="text-left px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Parish / City</th>
+                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Rate</th>
+                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Tax Collected</th>
+                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Orders</th>
+                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>To Remit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(Object.entries(parishBreakdown) as [string, { tax: number; orders: number; rate: number }][]).sort((a, b) => b[1].tax - a[1].tax).map(([parish, data], i) => (
+                    <tr key={parish} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}` }}>
+                      <td className="px-4 py-2" style={{ color: T.textPrimary, fontWeight: 500 }}>{parish}</td>
+                      <td className="px-4 py-2 text-right" style={{ color: T.textSecond }}>{(data.rate * 100).toFixed(2)}%</td>
+                      <td className="px-4 py-2 text-right" style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(data.tax)}</td>
+                      <td className="px-4 py-2 text-right" style={{ color: T.textSecond }}>{data.orders}</td>
+                      <td className="px-4 py-2 text-right" style={{ color: BRAND_GOLD, fontWeight: 600 }}>{fmtD(data.tax)}</td>
+                    </tr>
+                  ))}
+                  {Object.keys(parishBreakdown).length === 0 && (
+                    <tr><td colSpan={5} className="text-center py-6" style={{ color: T.textSecond }}>No orders in selected range</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Section 2 — Processing Fees */}
+            <div style={SECTION_LABEL}>PROCESSING FEES</div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div style={METRIC_CARD}>
+                <div style={{ ...METRIC_NUM, color: ALERT_RED }}>{fmtD(feesCalculated)}</div>
+                <div style={METRIC_LABEL}>Stripe Fees Paid</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={{ ...METRIC_NUM, color: POSITIVE }}>{fmtD(feesSavedCOD)}</div>
+                <div style={METRIC_LABEL}>Fees Saved (COD)</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={{ ...METRIC_NUM, color: feesSavedCOD - feesCalculated > 0 ? POSITIVE : ALERT_RED }}>{fmtD(feesSavedCOD - feesCalculated)}</div>
+                <div style={METRIC_LABEL}>Net Fee Impact</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={{ fontSize: 14, color: T.textPrimary }}>
+                  <span style={{ fontWeight: 700 }}>{pctCard}%</span> Card · <span style={{ fontWeight: 700 }}>{pctCOD}%</span> COD
+                </div>
+                <div style={METRIC_LABEL}>Payment Split ({cardOrders.length} / {codOrders.length})</div>
+              </div>
+            </div>
+
+            {/* Section 3 — Operations Metrics */}
+            <div style={SECTION_LABEL}>OPERATIONS METRICS</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div style={METRIC_CARD}>
+                <div style={METRIC_NUM}>{totalMiles.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                <div style={METRIC_LABEL}>Total Miles Driven</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={METRIC_NUM}>{avgMiles.toFixed(1)}</div>
+                <div style={METRIC_LABEL}>Avg Miles / Order</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={METRIC_NUM}>{fmtD(distanceFeeRevenue)}</div>
+                <div style={METRIC_LABEL}>Distance Fee Revenue</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div style={METRIC_CARD}>
+                <div style={{ ...METRIC_NUM, color: ALERT_RED }}>{fmtD(fuelCostEst)}</div>
+                <div style={METRIC_LABEL}>Fuel Cost Est. ($0.87/mi RT)</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={{ ...METRIC_NUM, color: netDistanceFees >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netDistanceFees)}</div>
+                <div style={METRIC_LABEL}>Net on Distance Fees</div>
+              </div>
+              <div style={METRIC_CARD}>
+                <div style={{ ...METRIC_NUM, color: BRAND_GOLD }}>{fmtD(saturdayRevenue)}</div>
+                <div style={METRIC_LABEL}>Saturday Surcharge Revenue</div>
+              </div>
+            </div>
+
+            {/* Section 4 — Revenue Breakdown */}
+            <div style={SECTION_LABEL}>REVENUE BREAKDOWN</div>
+            <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '24px 28px' }}>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center" style={{ borderBottom: `1px solid ${T.cardBorder}`, paddingBottom: 10 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary }}>Gross Revenue</span>
+                  <span style={{ fontSize: 20, fontWeight: 700, color: T.textPrimary }}>{fmtD(grossRevenue)}</span>
+                </div>
+                <div className="flex justify-between items-center" style={{ paddingLeft: 16 }}>
+                  <span style={{ fontSize: 13, color: ALERT_RED }}>− Tax Collected</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: ALERT_RED }}>({fmtD(totalTaxCollected)})</span>
+                </div>
+                <div className="flex justify-between items-center" style={{ paddingLeft: 16 }}>
+                  <span style={{ fontSize: 13, color: ALERT_RED }}>− Stripe Fees</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: ALERT_RED }}>({fmtD(feesCalculated)})</span>
+                </div>
+                <div className="flex justify-between items-center" style={{ borderTop: `2px solid ${BRAND_GOLD}`, paddingTop: 12, marginTop: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: T.textPrimary }}>= Net Revenue</span>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: POSITIVE }}>{fmtD(netRevenue)}</span>
+                </div>
+              </div>
+              <div style={{ marginTop: 24, borderTop: `1px solid ${T.cardBorder}`, paddingTop: 16 }}>
+                <div style={{ ...SECTION_LABEL, marginBottom: 8 }}>REVENUE COMPONENTS</div>
+                <div className="space-y-2">
+                  <div className="flex justify-between" style={{ fontSize: 13 }}>
+                    <span style={{ color: T.textSecond }}>Sand Base Revenue</span>
+                    <span style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(baseRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between" style={{ fontSize: 13 }}>
+                    <span style={{ color: T.textSecond }}>Distance Fee Revenue</span>
+                    <span style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(distanceFeeRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between" style={{ fontSize: 13 }}>
+                    <span style={{ color: T.textSecond }}>Saturday Surcharge</span>
+                    <span style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(saturdayRevenue)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       default:
         return null;
     }
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: "#FAFAF9" }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: T.pageBg }}>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
