@@ -1491,7 +1491,7 @@ const Leads = () => {
 
   // Fetch abandoned sessions when navigating to that page (only if empty)
   useEffect(() => {
-    if (activePage === "abandoned" && authenticated && abandonedSessions.length === 0) {
+    if ((activePage === "abandoned" || activePage === "finances") && authenticated && abandonedSessions.length === 0) {
       fetchAbandonedSessions();
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
@@ -5650,6 +5650,196 @@ const Leads = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            {/* ── SECTION 5 — Revenue Recovery ── */}
+            <div style={{ marginTop: 32 }}>
+              <div style={SECTION_LABEL}>ABANDONED REVENUE</div>
+              {(() => {
+                const sessionsWithPrice = abandonedSessions.filter((s: any) => Number(s.calculated_price || 0) > 0);
+                const abandonedValue = sessionsWithPrice.reduce((s: number, sess: any) => s + Number(sess.calculated_price || 0), 0);
+                const emailsSent = abandonedSessions.filter((s: any) => s.email_1hr_sent || s.email_24hr_sent || s.email_72hr_sent).length;
+                const withEmail = abandonedSessions.filter((s: any) => s.customer_email).length;
+                return (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div style={METRIC_CARD}>
+                        <div style={METRIC_NUM}>{abandonedSessions.length}</div>
+                        <div style={METRIC_LABEL}>Total Abandoned</div>
+                      </div>
+                      <div style={METRIC_CARD}>
+                        <div style={METRIC_NUM}>{sessionsWithPrice.length}</div>
+                        <div style={METRIC_LABEL}>Got a Price</div>
+                      </div>
+                      <div style={METRIC_CARD}>
+                        <div style={{ ...METRIC_NUM, color: BRAND_GOLD }}>{fmtD(abandonedValue)}</div>
+                        <div style={METRIC_LABEL}>Abandoned Value</div>
+                      </div>
+                      <div style={METRIC_CARD}>
+                        <div style={METRIC_NUM}>{emailsSent}</div>
+                        <div style={METRIC_LABEL}>Recovery Emails Sent</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2">
+                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '12px 16px' }}>
+                        <span style={{ fontSize: 12, color: T.textSecond }}>Have Email</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary, marginLeft: 8 }}>{withEmail} of {abandonedSessions.length}</span>
+                      </div>
+                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '12px 16px' }}>
+                        <span style={{ fontSize: 12, color: T.textSecond }}>Email Rate</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary, marginLeft: 8 }}>{abandonedSessions.length > 0 ? ((withEmail / abandonedSessions.length) * 100).toFixed(0) : 0}%</span>
+                      </div>
+                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '12px 16px' }}>
+                        <span style={{ fontSize: 12, color: T.textSecond }}>Avg Abandoned $</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: BRAND_GOLD, marginLeft: 8 }}>{sessionsWithPrice.length > 0 ? fmtD(abandonedValue / sessionsWithPrice.length) : '$0'}</span>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: 11, color: T.textSecond, fontStyle: 'italic', marginTop: 4 }}>Recovery conversion tracking requires session→order linking (not yet implemented)</p>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* ── SECTION 6 — ZIP Conversion Intelligence ── */}
+            <div style={{ marginTop: 32 }}>
+              <div style={SECTION_LABEL}>ZIP SESSION INTELLIGENCE</div>
+              {(() => {
+                const zipStats = abandonedSessions.reduce((acc: Record<string, { sessions: number; withPrice: number; totalPrice: number; stages: Record<string, number> }>, s: any) => {
+                  const zip = s.geo_zip || 'Unknown';
+                  if (!acc[zip]) acc[zip] = { sessions: 0, withPrice: 0, totalPrice: 0, stages: {} };
+                  acc[zip].sessions++;
+                  if (Number(s.calculated_price || 0) > 0) {
+                    acc[zip].withPrice++;
+                    acc[zip].totalPrice += Number(s.calculated_price || 0);
+                  }
+                  const stage = s.stage || 'unknown';
+                  acc[zip].stages[stage] = (acc[zip].stages[stage] || 0) + 1;
+                  return acc;
+                }, {});
+                const zipRows = (Object.entries(zipStats) as [string, { sessions: number; withPrice: number; totalPrice: number; stages: Record<string, number> }][])
+                  .filter(([, d]) => d.sessions >= 2)
+                  .sort((a, b) => b[1].sessions - a[1].sessions)
+                  .slice(0, 20)
+                  .map(([zip, d]) => {
+                    const hotStages = ['started_checkout', 'reached_payment', 'clicked_order_now'];
+                    const hotCount = hotStages.reduce((s, st) => s + (d.stages[st] || 0), 0);
+                    const status = hotCount > 0 ? '🔥 Hot' : d.withPrice > 0 ? '⚠️ Interest' : '❄️ Cold';
+                    return { zip, ...d, avgPrice: d.withPrice > 0 ? d.totalPrice / d.withPrice : 0, hotCount, status };
+                  });
+                return (
+                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, overflow: 'hidden' }}>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ backgroundColor: T.tableHeaderBg }}>
+                          {['ZIP', 'Sessions', 'Got Price', 'Avg $', 'Hot Leads', 'Status'].map(h => (
+                            <th key={h} className="px-4 py-2.5 text-left font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {zipRows.map((r, i) => (
+                          <tr
+                            key={r.zip}
+                            style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}`, cursor: 'pointer' }}
+                            onClick={() => { setActivePage('cash_orders'); }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? T.cardBg : T.tableStripeBg)}
+                          >
+                            <td className="px-4 py-2 font-mono" style={{ color: T.textPrimary, fontWeight: 600 }}>{r.zip}</td>
+                            <td className="px-4 py-2" style={{ color: T.textPrimary }}>{r.sessions}</td>
+                            <td className="px-4 py-2" style={{ color: T.textPrimary }}>{r.withPrice}</td>
+                            <td className="px-4 py-2" style={{ color: BRAND_GOLD, fontWeight: 600 }}>{r.avgPrice > 0 ? fmtD(r.avgPrice) : '—'}</td>
+                            <td className="px-4 py-2" style={{ color: r.hotCount > 0 ? ALERT_RED : T.textSecond, fontWeight: r.hotCount > 0 ? 700 : 400 }}>{r.hotCount}</td>
+                            <td className="px-4 py-2" style={{ fontSize: 12 }}>{r.status}</td>
+                          </tr>
+                        ))}
+                        {zipRows.length === 0 && (
+                          <tr><td colSpan={6} className="text-center py-6" style={{ color: T.textSecond }}>Not enough session data yet (min 2 per ZIP)</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+              <p style={{ fontSize: 11, color: T.textSecond, fontStyle: 'italic', marginTop: 6 }}>Based on abandoned session data. ZIPs with &lt;2 sessions hidden.</p>
+            </div>
+
+            {/* ── SECTION 7 — Daily P&L Estimate ── */}
+            <div style={{ marginTop: 32 }}>
+              <div style={SECTION_LABEL}>TODAY'S P&L ESTIMATE</div>
+              {(() => {
+                const todayStr = new Date().toDateString();
+                const todayOrders = cashOrders.filter((o: any) => new Date(o.created_at).toDateString() === todayStr);
+                const grossToday = todayOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+                const taxToday = todayOrders.reduce((s: number, o: any) => s + Number(o.state_tax_amount || 0) + Number(o.parish_tax_amount || 0), 0);
+                const feesToday = todayOrders.filter((o: any) => o.payment_method === 'stripe-link')
+                  .reduce((s: number, o: any) => s + Number(o.processing_fee || (Number(o.price || 0) * 0.035)), 0);
+                const driverCostToday = todayOrders.length * 30;
+                const fuelCostToday = todayOrders.reduce((s: number, o: any) => s + (Number(o.distance_miles || 0) * 2 * 0.867), 0);
+                const netToday = grossToday - taxToday - feesToday - driverCostToday - fuelCostToday;
+                const netPerLoad = todayOrders.length > 0 ? netToday / todayOrders.length : 0;
+                const TARGET_PER_LOAD = 130;
+                const onTarget = netPerLoad >= TARGET_PER_LOAD;
+
+                return (
+                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '24px 28px', borderLeft: `3px solid ${BRAND_GOLD}` }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary }}>{todayOrders.length} orders today</span>
+                      <span style={{ fontSize: 12, color: T.textSecond }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between" style={{ fontSize: 14 }}>
+                        <span style={{ color: T.textPrimary, fontWeight: 600 }}>Gross Collected</span>
+                        <span style={{ color: T.textPrimary, fontWeight: 700, fontSize: 18 }}>{fmtD(grossToday)}</span>
+                      </div>
+                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
+                        <span style={{ color: ALERT_RED }}>− Tax Collected</span>
+                        <span style={{ color: ALERT_RED, fontWeight: 600 }}>({fmtD(taxToday)})</span>
+                      </div>
+                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
+                        <span style={{ color: ALERT_RED }}>− Stripe Fees</span>
+                        <span style={{ color: ALERT_RED, fontWeight: 600 }}>({fmtD(feesToday)})</span>
+                      </div>
+                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
+                        <span style={{ color: WARN_YELLOW }}>− Driver Costs est</span>
+                        <span style={{ color: WARN_YELLOW, fontWeight: 600 }}>({fmtD(driverCostToday)})</span>
+                      </div>
+                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
+                        <span style={{ color: WARN_YELLOW }}>− Fuel Cost est</span>
+                        <span style={{ color: WARN_YELLOW, fontWeight: 600 }}>({fmtD(fuelCostToday)})</span>
+                      </div>
+                      <div style={{ borderTop: `2px solid ${BRAND_GOLD}`, paddingTop: 12, marginTop: 8 }}>
+                        <div className="flex justify-between">
+                          <span style={{ fontSize: 15, fontWeight: 700, color: T.textPrimary }}>= Estimated Net</span>
+                          <span style={{ fontSize: 22, fontWeight: 700, color: netToday >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netToday)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {todayOrders.length > 0 && (
+                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.cardBorder}` }}>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <div style={{ fontSize: 11, color: T.textSecond }}>Per Load Net</div>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: T.textPrimary }}>{fmtD(netPerLoad)}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 11, color: T.textSecond }}>Target / Load</div>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: T.textSecond }}>{fmtD(TARGET_PER_LOAD)}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 11, color: T.textSecond }}>Status</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: onTarget ? POSITIVE : ALERT_RED }}>
+                              {onTarget ? '✅ ON TARGET' : '🔴 BELOW TARGET'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <p style={{ fontSize: 10, color: T.textSecond, fontStyle: 'italic', marginTop: 12 }}>Estimated — actual driver costs may vary. Fuel based on $0.867/mi round trip.</p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         );
