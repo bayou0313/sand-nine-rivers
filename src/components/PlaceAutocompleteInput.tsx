@@ -32,6 +32,7 @@ export default function PlaceAutocompleteInput({
 }: PlaceAutocompleteInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+  const justSelectedRef = useRef(false);
   const [hasValue, setHasValue] = useState(
     !!(initialValue && initialValue.length > 0)
   );
