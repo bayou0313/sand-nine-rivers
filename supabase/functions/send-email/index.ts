@@ -192,9 +192,14 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, prici
                 </table>
               </td>
             </tr>
+            <!-- WAYS ICON -->
+            <tr>
+              <td style="background-color:#FFFFFF;text-align:center;padding:20px 0 12px 0;">
+                <img src="${WAYS_ICON}" alt="WAYS" style="height:48px;width:48px;border-radius:8px;" />
+              </td>
+            </tr>
 
-            <!-- GOLD DIVIDER -->
-            <tr><td style="height:3px;background-color:${BRAND_GOLD};"></td></tr>
+
 
             <!-- PAYMENT STATUS BANNER -->
             <tr>
