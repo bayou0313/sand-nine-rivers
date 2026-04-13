@@ -298,6 +298,72 @@ export type Database = {
         }
         Relationships: []
       }
+      fraud_blocklist: {
+        Row: {
+          blocked_by: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          reason: string | null
+          type: string
+          value: string
+        }
+        Insert: {
+          blocked_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          type: string
+          value: string
+        }
+        Update: {
+          blocked_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          type?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      fraud_events: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          email: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          order_id: string | null
+          phone: string | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          email?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          order_id?: string | null
+          phone?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          email?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          order_id?: string | null
+          phone?: string | null
+          session_id?: string | null
+        }
+        Relationships: []
+      }
       global_settings: {
         Row: {
           description: string | null
@@ -590,6 +656,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_attempts: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          email: string | null
+          id: string
+          ip_address: string | null
+          phone: string | null
+          session_id: string | null
+          status: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          phone?: string | null
+          session_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          phone?: string | null
+          session_id?: string | null
+          status?: string | null
+        }
+        Relationships: []
       }
       payment_events: {
         Row: {
