@@ -5134,10 +5134,10 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCustomers.map(c => (
-                      <tr key={c.id} className="border-t" style={{ borderColor: T.cardBorder }}
-onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
-onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                    {filteredCustomers.map((c, i) => (
+                      <tr key={c.id} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}` }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? T.cardBg : T.tableStripeBg)}>
                         <td className="px-3 py-2 text-xs font-medium">{c.name || "—"}</td>
                         <td className="px-3 py-2 text-xs">{c.email}</td>
                         <td className="px-3 py-2 text-xs">{c.phone || "—"}</td>
