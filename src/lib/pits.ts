@@ -50,9 +50,11 @@ export interface EffectivePricing {
 
 export interface FindBestPitResult {
   pit: PitData;
-  distance: number;
+  distance: number;           // actual driving miles (display)
+  billedDistance: number;      // billed miles (pricing) — includes phantom miles
   price: number;
   serviceable: boolean;
+  isNorthshore: boolean;
 }
 
 // Last-resort fallbacks if a pit somehow has null pricing
@@ -161,7 +163,8 @@ export async function findBestPitDriving(
   customerAddress: string,
   globalFees: GlobalFees | GlobalPricing,
   supabaseClient?: any,
-  deliveryDayOfWeek?: number // 0=Sun..6=Sat — filter pits by operating_days
+  deliveryDayOfWeek?: number, // 0=Sun..6=Sat — filter pits by operating_days
+  zipCode?: string,
 ): Promise<FindBestPitResult | null> {
   let activePits = pits.filter(p => p.status === "active" && !p.is_pickup_only);
 
@@ -187,22 +190,26 @@ export async function findBestPitDriving(
         action: "calculate_distances",
         origins: activePits.map(p => p.address),
         destination: customerAddress,
+        zip_code: zipCode || '',
       },
     });
 
     if (error) throw error;
 
     const drivingDistances: (number | null)[] = data.distances || [];
-    console.log("[findBestPitDriving] driving distances:", drivingDistances);
+    const billedDistancesArr: (number | null)[] = data.billed_distances || data.distances || [];
+    const northshore: boolean = data.is_northshore || false;
+    console.log("[findBestPitDriving] driving distances:", drivingDistances, "billed:", billedDistancesArr, "northshore:", northshore);
 
     const results = activePits
       .map((pit, i) => {
         const distance = drivingDistances[i];
         if (distance === null || distance === undefined) return null;
+        const billedDistance = billedDistancesArr[i] ?? distance;
         const effective = getEffectivePrice(pit, globalFees);
-        const price = calcPitPrice(effective, distance, 1);
+        const price = calcPitPrice(effective, billedDistance, 1); // price on BILLED distance
         const serviceable = distance <= effective.max_distance;
-        return { pit, distance, price, serviceable };
+        return { pit, distance, billedDistance, price, serviceable, isNorthshore: northshore };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -239,6 +246,7 @@ export async function findAllPitDistances(
   customerAddress: string,
   globalFees: GlobalFees | GlobalPricing,
   supabaseClient?: any,
+  zipCode?: string,
 ): Promise<FindBestPitResult[]> {
   const activePits = pits.filter(p => p.status === "active" && !p.is_pickup_only);
   if (activePits.length === 0 || !supabaseClient) return [];
@@ -249,20 +257,24 @@ export async function findAllPitDistances(
         action: "calculate_distances",
         origins: activePits.map(p => p.address),
         destination: customerAddress,
+        zip_code: zipCode || '',
       },
     });
     if (error) throw error;
 
     const drivingDistances: (number | null)[] = data.distances || [];
+    const billedDistancesArr: (number | null)[] = data.billed_distances || data.distances || [];
+    const northshore: boolean = data.is_northshore || false;
 
     const results = activePits
       .map((pit, i) => {
         const distance = drivingDistances[i];
         if (distance === null || distance === undefined) return null;
+        const billedDistance = billedDistancesArr[i] ?? distance;
         const effective = getEffectivePrice(pit, globalFees);
-        const price = calcPitPrice(effective, distance, 1);
+        const price = calcPitPrice(effective, billedDistance, 1);
         const serviceable = distance <= effective.max_distance;
-        return { pit, distance, price, serviceable };
+        return { pit, distance, billedDistance, price, serviceable, isNorthshore: northshore };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
 

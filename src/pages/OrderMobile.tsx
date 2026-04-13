@@ -49,9 +49,11 @@ declare global {
 
 type EstimateResult = {
   distance: number;
+  billedDistance?: number;
   price: number;
   address: string;
   duration: string;
+  isNorthshore?: boolean;
 };
 
 type PaymentMethodType = "stripe-link" | "cash" | "check" | null;
@@ -419,7 +421,7 @@ const OrderMobile = () => {
     setWeekdayPit(matchedPit);
     setWeekdayResult(result);
     setWeekdayPitSchedule(matchedPitSchedule);
-    findAllPitDistances(allPits, address, globalPricing, supabase).then(d => setAllPitDistances(d)).catch(() => {});
+    findAllPitDistances(allPits, address, globalPricing, supabase, detectedZip).then(d => setAllPitDistances(d)).catch(() => {});
   }, [allPits, address, result, matchedPit, allPitDistances]);
 
   // Handle Stripe return
@@ -653,7 +655,7 @@ const OrderMobile = () => {
         } else { setError("Could not locate that address."); setLoading(false); return; }
       }
       if (allPits.length === 0) { setError("No delivery locations configured."); setLoading(false); return; }
-      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, 1);
+      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, 1, detectedZip);
       if (!bestResult) { setError("No delivery locations available."); setLoading(false); return; }
       if (!bestResult.serviceable) {
         setOutOfAreaAddress(currentAddress);
@@ -677,14 +679,16 @@ const OrderMobile = () => {
 
       const estimateResult: EstimateResult = {
         distance: parseFloat(bestResult.distance.toFixed(1)),
+        billedDistance: bestResult.billedDistance,
         price: bestResult.price,
         address: `${bestResult.distance.toFixed(1)} mi away`,
         duration: "~30 min",
+        isNorthshore: bestResult.isNorthshore,
       };
       setWeekdayResult(estimateResult);
       setResult(estimateResult);
 
-      findAllPitDistances(allPits, currentAddress, globalPricing, supabase).then(d => setAllPitDistances(d)).catch(() => {});
+      findAllPitDistances(allPits, currentAddress, globalPricing, supabase, detectedZip).then(d => setAllPitDistances(d)).catch(() => {});
 
       setStep("price");
       trackEvent("begin_checkout", { value: bestResult.price, currency: "USD", rs_session_id: getSessionToken(), rs_price: bestResult.price, rs_distance: bestResult.distance, rs_pit: bestResult.pit.name, rs_zip: detectedZip, rs_parish: taxInfo.parish });
@@ -721,6 +725,8 @@ const OrderMobile = () => {
       customer_phone: form.phone.trim(),
       delivery_address: address,
       distance_miles: result!.distance,
+      billed_distance_miles: result!.billedDistance ?? result!.distance,
+      is_northshore: result!.isNorthshore ?? false,
       price: totalPrice,
       quantity,
       notes: form.notes.trim() || null,
