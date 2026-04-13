@@ -1681,17 +1681,17 @@ serve(async (req) => {
           .eq("needs_regen", true)
           .eq("status", "draft")
           .order("updated_at", { ascending: true })
-          .limit(5);
+          .limit(10);
         const draftInlineIds = new Set((draftInline || []).map((p: any) => p.id));
         let inlinePages = draftInline || [];
-        if (inlinePages.length < 5) {
+        if (inlinePages.length < 10) {
           const { data: activeInline } = await supabase
             .from("city_pages")
             .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
             .eq("needs_regen", true)
             .eq("status", "active")
             .order("updated_at", { ascending: true })
-            .limit(5 - inlinePages.length);
+            .limit(10 - inlinePages.length);
           inlinePages = [...inlinePages, ...(activeInline || []).filter((p: any) => !draftInlineIds.has(p.id))];
         }
 
@@ -3216,17 +3216,17 @@ serve(async (req) => {
         .eq("needs_regen", true)
         .eq("status", "draft")
         .order("updated_at", { ascending: true })
-        .limit(5);
+        .limit(10);
       const draftIds = new Set((draftPages || []).map((p: any) => p.id));
       let pendingPages = draftPages || [];
-      if (pendingPages.length < 5) {
+      if (pendingPages.length < 10) {
         const { data: activePages } = await supabase
           .from("city_pages")
           .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
           .eq("needs_regen", true)
           .eq("status", "active")
           .order("updated_at", { ascending: true })
-          .limit(5 - pendingPages.length);
+          .limit(10 - pendingPages.length);
         pendingPages = [...pendingPages, ...(activePages || []).filter((p: any) => !draftIds.has(p.id))];
       }
 
