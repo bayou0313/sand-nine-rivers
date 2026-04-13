@@ -14,6 +14,23 @@ const corsHeaders = {
 };
 
 /**
+ * Northshore phantom miles — adds 3 miles to billed distance for deliveries
+ * crossing Lake Pontchartrain (Causeway toll recovery).
+ * Customer sees actual distance; pricing uses billed distance.
+ */
+const NORTHSHORE_ZIPS = new Set([
+  '70433','70434','70435','70436','70437','70438',
+  '70441','70443','70444','70445','70446','70447',
+  '70448','70449','70458','70459','70460','70461',
+  '70462','70463','70464','70465','70466','70467',
+  '70469','70470','70471'
+]);
+const NORTHSHORE_PARISHES = new Set(['St. Tammany Parish']);
+const isNorthshoreZip = (zip: string) => NORTHSHORE_ZIPS.has(zip);
+const isNorthshoreRegion = (region: string) => NORTHSHORE_PARISHES.has(region);
+const PHANTOM_MILES = 3;
+
+/**
  * Server-side canonical distance function.
  * Mirror of getDrivingDistanceBatch in src/lib/pits.ts — keep in sync.
  * Roads only. No haversine fallback. Nulls mean skip, not approximate.
@@ -338,9 +355,18 @@ serve(async (req) => {
         }
         return null;
       });
+
+      // Northshore phantom miles — add 3 mi to billed distance for toll recovery
+      const destZip = body.zip_code || '';
+      const northshore = isNorthshoreZip(destZip);
+      const billedDistances = distances.map((d: number | null) =>
+        d != null && northshore ? d + PHANTOM_MILES : d
+      );
+
       console.log("[calculate_distances] raw distances (miles):", JSON.stringify(distances));
+      if (northshore) console.log("[calculate_distances] Northshore ZIP detected:", destZip, "→ +3 phantom miles");
       return new Response(
-        JSON.stringify({ distances }),
+        JSON.stringify({ distances, billed_distances: billedDistances, is_northshore: northshore }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -2442,7 +2468,10 @@ serve(async (req) => {
           continue;
         }
 
-        const extraMiles = Math.max(0, closestDistance - effFM);
+        // Northshore phantom miles for toll recovery (region-based)
+        const cityIsNorthshore = isNorthshoreRegion(city.region || '');
+        const billedDistance = cityIsNorthshore ? closestDistance + PHANTOM_MILES : closestDistance;
+        const extraMiles = Math.max(0, billedDistance - effFM);
         const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
 
         // Multi-PIT coverage detection
@@ -2615,7 +2644,7 @@ serve(async (req) => {
       for (const row of gsData || []) gs[row.key] = row.value;
 
       const allCandidates: Array<{
-        city_name: string; city_slug: string; state: string;
+        city_name: string; city_slug: string; state: string; region: string;
         lat: number; lng: number; distance_from_pit: number;
         pit_id: string; pit_name: string; base_price: number;
       }> = [];
@@ -2635,7 +2664,7 @@ serve(async (req) => {
         }
         console.log(`[bulk] Sampling ${samplePoints.length} points for PIT ${pit.name}`);
 
-        const pitCityMap = new Map<string, { name: string; state: string; lat: number; lng: number }>();
+        const pitCityMap = new Map<string, { name: string; state: string; lat: number; lng: number; region: string }>();
         const BATCH_SIZE = 10;
         for (let i = 0; i < samplePoints.length; i += BATCH_SIZE) {
           const batch = samplePoints.slice(i, i + BATCH_SIZE);
@@ -2655,12 +2684,16 @@ serve(async (req) => {
               const components = result.address_components || [];
               let cityName = "";
               let stateCode = "";
+              let regionName = "";
               for (const prio of VALID_TYPES) {
                 const comp = components.find((c: any) => c.types?.includes(prio));
                 if (comp && !cityName) cityName = comp.long_name;
               }
               const stateComp = components.find((c: any) => c.types?.includes("administrative_area_level_1"));
               if (stateComp) stateCode = stateComp.short_name;
+              // Extract parish/county for Northshore detection
+              const parishComp = components.find((c: any) => c.types?.includes("administrative_area_level_2"));
+              if (parishComp) regionName = parishComp.long_name;
               if (!cityName) continue;
               cityName = cleanCityName(cityName);
               if (!isValidCityName(cityName)) continue;
@@ -2668,7 +2701,7 @@ serve(async (req) => {
               if (!loc) continue;
               const key = cityName.toLowerCase();
               if (!pitCityMap.has(key)) {
-                pitCityMap.set(key, { name: cityName, state: stateCode || "LA", lat: loc.lat, lng: loc.lng });
+                pitCityMap.set(key, { name: cityName, state: stateCode || "LA", lat: loc.lat, lng: loc.lng, region: regionName });
               }
             }
           }
@@ -2692,11 +2725,14 @@ serve(async (req) => {
           if (distance === null) continue; // No road route found — skip this city
           if (distance > maxDist) continue;
           const slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
-          const extraMiles = Math.max(0, distance - freeMiles);
+          // Northshore phantom miles for toll recovery (region-based)
+          const cityIsNorthshore = isNorthshoreRegion(city.region || '');
+          const billedDistance = cityIsNorthshore ? distance + PHANTOM_MILES : distance;
+          const extraMiles = Math.max(0, billedDistance - freeMiles);
           const price = Math.max(bPrice, Math.round(bPrice + extraMiles * extraPerMile));
 
           allCandidates.push({
-            city_name: city.name, city_slug: slug, state: city.state,
+            city_name: city.name, city_slug: slug, state: city.state, region: city.region || '',
             lat: city.lat, lng: city.lng, distance_from_pit: Math.round(distance * 10) / 10,
             pit_id: pit.id, pit_name: pit.name, base_price: price,
           });
@@ -2741,7 +2777,10 @@ serve(async (req) => {
           const effBP = closestPit.base_price ?? parseFloat(gs.default_base_price || "195");
           const effFM = closestPit.free_miles ?? parseFloat(gs.default_free_miles || "15");
           const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
-          const extraMiles = Math.max(0, closestDistance - effFM);
+          // Northshore phantom miles for toll recovery (region-based)
+          const cityIsNorthshore = isNorthshoreRegion(city.region || '');
+          const billedDistance = cityIsNorthshore ? closestDistance + PHANTOM_MILES : closestDistance;
+          const extraMiles = Math.max(0, billedDistance - effFM);
           const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
           city.pit_id = closestPit.id;
           city.pit_name = closestPit.name;
@@ -2824,7 +2863,7 @@ serve(async (req) => {
           .from("city_pages")
           .insert({
             pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
-            state: city.state, lat: city.lat, lng: city.lng,
+            state: city.state, region: city.region || null, lat: city.lat, lng: city.lng,
             distance_from_pit: city.distance_from_pit, base_price: city.base_price,
             multi_pit_coverage: isMultiPit, competing_pit_ids: competingIds,
             status: "draft", prompt_version: null, regen_reason: 'missing_content',
@@ -2900,7 +2939,7 @@ serve(async (req) => {
 
       const { data: allPages, error: pagesErr } = await supabase
         .from("city_pages")
-        .select("id, city_name, lat, lng, pit_id, distance_from_pit, base_price");
+        .select("id, city_name, lat, lng, pit_id, distance_from_pit, base_price, region");
       if (pagesErr) throw pagesErr;
 
       let updated = 0;
@@ -2950,7 +2989,10 @@ serve(async (req) => {
         const effectiveBase = bestPit.base_price ?? defaultBase;
         const effectiveFree = bestPit.free_miles ?? defaultFree;
         const effectiveExtra = bestPit.price_per_extra_mile ?? defaultExtra;
-        const extraMiles = Math.max(0, bestDistance - effectiveFree);
+        // Northshore phantom miles for toll recovery (region-based)
+        const pageIsNorthshore = isNorthshoreRegion(page.region || '');
+        const billedDistance = pageIsNorthshore ? bestDistance + PHANTOM_MILES : bestDistance;
+        const extraMiles = Math.max(0, billedDistance - effectiveFree);
         const newPrice = Math.max(effectiveBase, Math.round(effectiveBase + extraMiles * effectiveExtra));
 
         const oldDist = page.distance_from_pit ? Number(page.distance_from_pit) : null;
