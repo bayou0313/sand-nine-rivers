@@ -25,6 +25,47 @@ const PAGE_SIZE = 25;
 const HQ_LAT = 29.9308;
 const HQ_LON = -90.1685;
 
+// ─── GLOBAL DESIGN TOKENS ───
+const LABEL_STYLE: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: '#9CA3AF',
+};
+
+const NUM_STYLE: React.CSSProperties = {
+  fontSize: 36,
+  fontWeight: 700,
+  lineHeight: 1.1,
+};
+
+const SUB_STYLE: React.CSSProperties = {
+  fontSize: 12,
+  color: '#6B7280',
+  marginTop: 4,
+};
+
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  pending:   { bg: '#F3F4F6', text: '#6B7280' },
+  confirmed: { bg: '#EFF6FF', text: '#3B82F6' },
+  cancelled: { bg: '#FEF2F2', text: '#EF4444' },
+  paid:      { bg: '#ECFDF5', text: '#059669' },
+  captured:  { bg: '#ECFDF5', text: '#059669' },
+  en_route:  { bg: '#EFF6FF', text: '#3B82F6' },
+  delivered: { bg: '#ECFDF5', text: '#059669' },
+  cod:       { bg: '#FDF8F0', text: '#C07A00' },
+  active:    { bg: '#ECFDF5', text: '#059669' },
+  planning:  { bg: '#EFF6FF', text: '#3B82F6' },
+  inactive:  { bg: '#F3F4F6', text: '#6B7280' },
+  draft:     { bg: '#F3F4F6', text: '#6B7280' },
+  new:       { bg: '#F3F4F6', text: '#0D2137' },
+  called:    { bg: '#EFF6FF', text: '#1A6BB8' },
+  quoted:    { bg: '#FDF8F0', text: '#F59E0B' },
+  won:       { bg: '#ECFDF5', text: '#22C55E' },
+  lost:      { bg: '#F3F4F6', text: '#999999' },
+};
+
 const DEFAULT_SETTINGS: Record<string, string> = {
   saturday_surcharge: "35.00",
   site_name: "River Sand",
@@ -1876,10 +1917,66 @@ const Leads = () => {
     await fetchLeads(storedPassword());
   };
 
-  const MetricCard = ({ label, value }: { label: string; value: string | number }) => (
-    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
-      <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{value}</p>
-      <p className="text-xs mt-1" style={{ color: T.textSecond }}>{label}</p>
+  // ─── REUSABLE DESIGN SYSTEM COMPONENTS ───
+
+  const SectionHeader = ({ title, right }: { title: string; right?: string }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
+      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>{title}</span>
+      {right && <span style={{ marginLeft: 'auto', fontSize: 11, color: T.textSecond }}>{right}</span>}
+    </div>
+  );
+
+  const StatusPill = ({ status }: { status: string }) => {
+    const key = status.toLowerCase().replace(/[\s_-]+/g, '_');
+    const colors = STATUS_COLORS[key] || { bg: '#F3F4F6', text: '#6B7280' };
+    return (
+      <span style={{
+        padding: '3px 10px',
+        borderRadius: 20,
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        backgroundColor: isDark ? `${colors.text}20` : colors.bg,
+        color: colors.text,
+      }}>
+        {status}
+      </span>
+    );
+  };
+
+  const MetricCard = ({ label, value, sub, onClick, accent = false }: {
+    label: string; value: string | number; sub?: string;
+    onClick?: () => void; accent?: boolean;
+  }) => (
+    <div
+      onClick={onClick}
+      style={{
+        background: T.cardBg,
+        border: `1px solid ${T.cardBorder}`,
+        borderLeft: accent ? `3px solid ${BRAND_GOLD}` : `1px solid ${T.cardBorder}`,
+        borderRadius: 10,
+        padding: '20px 24px',
+        minHeight: 110,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.15s ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      }}
+      onMouseEnter={e => {
+        if (onClick) {
+          (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+          (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+        }
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.transform = 'none';
+        (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+      }}
+    >
+      <div style={{ ...LABEL_STYLE, color: T.textSecond }}>{label}</div>
+      <div style={{ ...NUM_STYLE, fontSize: 28, marginTop: 8, color: T.textPrimary }}>{value}</div>
+      {sub && <div style={{ ...SUB_STYLE, color: T.textSecond }}>{sub}</div>}
     </div>
   );
 
@@ -4887,7 +4984,7 @@ const Leads = () => {
                   <thead>
                     <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action", "Email", "Last Email Sent"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -4899,7 +4996,9 @@ const Leads = () => {
                       const isToday = o.delivery_date === today;
                       const isPast = o.delivery_date && o.delivery_date < today && !o.cash_collected;
                       return (
-                        <tr key={o.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
+                        <tr key={o.id} className="border-t" style={{ borderColor: T.cardBorder }}
+onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                           <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{o.order_number || "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(o.created_at)}</td>
                           <td className="px-3 py-2">
@@ -5030,21 +5129,23 @@ const Leads = () => {
                   <thead>
                     <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Name", "Email", "Phone", "Company", "Total Orders", "Total Spent", "First Order", "Last Order", "Actions"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCustomers.map(c => (
-                      <tr key={c.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
-                        <td className="px-3 py-2 text-xs font-medium">{c.name || "—"}</td>
-                        <td className="px-3 py-2 text-xs">{c.email}</td>
-                        <td className="px-3 py-2 text-xs">{c.phone || "—"}</td>
-                        <td className="px-3 py-2 text-xs">{c.company || "—"}</td>
-                        <td className="px-3 py-2 text-xs font-bold text-center">{c.total_orders || 0}</td>
+                    {filteredCustomers.map((c, i) => (
+                      <tr key={c.id} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}` }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? T.cardBg : T.tableStripeBg)}>
+                        <td className="px-3 py-2 text-xs font-medium" style={{ color: T.textPrimary }}>{c.name || "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: T.textPrimary }}>{c.email}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.phone || "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.company || "—"}</td>
+                        <td className="px-3 py-2 text-xs font-bold text-center" style={{ color: T.textPrimary }}>{c.total_orders || 0}</td>
                         <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(c.total_spent || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap">{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap">{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond }}>{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond }}>{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 flex gap-1">
                           <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
                             View Orders
@@ -5091,13 +5192,15 @@ const Leads = () => {
                   <thead>
                     <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Date", "Address", "Location", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {abandonedSessions.map(s => (
-                      <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
+                      <tr key={s.id} className="border-t" style={{ borderColor: T.cardBorder }}
+onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
                         <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : s.delivery_address ? s.delivery_address.split(",")[1]?.trim() || "—" : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
@@ -5484,10 +5587,10 @@ const Leads = () => {
         const pctCard = rangeOrders.length ? ((cardOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
         const pctCOD = rangeOrders.length ? ((codOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
 
-        const SECTION_LABEL: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: T.textSecond, marginBottom: 12 };
-        const METRIC_CARD: React.CSSProperties = { ...CARD_STYLE_T, borderRadius: 10, padding: '16px 20px', borderLeft: `3px solid ${BRAND_GOLD}` };
-        const METRIC_NUM: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: T.textPrimary };
-        const METRIC_LABEL: React.CSSProperties = { fontSize: 12, color: T.textSecond, marginTop: 2 };
+        const SECTION_LABEL_F: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: T.textSecond, marginBottom: 12 };
+        const METRIC_CARD_F: React.CSSProperties = { ...CARD_STYLE_T, borderRadius: 10, padding: '16px 20px', borderLeft: `3px solid ${BRAND_GOLD}` };
+        const METRIC_NUM_F: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: T.textPrimary };
+        const METRIC_LABEL_F: React.CSSProperties = { fontSize: 12, color: T.textSecond, marginTop: 2 };
 
         return (
           <div>
@@ -5498,7 +5601,7 @@ const Leads = () => {
                   key={r}
                   onClick={() => setFinanceRange(r)}
                   style={{
-                    padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                     backgroundColor: financeRange === r ? BRAND_GOLD : T.cardBg,
                     color: financeRange === r ? '#fff' : T.textPrimary,
                     border: `1px solid ${financeRange === r ? BRAND_GOLD : T.cardBorder}`,
@@ -5514,20 +5617,11 @@ const Leads = () => {
             </div>
 
             {/* Section 1 — Tax Liability */}
-            <div style={SECTION_LABEL}>TAX LIABILITY</div>
+            <SectionHeader title="TAX LIABILITY" right={`${rangeOrders.length} orders`} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(stateTaxCollected)}</div>
-                <div style={METRIC_LABEL}>State Tax Collected</div>
-              </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(parishTaxCollected)}</div>
-                <div style={METRIC_LABEL}>Parish Tax Collected</div>
-              </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(totalTaxCollected)}</div>
-                <div style={METRIC_LABEL}>Total Tax to Remit</div>
-              </div>
+              <MetricCard label="State Tax Collected" value={fmtD(stateTaxCollected)} accent />
+              <MetricCard label="Parish Tax Collected" value={fmtD(parishTaxCollected)} accent />
+              <MetricCard label="Total Tax to Remit" value={fmtD(totalTaxCollected)} accent />
             </div>
             {/* Parish breakdown table */}
             <div style={{ ...CARD_STYLE_T, borderRadius: 10, overflow: 'hidden', marginBottom: 24 }}>
@@ -5559,61 +5653,61 @@ const Leads = () => {
             </div>
 
             {/* Section 2 — Processing Fees */}
-            <div style={SECTION_LABEL}>PROCESSING FEES</div>
+            <SectionHeader title="PROCESSING FEES" />
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: ALERT_RED }}>{fmtD(feesCalculated)}</div>
-                <div style={METRIC_LABEL}>Stripe Fees Paid</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: ALERT_RED }}>{fmtD(feesCalculated)}</div>
+                <div style={METRIC_LABEL_F}>Stripe Fees Paid</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: POSITIVE }}>{fmtD(feesSavedCOD)}</div>
-                <div style={METRIC_LABEL}>Fees Saved (COD)</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: POSITIVE }}>{fmtD(feesSavedCOD)}</div>
+                <div style={METRIC_LABEL_F}>Fees Saved (COD)</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: feesSavedCOD - feesCalculated > 0 ? POSITIVE : ALERT_RED }}>{fmtD(feesSavedCOD - feesCalculated)}</div>
-                <div style={METRIC_LABEL}>Net Fee Impact</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: feesSavedCOD - feesCalculated > 0 ? POSITIVE : ALERT_RED }}>{fmtD(feesSavedCOD - feesCalculated)}</div>
+                <div style={METRIC_LABEL_F}>Net Fee Impact</div>
               </div>
-              <div style={METRIC_CARD}>
+              <div style={METRIC_CARD_F}>
                 <div style={{ fontSize: 14, color: T.textPrimary }}>
                   <span style={{ fontWeight: 700 }}>{pctCard}%</span> Card · <span style={{ fontWeight: 700 }}>{pctCOD}%</span> COD
                 </div>
-                <div style={METRIC_LABEL}>Payment Split ({cardOrders.length} / {codOrders.length})</div>
+                <div style={METRIC_LABEL_F}>Payment Split ({cardOrders.length} / {codOrders.length})</div>
               </div>
             </div>
 
             {/* Section 3 — Operations Metrics */}
-            <div style={SECTION_LABEL}>OPERATIONS METRICS</div>
+            <SectionHeader title="OPERATIONS METRICS" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{totalMiles.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                <div style={METRIC_LABEL}>Total Miles Driven</div>
+              <div style={METRIC_CARD_F}>
+                <div style={METRIC_NUM_F}>{totalMiles.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                <div style={METRIC_LABEL_F}>Total Miles Driven</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{avgMiles.toFixed(1)}</div>
-                <div style={METRIC_LABEL}>Avg Miles / Order</div>
+              <div style={METRIC_CARD_F}>
+                <div style={METRIC_NUM_F}>{avgMiles.toFixed(1)}</div>
+                <div style={METRIC_LABEL_F}>Avg Miles / Order</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(distanceFeeRevenue)}</div>
-                <div style={METRIC_LABEL}>Distance Fee Revenue</div>
+              <div style={METRIC_CARD_F}>
+                <div style={METRIC_NUM_F}>{fmtD(distanceFeeRevenue)}</div>
+                <div style={METRIC_LABEL_F}>Distance Fee Revenue</div>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: ALERT_RED }}>{fmtD(fuelCostEst)}</div>
-                <div style={METRIC_LABEL}>Fuel Cost Est. ($0.87/mi RT)</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: ALERT_RED }}>{fmtD(fuelCostEst)}</div>
+                <div style={METRIC_LABEL_F}>Fuel Cost Est. ($0.87/mi RT)</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: netDistanceFees >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netDistanceFees)}</div>
-                <div style={METRIC_LABEL}>Net on Distance Fees</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: netDistanceFees >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netDistanceFees)}</div>
+                <div style={METRIC_LABEL_F}>Net on Distance Fees</div>
               </div>
-              <div style={METRIC_CARD}>
-                <div style={{ ...METRIC_NUM, color: BRAND_GOLD }}>{fmtD(saturdayRevenue)}</div>
-                <div style={METRIC_LABEL}>Saturday Surcharge Revenue</div>
+              <div style={METRIC_CARD_F}>
+                <div style={{ ...METRIC_NUM_F, color: BRAND_GOLD }}>{fmtD(saturdayRevenue)}</div>
+                <div style={METRIC_LABEL_F}>Saturday Surcharge Revenue</div>
               </div>
             </div>
 
             {/* Section 4 — Revenue Breakdown */}
-            <div style={SECTION_LABEL}>REVENUE BREAKDOWN</div>
+            <SectionHeader title="REVENUE BREAKDOWN" />
             <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '24px 28px' }}>
               <div className="space-y-3">
                 <div className="flex justify-between items-center" style={{ borderBottom: `1px solid ${T.cardBorder}`, paddingBottom: 10 }}>
@@ -5634,7 +5728,7 @@ const Leads = () => {
                 </div>
               </div>
               <div style={{ marginTop: 24, borderTop: `1px solid ${T.cardBorder}`, paddingTop: 16 }}>
-                <div style={{ ...SECTION_LABEL, marginBottom: 8 }}>REVENUE COMPONENTS</div>
+                <SectionHeader title="REVENUE COMPONENTS" />
                 <div className="space-y-2">
                   <div className="flex justify-between" style={{ fontSize: 13 }}>
                     <span style={{ color: T.textSecond }}>Sand Base Revenue</span>
@@ -5653,7 +5747,7 @@ const Leads = () => {
             </div>
             {/* ── SECTION 5 — Revenue Recovery ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL}>ABANDONED REVENUE</div>
+              <SectionHeader title="ABANDONED REVENUE" />
               {(() => {
                 const sessionsWithPrice = abandonedSessions.filter((s: any) => Number(s.calculated_price || 0) > 0);
                 const abandonedValue = sessionsWithPrice.reduce((s: number, sess: any) => s + Number(sess.calculated_price || 0), 0);
@@ -5662,21 +5756,21 @@ const Leads = () => {
                 return (
                   <>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div style={METRIC_CARD}>
-                        <div style={METRIC_NUM}>{abandonedSessions.length}</div>
-                        <div style={METRIC_LABEL}>Total Abandoned</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={METRIC_NUM_F}>{abandonedSessions.length}</div>
+                        <div style={METRIC_LABEL_F}>Total Abandoned</div>
                       </div>
-                      <div style={METRIC_CARD}>
-                        <div style={METRIC_NUM}>{sessionsWithPrice.length}</div>
-                        <div style={METRIC_LABEL}>Got a Price</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={METRIC_NUM_F}>{sessionsWithPrice.length}</div>
+                        <div style={METRIC_LABEL_F}>Got a Price</div>
                       </div>
-                      <div style={METRIC_CARD}>
-                        <div style={{ ...METRIC_NUM, color: BRAND_GOLD }}>{fmtD(abandonedValue)}</div>
-                        <div style={METRIC_LABEL}>Abandoned Value</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={{ ...METRIC_NUM_F, color: BRAND_GOLD }}>{fmtD(abandonedValue)}</div>
+                        <div style={METRIC_LABEL_F}>Abandoned Value</div>
                       </div>
-                      <div style={METRIC_CARD}>
-                        <div style={METRIC_NUM}>{emailsSent}</div>
-                        <div style={METRIC_LABEL}>Recovery Emails Sent</div>
+                      <div style={METRIC_CARD_F}>
+                        <div style={METRIC_NUM_F}>{emailsSent}</div>
+                        <div style={METRIC_LABEL_F}>Recovery Emails Sent</div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2">
@@ -5701,7 +5795,7 @@ const Leads = () => {
 
             {/* ── SECTION 6 — ZIP Conversion Intelligence ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL}>ZIP SESSION INTELLIGENCE</div>
+              <SectionHeader title="ZIP SESSION INTELLIGENCE" />
               {(() => {
                 const zipStats = abandonedSessions.reduce((acc: Record<string, { sessions: number; withPrice: number; totalPrice: number; stages: Record<string, number> }>, s: any) => {
                   const zip = s.geo_zip || 'Unknown';
@@ -5765,7 +5859,7 @@ const Leads = () => {
 
             {/* ── SECTION 7 — Daily P&L Estimate ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL}>TODAY'S P&L ESTIMATE</div>
+              <SectionHeader title="TODAY'S P&L ESTIMATE" />
               {(() => {
                 const todayStr = new Date().toDateString();
                 const todayOrders = cashOrders.filter((o: any) => new Date(o.created_at).toDateString() === todayStr);
