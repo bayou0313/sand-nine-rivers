@@ -767,6 +767,18 @@ const Leads = () => {
     }
   }, [fetchLeads, fetchSettings, fetchPits, fetchNotifications]);
 
+  // Sync body background for full-page dark mode coverage
+  useEffect(() => {
+    const dark = globalSettings?.dashboard_theme === 'dark';
+    const bg = dark ? '#0A0F1E' : '#FAFAF9';
+    document.body.style.backgroundColor = bg;
+    document.documentElement.style.backgroundColor = bg;
+    return () => {
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.backgroundColor = '';
+    };
+  }, [globalSettings?.dashboard_theme]);
+
   // Realtime subscription for notifications
   useEffect(() => {
     if (!authenticated) return;
