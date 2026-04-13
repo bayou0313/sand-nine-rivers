@@ -6054,6 +6054,261 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
         );
       }
 
+      case "fraud": {
+        const EVENT_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
+          blocked_attempt: { bg: "#FEE2E2", text: "#DC2626", icon: "🔴" },
+          velocity_flag: { bg: "#FEF3C7", text: "#D97706", icon: "🟡" },
+          manual_flag: { bg: "#FFEDD5", text: "#EA580C", icon: "🟠" },
+          failed_payment: { bg: "#FEE2E2", text: "#DC2626", icon: "🔴" },
+        };
+
+        const handleBlock = async () => {
+          if (!blockForm.value.trim()) return;
+          setBlockingEntity(true);
+          try {
+            const { data, error: fnErr } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "block_entity", type: blockForm.type, value: blockForm.value.trim(), reason: blockForm.reason || null, expires_at: blockForm.expires_at || null },
+            });
+            if (fnErr) throw fnErr;
+            if (data?.error) throw new Error(data.error);
+            toast({ title: "Blocked", description: `${blockForm.type}: ${blockForm.value} added to blocklist` });
+            setBlockForm({ type: "ip", value: "", reason: "", expires_at: "" });
+            fetchFraudData();
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          } finally { setBlockingEntity(false); }
+        };
+
+        const handleUnblock = async (type: string, value: string) => {
+          try {
+            await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "unblock_entity", type, value },
+            });
+            toast({ title: "Unblocked", description: `${type}: ${value} removed` });
+            fetchFraudData();
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          }
+        };
+
+        const handleBlockIp = async (ip: string) => {
+          try {
+            await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "block_entity", type: "ip", value: ip, reason: "Blocked from payment attempts view" },
+            });
+            toast({ title: "IP Blocked", description: ip });
+            fetchFraudData();
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          }
+        };
+
+        const failedAttempts = fraudPaymentAttempts.filter(a => a.status === "failed");
+        const ipGroups = failedAttempts.reduce((acc: Record<string, any[]>, a) => {
+          const key = a.ip_address || "unknown";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(a);
+          return acc;
+        }, {});
+
+        return (
+          <div className="space-y-6">
+            {/* Refresh */}
+            <div className="flex justify-end">
+              <Button size="sm" onClick={fetchFraudData} disabled={fraudLoading} variant="outline">
+                {fraudLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                <span className="ml-1">Refresh</span>
+              </Button>
+            </div>
+
+            {/* ─── SECTION 1: LIVE THREAT FEED ─── */}
+            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+                <Shield className="w-4 h-4 inline mr-2" style={{ color: ALERT_RED }} />
+                Live Threat Feed
+              </h3>
+              {fraudEvents.length === 0 ? (
+                <p className="text-sm" style={{ color: T.textSecond }}>No fraud events recorded yet.</p>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {fraudEvents.slice(0, 50).map((evt: any) => {
+                    const colors = EVENT_COLORS[evt.event_type] || { bg: "#F3F4F6", text: "#6B7280", icon: "⚪" };
+                    return (
+                      <div key={evt.id} className="flex items-start gap-3 px-3 py-2 rounded-lg text-sm" style={{ backgroundColor: colors.bg }}>
+                        <span>{colors.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium" style={{ color: colors.text }}>{evt.event_type.replace(/_/g, " ")}</div>
+                          <div className="text-xs mt-0.5" style={{ color: T.textSecond }}>
+                            {evt.ip_address && <span>IP: {evt.ip_address} </span>}
+                            {evt.email && <span>• {evt.email} </span>}
+                            {evt.phone && <span>• {evt.phone} </span>}
+                          </div>
+                          {evt.details && (
+                            <div className="text-xs mt-1" style={{ color: T.textSecond }}>
+                              {typeof evt.details === "object" ? (evt.details.reason || JSON.stringify(evt.details).slice(0, 120)) : String(evt.details)}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-xs whitespace-nowrap" style={{ color: T.textSecond }}>
+                          {new Date(evt.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ─── SECTION 2: BLOCKLIST ─── */}
+            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+                <Lock className="w-4 h-4 inline mr-2" style={{ color: BRAND_GOLD }} />
+                Active Blocklist
+              </h3>
+
+              {/* Add block form */}
+              <div className="flex flex-wrap gap-2 mb-4 p-3 rounded-lg" style={{ backgroundColor: T.pageBg }}>
+                <select
+                  value={blockForm.type}
+                  onChange={e => setBlockForm(f => ({ ...f, type: e.target.value }))}
+                  className="h-9 rounded-md border px-2 text-sm" style={{ borderColor: T.cardBorder, backgroundColor: T.cardBg, color: T.textPrimary }}
+                >
+                  <option value="ip">IP Address</option>
+                  <option value="phone">Phone</option>
+                  <option value="email">Email</option>
+                  <option value="address">Address</option>
+                </select>
+                <Input placeholder="Value to block" value={blockForm.value} onChange={e => setBlockForm(f => ({ ...f, value: e.target.value }))} className="flex-1 min-w-[160px] h-9" />
+                <Input placeholder="Reason (optional)" value={blockForm.reason} onChange={e => setBlockForm(f => ({ ...f, reason: e.target.value }))} className="flex-1 min-w-[140px] h-9" />
+                <Input type="datetime-local" placeholder="Expires (optional)" value={blockForm.expires_at} onChange={e => setBlockForm(f => ({ ...f, expires_at: e.target.value }))} className="w-[200px] h-9" />
+                <Button size="sm" onClick={handleBlock} disabled={blockingEntity || !blockForm.value.trim()} style={{ backgroundColor: ALERT_RED, color: "white" }}>
+                  {blockingEntity ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                  <span className="ml-1">Block</span>
+                </Button>
+              </div>
+
+              {fraudBlocklist.length === 0 ? (
+                <p className="text-sm" style={{ color: T.textSecond }}>No active blocks.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                        <th className="text-left py-2 px-2 font-medium text-xs uppercase" style={{ color: T.textSecond }}>Type</th>
+                        <th className="text-left py-2 px-2 font-medium text-xs uppercase" style={{ color: T.textSecond }}>Value</th>
+                        <th className="text-left py-2 px-2 font-medium text-xs uppercase" style={{ color: T.textSecond }}>Reason</th>
+                        <th className="text-left py-2 px-2 font-medium text-xs uppercase" style={{ color: T.textSecond }}>Blocked</th>
+                        <th className="text-left py-2 px-2 font-medium text-xs uppercase" style={{ color: T.textSecond }}>Expires</th>
+                        <th className="text-left py-2 px-2 font-medium text-xs uppercase" style={{ color: T.textSecond }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fraudBlocklist.map((b: any) => (
+                        <tr key={b.id} style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                          <td className="py-2 px-2">
+                            <span className="px-2 py-0.5 rounded text-xs font-medium" style={{
+                              backgroundColor: b.type === "ip" ? "#DBEAFE" : b.type === "email" ? "#FCE7F3" : b.type === "phone" ? "#FEF3C7" : "#E5E7EB",
+                              color: b.type === "ip" ? "#1D4ED8" : b.type === "email" ? "#BE185D" : b.type === "phone" ? "#D97706" : "#4B5563"
+                            }}>{b.type.toUpperCase()}</span>
+                          </td>
+                          <td className="py-2 px-2 font-mono text-xs" style={{ color: T.textPrimary }}>{b.value}</td>
+                          <td className="py-2 px-2 text-xs" style={{ color: T.textSecond }}>{b.reason || "—"}</td>
+                          <td className="py-2 px-2 text-xs" style={{ color: T.textSecond }}>
+                            {new Date(b.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            <span className="ml-1 text-xs" style={{ color: T.textSecond }}>by {b.blocked_by}</span>
+                          </td>
+                          <td className="py-2 px-2 text-xs" style={{ color: b.expires_at ? WARN_YELLOW : T.textSecond }}>
+                            {b.expires_at ? new Date(b.expires_at).toLocaleDateString() : "Permanent"}
+                          </td>
+                          <td className="py-2 px-2">
+                            <Button size="sm" variant="outline" onClick={() => handleUnblock(b.type, b.value)} className="h-7 text-xs">
+                              Unblock
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* ─── SECTION 3: FAILED PAYMENT ATTEMPTS ─── */}
+            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+                <AlertTriangle className="w-4 h-4 inline mr-2" style={{ color: WARN_YELLOW }} />
+                Failed Payment Attempts (24hr)
+              </h3>
+              {failedAttempts.length === 0 ? (
+                <p className="text-sm" style={{ color: T.textSecond }}>No failed payment attempts in the last 24 hours.</p>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(ipGroups).map(([ip, attempts]) => (
+                    <div key={ip} className="rounded-lg p-3" style={{ backgroundColor: T.pageBg, border: `1px solid ${T.cardBorder}` }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="font-mono text-sm font-medium" style={{ color: T.textPrimary }}>{ip}</span>
+                          <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold" style={{
+                            backgroundColor: (attempts as any[]).length >= 3 ? "#FEE2E2" : "#FEF3C7",
+                            color: (attempts as any[]).length >= 3 ? ALERT_RED : WARN_YELLOW
+                          }}>{(attempts as any[]).length} failed</span>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => handleBlockIp(ip)} className="h-7 text-xs border-red-300 text-red-600">
+                          <Shield className="w-3 h-3 mr-1" /> Block IP
+                        </Button>
+                      </div>
+                      <div className="space-y-1">
+                        {(attempts as any[]).slice(0, 5).map((a: any) => (
+                          <div key={a.id} className="flex items-center gap-3 text-xs" style={{ color: T.textSecond }}>
+                            <span>{new Date(a.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+                            {a.email && <span>{a.email}</span>}
+                            {a.amount && <span>${a.amount}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ─── SECTION 4: VELOCITY ALERTS ─── */}
+            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+                <Zap className="w-4 h-4 inline mr-2" style={{ color: BRAND_GOLD }} />
+                Velocity Alerts
+              </h3>
+              {(() => {
+                const velocityEvents = fraudEvents.filter(e => e.event_type === "velocity_flag");
+                if (velocityEvents.length === 0) return <p className="text-sm" style={{ color: T.textSecond }}>No velocity alerts.</p>;
+                return (
+                  <div className="space-y-2">
+                    {velocityEvents.slice(0, 20).map((evt: any) => (
+                      <div key={evt.id} className="flex items-start gap-3 px-3 py-2 rounded-lg" style={{ backgroundColor: "#FEF3C7" }}>
+                        <span>🟡</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium" style={{ color: "#92400E" }}>
+                            {evt.details?.reason || "Velocity flag"}
+                          </div>
+                          <div className="text-xs mt-0.5" style={{ color: T.textSecond }}>
+                            {evt.ip_address && <span>IP: {evt.ip_address} </span>}
+                            {evt.details?.sessionCount && <span>• {evt.details.sessionCount} sessions </span>}
+                            {evt.details?.addressOrders && <span>• {evt.details.addressOrders} orders same address </span>}
+                          </div>
+                        </div>
+                        <span className="text-xs whitespace-nowrap" style={{ color: T.textSecond }}>
+                          {new Date(evt.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        );
+      }
+
       default:
         return null;
     }
