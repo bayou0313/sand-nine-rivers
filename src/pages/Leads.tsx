@@ -3953,6 +3953,40 @@ const Leads = () => {
               )}
             </div>
 
+            {/* DASHBOARD THEME TOGGLE */}
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Dashboard Theme</h3>
+              <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
+                Switch the LMT dashboard between light and dark appearance. Applies to all tabs.
+              </p>
+              <div className="flex items-center gap-3">
+                {([['light', '☀️ Light'], ['dark', '🌙 Dark']] as const).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    onClick={async () => {
+                      try {
+                        await supabase.functions.invoke("leads-auth", {
+                          body: { password: storedPassword(), action: "save_settings", settings: { dashboard_theme: mode } },
+                        });
+                        setGlobalSettings({ ...globalSettings, dashboard_theme: mode });
+                        toast({ title: mode === 'dark' ? '🌙 Dark theme applied' : '☀️ Light theme applied' });
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err.message, variant: "destructive" });
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
+                    style={{
+                      backgroundColor: globalSettings.dashboard_theme === mode || (!globalSettings.dashboard_theme && mode === 'light') ? BRAND_GOLD : T.cardBg,
+                      color: globalSettings.dashboard_theme === mode || (!globalSettings.dashboard_theme && mode === 'light') ? 'white' : T.textPrimary,
+                      border: `1px solid ${globalSettings.dashboard_theme === mode || (!globalSettings.dashboard_theme && mode === 'light') ? BRAND_GOLD : T.cardBorder}`,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Tabs */}
             <div className="flex gap-1 mb-6" style={{ borderBottom: `2px solid ${T.cardBorder}` }}>
               {([["pricing", "Pricing"], ["profile", "Business Profile"], ["seo", "SEO"], ["tracking", "Tracking"]] as const).map(([id, label]) => (
