@@ -1551,6 +1551,14 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchCityPages]);
 
+  // Fetch overview data when overview tab loads
+  useEffect(() => {
+    if (activePage === "overview" && authenticated) {
+      fetchCashOrders();
+      fetchCityPages();
+    }
+  }, [activePage, authenticated, fetchCashOrders, fetchCityPages]);
+
   // Schedule fetch functions
   const fetchScheduleOrders = useCallback(async (date: Date) => {
     const dateStr = date.toISOString().split("T")[0];
