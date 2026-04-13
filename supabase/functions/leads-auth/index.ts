@@ -686,6 +686,44 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── LOG PAYMENT ATTEMPT (no password — called from stripe-webhook) ──
+    if (action === "log_payment_attempt") {
+      const { ip_address, session_id, email, phone, amount, status } = body;
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      await sb.from("payment_attempts").insert({
+        ip_address, session_id, email, phone, amount, status
+      });
+
+      // Auto-block after 3 failed attempts from same session
+      if (status === "failed" && session_id) {
+        const { count } = await sb
+          .from("payment_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("session_id", session_id)
+          .eq("status", "failed");
+
+        if ((count || 0) >= 3) {
+          if (ip_address) {
+            await sb.from("fraud_blocklist").upsert(
+              { type: "ip", value: ip_address, reason: "Auto-blocked: 3 failed payments same session", blocked_by: "system" },
+              { onConflict: "type,value" }
+            );
+          }
+          await sb.from("notifications").insert({
+            type: "fraud_alert",
+            title: "🚨 Auto-Blocked",
+            message: `IP ${ip_address} auto-blocked: 3 failed payment attempts from session ${session_id?.slice(0, 8)}`,
+            entity_type: "fraud",
+            entity_id: session_id || null
+          });
+        }
+      }
+
+      return new Response(JSON.stringify({ logged: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
 
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
@@ -3781,45 +3819,6 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ── LOG PAYMENT ATTEMPT (no password — called from stripe-webhook) ──
-    if (action === "log_payment_attempt") {
-      const { ip_address, session_id, email, phone, amount, status } = body;
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-      await supabase.from("payment_attempts").insert({
-        ip_address, session_id, email, phone, amount, status
-      });
-
-      // Auto-block after 3 failed attempts from same session
-      if (status === "failed" && session_id) {
-        const { count } = await supabase
-          .from("payment_attempts")
-          .select("id", { count: "exact", head: true })
-          .eq("session_id", session_id)
-          .eq("status", "failed");
-
-        if ((count || 0) >= 3) {
-          if (ip_address) {
-            await supabase.from("fraud_blocklist").upsert(
-              { type: "ip", value: ip_address, reason: "Auto-blocked: 3 failed payments same session", blocked_by: "system" },
-              { onConflict: "type,value" }
-            );
-          }
-          await supabase.from("notifications").insert({
-            type: "fraud_alert",
-            title: "🚨 Auto-Blocked",
-            message: `IP ${ip_address} auto-blocked: 3 failed payment attempts from session ${session_id?.slice(0, 8)}`,
-            entity_type: "fraud",
-            entity_id: session_id || null
-          });
-        }
-      }
-
-      return new Response(JSON.stringify({ logged: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
 
     // ── LIST PAYMENT ATTEMPTS (password required) ──
     if (action === "list_payment_attempts") {
