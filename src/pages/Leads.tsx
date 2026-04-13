@@ -1530,9 +1530,9 @@ const Leads = () => {
     setProfileSettings(prev => ({ ...prev, business_address: result.formattedAddress }));
   }, []);
 
-  // Fetch abandoned sessions when navigating to that page (only if empty)
+  // Fetch abandoned sessions when navigating to that page or overview (only if empty)
   useEffect(() => {
-    if ((activePage === "abandoned" || activePage === "finances") && authenticated && abandonedSessions.length === 0) {
+    if ((activePage === "abandoned" || activePage === "finances" || activePage === "overview") && authenticated && abandonedSessions.length === 0) {
       fetchAbandonedSessions();
     }
   }, [activePage, authenticated, fetchAbandonedSessions]);
@@ -2308,6 +2308,87 @@ const Leads = () => {
                 </div>
               </div>
             )}
+
+            {/* Hot Prospects — abandoned sessions with high intent */}
+            {(() => {
+              const HOT_STAGES = ["clicked_order_now", "started_checkout", "reached_payment"];
+              const hotProspects = abandonedSessions
+                .filter((s: any) => HOT_STAGES.includes(s.stage))
+                .sort((a: any, b: any) => new Date(b.last_seen_at || b.updated_at || b.created_at).getTime() - new Date(a.last_seen_at || a.updated_at || a.created_at).getTime())
+                .slice(0, 5);
+              if (hotProspects.length === 0) return null;
+
+              const stageLabel: Record<string, string> = {
+                clicked_order_now: "Clicked Order",
+                started_checkout: "Started Checkout",
+                reached_payment: "At Payment",
+              };
+              const stageColor: Record<string, string> = {
+                clicked_order_now: WARN_YELLOW,
+                started_checkout: "#F97316",
+                reached_payment: ALERT_RED,
+              };
+
+              const timeAgo = (d: string) => {
+                const mins = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
+                if (mins < 60) return `${mins}m ago`;
+                const hrs = Math.floor(mins / 60);
+                if (hrs < 24) return `${hrs}h ago`;
+                return `${Math.floor(hrs / 24)}d ago`;
+              };
+
+              return (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Zap size={12} style={{ color: ALERT_RED }} />
+                      <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>HOT PROSPECTS</h2>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ backgroundColor: ALERT_RED }}>{hotProspects.length}</span>
+                    </div>
+                    <button onClick={() => setActivePage("abandoned")} className="text-[10px] font-mono uppercase tracking-wider hover:underline" style={{ color: BRAND_GOLD }}>View All →</button>
+                  </div>
+                  <div className="space-y-2">
+                    {hotProspects.map((s: any) => (
+                      <div key={s.id} onClick={() => setActivePage("abandoned")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${stageColor[s.stage] || WARN_YELLOW}` }}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-bold truncate" style={{ color: T.textPrimary }}>
+                              {s.customer_name || s.delivery_address?.split(",")[0] || "Unknown"}
+                            </span>
+                            {s.ip_is_business && (
+                              <span className="px-1 py-0.5 rounded text-[8px] font-bold uppercase" style={{ backgroundColor: "rgba(59,130,246,0.1)", color: "#3B82F6" }}>
+                                <Building2 size={8} className="inline mr-0.5" />BIZ
+                              </span>
+                            )}
+                            {s.customer_email && (
+                              <span className="px-1 py-0.5 rounded text-[8px] font-bold uppercase" style={{ backgroundColor: "rgba(5,150,105,0.1)", color: POSITIVE }}>
+                                HAS EMAIL
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] truncate" style={{ color: T.textSecond }}>
+                              {s.delivery_address ? s.delivery_address.split(",").slice(0, 2).join(",") : s.geo_city || "—"}
+                            </span>
+                            {s.calculated_price && (
+                              <span className="text-[10px] font-mono font-bold" style={{ color: BRAND_GOLD }}>${Number(s.calculated_price).toFixed(0)}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase" style={{ backgroundColor: `${stageColor[s.stage]}15`, color: stageColor[s.stage] }}>
+                            {stageLabel[s.stage] || s.stage}
+                          </span>
+                          <span className="text-[9px] font-mono" style={{ color: T.textSecond }}>
+                            {timeAgo(s.last_seen_at || s.updated_at || s.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Pipeline + SEO side by side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
