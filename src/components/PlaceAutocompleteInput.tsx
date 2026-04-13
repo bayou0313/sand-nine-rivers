@@ -32,6 +32,7 @@ export default function PlaceAutocompleteInput({
 }: PlaceAutocompleteInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+  const justSelectedRef = useRef(false);
   const [hasValue, setHasValue] = useState(
     !!(initialValue && initialValue.length > 0)
   );
@@ -63,6 +64,7 @@ export default function PlaceAutocompleteInput({
           const lat = place.geometry?.location?.lat();
           const lng = place.geometry?.location?.lng();
           if (lat != null && lng != null) {
+            justSelectedRef.current = true;
             setHasValue(true);
             onInputChangeRef.current?.(place.formatted_address || "");
             onPlaceSelectRef.current({
@@ -71,6 +73,7 @@ export default function PlaceAutocompleteInput({
               lng,
               addressComponents: place.address_components || [],
             });
+            setTimeout(() => { justSelectedRef.current = false; }, 300);
           }
         });
 
@@ -99,6 +102,7 @@ export default function PlaceAutocompleteInput({
   }, []);
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (justSelectedRef.current) return;
     const val = e.target.value;
     setHasValue(val.length > 0);
     onInputChangeRef.current?.(val);
