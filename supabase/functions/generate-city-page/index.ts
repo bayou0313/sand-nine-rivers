@@ -143,22 +143,34 @@ CRITICAL RULES:
 - Always mention 1-855-GOT-WAYS at least once
 - Reference the parish "${effectiveRegion}" by name naturally`;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-      model: "claude-sonnet-4-5",
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
+    const fetchAnthropic = async (): Promise<Response> => {
+      return fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 2000,
+          system: systemPrompt,
+          messages: [
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+    };
+
+    let response = await fetchAnthropic();
+    let retries = 0;
+    while (response.status === 529 && retries < 3) {
+      const delay = 5000 * Math.pow(2, retries);
+      console.log(`[generate-city-page] Anthropic overloaded (529), retry ${retries + 1}/3 in ${delay}ms...`);
+      await new Promise(r => setTimeout(r, delay));
+      response = await fetchAnthropic();
+      retries++;
+    }
 
     if (!response.ok) {
       const errText = await response.text();
