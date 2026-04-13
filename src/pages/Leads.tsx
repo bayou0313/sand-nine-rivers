@@ -5581,6 +5581,7 @@ const Leads = () => {
         const pctCard = rangeOrders.length ? ((cardOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
         const pctCOD = rangeOrders.length ? ((codOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
 
+        const SECTION_LABEL_F: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: T.textSecond, marginBottom: 12 };
         const METRIC_CARD_F: React.CSSProperties = { ...CARD_STYLE_T, borderRadius: 10, padding: '16px 20px', borderLeft: `3px solid ${BRAND_GOLD}` };
         const METRIC_NUM_F: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: T.textPrimary };
         const METRIC_LABEL_F: React.CSSProperties = { fontSize: 12, color: T.textSecond, marginTop: 2 };
