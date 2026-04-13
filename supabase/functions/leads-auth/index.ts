@@ -194,6 +194,14 @@ serve(async (req) => {
       if (entry_page) upsertData.entry_page = entry_page;
       if (referrer) upsertData.referrer = referrer;
 
+      // IP enrichment — org, city, zip, business detection
+      if (geo.org) {
+        upsertData.ip_org = geo.org;
+        upsertData.ip_is_business = /(LLC|Inc|Corp|Construction|Contractor|Builders|Excavat|Paving|Landscap|Plumb|Electric|Roofing|Materials|Supply|Equipment|Trucking|Grading|Concrete|Masonry|Fencing|Demolition|Hauling|Septic|Utilities)/i.test(geo.org);
+      }
+      if (geo.city) upsertData.ip_city = geo.city;
+      if (geo.postal) upsertData.ip_zip = geo.postal;
+
       await sb.from("visitor_sessions").upsert(
         upsertData,
         { onConflict: "session_token", ignoreDuplicates: false }
