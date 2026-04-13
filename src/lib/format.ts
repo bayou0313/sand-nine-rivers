@@ -30,7 +30,7 @@ const PARISH_TAX_RATES: Record<string, number> = {
   "jefferson": 0.0975,
   "orleans": 0.1000,
   "st. bernard": 0.1000,
-  "st. charles": 0.1000,
+  "st. charles": 0.1055,
   "st. tammany": 0.0925,
   "plaquemines": 0.0975,
   "st. john the baptist": 0.1025,
@@ -105,14 +105,15 @@ export function getParishFromPlaceResult(
 ): string | null {
   const county = addressComponents.find(c => c.types.includes("administrative_area_level_2"));
   if (!county) return null;
-  return county.long_name.replace(/ Parish$/i, "").toLowerCase();
+  return county.long_name;
 }
 
 // Look up tax rate by parish name (from Google Maps structured data)
 export function getTaxRateByParish(parishName: string): { rate: number; parish: string } {
-  const key = parishName.toLowerCase();
-  if (PARISH_TAX_RATES[key] !== undefined) {
+  const normalized = parishName.toLowerCase().replace(/ parish$/i, "").trim();
+  const key = Object.keys(PARISH_TAX_RATES).find(k => k === normalized);
+  if (key !== undefined) {
     return { rate: PARISH_TAX_RATES[key], parish: key.replace(/\b\w/g, c => c.toUpperCase()) + " Parish" };
   }
-  return { rate: DEFAULT_TAX_RATE, parish: key.replace(/\b\w/g, c => c.toUpperCase()) + " Parish (default rate)" };
+  return { rate: DEFAULT_TAX_RATE, parish: normalized.replace(/\b\w/g, c => c.toUpperCase()) + " Parish (default rate)" };
 }
