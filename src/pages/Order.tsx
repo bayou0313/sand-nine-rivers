@@ -917,7 +917,7 @@ const Order = () => {
       setWeekdayPit(matchedPit);
       setWeekdayResult(result);
       setWeekdayPitSchedule(matchedPitSchedule);
-      const distances = await findAllPitDistances(allPits, customerAddr, globalPricing, supabase);
+      const distances = await findAllPitDistances(allPits, customerAddr, globalPricing, supabase, detectedZip);
       setAllPitDistances(distances);
     };
 
@@ -978,7 +978,7 @@ const Order = () => {
 
       console.log("[calculateDistance] calling findBestPitDriving, pits:", allPits.length);
       // Default to Monday (1) for initial price calc — excludes Saturday-only pits
-      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, 1);
+      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, 1, detectedZip);
       console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {
@@ -1017,7 +1017,7 @@ const Order = () => {
       setWeekdayPitSchedule(weekdaySchedule);
 
       // Resolve all pit distances for per-date assignment
-      findAllPitDistances(allPits, currentAddress, globalPricing, supabase)
+      findAllPitDistances(allPits, currentAddress, globalPricing, supabase, detectedZip)
         .then(distances => setAllPitDistances(distances))
         .catch(() => setAllPitDistances([]));
 
@@ -1065,6 +1065,8 @@ const Order = () => {
       customer_phone: form.phone.trim(),
       delivery_address: address,
       distance_miles: result!.distance,
+      billed_distance_miles: result!.billedDistance ?? result!.distance,
+      is_northshore: result!.isNorthshore ?? false,
       price: totalPrice,
       quantity,
       notes: form.notes.trim() || null,
