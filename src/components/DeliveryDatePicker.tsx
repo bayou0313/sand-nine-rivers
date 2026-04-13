@@ -1,6 +1,6 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, AlertTriangle } from "lucide-react";
+import { CalendarDays, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const SATURDAY_SURCHARGE = 35;
@@ -238,8 +238,11 @@ type Props = {
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 60, null, allPitDistances), [pitSchedule, allPitDistances]);
+  const [datePage, setDatePage] = useState(0);
+  const datesPerPage = 5;
+  const totalPages = Math.ceil(dates.length / datesPerPage);
+  const visibleDates = dates.slice(datePage * datesPerPage, (datePage + 1) * datesPerPage);
 
   // Per-date surcharge helpers
   const getSatSurcharge = (d: DeliveryDateWithPit) => {
@@ -381,79 +384,97 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
           <span className="font-body text-xs" style={{ color: '#6B7280' }}>Select delivery date</span>
           <button
             type="button"
-            onClick={() => scrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' })}
+            onClick={() => setDatePage(0)}
             className="font-body text-xs text-accent underline"
           >
             ← Today
           </button>
         </div>
-        <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#C07A00 #f0f0f0' }}>
-          {dates.map((d, i) => {
-            const isSelected = selectedDate?.iso === d.iso;
-            const isBlocked = d.blocked || isFullyBooked(d);
-            const booked = isFullyBooked(d);
-            return (
-              <motion.button
-                key={d.iso}
-                type="button"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                onClick={() => { if (!isBlocked) { onSelect(d); if ((d as DeliveryDateWithPit).assignedPit && onPitAssigned) onPitAssigned((d as DeliveryDateWithPit).assignedPit!.pit); } }}
-                disabled={isBlocked}
-                className={`flex-shrink-0 w-[88px] rounded-xl p-3 text-center border-2 transition-all duration-200 ${
-                  isBlocked
-                    ? "border-border bg-muted/50 opacity-50 cursor-not-allowed"
-                    : isSelected && d.isSunday
-                    ? "border-indigo-500 bg-indigo-50 shadow-lg shadow-indigo-500/20 scale-105"
-                    : isSelected && d.isSaturday
-                    ? "border-amber-500 bg-amber-50 shadow-lg shadow-amber-500/20 scale-105"
-                    : isSelected
-                    ? "border-accent bg-accent/10 shadow-lg shadow-accent/20 scale-105"
-                    : d.isSunday
-                    ? "border-indigo-300 bg-indigo-50/60 hover:border-indigo-400 hover:shadow-md"
-                    : d.isSaturday
-                    ? "border-amber-300 bg-amber-50/60 hover:border-amber-400 hover:shadow-md"
-                    : "border-border bg-card hover:border-primary/40 hover:shadow-md"
-                }`}
-              >
-                <p className={`font-display text-sm tracking-wider ${isBlocked ? "text-muted-foreground" : isSelected ? (d.isSunday ? "text-indigo-600" : d.isSaturday ? "text-amber-600" : "text-accent") : "text-muted-foreground"}`}>
-                  {d.label}
-                </p>
-                <p className={`font-display text-xl mt-1 ${isBlocked ? "text-muted-foreground line-through" : "text-foreground"}`}>
-                  {d.dateStr.split(" ")[1]}
-                </p>
-                <p className={`font-body text-[10px] mt-0.5 ${isBlocked ? "text-muted-foreground" : isSelected ? (d.isSunday ? "text-indigo-600" : d.isSaturday ? "text-amber-600" : "text-accent") : "text-muted-foreground"}`}>
-                  {d.dateStr.split(" ")[0]}
-                </p>
-                {booked && (
-                  <span className="inline-block mt-1.5 text-[8px] font-display tracking-wider bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">
-                    FULLY BOOKED
-                  </span>
-                )}
-                {!isBlocked && d.blocked && (
-                  <span className="inline-block mt-1.5 text-[8px] font-display tracking-wider text-muted-foreground">
-                    CLOSED
-                  </span>
-                )}
-                {!isBlocked && d.isSameDay && (
-                  <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-amber-500/20 text-amber-700 px-1.5 py-0.5 rounded-full">
-                    SAME DAY
-                  </span>
-                )}
-                {!isBlocked && !booked && d.isSaturday && (
-                  <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-amber-400/20 text-amber-600 px-1.5 py-0.5 rounded-full">
-                    SAT +${getSatSurcharge(d)}
-                  </span>
-                )}
-                {!isBlocked && !booked && d.isSunday && getSunSurcharge(d) > 0 && (
-                  <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-indigo-400/20 text-indigo-600 px-1.5 py-0.5 rounded-full">
-                    SUN +${getSunSurcharge(d)}
-                  </span>
-                )}
-              </motion.button>
-            );
-          })}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setDatePage(p => Math.max(0, p - 1))}
+            disabled={datePage === 0}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex gap-3 flex-1 justify-center">
+            {visibleDates.map((d, i) => {
+              const isSelected = selectedDate?.iso === d.iso;
+              const isBlocked = d.blocked || isFullyBooked(d);
+              const booked = isFullyBooked(d);
+              return (
+                <motion.button
+                  key={d.iso}
+                  type="button"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  onClick={() => { if (!isBlocked) { onSelect(d); if ((d as DeliveryDateWithPit).assignedPit && onPitAssigned) onPitAssigned((d as DeliveryDateWithPit).assignedPit!.pit); } }}
+                  disabled={isBlocked}
+                  className={`flex-shrink-0 w-[88px] rounded-xl p-3 text-center border-2 transition-all duration-200 ${
+                    isBlocked
+                      ? "border-border bg-muted/50 opacity-50 cursor-not-allowed"
+                      : isSelected && d.isSunday
+                      ? "border-indigo-500 bg-indigo-50 shadow-lg shadow-indigo-500/20 scale-105"
+                      : isSelected && d.isSaturday
+                      ? "border-amber-500 bg-amber-50 shadow-lg shadow-amber-500/20 scale-105"
+                      : isSelected
+                      ? "border-accent bg-accent/10 shadow-lg shadow-accent/20 scale-105"
+                      : d.isSunday
+                      ? "border-indigo-300 bg-indigo-50/60 hover:border-indigo-400 hover:shadow-md"
+                      : d.isSaturday
+                      ? "border-amber-300 bg-amber-50/60 hover:border-amber-400 hover:shadow-md"
+                      : "border-border bg-card hover:border-primary/40 hover:shadow-md"
+                  }`}
+                >
+                  <p className={`font-display text-sm tracking-wider ${isBlocked ? "text-muted-foreground" : isSelected ? (d.isSunday ? "text-indigo-600" : d.isSaturday ? "text-amber-600" : "text-accent") : "text-muted-foreground"}`}>
+                    {d.label}
+                  </p>
+                  <p className={`font-display text-xl mt-1 ${isBlocked ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                    {d.dateStr.split(" ")[1]}
+                  </p>
+                  <p className={`font-body text-[10px] mt-0.5 ${isBlocked ? "text-muted-foreground" : isSelected ? (d.isSunday ? "text-indigo-600" : d.isSaturday ? "text-amber-600" : "text-accent") : "text-muted-foreground"}`}>
+                    {d.dateStr.split(" ")[0]}
+                  </p>
+                  {booked && (
+                    <span className="inline-block mt-1.5 text-[8px] font-display tracking-wider bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">
+                      FULLY BOOKED
+                    </span>
+                  )}
+                  {!isBlocked && d.blocked && (
+                    <span className="inline-block mt-1.5 text-[8px] font-display tracking-wider text-muted-foreground">
+                      CLOSED
+                    </span>
+                  )}
+                  {!isBlocked && d.isSameDay && (
+                    <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-amber-500/20 text-amber-700 px-1.5 py-0.5 rounded-full">
+                      SAME DAY
+                    </span>
+                  )}
+                  {!isBlocked && !booked && d.isSaturday && (
+                    <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-amber-400/20 text-amber-600 px-1.5 py-0.5 rounded-full">
+                      SAT +${getSatSurcharge(d)}
+                    </span>
+                  )}
+                  {!isBlocked && !booked && d.isSunday && getSunSurcharge(d) > 0 && (
+                    <span className="inline-block mt-1.5 text-[9px] font-display tracking-wider bg-indigo-400/20 text-indigo-600 px-1.5 py-0.5 rounded-full">
+                      SUN +${getSunSurcharge(d)}
+                    </span>
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => setDatePage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={datePage >= totalPages - 1}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
         </>
       )}
