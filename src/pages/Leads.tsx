@@ -2064,192 +2064,191 @@ const Leads = () => {
         const totalViews = cityPages.reduce((s: number, cp: any) => s + (cp.page_views || 0), 0);
         const topCities = [...activeCityPages].sort((a: any, b: any) => (b.page_views || 0) - (a.page_views || 0)).slice(0, 5);
         const recentOrders = [...cashOrders].sort((a: any, b: any) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 5);
-        const dayName = todayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+        const dayName = todayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+        const timeStr = todayDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+
+        const OPS_BG = "#0A0F1E";
+        const CARD_BG = "#0D1529";
+        const CARD_BORDER_CLR = "rgba(255,255,255,0.06)";
+        const GOLD = "#C07A00";
+        const GREEN = "#10B981";
+        const RED = "#EF4444";
+        const TEXT_SEC = "#64748B";
+        const TEXT_PRI = "#FFFFFF";
+
+        const fmt = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        const fmtFull = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+        const pipelineStages = STAGES.map(stage => {
+          const sl = parsedLeads.filter((l: any) => l.stage === stage);
+          const val = sl.reduce((s: number, l: any) => s + Number(l.calculated_price || 0), 0);
+          return { stage, count: sl.length, value: val };
+        });
+
+        const MetricBox = ({ label, value, sub, onClick, accent = GOLD }: { label: string; value: string; sub: string; onClick: () => void; accent?: string }) => (
+          <div
+            onClick={onClick}
+            className="rounded-lg p-4 cursor-pointer transition-all duration-200 hover:border-[#C07A00]/60 group"
+            style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}
+          >
+            <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: TEXT_SEC }}>{label}</p>
+            <p className="text-2xl md:text-3xl font-bold font-mono leading-none" style={{ color: accent }}>{value}</p>
+            <p className="text-[11px] mt-1.5" style={{ color: TEXT_SEC }}>{sub}</p>
+          </div>
+        );
 
         return (
-          <>
-            {/* Section 1 — Today at a Glance */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>TODAY AT A GLANCE</h2>
-                <span className="text-sm font-medium" style={{ color: BRAND_GOLD }}>{dayName}</span>
+          <div className="rounded-2xl p-4 md:p-6 -mx-2 md:-mx-0" style={{ backgroundColor: OPS_BG }}>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h1 className="text-lg md:text-xl font-bold tracking-wide" style={{ color: TEXT_PRI }}>
+                  LMT OPERATIONS CENTER
+                </h1>
+                <p className="text-xs font-mono mt-0.5" style={{ color: TEXT_SEC }}>{dayName} · {timeStr}</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{`$${toCaptureRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
-                  <p className="text-xs text-white/80 mt-1">To Capture</p>
-                </div>
-                <div onClick={() => setActivePage("schedule")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{todayOrders.length}</p>
-                  <p className="text-xs text-white/80 mt-1">Confirmed Today</p>
-                </div>
-                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{todayCOD.length}</p>
-                  <p className="text-xs text-white/80 mt-1">COD Pending</p>
-                </div>
-                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{furthest > 0 ? `${furthest.toFixed(1)} mi` : "—"}</p>
-                  <p className="text-xs text-white/80 mt-1">Furthest Delivery</p>
-                </div>
-                <div onClick={() => setActivePage("schedule")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{todayOrders.reduce((s: number, o: any) => s + Number(o.quantity || 1), 0)}</p>
-                  <p className="text-xs text-white/80 mt-1">Loads Today</p>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: GREEN }} />
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: GREEN }} />
+                </span>
+                <span className="text-xs font-mono" style={{ color: GREEN }}>LIVE</span>
               </div>
             </div>
 
-            {/* Section 2 — Revenue */}
-            <div className="mb-6">
-              <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>REVENUE</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
-                  <p className="text-xs text-gray-500 mb-1">Today (Captured)</p>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${todayCapturedRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
-                  <p className="text-xs text-gray-500 mb-1">Month-to-Date</p>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${mtdRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
-                  <p className="text-xs text-gray-500 mb-1">Avg Order Value</p>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${avgOrder.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-4 bg-white border shadow-sm cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_GOLD + "40" }}>
-                  <p className="text-xs text-gray-500 mb-1">Total Orders</p>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{cashOrders.length}</p>
-                </div>
-              </div>
+            {/* Top Metrics Row */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+              <MetricBox label="CAPTURE TONIGHT" value={fmt(toCaptureRev)} sub="pending auth" onClick={() => setActivePage("cash_orders")} />
+              <MetricBox label="ORDERS TODAY" value={String(todayOrders.length)} sub="confirmed" onClick={() => setActivePage("schedule")} />
+              <MetricBox label="COD DUE" value={String(todayCOD.length)} sub="collect today" onClick={() => setActivePage("cash_orders")} accent={todayCOD.length > 0 ? RED : GOLD} />
+              <MetricBox label="AVG ORDER" value={fmtFull(avgOrder)} sub="per load" onClick={() => setActivePage("cash_orders")} />
+              <MetricBox label="MTD REVENUE" value={fmt(mtdRev)} sub="this month" onClick={() => setActivePage("cash_orders")} accent={GREEN} />
             </div>
 
-            {/* Section 3 — Operations Alerts */}
-            {(uncollectedCOD.length > 0 || captureIssues.length > 0 || outOfAreaLeads.length > 0) && (
-              <div className="mb-6">
-                <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>⚠️ ACTION ITEMS</h2>
-                <div className="space-y-2">
+            {/* Operations Alerts */}
+            {(uncollectedCOD.length > 0 || captureIssues.length > 0 || outOfAreaLeads.length > 0 || toCaptureRev > 0) && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap size={12} style={{ color: GOLD }} />
+                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: GOLD }}>OPERATIONS ALERTS</h2>
+                </div>
+                <div className="space-y-1.5">
                   {uncollectedCOD.length > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md" style={{ backgroundColor: "#FEF3C7", borderColor: "#F59E0B40" }}>
-                      <span className="text-lg">💵</span>
-                      <div>
-                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{uncollectedCOD.length} COD order{uncollectedCOD.length > 1 ? "s" : ""} not collected</p>
-                        <p className="text-xs text-gray-600">${uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} outstanding</p>
-                      </div>
-                      <span className="ml-auto text-xs font-bold" style={{ color: BRAND_GOLD }}>→</span>
-                    </div>
-                  )}
-                  {captureIssues.length > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md" style={{ backgroundColor: "#FEE2E2", borderColor: "#EF444440" }}>
-                      <span className="text-lg">🔴</span>
-                      <div>
-                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{captureIssues.length} payment capture failed</p>
-                        <p className="text-xs text-gray-600">Requires manual capture in Orders tab</p>
-                      </div>
-                      <span className="ml-auto text-xs font-bold" style={{ color: BRAND_GOLD }}>→</span>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: RED }} />
+                      <span className="text-xs" style={{ color: TEXT_PRI }}><span className="font-bold">{uncollectedCOD.length} COD</span> order{uncollectedCOD.length > 1 ? "s" : ""} need collection — {fmtFull(uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0))}</span>
+                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
                     </div>
                   )}
                   {outOfAreaLeads.length > 0 && (
-                    <div onClick={() => setActivePage("all")} className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md" style={{ backgroundColor: "#DBEAFE", borderColor: "#3B82F640" }}>
-                      <span className="text-lg">📍</span>
-                      <div>
-                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{outOfAreaLeads.length} out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""}</p>
-                        <p className="text-xs text-gray-600">No pit assigned — needs attention</p>
-                      </div>
-                      <span className="ml-auto text-xs font-bold" style={{ color: BRAND_GOLD }}>→</span>
+                    <div onClick={() => setActivePage("all")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#F59E0B" }} />
+                      <span className="text-xs" style={{ color: TEXT_PRI }}><span className="font-bold">{outOfAreaLeads.length}</span> out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""} — no pit assigned</span>
+                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
+                    </div>
+                  )}
+                  {captureIssues.length > 0 && (
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: RED }} />
+                      <span className="text-xs" style={{ color: TEXT_PRI }}><span className="font-bold">{captureIssues.length}</span> payment capture{captureIssues.length > 1 ? "s" : ""} failed</span>
+                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
+                    </div>
+                  )}
+                  {toCaptureRev > 0 && (
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: GREEN }} />
+                      <span className="text-xs" style={{ color: TEXT_PRI }}>{fmtFull(toCaptureRev)} capture scheduled for tonight</span>
+                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Section 4 — Pipeline */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>PIPELINE</h2>
-                <span className="text-sm font-bold" style={{ color: BRAND_GOLD }}>${metrics.pipelineValue.toLocaleString()}</span>
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {STAGES.map(stage => {
-                  const count = parsedLeads.filter((l: any) => l.stage === stage).length;
-                  return (
-                    <div key={stage} onClick={() => setActivePage("pipeline")} className="rounded-lg overflow-hidden border cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: STAGE_COLORS[stage] + "30" }}>
-                      <div className="px-2 py-1.5 text-center" style={{ backgroundColor: STAGE_COLORS[stage] }}>
-                        <span className="text-white text-xs font-bold uppercase">{stage}</span>
-                      </div>
-                      <div className="p-2 text-center bg-white">
-                        <p className="text-xl font-bold" style={{ color: STAGE_COLORS[stage] }}>{count}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Section 5 — SEO Snapshot */}
-            <div className="mb-6">
-              <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>SEO</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                <div onClick={() => setActivePage("city_pages")} className="rounded-xl p-3 bg-white border shadow-sm text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{activeCityPages.length}</p>
-                  <p className="text-xs text-gray-500">Active Pages</p>
-                </div>
-                <div onClick={() => setActivePage("city_pages")} className="rounded-xl p-3 bg-white border shadow-sm text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
-                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{totalViews.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">Total Views</p>
-                </div>
-              </div>
-              {topCities.length > 0 && (
-                <div onClick={() => setActivePage("city_pages")} className="bg-white rounded-xl border shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr style={{ backgroundColor: BRAND_NAVY }}>
-                        <th className="px-3 py-2 text-left text-xs font-bold text-white uppercase">#</th>
-                        <th className="px-3 py-2 text-left text-xs font-bold text-white uppercase">City</th>
-                        <th className="px-3 py-2 text-right text-xs font-bold text-white uppercase">Views</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topCities.map((cp: any, i: number) => (
-                        <tr key={cp.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
-                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>{i + 1}</td>
-                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
-                          <td className="px-3 py-2 text-xs text-right">{(cp.page_views || 0).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Section 6 — Recent Orders */}
-            {recentOrders.length > 0 && (
-              <div className="mb-6">
+            {/* Pipeline + SEO side by side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Pipeline */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>RECENT ORDERS</h2>
-                  <Button size="sm" variant="outline" className="text-xs" onClick={() => setActivePage("cash_orders")}>View All</Button>
+                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: TEXT_SEC }}>PIPELINE</h2>
+                  <span className="text-xs font-mono font-bold" style={{ color: GOLD }}>{fmt(metrics.pipelineValue)}</span>
                 </div>
-                <div onClick={() => setActivePage("cash_orders")} className="bg-white rounded-xl border shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md" style={{ borderColor: BRAND_NAVY + "20" }}>
-                  <table className="w-full text-sm">
+                <div className="space-y-2">
+                  {pipelineStages.map(({ stage, count, value }) => (
+                    <div key={stage} onClick={() => setActivePage("pipeline")} className="flex items-center gap-3 cursor-pointer group">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: STAGE_COLORS[stage] }} />
+                      <span className="text-xs uppercase font-bold flex-shrink-0 w-14" style={{ color: STAGE_COLORS[stage] }}>{stage}</span>
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+                        <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(4, (count / Math.max(parsedLeads.length, 1)) * 100)}%`, backgroundColor: STAGE_COLORS[stage] }} />
+                      </div>
+                      <span className="text-xs font-mono font-bold w-6 text-right" style={{ color: TEXT_PRI }}>{count}</span>
+                      <span className="text-[10px] font-mono w-12 text-right" style={{ color: TEXT_SEC }}>{fmt(value)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SEO Performance */}
+              <div className="rounded-lg p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: TEXT_SEC }}>SEO PERFORMANCE</h2>
+                  <span className="text-xs font-mono" style={{ color: TEXT_SEC }}>{activeCityPages.length} pages</span>
+                </div>
+                <div className="flex gap-4 mb-3">
+                  <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
+                    <p className="text-2xl font-mono font-bold" style={{ color: TEXT_PRI }}>{activeCityPages.length}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Active Pages</p>
+                  </div>
+                  <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
+                    <p className="text-2xl font-mono font-bold" style={{ color: TEXT_PRI }}>{totalViews.toLocaleString()}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Total Views</p>
+                  </div>
+                </div>
+                {topCities.length > 0 && (
+                  <div className="space-y-1.5">
+                    {topCities.slice(0, 3).map((cp: any, i: number) => (
+                      <div key={cp.id} onClick={() => setActivePage("city_pages")} className="flex items-center gap-2 cursor-pointer">
+                        <span className="text-[10px] font-mono font-bold w-4" style={{ color: GOLD }}>{i + 1}</span>
+                        <span className="text-xs flex-1" style={{ color: TEXT_PRI }}>{cp.city_name}</span>
+                        <span className="text-xs font-mono" style={{ color: TEXT_SEC }}>{(cp.page_views || 0).toLocaleString()} views</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Orders */}
+            {recentOrders.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: TEXT_SEC }}>RECENT ORDERS</h2>
+                  <button onClick={() => setActivePage("cash_orders")} className="text-[10px] font-mono uppercase tracking-wider hover:underline" style={{ color: GOLD }}>View All →</button>
+                </div>
+                <div className="rounded-lg overflow-hidden" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+                  <table className="w-full text-xs">
                     <thead>
-                      <tr style={{ backgroundColor: BRAND_NAVY }}>
+                      <tr style={{ borderBottom: `1px solid ${CARD_BORDER_CLR}` }}>
                         {["Order", "Customer", "Address", "Amount", "Status"].map(h => (
-                          <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase">{h}</th>
+                          <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: TEXT_SEC }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {recentOrders.map((o: any, i: number) => (
-                        <tr key={o.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
-                          <td className="px-3 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{o.order_number || "—"}</td>
-                          <td className="px-3 py-2 text-xs">{o.customer_name}</td>
-                          <td className="px-3 py-2 text-xs max-w-[200px] truncate">{o.delivery_address}</td>
-                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          <td className="px-3 py-2">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                              o.status === "delivered" ? "bg-green-100 text-green-800" :
-                              o.status === "confirmed" ? "bg-blue-100 text-blue-800" :
-                              o.status === "cancelled" ? "bg-red-100 text-red-800" :
-                              "bg-gray-100 text-gray-800"
-                            }`}>{o.status}</span>
+                        <tr key={o.id} onClick={() => setActivePage("cash_orders")} className="cursor-pointer transition-colors" style={{ borderBottom: i < recentOrders.length - 1 ? `1px solid ${CARD_BORDER_CLR}` : "none" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(192,122,0,0.06)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                        >
+                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: GOLD }}>{o.order_number || "—"}</td>
+                          <td className="px-3 py-2.5" style={{ color: TEXT_PRI }}>{o.customer_name}</td>
+                          <td className="px-3 py-2.5 max-w-[180px] truncate" style={{ color: TEXT_SEC }}>{o.delivery_address}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: TEXT_PRI }}>{fmtFull(Number(o.price || 0))}</td>
+                          <td className="px-3 py-2.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono" style={{
+                              backgroundColor: o.status === "delivered" ? "rgba(16,185,129,0.15)" : o.status === "confirmed" ? "rgba(59,130,246,0.15)" : o.status === "cancelled" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
+                              color: o.status === "delivered" ? GREEN : o.status === "confirmed" ? "#3B82F6" : o.status === "cancelled" ? RED : TEXT_SEC
+                            }}>{o.status}</span>
                           </td>
                         </tr>
                       ))}
@@ -2258,7 +2257,7 @@ const Leads = () => {
                 </div>
               </div>
             )}
-          </>
+          </div>
         );
       }
 
