@@ -3493,6 +3493,117 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── CANCEL ORDER (release Stripe hold + notify) ──
+    if (action === "cancel_order") {
+      if (!order_id) {
+        return new Response(JSON.stringify({ error: "Missing order_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { data: cancelOrder, error: cancelErr } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", order_id)
+        .single();
+
+      if (cancelErr || !cancelOrder) {
+        return new Response(JSON.stringify({ error: "Order not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      if (cancelOrder.status === "cancelled") {
+        return new Response(JSON.stringify({ error: "Order already cancelled", order_number: cancelOrder.order_number }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      let stripeReleased = false;
+
+      // Release Stripe hold if payment is authorized
+      if (cancelOrder.stripe_payment_id && cancelOrder.payment_status === "authorized") {
+        try {
+          // Determine stripe mode
+          const { data: cancelModeData } = await supabase
+            .from("global_settings")
+            .select("value")
+            .eq("key", "stripe_mode")
+            .maybeSingle();
+
+          const cancelStripeMode = cancelModeData?.value || "live";
+          const cancelStripeKey = cancelStripeMode === "test"
+            ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
+            : Deno.env.get("STRIPE_SECRET_KEY");
+
+          const Stripe = (await import("https://esm.sh/stripe@18.5.0")).default;
+          const stripe = new Stripe(cancelStripeKey || "", {
+            apiVersion: "2025-08-27.basil",
+          });
+
+          await stripe.paymentIntents.cancel(cancelOrder.stripe_payment_id);
+          stripeReleased = true;
+          console.log(`[cancel_order] Released Stripe hold for ${cancelOrder.order_number}: ${cancelOrder.stripe_payment_id}`);
+        } catch (stripeErr: any) {
+          console.error(`[cancel_order] Stripe cancel failed for ${cancelOrder.order_number}:`, stripeErr.message);
+          // Continue with DB cancellation even if Stripe fails
+        }
+      }
+
+      // Update order status
+      const newPaymentStatus = stripeReleased ? "released" : cancelOrder.payment_status;
+      await supabase.from("orders").update({
+        status: "cancelled",
+        payment_status: newPaymentStatus,
+        cancelled_at: new Date().toISOString(),
+      } as any).eq("id", order_id);
+
+      // Send cancellation email to customer
+      if (cancelOrder.customer_email) {
+        const supabaseUrl3 = Deno.env.get("SUPABASE_URL")!;
+        const anonKey3 = Deno.env.get("SUPABASE_ANON_KEY") || "";
+        try {
+          await fetch(`${supabaseUrl3}/functions/v1/send-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${anonKey3}`,
+            },
+            body: JSON.stringify({
+              type: "order_cancelled",
+              data: {
+                customer_name: cancelOrder.customer_name,
+                customer_email: cancelOrder.customer_email,
+                order_number: cancelOrder.order_number,
+                delivery_address: cancelOrder.delivery_address,
+                delivery_date: cancelOrder.delivery_date,
+                price: cancelOrder.price,
+                payment_released: stripeReleased,
+              },
+            }),
+          });
+        } catch (emailErr: any) {
+          console.error(`[cancel_order] Failed to send cancellation email:`, emailErr.message);
+        }
+      }
+
+      // Create admin notification
+      try {
+        await supabase.from("notifications").insert({
+          type: "order_cancelled",
+          title: "🚫 Order Cancelled",
+          message: `${cancelOrder.order_number} — ${cancelOrder.customer_name} cancelled.${stripeReleased ? " Payment hold released." : ""}`,
+          entity_type: "order",
+          entity_id: order_id,
+        });
+      } catch {}
+
+      console.log(`[cancel_order] Cancelled ${cancelOrder.order_number}, stripe_released: ${stripeReleased}`);
+
+      return new Response(JSON.stringify({
+        success: true,
+        order_number: cancelOrder.order_number,
+        stripe_released: stripeReleased,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
