@@ -652,6 +652,22 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // TEMPORARY: Bootstrap cron password into global_settings (no auth needed - reads from env)
+    if (action === "bootstrap_cron_password") {
+      const pw = Deno.env.get("LEADS_PASSWORD");
+      if (!pw) {
+        return new Response(JSON.stringify({ error: "LEADS_PASSWORD not set" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sbUrl = Deno.env.get("SUPABASE_URL")!;
+      const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sbClient = createClient(sbUrl, sbKey);
+      const { error: upsertErr } = await sbClient.from("global_settings").upsert({ key: "leads_password_cron", value: pw, description: "Leads password for cron auth", is_public: false }, { onConflict: "key" });
+      if (upsertErr) {
+        return new Response(JSON.stringify({ error: upsertErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ success: true, message: "Cron password stored" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
       return new Response(
