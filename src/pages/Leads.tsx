@@ -329,6 +329,7 @@ const Leads = () => {
   // Sidebar nav
   const [activePage, setActivePage] = useState<NavPage>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [financeRange, setFinanceRange] = useState<'mtd' | 'qtd' | 'ytd'>('mtd');
 
   // Business profile state
   const [profileSettings, setProfileSettings] = useState<Record<string, string>>({});
