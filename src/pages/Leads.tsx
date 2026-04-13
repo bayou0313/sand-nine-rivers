@@ -2075,11 +2075,26 @@ const Leads = () => {
                 <span className="text-sm font-medium" style={{ color: BRAND_GOLD }}>{dayName}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <MetricCard label="To Capture" value={`$${toCaptureRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                <MetricCard label="Confirmed Today" value={todayOrders.length} />
-                <MetricCard label="COD Pending" value={todayCOD.length} />
-                <MetricCard label="Furthest Delivery" value={furthest > 0 ? `${furthest.toFixed(1)} mi` : "—"} />
-                <MetricCard label="Loads Today" value={todayOrders.reduce((s: number, o: any) => s + Number(o.quantity || 1), 0)} />
+                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{`$${toCaptureRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
+                  <p className="text-xs text-white/80 mt-1">To Capture</p>
+                </div>
+                <div onClick={() => setActivePage("schedule")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{todayOrders.length}</p>
+                  <p className="text-xs text-white/80 mt-1">Confirmed Today</p>
+                </div>
+                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{todayCOD.length}</p>
+                  <p className="text-xs text-white/80 mt-1">COD Pending</p>
+                </div>
+                <div onClick={() => setActivePage("cash_orders")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{furthest > 0 ? `${furthest.toFixed(1)} mi` : "—"}</p>
+                  <p className="text-xs text-white/80 mt-1">Furthest Delivery</p>
+                </div>
+                <div onClick={() => setActivePage("schedule")} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md" style={{ backgroundColor: BRAND_NAVY }}>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{todayOrders.reduce((s: number, o: any) => s + Number(o.quantity || 1), 0)}</p>
+                  <p className="text-xs text-white/80 mt-1">Loads Today</p>
+                </div>
               </div>
             </div>
 
