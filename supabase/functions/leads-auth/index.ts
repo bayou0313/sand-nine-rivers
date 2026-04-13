@@ -3604,6 +3604,243 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── CHECK FRAUD (password required) ──
+    if (action === "check_fraud") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { ip, phone, email, session_id, address } = body;
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+      // Helper functions
+      const logFraudEvent = async (data: Record<string, any>) => {
+        await supabase.from("fraud_events").insert(data);
+      };
+      const autoBlock = async (type: string, value: string, reason: string) => {
+        await supabase.from("fraud_blocklist").upsert(
+          { type, value, reason, blocked_by: "system" },
+          { onConflict: "type,value" }
+        );
+      };
+      const notifyAdmin = async (message: string) => {
+        await supabase.from("notifications").insert({
+          type: "fraud_alert", title: "🚨 Fraud Alert", message,
+          entity_type: "fraud", entity_id: session_id || null
+        });
+      };
+
+      const now = new Date().toISOString();
+
+      // 1. Check blocklist
+      const { data: blocked } = await supabase
+        .from("fraud_blocklist")
+        .select("*")
+        .or(`and(type.eq.ip,value.eq.${ip}),and(type.eq.phone,value.eq.${phone || "___none___"}),and(type.eq.email,value.eq.${email || "___none___"})`)
+        .or(`expires_at.is.null,expires_at.gt.${now}`);
+
+      if (blocked && blocked.length > 0) {
+        await logFraudEvent({ ip_address: ip, phone, email, session_id, event_type: "blocked_attempt", details: { blocked } });
+        return new Response(JSON.stringify({ blocked: true, reason: blocked[0].reason }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // 2. Rate limit: max 5 sessions per IP per hour
+      if (ip) {
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const { count: sessionCount } = await supabase
+          .from("visitor_sessions")
+          .select("id", { count: "exact", head: true })
+          .eq("ip_address", ip)
+          .gt("created_at", oneHourAgo);
+
+        if ((sessionCount || 0) >= 5) {
+          await logFraudEvent({ ip_address: ip, event_type: "velocity_flag", details: { sessionCount, reason: "IP session rate limit" } });
+          return new Response(JSON.stringify({ blocked: true, reason: "Too many requests from this IP" }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
+      // 3. Payment attempt limit: max 5 failed per IP per day
+      if (ip) {
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { count: ipPayments } = await supabase
+          .from("payment_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("ip_address", ip)
+          .eq("status", "failed")
+          .gt("created_at", oneDayAgo);
+
+        if ((ipPayments || 0) >= 5) {
+          await autoBlock("ip", ip, "Auto-blocked: 5+ failed payments in 24hr");
+          return new Response(JSON.stringify({ blocked: true, reason: "Payment attempt limit exceeded" }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
+      // 4. Address velocity: 3+ orders to same address in 24hr → alert
+      if (address) {
+        const streetPart = address.split(",")[0]?.trim();
+        if (streetPart) {
+          const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          const { count: addressOrders } = await supabase
+            .from("orders")
+            .select("id", { count: "exact", head: true })
+            .ilike("delivery_address", `%${streetPart}%`)
+            .gt("created_at", oneDayAgo);
+
+          if ((addressOrders || 0) >= 3) {
+            await logFraudEvent({ ip_address: ip, event_type: "velocity_flag", details: { addressOrders, reason: "Address velocity" } });
+            await notifyAdmin(`⚠️ Velocity Alert: ${addressOrders} orders to same address in 24hr — ${streetPart}`);
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ blocked: false }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── BLOCK ENTITY (password required) ──
+    if (action === "block_entity") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { type, value, reason, expires_at } = body;
+      if (!type || !value) {
+        return new Response(JSON.stringify({ error: "type and value required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      await supabase.from("fraud_blocklist").upsert(
+        { type, value, reason: reason || null, blocked_by: "admin", expires_at: expires_at || null },
+        { onConflict: "type,value" }
+      );
+      await supabase.from("fraud_events").insert({
+        event_type: "manual_flag", details: { type, value, reason }
+      });
+      return new Response(JSON.stringify({ blocked: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── UNBLOCK ENTITY (password required) ──
+    if (action === "unblock_entity") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { type, value } = body;
+      if (!type || !value) {
+        return new Response(JSON.stringify({ error: "type and value required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      await supabase.from("fraud_blocklist").delete().eq("type", type).eq("value", value);
+      return new Response(JSON.stringify({ unblocked: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── LIST FRAUD EVENTS (password required) ──
+    if (action === "list_fraud_events") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const { data } = await supabase
+        .from("fraud_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      return new Response(JSON.stringify({ events: data || [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── LIST BLOCKLIST (password required) ──
+    if (action === "list_blocklist") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const { data } = await supabase
+        .from("fraud_blocklist")
+        .select("*")
+        .order("created_at", { ascending: false });
+      return new Response(JSON.stringify({ blocklist: data || [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── LOG PAYMENT ATTEMPT (no password — called from stripe-webhook) ──
+    if (action === "log_payment_attempt") {
+      const { ip_address, session_id, email, phone, amount, status } = body;
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+      await supabase.from("payment_attempts").insert({
+        ip_address, session_id, email, phone, amount, status
+      });
+
+      // Auto-block after 3 failed attempts from same session
+      if (status === "failed" && session_id) {
+        const { count } = await supabase
+          .from("payment_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("session_id", session_id)
+          .eq("status", "failed");
+
+        if ((count || 0) >= 3) {
+          if (ip_address) {
+            await supabase.from("fraud_blocklist").upsert(
+              { type: "ip", value: ip_address, reason: "Auto-blocked: 3 failed payments same session", blocked_by: "system" },
+              { onConflict: "type,value" }
+            );
+          }
+          await supabase.from("notifications").insert({
+            type: "fraud_alert",
+            title: "🚨 Auto-Blocked",
+            message: `IP ${ip_address} auto-blocked: 3 failed payment attempts from session ${session_id?.slice(0, 8)}`,
+            entity_type: "fraud",
+            entity_id: session_id || null
+          });
+        }
+      }
+
+      return new Response(JSON.stringify({ logged: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── LIST PAYMENT ATTEMPTS (password required) ──
+    if (action === "list_payment_attempts") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from("payment_attempts")
+        .select("*")
+        .gt("created_at", oneDayAgo)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      return new Response(JSON.stringify({ attempts: data || [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

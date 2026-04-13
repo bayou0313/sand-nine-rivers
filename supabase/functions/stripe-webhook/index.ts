@@ -430,6 +430,34 @@ serve(async (req) => {
       event_id: event.id,
     });
 
+    // Log payment attempt for fraud tracking
+    if (event.type === "payment_intent.payment_failed" || event.type === "payment_intent.succeeded") {
+      try {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const attemptStatus = event.type === "payment_intent.succeeded" ? "success" : "failed";
+        const leadsAuthUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/leads-auth`;
+        await fetch(leadsAuthUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          },
+          body: JSON.stringify({
+            action: "log_payment_attempt",
+            ip_address: pi.metadata?.ip_address || null,
+            session_id: pi.metadata?.session_id || null,
+            email: pi.metadata?.customer_email || pi.receipt_email || null,
+            phone: pi.metadata?.customer_phone || null,
+            amount: (pi.amount || 0) / 100,
+            status: attemptStatus,
+          }),
+        });
+        console.log(`[stripe-webhook] Logged payment attempt: ${attemptStatus}`);
+      } catch (logErr) {
+        console.error("[stripe-webhook] Failed to log payment attempt:", logErr);
+      }
+    }
+
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
