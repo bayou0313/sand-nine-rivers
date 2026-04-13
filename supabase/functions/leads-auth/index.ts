@@ -2939,7 +2939,7 @@ serve(async (req) => {
 
       const { data: allPages, error: pagesErr } = await supabase
         .from("city_pages")
-        .select("id, city_name, lat, lng, pit_id, distance_from_pit, base_price");
+        .select("id, city_name, lat, lng, pit_id, distance_from_pit, base_price, region");
       if (pagesErr) throw pagesErr;
 
       let updated = 0;
@@ -2989,7 +2989,10 @@ serve(async (req) => {
         const effectiveBase = bestPit.base_price ?? defaultBase;
         const effectiveFree = bestPit.free_miles ?? defaultFree;
         const effectiveExtra = bestPit.price_per_extra_mile ?? defaultExtra;
-        const extraMiles = Math.max(0, bestDistance - effectiveFree);
+        // Northshore phantom miles for toll recovery (region-based)
+        const pageIsNorthshore = isNorthshoreRegion(page.region || '');
+        const billedDistance = pageIsNorthshore ? bestDistance + PHANTOM_MILES : bestDistance;
+        const extraMiles = Math.max(0, billedDistance - effectiveFree);
         const newPrice = Math.max(effectiveBase, Math.round(effectiveBase + extraMiles * effectiveExtra));
 
         const oldDist = page.distance_from_pit ? Number(page.distance_from_pit) : null;
