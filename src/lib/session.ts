@@ -28,6 +28,28 @@ export function isNoTrack(): boolean {
   return localStorage.getItem(NOTRACK_KEY) === "1";
 }
 
+// Async version that also checks IP against backend notrack_ips list
+export async function isNoTrackIP(): Promise<boolean> {
+  if (isNoTrack()) return true;
+  try {
+    const ipRes = await fetch('https://api.ipify.org?format=json');
+    const { ip } = await ipRes.json();
+    const { data } = await supabase
+      .from('global_settings')
+      .select('value')
+      .eq('key', 'notrack_ips')
+      .single();
+    const noTrackList: string[] = JSON.parse(data?.value || '[]');
+    if (noTrackList.includes(ip)) {
+      localStorage.setItem(NOTRACK_KEY, '1');
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function getSessionToken(): string {
   let token = localStorage.getItem(SESSION_KEY);
   if (!token) {
