@@ -1675,13 +1675,25 @@ serve(async (req) => {
       if (regenTriggered) {
         const regenUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-city-page`;
         const leadsPass = Deno.env.get("LEADS_PASSWORD") || "";
-        const { data: inlinePages } = await supabase
+        const { data: draftInline } = await supabase
           .from("city_pages")
           .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
           .eq("needs_regen", true)
-          .in("status", ["active", "draft"])
+          .eq("status", "draft")
           .order("updated_at", { ascending: true })
           .limit(5);
+        const draftInlineIds = new Set((draftInline || []).map((p: any) => p.id));
+        let inlinePages = draftInline || [];
+        if (inlinePages.length < 5) {
+          const { data: activeInline } = await supabase
+            .from("city_pages")
+            .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
+            .eq("needs_regen", true)
+            .eq("status", "active")
+            .order("updated_at", { ascending: true })
+            .limit(5 - inlinePages.length);
+          inlinePages = [...inlinePages, ...(activeInline || []).filter((p: any) => !draftInlineIds.has(p.id))];
+        }
 
         const { data: inlinePits } = await supabase.from("pits").select("*").eq("status", "active");
         const inlinePitsById: Record<string, any> = {};
@@ -3198,13 +3210,25 @@ serve(async (req) => {
     }
 
     if (action === "process_regen_queue") {
-      const { data: pendingPages } = await supabase
+      const { data: draftPages } = await supabase
         .from("city_pages")
         .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
         .eq("needs_regen", true)
-        .in("status", ["active", "draft"])
+        .eq("status", "draft")
         .order("updated_at", { ascending: true })
         .limit(5);
+      const draftIds = new Set((draftPages || []).map((p: any) => p.id));
+      let pendingPages = draftPages || [];
+      if (pendingPages.length < 5) {
+        const { data: activePages } = await supabase
+          .from("city_pages")
+          .select("id, city_name, city_slug, state, region, distance_from_pit, base_price, multi_pit_coverage, pit_id")
+          .eq("needs_regen", true)
+          .eq("status", "active")
+          .order("updated_at", { ascending: true })
+          .limit(5 - pendingPages.length);
+        pendingPages = [...pendingPages, ...(activePages || []).filter((p: any) => !draftIds.has(p.id))];
+      }
 
       if (!pendingPages?.length) {
         return new Response(
