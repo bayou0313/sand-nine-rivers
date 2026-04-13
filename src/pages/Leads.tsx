@@ -798,6 +798,14 @@ const Leads = () => {
     } catch (err) { console.error("[notifications] Mark read error:", err); }
   }, []);
 
+  // Fraud & Security tab state
+  const [fraudEvents, setFraudEvents] = useState<any[]>([]);
+  const [fraudBlocklist, setFraudBlocklist] = useState<any[]>([]);
+  const [fraudPaymentAttempts, setFraudPaymentAttempts] = useState<any[]>([]);
+  const [fraudLoading, setFraudLoading] = useState(false);
+  const [blockForm, setBlockForm] = useState({ type: "ip", value: "", reason: "", expires_at: "" });
+  const [blockingEntity, setBlockingEntity] = useState(false);
+
 
   useEffect(() => {
     const saved = storedPassword();
