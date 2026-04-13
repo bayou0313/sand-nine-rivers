@@ -66,6 +66,7 @@ export default function PlaceAutocompleteInput({
       try {
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current!, {
           componentRestrictions: { country: "us" },
+          types: ["address"],
           fields: ["formatted_address", "geometry", "address_components"],
           language: "en",
         });
