@@ -7,7 +7,7 @@ import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp,
 import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -2139,11 +2139,11 @@ const Leads = () => {
 
             {/* Top Metrics Row */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-              <MetricBox label="CAPTURE TONIGHT" value={fmt(toCaptureRev)} sub="pending auth" onClick={() => setActivePage("cash_orders")} />
-              <MetricBox label="ORDERS TODAY" value={String(todayOrders.length)} sub="confirmed" onClick={() => setActivePage("schedule")} />
-              <MetricBox label="COD DUE" value={String(todayCOD.length)} sub="collect today" onClick={() => setActivePage("cash_orders")} accent={todayCOD.length > 0 ? RED : GOLD} />
-              <MetricBox label="AVG ORDER" value={fmtFull(avgOrder)} sub="per load" onClick={() => setActivePage("cash_orders")} />
-              <MetricBox label="MTD REVENUE" value={fmt(mtdRev)} sub="this month" onClick={() => setActivePage("cash_orders")} accent={GREEN} />
+              <MetricBox label="CAPTURE TONIGHT" numValue={toCaptureRev} prefix="$" sub="pending auth" onClick={() => setActivePage("cash_orders")} />
+              <MetricBox label="ORDERS TODAY" numValue={todayOrders.length} sub="confirmed" onClick={() => setActivePage("schedule")} />
+              <MetricBox label="COD DUE" numValue={todayCOD.length} sub="collect today" onClick={() => setActivePage("cash_orders")} accent={todayCOD.length > 0 ? RED : GOLD} />
+              <MetricBox label="AVG ORDER" numValue={avgOrder} prefix="$" decimals={2} sub="per load" onClick={() => setActivePage("cash_orders")} />
+              <MetricBox label="MTD REVENUE" numValue={mtdRev} prefix="$" sub="this month" onClick={() => setActivePage("cash_orders")} accent={GREEN} />
             </div>
 
             {/* Operations Alerts */}
