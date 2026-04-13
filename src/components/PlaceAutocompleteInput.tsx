@@ -1,4 +1,4 @@
-// Stable Autocomplete — redeployed 2026-03-31
+// Stable Autocomplete — redeployed 2026-04-13
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useCallback, useState } from "react";
 
@@ -9,8 +9,17 @@ export interface PlaceSelectResult {
   addressComponents?: any[];
 }
 
+export interface AddressMismatchData {
+  typed: string;
+  resolved: string;
+  lat: number;
+  lng: number;
+  addressComponents: any[];
+}
+
 interface PlaceAutocompleteInputProps {
   onPlaceSelect: (result: PlaceSelectResult) => void;
+  onAddressMismatch?: (data: AddressMismatchData) => void;
   onInputChange?: (value: string) => void;
   onEnterKey?: () => void;
   placeholder?: string;
@@ -22,6 +31,7 @@ interface PlaceAutocompleteInputProps {
 
 export default function PlaceAutocompleteInput({
   onPlaceSelect,
+  onAddressMismatch,
   onInputChange,
   onEnterKey,
   placeholder = "Enter your delivery address...",
@@ -38,9 +48,11 @@ export default function PlaceAutocompleteInput({
   );
 
   const onPlaceSelectRef = useRef(onPlaceSelect);
+  const onAddressMismatchRef = useRef(onAddressMismatch);
   const onInputChangeRef = useRef(onInputChange);
   const onEnterKeyRef = useRef(onEnterKey);
   useEffect(() => { onPlaceSelectRef.current = onPlaceSelect; }, [onPlaceSelect]);
+  useEffect(() => { onAddressMismatchRef.current = onAddressMismatch; }, [onAddressMismatch]);
   useEffect(() => { onInputChangeRef.current = onInputChange; }, [onInputChange]);
   useEffect(() => { onEnterKeyRef.current = onEnterKey; }, [onEnterKey]);
 
@@ -65,15 +77,36 @@ export default function PlaceAutocompleteInput({
           const lng = place.geometry?.location?.lng();
           if (lat != null && lng != null) {
             const resolvedAddress = place.formatted_address || "";
-            resolvedAddressRef.current = resolvedAddress;
-            setHasValue(true);
-            onInputChangeRef.current?.(resolvedAddressRef.current);
-            onPlaceSelectRef.current({
-              formattedAddress: resolvedAddressRef.current,
-              lat,
-              lng,
-              addressComponents: place.address_components || [],
-            });
+            const typedAddress = inputRef.current?.value || "";
+
+            // Compare first segment (street + number) to detect mismatches
+            const typedFirst = typedAddress.split(",")[0].toLowerCase().trim();
+            const resolvedFirst = resolvedAddress.split(",")[0].toLowerCase().trim();
+            const addressesDiffer = typedFirst !== resolvedFirst
+              && !resolvedFirst.includes(typedFirst)
+              && !typedFirst.includes(resolvedFirst);
+
+            if (addressesDiffer && onAddressMismatchRef.current) {
+              console.log("[PlaceAutocompleteInput] Address mismatch detected", { typed: typedAddress, resolved: resolvedAddress });
+              onAddressMismatchRef.current({
+                typed: typedAddress,
+                resolved: resolvedAddress,
+                lat,
+                lng,
+                addressComponents: place.address_components || [],
+              });
+            } else {
+              // Addresses match — proceed normally
+              resolvedAddressRef.current = resolvedAddress;
+              setHasValue(true);
+              onInputChangeRef.current?.(resolvedAddress);
+              onPlaceSelectRef.current({
+                formattedAddress: resolvedAddress,
+                lat,
+                lng,
+                addressComponents: place.address_components || [],
+              });
+            }
           }
         });
 
