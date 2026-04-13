@@ -2068,16 +2068,7 @@ const Leads = () => {
   };
   const CARD_STYLE_T = { backgroundColor: T.cardBg, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow };
 
-  // Sync body background for full-page dark mode coverage
-  useEffect(() => {
-    document.body.style.backgroundColor = T.pageBg;
-    document.documentElement.style.backgroundColor = T.pageBg;
-    return () => {
-      document.body.style.backgroundColor = '';
-      document.documentElement.style.backgroundColor = '';
-    };
-  }, [T.pageBg]);
-
+  // ─── RENDER PAGES ───
   const renderPageContent = () => {
     switch (activePage) {
       case "overview": {
