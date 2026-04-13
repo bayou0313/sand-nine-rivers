@@ -129,7 +129,6 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, prici
 
   // Processing fee row (stripe only) — hidden in baked pricing mode
   const feeRow = !isBaked && isStripePaid && processingFeeAmt > 0.01 ? `
-  const feeRow = !isBaked && isStripePaid && processingFeeAmt > 0.01 ? `
                     <tr>
                       <td style="padding:10px 16px;font-size:14px;color:#555;border-bottom:1px solid #E8E5DD;">
                         Processing Fee
