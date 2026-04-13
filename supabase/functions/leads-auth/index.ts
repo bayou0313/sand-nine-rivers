@@ -2863,7 +2863,7 @@ serve(async (req) => {
           .from("city_pages")
           .insert({
             pit_id: city.pit_id, city_name: city.city_name, city_slug: city.city_slug,
-            state: city.state, lat: city.lat, lng: city.lng,
+            state: city.state, region: city.region || null, lat: city.lat, lng: city.lng,
             distance_from_pit: city.distance_from_pit, base_price: city.base_price,
             multi_pit_coverage: isMultiPit, competing_pit_ids: competingIds,
             status: "draft", prompt_version: null, regen_reason: 'missing_content',
