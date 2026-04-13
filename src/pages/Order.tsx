@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { updateSession, initSession } from "@/lib/session";
+import { updateSession, initSession, getSessionToken } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
@@ -1032,6 +1032,12 @@ const Order = () => {
         value: bestResult.price,
         currency: "USD",
         items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }],
+        rs_session_id: getSessionToken(),
+        rs_price: bestResult.price,
+        rs_distance: bestResult.distance,
+        rs_pit: bestResult.pit.name,
+        rs_zip: detectedZip,
+        rs_parish: taxInfo.parish,
       });
       updateSession({
         stage: "started_checkout",
@@ -1129,6 +1135,12 @@ const Order = () => {
         currency: "USD",
         tax: taxAmount,
         items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result?.price || 0, quantity }],
+        rs_session_id: getSessionToken(),
+        rs_payment_method: codSubOption,
+        rs_pit: matchedPit?.name,
+        rs_distance: result?.distance,
+        rs_zip: detectedZip,
+        rs_parish: taxInfo.parish,
       });
       updateSession({
         stage: "completed_order",

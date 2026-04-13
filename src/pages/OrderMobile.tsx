@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import { updateSession, initSession } from "@/lib/session";
+import { updateSession, initSession, getSessionToken } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
 import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
@@ -687,7 +687,7 @@ const OrderMobile = () => {
       findAllPitDistances(allPits, currentAddress, globalPricing, supabase).then(d => setAllPitDistances(d)).catch(() => {});
 
       setStep("price");
-      trackEvent("begin_checkout", { value: bestResult.price, currency: "USD" });
+      trackEvent("begin_checkout", { value: bestResult.price, currency: "USD", rs_session_id: getSessionToken(), rs_price: bestResult.price, rs_distance: bestResult.distance, rs_pit: bestResult.pit.name, rs_zip: detectedZip, rs_parish: taxInfo.parish });
       updateSession({ stage: "started_checkout", delivery_address: currentAddress, calculated_price: bestResult.price, nearest_pit_id: bestResult.pit.id, nearest_pit_name: bestResult.pit.name, serviceable: true });
     } catch { setError("Something went wrong. Please try again."); }
     finally { setLoading(false); }
@@ -774,7 +774,7 @@ const OrderMobile = () => {
       // Only transition to success AFTER totals are populated
       setStep("success");
       clearCart();
-      trackEvent("purchase", { transaction_id: inserted?.order_number || "", value: totalPrice, currency: "USD" });
+      trackEvent("purchase", { transaction_id: inserted?.order_number || "", value: totalPrice, currency: "USD", rs_session_id: getSessionToken(), rs_payment_method: codSubOption, rs_pit: matchedPit?.name, rs_distance: result?.distance, rs_zip: detectedZip, rs_parish: taxInfo.parish });
       updateSession({ stage: "completed_order", order_id: inserted?.id || null, order_number: inserted?.order_number || null });
       supabase.functions.invoke("leads-auth", { body: { action: "notify_new_order", customer_name: form.name, payment_method: codSubOption, delivery_address: address, order_id: inserted?.id } }).catch(() => {});
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null);
