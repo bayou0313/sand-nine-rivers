@@ -79,9 +79,17 @@ export default function PlaceAutocompleteInput({
             const resolvedAddress = place.formatted_address || "";
             const typedAddress = inputRef.current?.value || "";
 
+            const normalize = (s: string) => s
+              .toLowerCase()
+              .trim()
+              .replace(/\./g, '')      // remove periods (U.S. → us)
+              .replace(/\s+/g, ' ')   // normalize spaces
+              .split(',')[0]           // first segment only
+              .trim();
+
             // Compare first segment (street + number) to detect mismatches
-            const typedFirst = typedAddress.split(",")[0].toLowerCase().trim();
-            const resolvedFirst = resolvedAddress.split(",")[0].toLowerCase().trim();
+            const typedFirst = normalize(typedAddress);
+            const resolvedFirst = normalize(resolvedAddress);
             const addressesDiffer = typedFirst !== resolvedFirst
               && !resolvedFirst.includes(typedFirst)
               && !typedFirst.includes(resolvedFirst);
