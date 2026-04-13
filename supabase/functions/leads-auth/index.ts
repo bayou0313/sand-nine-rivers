@@ -789,6 +789,23 @@ serve(async (req) => {
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      // Check stripe mode — skip DB write in test mode
+      const { data: modeRow } = await supabase
+        .from("global_settings")
+        .select("value")
+        .eq("key", "stripe_mode")
+        .single();
+      if (modeRow?.value === "test") {
+        console.log("[send_offer] TEST MODE — skipping order creation");
+        return new Response(JSON.stringify({
+          success: true,
+          order_id: "test-" + Date.now(),
+          order_number: "RS-TEST-0000",
+          payment_url: "https://riversand.net/order?payment=test",
+          test_mode: true,
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       // Create order via RPC
       const orderData = {
         customer_name: lead.customer_name,

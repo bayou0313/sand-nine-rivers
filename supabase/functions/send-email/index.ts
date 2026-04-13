@@ -909,6 +909,7 @@ serve(async (req) => {
         "legal_name", "site_name", "phone", "website",
         "support_email", "tagline", "copyright_year",
         "sender_name", "sender_title", "pricing_mode", "state_tax_rate",
+        "stripe_mode",
       ]);
 
     const emailCfg: Record<string, string> = {};

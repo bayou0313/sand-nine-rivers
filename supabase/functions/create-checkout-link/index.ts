@@ -51,6 +51,16 @@ serve(async (req) => {
 
     console.log(`[create-checkout-link] stripe_mode: ${stripeMode}, key starts with: ${stripeKey?.slice(0, 8)}`);
 
+    // In test mode, return mock checkout URL without creating real Stripe session
+    if (stripeMode === "test") {
+      console.log("[create-checkout-link] TEST MODE — returning mock URL");
+      const safeOriginTest = origin_url || "https://riversand.net";
+      return new Response(
+        JSON.stringify({ url: `${safeOriginTest}/order?payment=test&order_id=${encodeURIComponent(order_id || "")}`, test_mode: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const stripe = new Stripe(stripeKey || "", {
       apiVersion: "2025-08-27.basil",
     });
