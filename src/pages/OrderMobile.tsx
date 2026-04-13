@@ -35,7 +35,8 @@ import {
   parseGlobalSettings,
   FALLBACK_GLOBAL_PRICING,
 } from "@/lib/pits";
-import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
+import AddressMismatchDialog from "@/components/AddressMismatchDialog";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
 import { useCountdown } from "@/hooks/use-countdown";

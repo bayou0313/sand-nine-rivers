@@ -25,7 +25,8 @@ import OutOfAreaModal from "@/components/OutOfAreaModal";
 import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, type FindBestPitResult, findBestPitDriving, findAllPitDistances, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
-import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
+import AddressMismatchDialog from "@/components/AddressMismatchDialog";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {

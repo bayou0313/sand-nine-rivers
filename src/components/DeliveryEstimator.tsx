@@ -13,7 +13,8 @@ import OutOfAreaModal from "@/components/OutOfAreaModal";
 import { supabase } from "@/integrations/supabase/client";
 import { type PitData, type GlobalPricing, findBestPitDriving, parseGlobalSettings, getEffectivePrice, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
-import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
+import AddressMismatchDialog from "@/components/AddressMismatchDialog";
 
 type EstimateResult = {
   distance: number;
