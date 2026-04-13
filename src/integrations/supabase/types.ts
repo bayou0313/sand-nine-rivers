@@ -960,6 +960,39 @@ export type Database = {
         }
         Relationships: []
       }
+      zip_tax_rates: {
+        Row: {
+          combined_rate: number
+          created_at: string | null
+          id: string
+          local_rate: number
+          state_code: string
+          state_rate: number
+          tax_region_name: string
+          zip_code: string
+        }
+        Insert: {
+          combined_rate: number
+          created_at?: string | null
+          id?: string
+          local_rate?: number
+          state_code?: string
+          state_rate?: number
+          tax_region_name: string
+          zip_code: string
+        }
+        Update: {
+          combined_rate?: number
+          created_at?: string | null
+          id?: string
+          local_rate?: number
+          state_code?: string
+          state_rate?: number
+          tax_region_name?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
