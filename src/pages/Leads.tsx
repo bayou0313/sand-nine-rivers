@@ -5581,10 +5581,9 @@ const Leads = () => {
         const pctCard = rangeOrders.length ? ((cardOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
         const pctCOD = rangeOrders.length ? ((codOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
 
-        const SECTION_LABEL: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: T.textSecond, marginBottom: 12 };
-        const METRIC_CARD: React.CSSProperties = { ...CARD_STYLE_T, borderRadius: 10, padding: '16px 20px', borderLeft: `3px solid ${BRAND_GOLD}` };
-        const METRIC_NUM: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: T.textPrimary };
-        const METRIC_LABEL: React.CSSProperties = { fontSize: 12, color: T.textSecond, marginTop: 2 };
+        const METRIC_CARD_F: React.CSSProperties = { ...CARD_STYLE_T, borderRadius: 10, padding: '16px 20px', borderLeft: `3px solid ${BRAND_GOLD}` };
+        const METRIC_NUM_F: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: T.textPrimary };
+        const METRIC_LABEL_F: React.CSSProperties = { fontSize: 12, color: T.textSecond, marginTop: 2 };
 
         return (
           <div>
@@ -5595,7 +5594,7 @@ const Leads = () => {
                   key={r}
                   onClick={() => setFinanceRange(r)}
                   style={{
-                    padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                     backgroundColor: financeRange === r ? BRAND_GOLD : T.cardBg,
                     color: financeRange === r ? '#fff' : T.textPrimary,
                     border: `1px solid ${financeRange === r ? BRAND_GOLD : T.cardBorder}`,
@@ -5611,20 +5610,11 @@ const Leads = () => {
             </div>
 
             {/* Section 1 — Tax Liability */}
-            <div style={SECTION_LABEL}>TAX LIABILITY</div>
+            <SectionHeader title="TAX LIABILITY" right={`${rangeOrders.length} orders`} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(stateTaxCollected)}</div>
-                <div style={METRIC_LABEL}>State Tax Collected</div>
-              </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(parishTaxCollected)}</div>
-                <div style={METRIC_LABEL}>Parish Tax Collected</div>
-              </div>
-              <div style={METRIC_CARD}>
-                <div style={METRIC_NUM}>{fmtD(totalTaxCollected)}</div>
-                <div style={METRIC_LABEL}>Total Tax to Remit</div>
-              </div>
+              <MetricCard label="State Tax Collected" value={fmtD(stateTaxCollected)} accent />
+              <MetricCard label="Parish Tax Collected" value={fmtD(parishTaxCollected)} accent />
+              <MetricCard label="Total Tax to Remit" value={fmtD(totalTaxCollected)} accent />
             </div>
             {/* Parish breakdown table */}
             <div style={{ ...CARD_STYLE_T, borderRadius: 10, overflow: 'hidden', marginBottom: 24 }}>
