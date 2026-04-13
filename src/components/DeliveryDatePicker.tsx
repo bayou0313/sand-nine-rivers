@@ -240,7 +240,7 @@ type Props = {
 const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
   const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 60, null, allPitDistances), [pitSchedule, allPitDistances]);
   const [datePage, setDatePage] = useState(0);
-  const datesPerPage = 5;
+  const datesPerPage = 6;
   const totalPages = Math.ceil(dates.length / datesPerPage);
   const visibleDates = dates.slice(datePage * datesPerPage, (datePage + 1) * datesPerPage);
 
