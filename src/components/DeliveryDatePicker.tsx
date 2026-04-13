@@ -387,7 +387,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
             ← Today
           </button>
         </div>
-        <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#C07A00 #f0f0f0' }}>
           {dates.map((d, i) => {
             const isSelected = selectedDate?.iso === d.iso;
             const isBlocked = d.blocked || isFullyBooked(d);
