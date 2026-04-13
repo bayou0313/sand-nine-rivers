@@ -2396,6 +2396,7 @@ const Leads = () => {
           return String(aVal).localeCompare(String(bVal)) * dir;
         });
         const activeCount = cityPages.filter((cp: any) => cp.status === "active").length;
+        const draftCount = cityPages.filter((cp: any) => cp.status === "draft").length;
         const totalViews = cityPages.reduce((sum: number, cp: any) => sum + (cp.page_views || 0), 0);
         const citiesCovered = new Set(cityPages.map((cp: any) => cp.city_name)).size;
         const statesCovered = new Set(cityPages.map((cp: any) => cp.state)).size;
@@ -2596,8 +2597,9 @@ const Leads = () => {
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-8 gap-3 mb-4">
               <MetricCard label="Active Pages" value={activeCount} />
+              <MetricCard label="Draft Pages" value={draftCount} />
               <MetricCard label="Current" value={currentCount} />
               <MetricCard label="Outdated" value={outdatedCount} />
               <MetricCard label="PIT Changed" value={pitChangedCount} />
