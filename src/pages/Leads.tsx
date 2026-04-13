@@ -5465,6 +5465,7 @@ const Leads = () => {
                 key={section.section}
                 title={section.section}
                 defaultOpen={sectionHasActive}
+                textColor={T.textSecond}
               >
                 {section.items.map(item => {
                   const Icon = item.icon;
