@@ -819,6 +819,8 @@ export type Database = {
           email_1hr_sent_at: string | null
           email_24hr_sent: boolean | null
           email_24hr_sent_at: string | null
+          email_48hr_sent: boolean | null
+          email_48hr_sent_at: string | null
           email_72hr_sent: boolean | null
           email_72hr_sent_at: string | null
           entry_city_name: string | null
@@ -861,6 +863,8 @@ export type Database = {
           email_1hr_sent_at?: string | null
           email_24hr_sent?: boolean | null
           email_24hr_sent_at?: string | null
+          email_48hr_sent?: boolean | null
+          email_48hr_sent_at?: string | null
           email_72hr_sent?: boolean | null
           email_72hr_sent_at?: string | null
           entry_city_name?: string | null
@@ -903,6 +907,8 @@ export type Database = {
           email_1hr_sent_at?: string | null
           email_24hr_sent?: boolean | null
           email_24hr_sent_at?: string | null
+          email_48hr_sent?: boolean | null
+          email_48hr_sent_at?: string | null
           email_72hr_sent?: boolean | null
           email_72hr_sent_at?: string | null
           entry_city_name?: string | null

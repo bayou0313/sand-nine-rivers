@@ -13,6 +13,7 @@ const BRAND_GOLD = "#C07A00";
 const FROM = "River Sand <no_reply@riversand.net>";
 const PHONE = "1-855-GOT-WAYS";
 const BASE_URL = "https://riversand.net";
+const WAYS_ICON = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_-_ICON_-_512.png.png";
 
 function emailWrapper(body: string) {
   return `<!DOCTYPE html>
@@ -22,6 +23,7 @@ function emailWrapper(body: string) {
   .container{max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden}
   .header{background:${BRAND_COLOR};padding:24px;text-align:center}
   .header h1{color:${BRAND_GOLD};margin:0;font-size:24px;letter-spacing:2px}
+  .icon-row{background:#ffffff;text-align:center;padding:20px 0 12px 0}
   .body{padding:32px 24px}
   .body h2{color:${BRAND_COLOR};margin:0 0 16px}
   .body p{color:#555;font-size:15px;line-height:1.6}
@@ -31,6 +33,7 @@ function emailWrapper(body: string) {
 </style></head><body>
 <div class="container">
   <div class="header"><h1>RIVER SAND</h1></div>
+  <div class="icon-row"><img src="${WAYS_ICON}" alt="WAYS" style="height:48px;width:48px;border-radius:8px;" /></div>
   <div class="body">${body}</div>
   <div class="footer">
     <p>River Sand &bull; Greater New Orleans, LA</p>
@@ -38,6 +41,50 @@ function emailWrapper(body: string) {
     <p style="margin-top:8px;font-size:11px;color:#bbb">© 2026 WAYS® Materials LLC</p>
   </div>
 </div></body></html>`;
+}
+
+/** Call create-checkout-link to get a real Stripe checkout URL with discount baked in */
+async function createDiscountedCheckoutLink(
+  supabase: any,
+  session: any,
+  discountDollars: number
+): Promise<string | null> {
+  try {
+    const originalPrice = session.calculated_price || 195;
+    const discountedPrice = Math.max(0, originalPrice - discountDollars);
+    const amountCents = Math.round(discountedPrice * 100);
+
+    if (amountCents < 50) return null; // Stripe minimum
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/create-checkout-link`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        amount: amountCents,
+        description: `River Sand Delivery — $${discountDollars} discount applied`,
+        customer_name: session.customer_name || "",
+        customer_email: session.customer_email,
+        origin_url: BASE_URL,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`[abandonment-emails] checkout-link error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.url || null;
+  } catch (err: any) {
+    console.error("[abandonment-emails] createDiscountedCheckoutLink error:", err.message);
+    return null;
+  }
 }
 
 serve(async (req: Request) => {
@@ -71,9 +118,9 @@ serve(async (req: Request) => {
     const SENDER_TITLE = cfg.sender_title || "Founder & CEO";
     const SITE = cfg.site_name || "River Sand";
 
-    const results = { email_1hr: 0, email_24hr: 0, email_72hr: 0, email_hot_path: 0, errors: [] as string[] };
+    const results = { email_1hr: 0, email_24hr: 0, email_48hr: 0, email_108hr: 0, email_hot_path: 0, errors: [] as string[] };
 
-    // Email 1: 1 hour after abandonment
+    // ── Email 1: 1 hour after abandonment ──
     const { data: sessions1hr } = await supabase
       .from("visitor_sessions")
       .select("*")
@@ -112,7 +159,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // Email 2: 24 hours after abandonment
+    // ── Email 2: 24 hours after abandonment ──
     const { data: sessions24hr } = await supabase
       .from("visitor_sessions")
       .select("*")
@@ -152,7 +199,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // HOT PATH: Stripe link clicked — $10 off at 24hr (accelerated)
+    // ── HOT PATH: Stripe link clicked — $10 off at 24hr (server-side Stripe link) ──
     const { data: sessionsHotPath } = await supabase
       .from("visitor_sessions")
       .select("*")
@@ -160,7 +207,7 @@ serve(async (req: Request) => {
       .not("customer_email", "is", null)
       .eq("stripe_link_clicked", true)
       .eq("email_24hr_sent", false)
-      .is("order_id", null) // not converted
+      .is("order_id", null)
       .lt("updated_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
     for (const s of sessionsHotPath || []) {
@@ -168,7 +215,10 @@ serve(async (req: Request) => {
         const firstName = (s.customer_name || "").split(" ")[0] || "there";
         const originalPrice = s.calculated_price || 195;
         const discountedPrice = Math.max(0, originalPrice - 10);
-        const orderUrl = `${BASE_URL}/order?address=${encodeURIComponent(s.delivery_address || "")}&price=${discountedPrice}&discount=10&utm_source=abandonment&utm_medium=email&utm_campaign=hot_path_10off`;
+
+        // Create real Stripe checkout link with discount baked in
+        const checkoutUrl = await createDiscountedCheckoutLink(supabase, s, 10);
+        const ctaUrl = checkoutUrl || `${BASE_URL}/order?address=${encodeURIComponent(s.delivery_address || "")}&price=${discountedPrice}&discount=10&utm_source=abandonment&utm_medium=email&utm_campaign=hot_path_10off`;
 
         await resend.emails.send({
           from: FROM,
@@ -184,7 +234,7 @@ serve(async (req: Request) => {
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Original price</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-decoration:line-through;color:#999">$${originalPrice.toFixed(2)}</td></tr>
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Your price</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:700;color:${BRAND_GOLD}">$${discountedPrice.toFixed(2)}</td></tr>
             </table>
-            <p style="text-align:center"><a href="${orderUrl}" class="cta">COMPLETE YOUR ORDER — $${discountedPrice.toFixed(2)}</a></p>
+            <p style="text-align:center"><a href="${ctaUrl}" class="cta">COMPLETE YOUR ORDER — $${discountedPrice.toFixed(2)}</a></p>
             <p style="font-size:13px;color:#999">This $10 discount expires in 24 hours.</p>
             <p style="margin-top:24px">— ${SENDER_NAME}<br>${SENDER_TITLE}, ${SITE}<br>${PHONE}</p>
           `),
@@ -195,6 +245,7 @@ serve(async (req: Request) => {
           .from("visitor_sessions")
           .update({
             email_24hr_sent: true, email_24hr_sent_at: new Date().toISOString(),
+            email_48hr_sent: true, email_48hr_sent_at: new Date().toISOString(),
             email_72hr_sent: true, email_72hr_sent_at: new Date().toISOString(),
           })
           .eq("id", s.id);
@@ -205,39 +256,84 @@ serve(async (req: Request) => {
       }
     }
 
-    // Email 3: 72 hours — $5 off (cold path only — excludes hot path sessions)
-    const { data: sessions72hr } = await supabase
+    // ── Email 3: 48 hours — no discount (cold path) ──
+    const { data: sessions48hr } = await supabase
       .from("visitor_sessions")
       .select("*")
       .in("stage", ["started_checkout", "reached_payment"])
       .not("customer_email", "is", null)
       .eq("email_24hr_sent", true)
-      .eq("email_72hr_sent", false)
-      .lt("updated_at", new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString());
+      .eq("email_48hr_sent", false)
+      .lt("updated_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
 
-    for (const s of sessions72hr || []) {
+    for (const s of sessions48hr || []) {
       try {
         const firstName = (s.customer_name || "").split(" ")[0] || "there";
-        const originalPrice = s.calculated_price || 195;
-        const discountedPrice = Math.max(0, originalPrice - 5);
-        const orderUrl = `${BASE_URL}/order?address=${encodeURIComponent(s.delivery_address || "")}&price=${discountedPrice}&discount=5&utm_source=abandonment&utm_medium=email&utm_campaign=abandon_72hr`;
+        const orderUrl = `${BASE_URL}/order?address=${encodeURIComponent(s.delivery_address || "")}&price=${s.calculated_price || ""}&utm_source=abandonment&utm_medium=email&utm_campaign=abandon_48hr`;
 
         await resend.emails.send({
           from: FROM,
           to: [s.customer_email],
-          subject: "Here's $5 off your River Sand delivery",
+          subject: "Your river sand delivery — still available",
           html: emailWrapper(`
-            <h2>Here's $5 off your order</h2>
+            <h2>Your delivery is still waiting</h2>
             <p>Hi ${firstName},</p>
-            <p>We'd love to deliver to you. Here's $5 off your order — applied automatically, no code needed.</p>
+            <p>Just a friendly reminder — your River Sand delivery to <strong>${s.delivery_address || "your address"}</strong> is ready when you are.</p>
+            <p>We deliver 9 cubic yards of premium river sand right to your site. No middlemen, no hidden fees.</p>
+            <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW</a></p>
+            <p>Need help? Call us at <a href="tel:+18554689297">${PHONE}</a> — we'll walk you through it.</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
+          `),
+        });
+
+        await supabase
+          .from("visitor_sessions")
+          .update({ email_48hr_sent: true, email_48hr_sent_at: new Date().toISOString() })
+          .eq("id", s.id);
+
+        results.email_48hr++;
+      } catch (err: any) {
+        results.errors.push(`48hr-${s.id}: ${err.message}`);
+      }
+    }
+
+    // ── Email 4: 108 hours — $10 off final offer (cold path, server-side Stripe link) ──
+    const { data: sessions108hr } = await supabase
+      .from("visitor_sessions")
+      .select("*")
+      .in("stage", ["started_checkout", "reached_payment"])
+      .not("customer_email", "is", null)
+      .eq("email_48hr_sent", true)
+      .eq("email_72hr_sent", false)
+      .lt("updated_at", new Date(Date.now() - 108 * 60 * 60 * 1000).toISOString());
+
+    for (const s of sessions108hr || []) {
+      try {
+        const firstName = (s.customer_name || "").split(" ")[0] || "there";
+        const originalPrice = s.calculated_price || 195;
+        const discountedPrice = Math.max(0, originalPrice - 10);
+
+        // Create real Stripe checkout link with discount baked in
+        const checkoutUrl = await createDiscountedCheckoutLink(supabase, s, 10);
+        const ctaUrl = checkoutUrl || `${BASE_URL}/order?address=${encodeURIComponent(s.delivery_address || "")}&price=${discountedPrice}&discount=10&utm_source=abandonment&utm_medium=email&utm_campaign=abandon_108hr`;
+
+        await resend.emails.send({
+          from: FROM,
+          to: [s.customer_email],
+          subject: "Last chance — $10 off your river sand delivery",
+          html: emailWrapper(`
+            <h2>Last chance — $10 off your order</h2>
+            <p>Hi ${firstName},</p>
+            <p>This is your final reminder. We'd really love to deliver to you — so here's <strong>$10 off</strong> your order, applied automatically.</p>
             <table style="width:100%;border-collapse:collapse;margin:16px 0">
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Product</td><td style="padding:8px 0;border-bottom:1px solid #eee">River Sand — 9 Cubic Yards</td></tr>
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Delivered to</td><td style="padding:8px 0;border-bottom:1px solid #eee">${s.delivery_address || ""}</td></tr>
+              <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Original price</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-decoration:line-through;color:#999">$${originalPrice.toFixed(2)}</td></tr>
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:${BRAND_COLOR}">Your price</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:700;color:${BRAND_GOLD}">$${discountedPrice.toFixed(2)}</td></tr>
             </table>
-            <p style="text-align:center"><a href="${orderUrl}" class="cta">ORDER NOW — $${discountedPrice.toFixed(2)} DELIVERED</a></p>
-            <p style="font-size:13px;color:#999">Offer expires 7 days from this email.</p>
-            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SITE} | ${PHONE}</p>
+            <p style="text-align:center"><a href="${ctaUrl}" class="cta">COMPLETE YOUR ORDER — $${discountedPrice.toFixed(2)}</a></p>
+            <p style="font-size:13px;color:#999">This is our final offer — expires in 48 hours.</p>
+            <p style="margin-top:24px">— ${SENDER_NAME}<br>${SENDER_TITLE}, ${SITE}<br>${PHONE}</p>
           `),
         });
 
@@ -246,9 +342,9 @@ serve(async (req: Request) => {
           .update({ email_72hr_sent: true, email_72hr_sent_at: new Date().toISOString() })
           .eq("id", s.id);
 
-        results.email_72hr++;
+        results.email_108hr++;
       } catch (err: any) {
-        results.errors.push(`72hr-${s.id}: ${err.message}`);
+        results.errors.push(`108hr-${s.id}: ${err.message}`);
       }
     }
 
