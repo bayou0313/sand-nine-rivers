@@ -1661,6 +1661,30 @@ const Leads = () => {
     }
   }, [activePage, authenticated, scheduleDate, fetchScheduleOrders, fetchWeekCounts]);
 
+  // Fetch fraud data when navigating to fraud tab
+  const fetchFraudData = useCallback(async () => {
+    setFraudLoading(true);
+    try {
+      const pw = storedPassword();
+      const [eventsRes, blocklistRes, attemptsRes] = await Promise.all([
+        supabase.functions.invoke("leads-auth", { body: { password: pw, action: "list_fraud_events" } }),
+        supabase.functions.invoke("leads-auth", { body: { password: pw, action: "list_blocklist" } }),
+        supabase.functions.invoke("leads-auth", { body: { password: pw, action: "list_payment_attempts" } }),
+      ]);
+      if (eventsRes.data?.events) setFraudEvents(eventsRes.data.events);
+      if (blocklistRes.data?.blocklist) setFraudBlocklist(blocklistRes.data.blocklist);
+      if (attemptsRes.data?.attempts) setFraudPaymentAttempts(attemptsRes.data.attempts);
+    } catch (err: any) {
+      console.error("[fraud] Fetch error:", err);
+    } finally { setFraudLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (activePage === "fraud" && authenticated) {
+      fetchFraudData();
+    }
+  }, [activePage, authenticated, fetchFraudData]);
+
   useEffect(() => {
     if (weekStripRef.current) {
       const selected = weekStripRef.current.querySelector("[data-selected='true']");
