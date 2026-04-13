@@ -5399,7 +5399,7 @@ const Leads = () => {
                 const isPaid = order.payment_status === "paid";
                 const isCOD = order.payment_method === "COD" || order.payment_method === "PAY AT DELIVERY";
                 return (
-                  <div key={order.id} style={{ background: "white", border: `1px solid ${T.cardBorder}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
+                  <div key={order.id} style={{ background: T.cardBg, border: `1px solid ${T.cardBorder}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                       <div>
                         <span style={{ fontSize: "13px", fontWeight: 700, color: BRAND_GOLD }}>#{order.order_number}</span>
