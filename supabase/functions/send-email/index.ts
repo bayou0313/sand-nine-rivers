@@ -54,6 +54,7 @@ const DEFAULT_DISPATCH_EMAIL = "cmo@haulogix.com";
 const RIVERSAND_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
 const WAYS_WHITE_LOGO = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_LOGO___-__WHITE.png.png";
 const RIVERSAND_ICON = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/RIVERSAND_-_ICON_-_512.png.png";
+const WAYS_ICON = "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/WAYS_-_ICON_-_512.png.png";
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "TBD";
