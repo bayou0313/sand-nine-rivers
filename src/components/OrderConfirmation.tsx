@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Loader2, Download, ChevronDown, MessageCircle, Mail } from "lucide-react";
+import { Loader2, Download, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
@@ -191,32 +191,8 @@ export default function OrderConfirmation({
     year: "numeric",
   });
 
-  const shareText = `River Sand Order ${orderNumber || ""} — ${quantity} load${quantity > 1 ? "s" : ""} to ${address}. ${deliveryDateLabel}. Total: ${formatCurrency(finalAmount)}`;
 
-  const handleMailtoClick = () => {
-    const subject = `River Sand Order ${orderNumber || ""}`;
-    const body = `Order: ${orderNumber || "N/A"}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\n\nQuestions? Call 1-855-GOT-WAYS`;
-    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const a = document.createElement("a");
-    a.href = href;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
 
-  const handleForwardByEmail = () => {
-    const subject = `River Sand Order ${orderNumber || ""} — Order Details`;
-    const body = `Here are the details for my River Sand order:\n\nOrder: ${orderNumber || "N/A"}\nCustomer: ${customerName}\nDelivery: ${address}\nDate: ${deliveryDateLabel}\nQuantity: ${quantity} load${quantity > 1 ? "s" : ""}\nTotal: ${formatCurrency(finalAmount)}\nPayment: ${isStripePaid ? "Paid by Card" : `${codSubOption === "check" ? "Check" : "Cash"} — Due at Delivery`}\n\nQuestions? Call 1-855-GOT-WAYS or email orders@riversand.net`;
-    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const a = document.createElement("a");
-    a.href = href;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-  // WhatsApp disabled — will be enabled when API is configured
   // const whatsappEnabled = false;
 
 
@@ -642,46 +618,7 @@ export default function OrderConfirmation({
             View Order Details
           </Button>
 
-          {/* Share buttons row */}
-          <div className="grid grid-cols-3 gap-2">
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl text-xs font-display"
-              onClick={handleMailtoClick}
-            >
-              <Mail className="w-4 h-4 mr-1" /> Email
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl text-xs font-display md:hidden"
-              asChild
-            >
-              <a href={`sms:?body=${encodeURIComponent(shareText)}`}>
-                <MessageCircle className="w-4 h-4 mr-1" /> SMS
-              </a>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl text-xs font-display hidden md:inline-flex"
-              disabled
-              title="SMS available on mobile only"
-            >
-              <MessageCircle className="w-4 h-4 mr-1" /> SMS
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl text-xs font-display"
-              onClick={async () => {
-                const permanentUrl = lookupToken
-                  ? `https://riversand.net/order?token=${lookupToken}`
-                  : `https://riversand.net/order?order_id=${confirmedOrderId}&order_number=${orderNumber}`;
-                await navigator.clipboard.writeText(permanentUrl);
-                toast({ title: "Link copied!", description: "Share this link to view the order." });
-              }}
-            >
-              🔗 Copy
-            </Button>
-          </div>
+
 
           <div className="text-center space-y-1 pt-2">
             <p className="text-sm font-body" style={{ color: "#6B7280" }}>
