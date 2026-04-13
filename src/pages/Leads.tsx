@@ -221,14 +221,14 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
 ];
 
 /* ── Sidebar Accordion Section ── */
-const SidebarAccordion = ({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) => {
+const SidebarAccordion = ({ title, children, defaultOpen = false, textColor }: { title: string; children: React.ReactNode; defaultOpen?: boolean; textColor?: string }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="mb-1">
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:opacity-80 transition-opacity"
-        style={{ color: T.textSecond }}
+        style={{ color: textColor || '#6B7280' }}
       >
         <span>{title}</span>
         <motion.span
