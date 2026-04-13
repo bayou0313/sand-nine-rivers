@@ -25,7 +25,8 @@ import OutOfAreaModal from "@/components/OutOfAreaModal";
 import RefundPolicyModal from "@/components/RefundPolicyModal";
 import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, type FindBestPitResult, findBestPitDriving, findAllPitDistances, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
-import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
+import AddressMismatchDialog from "@/components/AddressMismatchDialog";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -852,6 +853,8 @@ const Order = () => {
     }
   }, [searchParams]);
 
+  const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
+
   const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
     setAddress(result.formattedAddress);
     setCustomerCoords({ lat: result.lat, lng: result.lng });
@@ -859,6 +862,42 @@ const Order = () => {
       const parish = getParishFromPlaceResult(result.addressComponents);
       setDetectedParish(parish);
     }
+  }, []);
+
+  const handleAddressMismatch = useCallback((data: AddressMismatchData) => {
+    setMismatchData(data);
+  }, []);
+
+  const handleMismatchUseResolved = useCallback(() => {
+    if (!mismatchData) return;
+    handleOrderPlaceSelect({
+      formattedAddress: mismatchData.resolved,
+      lat: mismatchData.lat,
+      lng: mismatchData.lng,
+      addressComponents: mismatchData.addressComponents,
+    });
+    const input = addressContainerRef.current?.querySelector("input");
+    if (input) input.value = mismatchData.resolved;
+    setMismatchData(null);
+  }, [mismatchData, handleOrderPlaceSelect]);
+
+  const handleMismatchKeepTyped = useCallback(() => {
+    if (!mismatchData) return;
+    handleOrderPlaceSelect({
+      formattedAddress: mismatchData.typed,
+      lat: mismatchData.lat,
+      lng: mismatchData.lng,
+      addressComponents: mismatchData.addressComponents,
+    });
+    setMismatchData(null);
+  }, [mismatchData, handleOrderPlaceSelect]);
+
+  const handleMismatchChange = useCallback(() => {
+    setMismatchData(null);
+    setAddress("");
+    setCustomerCoords(null);
+    const input = addressContainerRef.current?.querySelector("input");
+    if (input) { input.value = ""; input.focus(); }
   }, []);
 
   // URL params flow: resolve allPitDistances when address is set via URL params
@@ -1399,6 +1438,7 @@ const Order = () => {
                     {apiLoaded ? (
                       <PlaceAutocompleteInput
                         onPlaceSelect={handleOrderPlaceSelect}
+                        onAddressMismatch={handleAddressMismatch}
                         onInputChange={(val) => setAddress(val)}
                         onEnterKey={calculateDistance}
                         placeholder="Enter your delivery address..."
@@ -2027,6 +2067,12 @@ const Order = () => {
       calculatedPrice={null}
     />
     <RefundPolicyModal open={showRefundPolicy} onClose={() => setShowRefundPolicy(false)} pricingMode={pricingMode} />
+    <AddressMismatchDialog
+      data={mismatchData}
+      onUseResolved={handleMismatchUseResolved}
+      onKeepTyped={handleMismatchKeepTyped}
+      onChangeAddress={handleMismatchChange}
+    />
   </>
   );
 };

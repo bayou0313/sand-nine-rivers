@@ -35,7 +35,8 @@ import {
   parseGlobalSettings,
   FALLBACK_GLOBAL_PRICING,
 } from "@/lib/pits";
-import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
+import AddressMismatchDialog from "@/components/AddressMismatchDialog";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
 import { useCountdown } from "@/hooks/use-countdown";
@@ -581,6 +582,7 @@ const OrderMobile = () => {
       clearInterval(poll);
     };
   }, [toast, verifyStripePayment, pendingOrderId, lookupToken, step]);
+  const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
 
   // Address selection
   const handlePlaceSelect = useCallback((res: PlaceSelectResult) => {
@@ -588,6 +590,42 @@ const OrderMobile = () => {
     setCustomerCoords({ lat: res.lat, lng: res.lng });
     if (res.addressComponents) setDetectedParish(getParishFromPlaceResult(res.addressComponents));
     updateSession({ stage: "entered_address", delivery_address: res.formattedAddress, address_lat: res.lat, address_lng: res.lng });
+  }, []);
+
+  const handleAddressMismatch = useCallback((data: AddressMismatchData) => {
+    setMismatchData(data);
+  }, []);
+
+  const handleMismatchUseResolved = useCallback(() => {
+    if (!mismatchData) return;
+    handlePlaceSelect({
+      formattedAddress: mismatchData.resolved,
+      lat: mismatchData.lat,
+      lng: mismatchData.lng,
+      addressComponents: mismatchData.addressComponents,
+    });
+    const input = addressContainerRef.current?.querySelector("input");
+    if (input) input.value = mismatchData.resolved;
+    setMismatchData(null);
+  }, [mismatchData, handlePlaceSelect]);
+
+  const handleMismatchKeepTyped = useCallback(() => {
+    if (!mismatchData) return;
+    handlePlaceSelect({
+      formattedAddress: mismatchData.typed,
+      lat: mismatchData.lat,
+      lng: mismatchData.lng,
+      addressComponents: mismatchData.addressComponents,
+    });
+    setMismatchData(null);
+  }, [mismatchData, handlePlaceSelect]);
+
+  const handleMismatchChange = useCallback(() => {
+    setMismatchData(null);
+    setAddress("");
+    setCustomerCoords(null);
+    const input = addressContainerRef.current?.querySelector("input");
+    if (input) { input.value = ""; input.focus(); }
   }, []);
 
   // Calculate distance
@@ -890,6 +928,7 @@ const OrderMobile = () => {
                   {apiLoaded ? (
                     <PlaceAutocompleteInput
                       onPlaceSelect={handlePlaceSelect}
+                      onAddressMismatch={handleAddressMismatch}
                       onInputChange={(val) => { setAddress(val); setCustomerCoords(null); }}
                       onEnterKey={calculateDistance}
                       placeholder="Enter your delivery address"
@@ -1411,6 +1450,12 @@ const OrderMobile = () => {
         distanceMiles={outOfAreaDistance}
         nearestPit={nearestPitInfo}
         calculatedPrice={null}
+      />
+      <AddressMismatchDialog
+        data={mismatchData}
+        onUseResolved={handleMismatchUseResolved}
+        onKeepTyped={handleMismatchKeepTyped}
+        onChangeAddress={handleMismatchChange}
       />
     </div>
   );
