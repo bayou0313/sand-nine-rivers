@@ -220,7 +220,8 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
 
       // Distances are real driving miles from Google Distance Matrix API — NOT haversine.
       console.log("[calculateDistance] calling findBestPitDriving, pits:", pits.length);
-      const bestResult = await findBestPitDriving(pits, currentAddress, globalPricing, supabase);
+      // Default to Monday (1) so Saturday-only pits don't win hero pricing
+      const bestResult = await findBestPitDriving(pits, currentAddress, globalPricing, supabase, 1);
       console.log("[calculateDistance] bestResult:", bestResult);
 
       if (!bestResult) {
