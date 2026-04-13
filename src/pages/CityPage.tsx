@@ -5,7 +5,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
-import { updateSession, initSession, isNoTrack } from "@/lib/session";
+import { updateSession, initSession, isNoTrackIP } from "@/lib/session";
 import { getPaletteForSlug, deriveCssVars } from "@/lib/palettes";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -231,9 +231,12 @@ const CityPage = () => {
         entry_city_name: data.city_name,
       });
 
-      if (data.status === "active" && !isNoTrack()) {
+      if (data.status === "active") {
         try {
-          await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });
+          const noTrack = await isNoTrackIP();
+          if (!noTrack) {
+            await supabase.rpc("increment_city_page_views" as any, { p_slug: citySlug });
+          }
         } catch { /* ignore */ }
       }
 
