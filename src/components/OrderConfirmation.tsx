@@ -591,7 +591,7 @@ export default function OrderConfirmation({
                   <span className="font-semibold" style={{ color: "#374151" }}>
                     {t.title}
                   </span>{" "}
-                  — {t.body}
+                  — {t.body === "__DYNAMIC_CANCELLATION__" ? (paymentMethod === "stripe-link" ? "Cancel anytime before your driver is on route — you will not be charged. Once your driver is on route, your delivery is confirmed and non-refundable." : "Cancel anytime before your driver is on route. Your order will simply be removed — no payment was collected.") : t.body}
                 </li>
               ))}
             </ol>
@@ -615,7 +615,7 @@ export default function OrderConfirmation({
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-xs pb-2 font-body" style={{ color: "#6B7280" }}>
-                      {t.body}
+                      {t.body === "__DYNAMIC_CANCELLATION__" ? (paymentMethod === "stripe-link" ? "Cancel anytime before your driver is on route — you will not be charged. Once your driver is on route, your delivery is confirmed and non-refundable." : "Cancel anytime before your driver is on route. Your order will simply be removed — no payment was collected.") : t.body}
                     </p>
                   </AccordionContent>
                 </AccordionItem>
