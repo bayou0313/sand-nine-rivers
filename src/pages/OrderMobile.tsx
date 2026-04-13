@@ -32,7 +32,6 @@ import {
   findBestPitDriving,
   findAllPitDistances,
   getEffectivePrice,
-  getCODPrice,
   parseGlobalSettings,
   FALLBACK_GLOBAL_PRICING,
 } from "@/lib/pits";
@@ -163,12 +162,10 @@ const OrderMobile = () => {
   const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
   const isBaked = pricingMode === "baked";
   const isCOD = paymentMethod === "cash" || paymentMethod === "check";
-  const effectiveBaseForCalc = isBaked && isCOD && effectivePricing.base_price ? getCODPrice(effectivePricing.base_price) : effectivePricing.base_price;
+  // In baked mode, everyone pays the same price — no COD discount
   const subtotal = result ? (result.price * quantity) + saturdaySurchargeTotal + sundaySurchargeTotal : 0;
-  const codSubtotalAdjustment = isBaked && isCOD && result ? (effectivePricing.base_price - effectiveBaseForCalc) * quantity : 0;
-  const adjustedSubtotal = subtotal - codSubtotalAdjustment;
-  const taxAmount = parseFloat((adjustedSubtotal * taxInfo.rate).toFixed(2));
-  const totalPrice = parseFloat((adjustedSubtotal + taxAmount).toFixed(2));
+  const taxAmount = parseFloat((subtotal * taxInfo.rate).toFixed(2));
+  const totalPrice = parseFloat((subtotal + taxAmount).toFixed(2));
   const processingFee = !isBaked && totalPrice > 0 ? parseFloat((totalPrice * PROCESSING_FEE_RATE + PROCESSING_FEE_FIXED).toFixed(2)) : 0;
   const totalWithProcessingFee = parseFloat((totalPrice + processingFee).toFixed(2));
   const isWeekendDate = selectedDeliveryDate?.isSaturday || selectedDeliveryDate?.isSunday;
