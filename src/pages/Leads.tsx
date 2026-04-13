@@ -5479,11 +5479,11 @@ const Leads = () => {
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 400,
                         color: isActive ? BRAND_GOLD : T.textPrimary,
-                        backgroundColor: isActive ? SIDEBAR_ACTIVE_BG : "transparent",
+                        backgroundColor: isActive ? T.activeNavBg : "transparent",
                         borderRadius: 6,
                       }}
                       onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = T.hoverNavBg; }}
-                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? SIDEBAR_ACTIVE_BG : "transparent"; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
                     >
                       <Icon className="w-[16px] h-[16px]" />
                       <span>{item.label}</span>
