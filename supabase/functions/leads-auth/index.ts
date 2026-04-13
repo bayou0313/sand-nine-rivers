@@ -652,6 +652,7 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+
     const leadsPassword = Deno.env.get("LEADS_PASSWORD");
     if (!leadsPassword || password !== leadsPassword) {
       return new Response(
@@ -3208,6 +3209,8 @@ serve(async (req) => {
         JSON.stringify({ success: true, updated, total: pages.length, message: `Updated ${updated} of ${pages.length} city pages with local addresses` }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+
 
     if (action === "process_regen_queue") {
       const { data: draftPages } = await supabase
