@@ -18,10 +18,15 @@ import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
-const SIDEBAR_HOVER = "#142845";
-const CONTENT_BG = "#F8F7F2";
+const SIDEBAR_HOVER = "#F5F4F1";
+const SIDEBAR_BG = "#FFFFFF";
+const SIDEBAR_ACTIVE_BG = "#FDF8F0";
+const CONTENT_BG = "#FAFAF9";
 const CARD_BORDER = "#E8E5DC";
-const SECTION_LABEL = "#4A6A8A";
+const SECTION_LABEL = "#6B7280";
+const POSITIVE = "#059669";
+const ALERT_RED = "#DC2626";
+const WARN_YELLOW = "#D97706";
 const PAGE_SIZE = 25;
 const HQ_LAT = 29.9308;
 const HQ_LON = -90.1685;
@@ -2067,14 +2072,7 @@ const Leads = () => {
         const dayName = todayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
         const timeStr = todayDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
 
-        const OPS_BG = "#0A0F1E";
-        const CARD_BG = "#0D1529";
-        const CARD_BORDER_CLR = "rgba(255,255,255,0.06)";
-        const GOLD = "#C07A00";
-        const GREEN = "#10B981";
-        const RED = "#EF4444";
-        const TEXT_SEC = "#64748B";
-        const TEXT_PRI = "#FFFFFF";
+        const CARD_STYLE = { backgroundColor: "#FFFFFF", border: `1px solid ${CARD_BORDER}`, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" };
 
         const fmt = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         const fmtFull = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2104,82 +2102,75 @@ const Leads = () => {
           return <span ref={ref} style={{ color }}>{`${prefix}0${suffix}`}</span>;
         };
 
-        const MetricBox = ({ label, numValue, sub, onClick, accent = GOLD, prefix = "", suffix = "", decimals = 0, displayOverride }: { label: string; numValue: number; sub: string; onClick: () => void; accent?: string; prefix?: string; suffix?: string; decimals?: number; displayOverride?: string }) => (
+        const MetricBox = ({ label, numValue, sub, onClick, accentColor = BRAND_GOLD, prefix = "", suffix = "", decimals = 0, borderAccent = false }: { label: string; numValue: number; sub: string; onClick: () => void; accentColor?: string; prefix?: string; suffix?: string; decimals?: number; borderAccent?: boolean }) => (
           <div
             onClick={onClick}
-            className="rounded-lg p-4 cursor-pointer transition-all duration-200 hover:border-[#C07A00]/60 group"
-            style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}
+            className="rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md group"
+            style={{ ...CARD_STYLE, borderLeft: borderAccent ? `3px solid ${BRAND_GOLD}` : undefined }}
           >
-            <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: TEXT_SEC }}>{label}</p>
-            <p className="text-2xl md:text-3xl font-bold font-mono leading-none">
-              {displayOverride != null ? <span style={{ color: accent }}>{displayOverride}</span> : <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accent} />}
+            <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: SECTION_LABEL }}>{label}</p>
+            <p className="text-[28px] md:text-[32px] font-bold leading-none">
+              <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accentColor === BRAND_GOLD ? BRAND_NAVY : accentColor} />
             </p>
-            <p className="text-[11px] mt-1.5" style={{ color: TEXT_SEC }}>{sub}</p>
+            <p className="text-[11px] mt-1.5" style={{ color: SECTION_LABEL }}>{sub}</p>
           </div>
         );
 
         return (
-          <div className="rounded-2xl p-4 md:p-6 -mx-2 md:-mx-0" style={{ backgroundColor: OPS_BG }}>
-            {/* Header */}
+          <>
+            {/* Header row */}
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h1 className="text-lg md:text-xl font-bold tracking-wide" style={{ color: TEXT_PRI }}>
-                  LMT OPERATIONS CENTER
-                </h1>
-                <p className="text-xs font-mono mt-0.5" style={{ color: TEXT_SEC }}>{dayName} · {timeStr}</p>
+                <p className="text-xs font-mono" style={{ color: SECTION_LABEL }}>{dayName} · {timeStr}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: GREEN }} />
-                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: GREEN }} />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: POSITIVE }} />
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: POSITIVE }} />
                 </span>
-                <span className="text-xs font-mono" style={{ color: GREEN }}>LIVE</span>
+                <span className="text-[10px] font-mono font-medium" style={{ color: POSITIVE }}>LIVE</span>
               </div>
             </div>
 
             {/* Top Metrics Row */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-              <MetricBox label="CAPTURE TONIGHT" numValue={toCaptureRev} prefix="$" sub="pending auth" onClick={() => setActivePage("cash_orders")} />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+              <MetricBox label="CAPTURE TONIGHT" numValue={toCaptureRev} prefix="$" sub="pending auth" onClick={() => setActivePage("cash_orders")} borderAccent />
               <MetricBox label="ORDERS TODAY" numValue={todayOrders.length} sub="confirmed" onClick={() => setActivePage("schedule")} />
-              <MetricBox label="COD DUE" numValue={todayCOD.length} sub="collect today" onClick={() => setActivePage("cash_orders")} accent={todayCOD.length > 0 ? RED : GOLD} />
+              <MetricBox label="COD DUE" numValue={todayCOD.length} sub="collect today" onClick={() => setActivePage("cash_orders")} accentColor={todayCOD.length > 0 ? ALERT_RED : BRAND_GOLD} />
               <MetricBox label="AVG ORDER" numValue={avgOrder} prefix="$" decimals={2} sub="per load" onClick={() => setActivePage("cash_orders")} />
-              <MetricBox label="MTD REVENUE" numValue={mtdRev} prefix="$" sub="this month" onClick={() => setActivePage("cash_orders")} accent={GREEN} />
+              <MetricBox label="MTD REVENUE" numValue={mtdRev} prefix="$" sub="this month" onClick={() => setActivePage("cash_orders")} accentColor={POSITIVE} borderAccent />
             </div>
 
             {/* Operations Alerts */}
             {(uncollectedCOD.length > 0 || captureIssues.length > 0 || outOfAreaLeads.length > 0 || toCaptureRev > 0) && (
-              <div className="mb-4">
+              <div className="mb-5">
                 <div className="flex items-center gap-2 mb-2">
-                  <Zap size={12} style={{ color: GOLD }} />
-                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: GOLD }}>OPERATIONS ALERTS</h2>
+                  <Zap size={12} style={{ color: BRAND_GOLD }} />
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>OPERATIONS ALERTS</h2>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {uncollectedCOD.length > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: RED }} />
-                      <span className="text-xs" style={{ color: TEXT_PRI }}><span className="font-bold">{uncollectedCOD.length} COD</span> order{uncollectedCOD.length > 1 ? "s" : ""} need collection — {fmtFull(uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0))}</span>
-                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${ALERT_RED}` }}>
+                      <span className="text-xs" style={{ color: BRAND_NAVY }}><span className="font-bold">{uncollectedCOD.length} COD</span> order{uncollectedCOD.length > 1 ? "s" : ""} need collection — {fmtFull(uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0))}</span>
+                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
                     </div>
                   )}
                   {outOfAreaLeads.length > 0 && (
-                    <div onClick={() => setActivePage("all")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#F59E0B" }} />
-                      <span className="text-xs" style={{ color: TEXT_PRI }}><span className="font-bold">{outOfAreaLeads.length}</span> out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""} — no pit assigned</span>
-                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
+                    <div onClick={() => setActivePage("all")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${WARN_YELLOW}` }}>
+                      <span className="text-xs" style={{ color: BRAND_NAVY }}><span className="font-bold">{outOfAreaLeads.length}</span> out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""} — no pit assigned</span>
+                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
                     </div>
                   )}
                   {captureIssues.length > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: RED }} />
-                      <span className="text-xs" style={{ color: TEXT_PRI }}><span className="font-bold">{captureIssues.length}</span> payment capture{captureIssues.length > 1 ? "s" : ""} failed</span>
-                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${ALERT_RED}` }}>
+                      <span className="text-xs" style={{ color: BRAND_NAVY }}><span className="font-bold">{captureIssues.length}</span> payment capture{captureIssues.length > 1 ? "s" : ""} failed</span>
+                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
                     </div>
                   )}
                   {toCaptureRev > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:border-[#C07A00]/40" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: GREEN }} />
-                      <span className="text-xs" style={{ color: TEXT_PRI }}>{fmtFull(toCaptureRev)} capture scheduled for tonight</span>
-                      <span className="ml-auto text-xs font-mono" style={{ color: TEXT_SEC }}>→</span>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${POSITIVE}` }}>
+                      <span className="text-xs" style={{ color: BRAND_NAVY }}>{fmtFull(toCaptureRev)} capture scheduled for tonight</span>
+                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
                     </div>
                   )}
                 </div>
@@ -2187,51 +2178,51 @@ const Leads = () => {
             )}
 
             {/* Pipeline + SEO side by side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               {/* Pipeline */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+              <div className="rounded-lg p-4" style={CARD_STYLE}>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: TEXT_SEC }}>PIPELINE</h2>
-                  <span className="text-xs font-mono font-bold" style={{ color: GOLD }}>{fmt(metrics.pipelineValue)}</span>
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>PIPELINE</h2>
+                  <span className="text-xs font-mono font-bold" style={{ color: BRAND_GOLD }}>{fmt(metrics.pipelineValue)}</span>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {pipelineStages.map(({ stage, count, value }) => (
                     <div key={stage} onClick={() => setActivePage("pipeline")} className="flex items-center gap-3 cursor-pointer group">
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: STAGE_COLORS[stage] }} />
                       <span className="text-xs uppercase font-bold flex-shrink-0 w-14" style={{ color: STAGE_COLORS[stage] }}>{stage}</span>
-                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#F0EFEB" }}>
                         <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(4, (count / Math.max(parsedLeads.length, 1)) * 100)}%`, backgroundColor: STAGE_COLORS[stage] }} />
                       </div>
-                      <span className="text-xs font-mono font-bold w-6 text-right" style={{ color: TEXT_PRI }}>{count}</span>
-                      <span className="text-[10px] font-mono w-12 text-right" style={{ color: TEXT_SEC }}>{fmt(value)}</span>
+                      <span className="text-xs font-mono font-bold w-6 text-right" style={{ color: BRAND_NAVY }}>{count}</span>
+                      <span className="text-[10px] font-mono w-12 text-right" style={{ color: SECTION_LABEL }}>{fmt(value)}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* SEO Performance */}
-              <div className="rounded-lg p-4" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+              <div className="rounded-lg p-4" style={CARD_STYLE}>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: TEXT_SEC }}>SEO PERFORMANCE</h2>
-                  <span className="text-xs font-mono" style={{ color: TEXT_SEC }}>{activeCityPages.length} pages</span>
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>SEO PERFORMANCE</h2>
+                  <span className="text-xs font-mono" style={{ color: SECTION_LABEL }}>{activeCityPages.length} pages</span>
                 </div>
-                <div className="flex gap-4 mb-3">
+                <div className="flex gap-6 mb-3">
                   <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
-                    <p className="text-2xl font-mono font-bold" style={{ color: TEXT_PRI }}>{activeCityPages.length}</p>
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Active Pages</p>
+                    <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{activeCityPages.length}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: SECTION_LABEL }}>Active Pages</p>
                   </div>
                   <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
-                    <p className="text-2xl font-mono font-bold" style={{ color: TEXT_PRI }}>{totalViews.toLocaleString()}</p>
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: TEXT_SEC }}>Total Views</p>
+                    <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{totalViews.toLocaleString()}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: SECTION_LABEL }}>Total Views</p>
                   </div>
                 </div>
                 {topCities.length > 0 && (
                   <div className="space-y-1.5">
                     {topCities.slice(0, 3).map((cp: any, i: number) => (
-                      <div key={cp.id} onClick={() => setActivePage("city_pages")} className="flex items-center gap-2 cursor-pointer">
-                        <span className="text-[10px] font-mono font-bold w-4" style={{ color: GOLD }}>{i + 1}</span>
-                        <span className="text-xs flex-1" style={{ color: TEXT_PRI }}>{cp.city_name}</span>
-                        <span className="text-xs font-mono" style={{ color: TEXT_SEC }}>{(cp.page_views || 0).toLocaleString()} views</span>
+                      <div key={cp.id} onClick={() => setActivePage("city_pages")} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors">
+                        <span className="text-[10px] font-mono font-bold w-4" style={{ color: BRAND_GOLD }}>{i + 1}</span>
+                        <span className="text-xs flex-1" style={{ color: BRAND_NAVY }}>{cp.city_name}</span>
+                        <span className="text-xs font-mono" style={{ color: SECTION_LABEL }}>{(cp.page_views || 0).toLocaleString()} views</span>
                       </div>
                     ))}
                   </div>
@@ -2243,32 +2234,32 @@ const Leads = () => {
             {recentOrders.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-[11px] uppercase tracking-widest font-bold" style={{ color: TEXT_SEC }}>RECENT ORDERS</h2>
-                  <button onClick={() => setActivePage("cash_orders")} className="text-[10px] font-mono uppercase tracking-wider hover:underline" style={{ color: GOLD }}>View All →</button>
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>RECENT ORDERS</h2>
+                  <button onClick={() => setActivePage("cash_orders")} className="text-[10px] font-mono uppercase tracking-wider hover:underline" style={{ color: BRAND_GOLD }}>View All →</button>
                 </div>
-                <div className="rounded-lg overflow-hidden" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}>
+                <div className="rounded-lg overflow-hidden" style={CARD_STYLE}>
                   <table className="w-full text-xs">
                     <thead>
-                      <tr style={{ borderBottom: `1px solid ${CARD_BORDER_CLR}` }}>
+                      <tr style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
                         {["Order", "Customer", "Address", "Amount", "Status"].map(h => (
-                          <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: TEXT_SEC }}>{h}</th>
+                          <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: SECTION_LABEL }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {recentOrders.map((o: any, i: number) => (
-                        <tr key={o.id} onClick={() => setActivePage("cash_orders")} className="cursor-pointer transition-colors" style={{ borderBottom: i < recentOrders.length - 1 ? `1px solid ${CARD_BORDER_CLR}` : "none" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(192,122,0,0.06)"; }}
+                        <tr key={o.id} onClick={() => setActivePage("cash_orders")} className="cursor-pointer transition-colors" style={{ borderBottom: i < recentOrders.length - 1 ? `1px solid ${CARD_BORDER}` : "none" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "#FDF8F0"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
                         >
-                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: GOLD }}>{o.order_number || "—"}</td>
-                          <td className="px-3 py-2.5" style={{ color: TEXT_PRI }}>{o.customer_name}</td>
-                          <td className="px-3 py-2.5 max-w-[180px] truncate" style={{ color: TEXT_SEC }}>{o.delivery_address}</td>
-                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: TEXT_PRI }}>{fmtFull(Number(o.price || 0))}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: BRAND_GOLD }}>{o.order_number || "—"}</td>
+                          <td className="px-3 py-2.5 font-medium" style={{ color: BRAND_NAVY }}>{o.customer_name}</td>
+                          <td className="px-3 py-2.5 max-w-[180px] truncate" style={{ color: SECTION_LABEL }}>{o.delivery_address}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: BRAND_NAVY }}>{fmtFull(Number(o.price || 0))}</td>
                           <td className="px-3 py-2.5">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono" style={{
-                              backgroundColor: o.status === "delivered" ? "rgba(16,185,129,0.15)" : o.status === "confirmed" ? "rgba(59,130,246,0.15)" : o.status === "cancelled" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
-                              color: o.status === "delivered" ? GREEN : o.status === "confirmed" ? "#3B82F6" : o.status === "cancelled" ? RED : TEXT_SEC
+                              backgroundColor: o.status === "delivered" ? "rgba(5,150,105,0.1)" : o.status === "confirmed" ? "rgba(59,130,246,0.1)" : o.status === "cancelled" ? "rgba(220,38,38,0.1)" : "rgba(0,0,0,0.04)",
+                              color: o.status === "delivered" ? POSITIVE : o.status === "confirmed" ? "#3B82F6" : o.status === "cancelled" ? ALERT_RED : SECTION_LABEL
                             }}>{o.status}</span>
                           </td>
                         </tr>
@@ -2278,7 +2269,7 @@ const Leads = () => {
                 </div>
               </div>
             )}
-          </div>
+          </>
         );
       }
 
@@ -5395,7 +5386,7 @@ const Leads = () => {
       {/* Sidebar */}
       <aside
         className={`fixed md:sticky top-0 left-0 z-50 md:z-auto h-screen flex flex-col transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ width: 220, minWidth: 220, backgroundColor: BRAND_NAVY }}
+        style={{ width: 220, minWidth: 220, backgroundColor: SIDEBAR_BG, borderRight: `1px solid ${CARD_BORDER}` }}
       >
         <div className="px-4 py-4">
           <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>LMT</h2>
@@ -5428,16 +5419,17 @@ const Leads = () => {
                     <button
                       key={item.id}
                       onClick={() => { setActivePage(item.id); setSidebarOpen(false); }}
-                      className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
+                      className="w-full flex items-center gap-3 px-3 rounded-md text-left transition-colors"
                       style={{
                         height: 36,
                         fontSize: 13,
-                        color: isActive ? BRAND_GOLD : "white",
-                        backgroundColor: isActive ? SIDEBAR_HOVER : "transparent",
-                        borderLeft: isActive ? `3px solid ${BRAND_GOLD}` : "3px solid transparent",
+                        fontWeight: isActive ? 600 : 400,
+                        color: isActive ? BRAND_GOLD : BRAND_NAVY,
+                        backgroundColor: isActive ? SIDEBAR_ACTIVE_BG : "transparent",
+                        borderRadius: 6,
                       }}
                       onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
-                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? SIDEBAR_ACTIVE_BG : "transparent"; }}
                     >
                       <Icon className="w-[16px] h-[16px]" />
                       <span>{item.label}</span>
@@ -5480,8 +5472,11 @@ const Leads = () => {
               <Menu className="w-5 h-5" style={{ color: BRAND_NAVY }} />
             </button>
             <div>
-              <h1 className="text-lg font-medium tracking-wider" style={{ color: BRAND_GOLD }}>{currentPage.title}</h1>
-              {currentPage.subtitle && <p className="text-xs text-gray-500">{currentPage.subtitle}</p>}
+              <div className="flex items-center gap-1" style={{ fontSize: 11 }}>
+                <span style={{ color: SECTION_LABEL }}>LMT ›</span>
+                <span style={{ color: BRAND_GOLD, fontWeight: 600 }}>{currentPage.title}</span>
+              </div>
+              {currentPage.subtitle && <p className="text-[10px] mt-0.5" style={{ color: SECTION_LABEL }}>{currentPage.subtitle}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
