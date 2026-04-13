@@ -2644,7 +2644,7 @@ serve(async (req) => {
       for (const row of gsData || []) gs[row.key] = row.value;
 
       const allCandidates: Array<{
-        city_name: string; city_slug: string; state: string;
+        city_name: string; city_slug: string; state: string; region: string;
         lat: number; lng: number; distance_from_pit: number;
         pit_id: string; pit_name: string; base_price: number;
       }> = [];
@@ -2725,11 +2725,14 @@ serve(async (req) => {
           if (distance === null) continue; // No road route found — skip this city
           if (distance > maxDist) continue;
           const slug = normalizeSlug(city.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
-          const extraMiles = Math.max(0, distance - freeMiles);
+          // Northshore phantom miles for toll recovery (region-based)
+          const cityIsNorthshore = isNorthshoreRegion(city.region || '');
+          const billedDistance = cityIsNorthshore ? distance + PHANTOM_MILES : distance;
+          const extraMiles = Math.max(0, billedDistance - freeMiles);
           const price = Math.max(bPrice, Math.round(bPrice + extraMiles * extraPerMile));
 
           allCandidates.push({
-            city_name: city.name, city_slug: slug, state: city.state,
+            city_name: city.name, city_slug: slug, state: city.state, region: city.region || '',
             lat: city.lat, lng: city.lng, distance_from_pit: Math.round(distance * 10) / 10,
             pit_id: pit.id, pit_name: pit.name, base_price: price,
           });
