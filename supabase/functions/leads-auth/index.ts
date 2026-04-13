@@ -1509,8 +1509,8 @@ serve(async (req) => {
         };
 
         // Generate sample points at various distances and directions
-        const distancesArr = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= newPitMaxDist);
-        const directionsArr = [0, 45, 90, 135, 180, 225, 270, 315];
+        const distancesArr = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 43, 45, 48, 50].filter(d => d <= newPitMaxDist);
+        const directionsArr = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5];
         const samplePts: { lat: number; lng: number }[] = [{ lat: savedPit.lat, lng: savedPit.lon }];
         for (const dist of distancesArr) {
           for (const dir of directionsArr) {
@@ -2173,8 +2173,8 @@ serve(async (req) => {
       const VALID_TYPES = ["sublocality_level_1", "locality", "administrative_area_level_3"];
 
       // Generate sample points at various distances and directions
-      const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= maxDist);
-      const directions = [0, 45, 90, 135, 180, 225, 270, 315];
+      const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 43, 45, 48, 50].filter(d => d <= maxDist);
+      const directions = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5];
       const samplePoints: { lat: number; lng: number }[] = [
         { lat: pitData.lat, lng: pitData.lon },
       ];
@@ -2568,8 +2568,8 @@ serve(async (req) => {
 
       for (const pit of allPits) {
         const maxDist = pit.max_distance || 30;
-        const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30].filter(d => d <= maxDist);
-        const directions = [0, 45, 90, 135, 180, 225, 270, 315];
+        const distances = [3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 43, 45, 48, 50].filter(d => d <= maxDist);
+        const directions = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5];
         const samplePoints: { lat: number; lng: number }[] = [{ lat: pit.lat, lng: pit.lon }];
         for (const dist of distances) {
           for (const dir of directions) {
