@@ -25,6 +25,47 @@ const PAGE_SIZE = 25;
 const HQ_LAT = 29.9308;
 const HQ_LON = -90.1685;
 
+// ─── GLOBAL DESIGN TOKENS ───
+const LABEL_STYLE: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: '#9CA3AF',
+};
+
+const NUM_STYLE: React.CSSProperties = {
+  fontSize: 36,
+  fontWeight: 700,
+  lineHeight: 1.1,
+};
+
+const SUB_STYLE: React.CSSProperties = {
+  fontSize: 12,
+  color: '#6B7280',
+  marginTop: 4,
+};
+
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  pending:   { bg: '#F3F4F6', text: '#6B7280' },
+  confirmed: { bg: '#EFF6FF', text: '#3B82F6' },
+  cancelled: { bg: '#FEF2F2', text: '#EF4444' },
+  paid:      { bg: '#ECFDF5', text: '#059669' },
+  captured:  { bg: '#ECFDF5', text: '#059669' },
+  en_route:  { bg: '#EFF6FF', text: '#3B82F6' },
+  delivered: { bg: '#ECFDF5', text: '#059669' },
+  cod:       { bg: '#FDF8F0', text: '#C07A00' },
+  active:    { bg: '#ECFDF5', text: '#059669' },
+  planning:  { bg: '#EFF6FF', text: '#3B82F6' },
+  inactive:  { bg: '#F3F4F6', text: '#6B7280' },
+  draft:     { bg: '#F3F4F6', text: '#6B7280' },
+  new:       { bg: '#F3F4F6', text: '#0D2137' },
+  called:    { bg: '#EFF6FF', text: '#1A6BB8' },
+  quoted:    { bg: '#FDF8F0', text: '#F59E0B' },
+  won:       { bg: '#ECFDF5', text: '#22C55E' },
+  lost:      { bg: '#F3F4F6', text: '#999999' },
+};
+
 const DEFAULT_SETTINGS: Record<string, string> = {
   saturday_surcharge: "35.00",
   site_name: "River Sand",
@@ -1876,10 +1917,66 @@ const Leads = () => {
     await fetchLeads(storedPassword());
   };
 
-  const MetricCard = ({ label, value }: { label: string; value: string | number }) => (
-    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
-      <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{value}</p>
-      <p className="text-xs mt-1" style={{ color: T.textSecond }}>{label}</p>
+  // ─── REUSABLE DESIGN SYSTEM COMPONENTS ───
+
+  const SectionHeader = ({ title, right }: { title: string; right?: string }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
+      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>{title}</span>
+      {right && <span style={{ marginLeft: 'auto', fontSize: 11, color: T.textSecond }}>{right}</span>}
+    </div>
+  );
+
+  const StatusPill = ({ status }: { status: string }) => {
+    const key = status.toLowerCase().replace(/[\s_-]+/g, '_');
+    const colors = STATUS_COLORS[key] || { bg: '#F3F4F6', text: '#6B7280' };
+    return (
+      <span style={{
+        padding: '3px 10px',
+        borderRadius: 20,
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        backgroundColor: isDark ? `${colors.text}20` : colors.bg,
+        color: colors.text,
+      }}>
+        {status}
+      </span>
+    );
+  };
+
+  const MetricCard = ({ label, value, sub, onClick, accent = false }: {
+    label: string; value: string | number; sub?: string;
+    onClick?: () => void; accent?: boolean;
+  }) => (
+    <div
+      onClick={onClick}
+      style={{
+        background: T.cardBg,
+        border: `1px solid ${T.cardBorder}`,
+        borderLeft: accent ? `3px solid ${BRAND_GOLD}` : `1px solid ${T.cardBorder}`,
+        borderRadius: 10,
+        padding: '20px 24px',
+        minHeight: 110,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.15s ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      }}
+      onMouseEnter={e => {
+        if (onClick) {
+          (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+          (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+        }
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.transform = 'none';
+        (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+      }}
+    >
+      <div style={{ ...LABEL_STYLE, color: T.textSecond }}>{label}</div>
+      <div style={{ ...NUM_STYLE, fontSize: 28, marginTop: 8, color: T.textPrimary }}>{value}</div>
+      {sub && <div style={{ ...SUB_STYLE, color: T.textSecond }}>{sub}</div>}
     </div>
   );
 
