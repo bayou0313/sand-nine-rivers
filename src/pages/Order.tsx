@@ -2067,6 +2067,12 @@ const Order = () => {
       calculatedPrice={null}
     />
     <RefundPolicyModal open={showRefundPolicy} onClose={() => setShowRefundPolicy(false)} pricingMode={pricingMode} />
+    <AddressMismatchDialog
+      data={mismatchData}
+      onUseResolved={handleMismatchUseResolved}
+      onKeepTyped={handleMismatchKeepTyped}
+      onChangeAddress={handleMismatchChange}
+    />
   </>
   );
 };
