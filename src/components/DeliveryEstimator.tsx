@@ -633,8 +633,17 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
     </>
   );
 
+  const mismatchDialog = (
+    <AddressMismatchDialog
+      data={mismatchData}
+      onUseResolved={handleMismatchUseResolved}
+      onKeepTyped={handleMismatchKeepTyped}
+      onChangeAddress={handleMismatchChange}
+    />
+  );
+
   if (embedded) {
-    return estimatorContent;
+    return <>{estimatorContent}{mismatchDialog}</>;
   }
 
   return (
@@ -669,6 +678,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
           )}
         </div>
       </div>
+      {mismatchDialog}
     </section>
   );
 };
