@@ -1499,6 +1499,9 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchPendingReview]);
 
+
+
+
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
@@ -1547,6 +1550,14 @@ const Leads = () => {
       fetchCityPages();
     }
   }, [activePage, authenticated, fetchCityPages]);
+
+  // Fetch overview data when overview tab loads
+  useEffect(() => {
+    if (activePage === "overview" && authenticated) {
+      fetchCashOrders();
+      fetchCityPages();
+    }
+  }, [activePage, authenticated, fetchCashOrders, fetchCityPages]);
 
   // Schedule fetch functions
   const fetchScheduleOrders = useCallback(async (date: Date) => {
@@ -2032,23 +2043,209 @@ const Leads = () => {
   // ─── RENDER PAGES ───
   const renderPageContent = () => {
     switch (activePage) {
-      case "overview":
+      case "overview": {
+        const today = new Date().toISOString().split("T")[0];
+        const todayDate = new Date();
+        const monthStart = today.slice(0, 7);
+        const todayOrders = cashOrders.filter((o: any) => o.delivery_date === today);
+        const todayCaptured = todayOrders.filter((o: any) => o.payment_status === "captured" || o.cash_collected);
+        const todayCapturedRev = todayCaptured.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const toCapture = cashOrders.filter((o: any) => o.payment_status === "authorized" && !o.cash_collected && o.delivery_date === today);
+        const toCaptureRev = toCapture.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const todayCOD = todayOrders.filter((o: any) => o.payment_method === "COD" && !o.cash_collected);
+        const furthest = todayOrders.reduce((m: number, o: any) => Math.max(m, Number(o.distance_miles || 0)), 0);
+        const mtdOrders = cashOrders.filter((o: any) => (o.created_at || "").slice(0, 7) === monthStart);
+        const mtdRev = mtdOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
+        const avgOrder = cashOrders.length > 0 ? cashOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0) / cashOrders.length : 0;
+        const uncollectedCOD = cashOrders.filter((o: any) => o.payment_method === "COD" && !o.cash_collected && o.delivery_date && o.delivery_date <= today);
+        const captureIssues = cashOrders.filter((o: any) => o.capture_status === "capture_failed");
+        const outOfAreaLeads = parsedLeads.filter((l: any) => l.stage === "new" && !l.nearest_pit_id);
+        const activeCityPages = cityPages.filter((cp: any) => cp.status === "active");
+        const totalViews = cityPages.reduce((s: number, cp: any) => s + (cp.page_views || 0), 0);
+        const topCities = [...activeCityPages].sort((a: any, b: any) => (b.page_views || 0) - (a.page_views || 0)).slice(0, 5);
+        const recentOrders = [...cashOrders].sort((a: any, b: any) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 5);
+        const dayName = todayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+
         return (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-              <MetricCard label="Pipeline Value" value={`$${metrics.pipelineValue.toLocaleString()}`} />
-              <MetricCard label="Hot ZIPs (2+)" value={zipData.filter(z => z.priority === "hot").length} />
-              <MetricCard label="Not Contacted" value={metrics.notContacted} />
-              <MetricCard label="Proposals Sent" value={metrics.quoted} />
-              <MetricCard label="Converted" value={metrics.won} />
+            {/* Section 1 — Today at a Glance */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>TODAY AT A GLANCE</h2>
+                <span className="text-sm font-medium" style={{ color: BRAND_GOLD }}>{dayName}</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <MetricCard label="To Capture" value={`$${toCaptureRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                <MetricCard label="Confirmed Today" value={todayOrders.length} />
+                <MetricCard label="COD Pending" value={todayCOD.length} />
+                <MetricCard label="Furthest Delivery" value={furthest > 0 ? `${furthest.toFixed(1)} mi` : "—"} />
+                <MetricCard label="Loads Today" value={todayOrders.reduce((s: number, o: any) => s + Number(o.quantity || 1), 0)} />
+              </div>
             </div>
-            <SearchAndFilters />
-            <div className="bg-white rounded-xl border shadow-sm" style={{ borderColor: CARD_BORDER }}>
-              <LeadsTable data={paginatedLeads} />
-              <Pagination />
+
+            {/* Section 2 — Revenue */}
+            <div className="mb-6">
+              <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>REVENUE</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                  <p className="text-xs text-gray-500 mb-1">Today (Captured)</p>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${todayCapturedRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                  <p className="text-xs text-gray-500 mb-1">Month-to-Date</p>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${mtdRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                  <p className="text-xs text-gray-500 mb-1">Avg Order Value</p>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>${avgOrder.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+                <div className="rounded-xl p-4 bg-white border shadow-sm" style={{ borderColor: BRAND_GOLD + "40" }}>
+                  <p className="text-xs text-gray-500 mb-1">Total Orders</p>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{cashOrders.length}</p>
+                </div>
+              </div>
             </div>
+
+            {/* Section 3 — Operations Alerts */}
+            {(uncollectedCOD.length > 0 || captureIssues.length > 0 || outOfAreaLeads.length > 0) && (
+              <div className="mb-6">
+                <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>⚠️ ACTION ITEMS</h2>
+                <div className="space-y-2">
+                  {uncollectedCOD.length > 0 && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ backgroundColor: "#FEF3C7", borderColor: "#F59E0B40" }}>
+                      <span className="text-lg">💵</span>
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{uncollectedCOD.length} COD order{uncollectedCOD.length > 1 ? "s" : ""} not collected</p>
+                        <p className="text-xs text-gray-600">${uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} outstanding</p>
+                      </div>
+                      <Button size="sm" variant="outline" className="ml-auto text-xs" onClick={() => setActivePage("cash_orders")}>View</Button>
+                    </div>
+                  )}
+                  {captureIssues.length > 0 && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ backgroundColor: "#FEE2E2", borderColor: "#EF444440" }}>
+                      <span className="text-lg">🔴</span>
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{captureIssues.length} payment capture failed</p>
+                        <p className="text-xs text-gray-600">Requires manual capture in Orders tab</p>
+                      </div>
+                      <Button size="sm" variant="outline" className="ml-auto text-xs" onClick={() => setActivePage("cash_orders")}>Fix</Button>
+                    </div>
+                  )}
+                  {outOfAreaLeads.length > 0 && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border" style={{ backgroundColor: "#DBEAFE", borderColor: "#3B82F640" }}>
+                      <span className="text-lg">📍</span>
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{outOfAreaLeads.length} out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""}</p>
+                        <p className="text-xs text-gray-600">No pit assigned — needs attention</p>
+                      </div>
+                      <Button size="sm" variant="outline" className="ml-auto text-xs" onClick={() => setActivePage("all")}>Review</Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Section 4 — Pipeline */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>PIPELINE</h2>
+                <span className="text-sm font-bold" style={{ color: BRAND_GOLD }}>${metrics.pipelineValue.toLocaleString()}</span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {STAGES.map(stage => {
+                  const count = parsedLeads.filter((l: any) => l.stage === stage).length;
+                  return (
+                    <div key={stage} className="rounded-lg overflow-hidden border" style={{ borderColor: STAGE_COLORS[stage] + "30" }}>
+                      <div className="px-2 py-1.5 text-center" style={{ backgroundColor: STAGE_COLORS[stage] }}>
+                        <span className="text-white text-xs font-bold uppercase">{stage}</span>
+                      </div>
+                      <div className="p-2 text-center bg-white">
+                        <p className="text-xl font-bold" style={{ color: STAGE_COLORS[stage] }}>{count}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Section 5 — SEO Snapshot */}
+            <div className="mb-6">
+              <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: BRAND_NAVY }}>SEO</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                <div className="rounded-xl p-3 bg-white border shadow-sm text-center" style={{ borderColor: BRAND_NAVY + "20" }}>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{activeCityPages.length}</p>
+                  <p className="text-xs text-gray-500">Active Pages</p>
+                </div>
+                <div className="rounded-xl p-3 bg-white border shadow-sm text-center" style={{ borderColor: BRAND_NAVY + "20" }}>
+                  <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{totalViews.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">Total Views</p>
+                </div>
+              </div>
+              {topCities.length > 0 && (
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: BRAND_NAVY + "20" }}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ backgroundColor: BRAND_NAVY }}>
+                        <th className="px-3 py-2 text-left text-xs font-bold text-white uppercase">#</th>
+                        <th className="px-3 py-2 text-left text-xs font-bold text-white uppercase">City</th>
+                        <th className="px-3 py-2 text-right text-xs font-bold text-white uppercase">Views</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topCities.map((cp: any, i: number) => (
+                        <tr key={cp.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>{i + 1}</td>
+                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_NAVY }}>{cp.city_name}</td>
+                          <td className="px-3 py-2 text-xs text-right">{(cp.page_views || 0).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Section 6 — Recent Orders */}
+            {recentOrders.length > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>RECENT ORDERS</h2>
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => setActivePage("cash_orders")}>View All</Button>
+                </div>
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: BRAND_NAVY + "20" }}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ backgroundColor: BRAND_NAVY }}>
+                        {["Order", "Customer", "Address", "Amount", "Status"].map(h => (
+                          <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.map((o: any, i: number) => (
+                        <tr key={o.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                          <td className="px-3 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{o.order_number || "—"}</td>
+                          <td className="px-3 py-2 text-xs">{o.customer_name}</td>
+                          <td className="px-3 py-2 text-xs max-w-[200px] truncate">{o.delivery_address}</td>
+                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                              o.status === "delivered" ? "bg-green-100 text-green-800" :
+                              o.status === "confirmed" ? "bg-blue-100 text-blue-800" :
+                              o.status === "cancelled" ? "bg-red-100 text-red-800" :
+                              "bg-gray-100 text-gray-800"
+                            }`}>{o.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         );
+      }
 
       case "zip":
         return (
