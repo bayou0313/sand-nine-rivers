@@ -102,6 +102,7 @@ export default function PlaceAutocompleteInput({
   }, []);
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (justSelectedRef.current) return;
     const val = e.target.value;
     setHasValue(val.length > 0);
     onInputChangeRef.current?.(val);
