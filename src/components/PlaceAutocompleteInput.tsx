@@ -64,6 +64,7 @@ export default function PlaceAutocompleteInput({
           const lat = place.geometry?.location?.lat();
           const lng = place.geometry?.location?.lng();
           if (lat != null && lng != null) {
+            justSelectedRef.current = true;
             setHasValue(true);
             onInputChangeRef.current?.(place.formatted_address || "");
             onPlaceSelectRef.current({
@@ -72,6 +73,7 @@ export default function PlaceAutocompleteInput({
               lng,
               addressComponents: place.address_components || [],
             });
+            setTimeout(() => { justSelectedRef.current = false; }, 300);
           }
         });
 
