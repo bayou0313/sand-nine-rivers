@@ -16,14 +16,8 @@ declare global {
 
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
-const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
-const SIDEBAR_HOVER = "#F5F4F1";
-const SIDEBAR_BG = "#FFFFFF";
-const SIDEBAR_ACTIVE_BG = "#FDF8F0";
-const CONTENT_BG = "#FAFAF9";
-const CARD_BORDER = "#E8E5DC";
-const SECTION_LABEL = "#6B7280";
+const BRAND_NAVY = "#0D2137"; // used for login screen only
 const POSITIVE = "#059669";
 const ALERT_RED = "#DC2626";
 const WARN_YELLOW = "#D97706";
@@ -184,7 +178,7 @@ type SortDir = "asc" | "desc";
 type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
-const STAGE_COLORS: Record<string, string> = { new: BRAND_NAVY, called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
+const STAGE_COLORS: Record<string, string> = { new: "#0D2137", called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
 
 const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: any }[] }[] = [
   {
@@ -227,14 +221,14 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
 ];
 
 /* ── Sidebar Accordion Section ── */
-const SidebarAccordion = ({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) => {
+const SidebarAccordion = ({ title, children, defaultOpen = false, textColor }: { title: string; children: React.ReactNode; defaultOpen?: boolean; textColor?: string }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="mb-1">
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:opacity-80 transition-opacity"
-        style={{ color: SECTION_LABEL }}
+        style={{ color: textColor || '#6B7280' }}
       >
         <span>{title}</span>
         <motion.span
@@ -1869,9 +1863,9 @@ const Leads = () => {
   };
 
   const MetricCard = ({ label, value }: { label: string; value: string | number }) => (
-    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+    <div className="rounded-xl p-3 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
       <p className="text-2xl font-bold" style={{ color: BRAND_GOLD }}>{value}</p>
-      <p className="text-xs text-white/80 mt-1">{label}</p>
+      <p className="text-xs mt-1" style={{ color: T.textSecond }}>{label}</p>
     </div>
   );
 
@@ -1880,7 +1874,7 @@ const Leads = () => {
       value={value}
       onChange={e => onChange(e.target.value)}
       className="h-9 px-2 rounded-md border text-sm"
-      style={{ borderColor: BRAND_NAVY + "40", color: BRAND_NAVY }}
+      style={{ borderColor: T.textPrimary + "40", color: T.textPrimary }}
       aria-label={label}
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -1890,7 +1884,7 @@ const Leads = () => {
   const TH = ({ col, label, className = "" }: { col: SortKey; label: string; className?: string }) => (
     <th
       className={`px-3 py-2 text-left text-xs font-bold uppercase tracking-wider cursor-pointer select-none ${className}`}
-      style={{ backgroundColor: BRAND_NAVY, color: sortKey === col ? BRAND_GOLD : "white" }}
+      style={{ backgroundColor: T.tableHeaderBg, color: sortKey === col ? BRAND_GOLD : T.tableHeaderText }}
       onClick={() => handleSort(col)}
     >
       <div className="flex items-center gap-1">{label}<SortIcon col={col} /></div>
@@ -1914,7 +1908,7 @@ const Leads = () => {
             <TH col="customer_phone" label="Phone" />
             {showStage && <TH col="stage" label="Stage" />}
             <TH col="contacted" label="Contacted" />
-            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: BRAND_NAVY, color: "white" }}>Action</th>
+            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: T.tableHeaderBg, color: T.tableHeaderText }}>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -1923,11 +1917,11 @@ const Leads = () => {
               key={l.id}
               onClick={() => openDetail(l)}
               className="cursor-pointer transition-colors"
-              style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#FFF8E7")}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? "white" : "#F9F9F9")}
+              style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? T.cardBg : T.tableStripeBg)}
             >
-              <td className="px-3 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{l.lead_number || `#${i + 1}`}</td>
+              <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{l.lead_number || `#${i + 1}`}</td>
               <td className="px-3 py-2 text-xs whitespace-nowrap">{formatLeadDate(l.created_at)}</td>
               <td className="px-3 py-2 text-xs max-w-[200px] truncate">{l.address}</td>
               <td className="px-3 py-2 text-xs">{l.state}</td>
@@ -2014,7 +2008,7 @@ const Leads = () => {
         <div className="bg-white rounded-2xl p-8 shadow-2xl w-full max-w-sm">
           <div className="text-center mb-6">
             <Lock className="w-10 h-10 mx-auto mb-3" style={{ color: BRAND_GOLD }} />
-            <h1 className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>LANDER MARKETING TOOLS</h1>
+            <h1 className="text-2xl font-bold" style={{ color: "#0D2137" }}>LANDER MARKETING TOOLS</h1>
             <p className="text-sm text-gray-500 mt-1">Enter password to access LMT</p>
           </div>
           <Input
@@ -2036,7 +2030,7 @@ const Leads = () => {
 
   if (loading && leads.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: CONTENT_BG }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FAFAF9" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} />
       </div>
     );
@@ -2044,6 +2038,32 @@ const Leads = () => {
 
   const livePricing = "Pricing configured per PIT";
   const currentPage = PAGE_TITLES[activePage];
+
+  // ─── DYNAMIC THEME TOKENS ───
+  const isDark = globalSettings?.dashboard_theme === 'dark';
+  const T = {
+    pageBg:        isDark ? '#0A0F1E' : '#FAFAF9',
+    cardBg:        isDark ? '#0D1529' : '#FFFFFF',
+    cardBorder:    isDark ? 'rgba(255,255,255,0.06)' : '#E8E5DC',
+    cardShadow:    isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.04)',
+    textPrimary:   isDark ? '#FFFFFF' : '#0D2137',
+    textSecond:    isDark ? '#64748B' : '#6B7280',
+    sidebarBg:     isDark ? '#0D1529' : '#FFFFFF',
+    sidebarBorder: isDark ? 'rgba(255,255,255,0.06)' : '#E8E5DC',
+    headerBg:      isDark ? '#0D1529' : '#FFFFFF',
+    activeNavBg:   isDark ? 'rgba(192,122,0,0.15)' : '#FDF8F0',
+    hoverNavBg:    isDark ? 'rgba(255,255,255,0.05)' : '#F5F4F1',
+    inputBg:       isDark ? '#0A0F1E' : '#FFFFFF',
+    inputBorder:   isDark ? 'rgba(255,255,255,0.1)' : '#E8E5DC',
+    tableHeaderBg: isDark ? '#111B30' : '#F5F4F1',
+    tableHeaderText: isDark ? '#FFFFFF' : '#0D2137',
+    tableStripeBg: isDark ? 'rgba(255,255,255,0.02)' : '#F9F9F9',
+    tableHoverBg:  isDark ? 'rgba(192,122,0,0.08)' : '#FFF8E7',
+    metricBg:      isDark ? '#111B30' : '#FFFFFF',
+    barBg:         isDark ? 'rgba(255,255,255,0.05)' : '#f3f3f3',
+    subtleBg:      isDark ? 'rgba(255,255,255,0.03)' : '#F8F7F2',
+  };
+  const CARD_STYLE_T = { backgroundColor: T.cardBg, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardShadow };
 
   // ─── RENDER PAGES ───
   const renderPageContent = () => {
@@ -2072,7 +2092,7 @@ const Leads = () => {
         const dayName = todayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
         const timeStr = todayDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
 
-        const CARD_STYLE = { backgroundColor: "#FFFFFF", border: `1px solid ${CARD_BORDER}`, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" };
+        const CARD_STYLE = CARD_STYLE_T;
 
         const fmt = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         const fmtFull = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2108,11 +2128,11 @@ const Leads = () => {
             className="rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md group"
             style={{ ...CARD_STYLE, borderLeft: borderAccent ? `3px solid ${BRAND_GOLD}` : undefined }}
           >
-            <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: SECTION_LABEL }}>{label}</p>
+            <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: T.textSecond }}>{label}</p>
             <p className="text-[28px] md:text-[32px] font-bold leading-none">
-              <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accentColor === BRAND_GOLD ? BRAND_NAVY : accentColor} />
+              <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accentColor === BRAND_GOLD ? T.textPrimary : accentColor} />
             </p>
-            <p className="text-[11px] mt-1.5" style={{ color: SECTION_LABEL }}>{sub}</p>
+            <p className="text-[11px] mt-1.5" style={{ color: T.textSecond }}>{sub}</p>
           </div>
         );
 
@@ -2121,7 +2141,7 @@ const Leads = () => {
             {/* Header row */}
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-xs font-mono" style={{ color: SECTION_LABEL }}>{dayName} · {timeStr}</p>
+                <p className="text-xs font-mono" style={{ color: T.textSecond }}>{dayName} · {timeStr}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
@@ -2146,31 +2166,31 @@ const Leads = () => {
               <div className="mb-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Zap size={12} style={{ color: BRAND_GOLD }} />
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>OPERATIONS ALERTS</h2>
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>OPERATIONS ALERTS</h2>
                 </div>
                 <div className="space-y-2">
                   {uncollectedCOD.length > 0 && (
                     <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${ALERT_RED}` }}>
-                      <span className="text-xs" style={{ color: BRAND_NAVY }}><span className="font-bold">{uncollectedCOD.length} COD</span> order{uncollectedCOD.length > 1 ? "s" : ""} need collection — {fmtFull(uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0))}</span>
-                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
+                      <span className="text-xs" style={{ color: T.textPrimary }}><span className="font-bold">{uncollectedCOD.length} COD</span> order{uncollectedCOD.length > 1 ? "s" : ""} need collection — {fmtFull(uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0))}</span>
+                      <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                   {outOfAreaLeads.length > 0 && (
                     <div onClick={() => setActivePage("all")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${WARN_YELLOW}` }}>
-                      <span className="text-xs" style={{ color: BRAND_NAVY }}><span className="font-bold">{outOfAreaLeads.length}</span> out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""} — no pit assigned</span>
-                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
+                      <span className="text-xs" style={{ color: T.textPrimary }}><span className="font-bold">{outOfAreaLeads.length}</span> out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""} — no pit assigned</span>
+                      <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                   {captureIssues.length > 0 && (
                     <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${ALERT_RED}` }}>
-                      <span className="text-xs" style={{ color: BRAND_NAVY }}><span className="font-bold">{captureIssues.length}</span> payment capture{captureIssues.length > 1 ? "s" : ""} failed</span>
-                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
+                      <span className="text-xs" style={{ color: T.textPrimary }}><span className="font-bold">{captureIssues.length}</span> payment capture{captureIssues.length > 1 ? "s" : ""} failed</span>
+                      <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                   {toCaptureRev > 0 && (
                     <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${POSITIVE}` }}>
-                      <span className="text-xs" style={{ color: BRAND_NAVY }}>{fmtFull(toCaptureRev)} capture scheduled for tonight</span>
-                      <span className="ml-auto text-xs" style={{ color: SECTION_LABEL }}>→</span>
+                      <span className="text-xs" style={{ color: T.textPrimary }}>{fmtFull(toCaptureRev)} capture scheduled for tonight</span>
+                      <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                 </div>
@@ -2182,7 +2202,7 @@ const Leads = () => {
               {/* Pipeline */}
               <div className="rounded-lg p-4" style={CARD_STYLE}>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>PIPELINE</h2>
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>PIPELINE</h2>
                   <span className="text-xs font-mono font-bold" style={{ color: BRAND_GOLD }}>{fmt(metrics.pipelineValue)}</span>
                 </div>
                 <div className="space-y-2.5">
@@ -2193,8 +2213,8 @@ const Leads = () => {
                       <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#F0EFEB" }}>
                         <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(4, (count / Math.max(parsedLeads.length, 1)) * 100)}%`, backgroundColor: STAGE_COLORS[stage] }} />
                       </div>
-                      <span className="text-xs font-mono font-bold w-6 text-right" style={{ color: BRAND_NAVY }}>{count}</span>
-                      <span className="text-[10px] font-mono w-12 text-right" style={{ color: SECTION_LABEL }}>{fmt(value)}</span>
+                      <span className="text-xs font-mono font-bold w-6 text-right" style={{ color: T.textPrimary }}>{count}</span>
+                      <span className="text-[10px] font-mono w-12 text-right" style={{ color: T.textSecond }}>{fmt(value)}</span>
                     </div>
                   ))}
                 </div>
@@ -2203,17 +2223,17 @@ const Leads = () => {
               {/* SEO Performance */}
               <div className="rounded-lg p-4" style={CARD_STYLE}>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>SEO PERFORMANCE</h2>
-                  <span className="text-xs font-mono" style={{ color: SECTION_LABEL }}>{activeCityPages.length} pages</span>
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>SEO PERFORMANCE</h2>
+                  <span className="text-xs font-mono" style={{ color: T.textSecond }}>{activeCityPages.length} pages</span>
                 </div>
                 <div className="flex gap-6 mb-3">
                   <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
-                    <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{activeCityPages.length}</p>
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: SECTION_LABEL }}>Active Pages</p>
+                    <p className="text-2xl font-bold" style={{ color: T.textPrimary }}>{activeCityPages.length}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: T.textSecond }}>Active Pages</p>
                   </div>
                   <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
-                    <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{totalViews.toLocaleString()}</p>
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: SECTION_LABEL }}>Total Views</p>
+                    <p className="text-2xl font-bold" style={{ color: T.textPrimary }}>{totalViews.toLocaleString()}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: T.textSecond }}>Total Views</p>
                   </div>
                 </div>
                 {topCities.length > 0 && (
@@ -2221,8 +2241,8 @@ const Leads = () => {
                     {topCities.slice(0, 3).map((cp: any, i: number) => (
                       <div key={cp.id} onClick={() => setActivePage("city_pages")} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors">
                         <span className="text-[10px] font-mono font-bold w-4" style={{ color: BRAND_GOLD }}>{i + 1}</span>
-                        <span className="text-xs flex-1" style={{ color: BRAND_NAVY }}>{cp.city_name}</span>
-                        <span className="text-xs font-mono" style={{ color: SECTION_LABEL }}>{(cp.page_views || 0).toLocaleString()} views</span>
+                        <span className="text-xs flex-1" style={{ color: T.textPrimary }}>{cp.city_name}</span>
+                        <span className="text-xs font-mono" style={{ color: T.textSecond }}>{(cp.page_views || 0).toLocaleString()} views</span>
                       </div>
                     ))}
                   </div>
@@ -2234,32 +2254,32 @@ const Leads = () => {
             {recentOrders.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: SECTION_LABEL }}>RECENT ORDERS</h2>
+                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>RECENT ORDERS</h2>
                   <button onClick={() => setActivePage("cash_orders")} className="text-[10px] font-mono uppercase tracking-wider hover:underline" style={{ color: BRAND_GOLD }}>View All →</button>
                 </div>
                 <div className="rounded-lg overflow-hidden" style={CARD_STYLE}>
                   <table className="w-full text-xs">
                     <thead>
-                      <tr style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                      <tr style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
                         {["Order", "Customer", "Address", "Amount", "Status"].map(h => (
-                          <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: SECTION_LABEL }}>{h}</th>
+                          <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {recentOrders.map((o: any, i: number) => (
-                        <tr key={o.id} onClick={() => setActivePage("cash_orders")} className="cursor-pointer transition-colors" style={{ borderBottom: i < recentOrders.length - 1 ? `1px solid ${CARD_BORDER}` : "none" }}
+                        <tr key={o.id} onClick={() => setActivePage("cash_orders")} className="cursor-pointer transition-colors" style={{ borderBottom: i < recentOrders.length - 1 ? `1px solid ${T.cardBorder}` : "none" }}
                           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "#FDF8F0"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
                         >
                           <td className="px-3 py-2.5 font-mono font-bold" style={{ color: BRAND_GOLD }}>{o.order_number || "—"}</td>
-                          <td className="px-3 py-2.5 font-medium" style={{ color: BRAND_NAVY }}>{o.customer_name}</td>
-                          <td className="px-3 py-2.5 max-w-[180px] truncate" style={{ color: SECTION_LABEL }}>{o.delivery_address}</td>
-                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: BRAND_NAVY }}>{fmtFull(Number(o.price || 0))}</td>
+                          <td className="px-3 py-2.5 font-medium" style={{ color: T.textPrimary }}>{o.customer_name}</td>
+                          <td className="px-3 py-2.5 max-w-[180px] truncate" style={{ color: T.textSecond }}>{o.delivery_address}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: T.textPrimary }}>{fmtFull(Number(o.price || 0))}</td>
                           <td className="px-3 py-2.5">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono" style={{
                               backgroundColor: o.status === "delivered" ? "rgba(5,150,105,0.1)" : o.status === "confirmed" ? "rgba(59,130,246,0.1)" : o.status === "cancelled" ? "rgba(220,38,38,0.1)" : "rgba(0,0,0,0.04)",
-                              color: o.status === "delivered" ? POSITIVE : o.status === "confirmed" ? "#3B82F6" : o.status === "cancelled" ? ALERT_RED : SECTION_LABEL
+                              color: o.status === "delivered" ? POSITIVE : o.status === "confirmed" ? "#3B82F6" : o.status === "cancelled" ? ALERT_RED : T.textSecond
                             }}>{o.status}</span>
                           </td>
                         </tr>
@@ -2277,14 +2297,14 @@ const Leads = () => {
         return (
           <>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-              <p className="text-sm" style={{ color: BRAND_NAVY }}>
+              <p className="text-sm" style={{ color: T.textPrimary }}>
                 <strong>💡 ZIPs with 2+ leads = confirmed unserved demand.</strong> These are your next expansion markets.
               </p>
             </div>
-            <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+            <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ backgroundColor: BRAND_NAVY }}>
+                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
                     {["ZIP", "City", "State", "Leads", "Demand", "Est. Monthly Rev", "Avg Distance", "Priority"].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
                     ))}
@@ -2292,8 +2312,8 @@ const Leads = () => {
                 </thead>
                 <tbody>
                   {zipData.map((z, i) => (
-                    <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
-                      <td className="px-3 py-2 font-mono font-bold" style={{ color: BRAND_NAVY }}>{z.zip}</td>
+                    <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
+                      <td className="px-3 py-2 font-mono font-bold" style={{ color: T.textPrimary }}>{z.zip}</td>
                       <td className="px-3 py-2">{z.city}</td>
                       <td className="px-3 py-2">{z.state}</td>
                       <td className="px-3 py-2 font-bold" style={{ color: BRAND_GOLD }}>{z.count}</td>
@@ -2321,7 +2341,7 @@ const Leads = () => {
         return (
           <>
             <div className="mb-4 text-center">
-              <p className="text-lg font-bold" style={{ color: BRAND_NAVY }}>
+              <p className="text-lg font-bold" style={{ color: T.textPrimary }}>
                 Active pipeline: <span style={{ color: BRAND_GOLD }}>${metrics.pipelineValue.toLocaleString()}</span>
               </p>
             </div>
@@ -2336,9 +2356,9 @@ const Leads = () => {
                     </div>
                     <div className="bg-gray-50 p-2 space-y-2 min-h-[200px] max-h-[500px] overflow-y-auto">
                       {stageLeads.map(l => (
-                        <div key={l.id} onClick={() => openDetail(l)} className="bg-white rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                        <div key={l.id} onClick={() => openDetail(l)} className="rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                           <p className="font-mono text-xs mb-1" style={{ color: BRAND_GOLD }}>{l.lead_number || "—"}</p>
-                          <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>{l.customer_name}</p>
+                          <p className="font-bold text-sm" style={{ color: T.textPrimary }}>{l.customer_name}</p>
                           <p className="text-xs text-gray-500">{l.zip} • {l.distance_miles?.toFixed(1) || "?"} mi</p>
                           {l.customer_email && <p className="text-xs text-gray-400 truncate">{l.customer_email}</p>}
                         </div>
@@ -2355,21 +2375,21 @@ const Leads = () => {
         return (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
                 <p className="text-white/60 text-sm">Immediate Opportunity</p>
                 <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.notContacted * basePrice).toLocaleString()}</p>
                 <p className="text-white/40 text-xs mt-1">{metrics.notContacted} uncontacted leads × ${basePrice}</p>
               </div>
-              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
                 <p className="text-white/60 text-sm">Total Pipeline</p>
                 <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.total * basePrice).toLocaleString()}</p>
                 <p className="text-white/40 text-xs mt-1">{metrics.total} total leads × ${basePrice}</p>
               </div>
             </div>
-            <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+            <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ backgroundColor: BRAND_NAVY }}>
+                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
                     {["ZIP / Market", "Leads", "Monthly Revenue", "Break-even (months)"].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-bold text-white uppercase">{h}</th>
                     ))}
@@ -2380,8 +2400,8 @@ const Leads = () => {
                     const monthlyRev = z.count * 5 * basePrice * 4;
                     const breakEven = monthlyRev > 0 ? (3000 / monthlyRev).toFixed(1) : "—";
                     return (
-                      <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
-                        <td className="px-4 py-3 font-bold" style={{ color: BRAND_NAVY }}>{z.zip} — {z.city}, {z.state}</td>
+                      <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
+                        <td className="px-4 py-3 font-bold" style={{ color: T.textPrimary }}>{z.zip} — {z.city}, {z.state}</td>
                         <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>{z.count}</td>
                         <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>${monthlyRev.toLocaleString()}</td>
                         <td className="px-4 py-3">{breakEven} mo</td>
@@ -2391,17 +2411,17 @@ const Leads = () => {
                 </tbody>
               </table>
             </div>
-            <div className="bg-white rounded-xl border shadow-sm mt-4 p-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="text-sm font-bold mb-4" style={{ color: BRAND_NAVY }}>Projected Monthly Revenue by Market</h3>
+            <div className="rounded-xl border shadow-sm mt-4 p-6" style={{ borderColor: T.cardBorder }}>
+              <h3 className="text-sm font-bold mb-4" style={{ color: T.textPrimary }}>Projected Monthly Revenue by Market</h3>
               <div className="space-y-3">
                 {zipData.filter(z => z.priority === "hot").map(z => {
                   const rev = z.count * 5 * basePrice * 4;
                   const maxRev = Math.max(...zipData.filter(zz => zz.priority === "hot").map(zz => zz.count * 5 * basePrice * 4), 1);
                   return (
                     <div key={z.zip} className="flex items-center gap-3">
-                      <span className="text-xs font-mono w-16" style={{ color: BRAND_NAVY }}>{z.zip}</span>
+                      <span className="text-xs font-mono w-16" style={{ color: T.textPrimary }}>{z.zip}</span>
                       <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
-                        <div className="h-full rounded" style={{ width: `${(rev / maxRev) * 100}%`, backgroundColor: rev === maxRev ? BRAND_GOLD : BRAND_NAVY }} />
+                        <div className="h-full rounded" style={{ width: `${(rev / maxRev) * 100}%`, backgroundColor: rev === maxRev ? BRAND_GOLD : T.textPrimary }} />
                       </div>
                       <span className="text-xs font-bold w-24 text-right" style={{ color: BRAND_GOLD }}>${rev.toLocaleString()}</span>
                     </div>
@@ -2427,9 +2447,9 @@ const Leads = () => {
             </div>
 
             {/* PIT Manager */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-4" style={{ borderColor: CARD_BORDER }}>
+            <div className="rounded-xl border shadow-sm p-6 mb-4" style={{ borderColor: T.cardBorder }}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold" style={{ color: BRAND_NAVY }}>PIT Manager</h3>
+                <h3 className="font-bold" style={{ color: T.textPrimary }}>PIT Manager</h3>
                 <div className="flex gap-2">
                   <Button onClick={geocodeAllLeads} disabled={geocoding} variant="outline" size="sm">
                     {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
@@ -2448,9 +2468,9 @@ const Leads = () => {
                   const hasOverride = p.base_price != null || p.free_miles != null || p.price_per_extra_mile != null || p.max_distance != null;
 
                   return (
-                    <div key={p.id} className="border rounded-xl p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : CARD_BORDER }}>
+                    <div key={p.id} className="border rounded-xl p-3 flex-1 min-w-[220px]" style={{ borderColor: selectedPit?.id === p.id ? BRAND_GOLD : T.cardBorder }}>
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-bold text-sm" style={{ color: BRAND_NAVY }}>
+                        <p className="font-bold text-sm" style={{ color: T.textPrimary }}>
                           {p.name}
                           {(p.lat == null || p.lon == null || Number(p.lat) === 0 || Number(p.lon) === 0) && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ml-2"
@@ -2481,7 +2501,7 @@ const Leads = () => {
                             const isOpen = days.includes(idx);
                             return (
                               <span key={idx} className="text-[10px] px-1.5 py-0.5 rounded" style={{
-                                backgroundColor: isOpen ? BRAND_NAVY : "#F3F3F3",
+                                backgroundColor: isOpen ? T.textPrimary : T.barBg,
                                 color: isOpen ? "white" : "#BBB",
                                 textDecoration: isOpen ? "none" : "line-through",
                               }}>{label}</span>
@@ -2536,9 +2556,9 @@ const Leads = () => {
                   })()}
                 </div>
 
-                <div className="bg-white rounded-xl border shadow-sm" style={{ borderColor: CARD_BORDER }}>
-                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
-                    <h3 className="font-bold text-sm" style={{ color: BRAND_NAVY }}>
+                <div className="rounded-xl border shadow-sm" style={{ borderColor: T.cardBorder }}>
+                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: T.cardBorder }}>
+                    <h3 className="font-bold text-sm" style={{ color: T.textPrimary }}>
                       Simulation: {selectedPit.name} — {simData.filter(d => d.status === "serviceable").length} newly serviceable
                     </h3>
                     <div className="flex gap-2">
@@ -2558,7 +2578,7 @@ const Leads = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr style={{ backgroundColor: BRAND_NAVY }}>
+                        <tr style={{ backgroundColor: T.tableHeaderBg }}>
                           <th className="px-3 py-2 text-white text-xs w-8"><input type="checkbox" checked={simSelected.size === simData.length && simData.length > 0} onChange={e => setSimSelected(e.target.checked ? new Set(simData.map(d => d.lead.id)) : new Set())} /></th>
                           {["Lead #", "Name", "Address / ZIP", "HQ Dist", "PIT Dist", "Delta", "New Price", "Savings", "Status"].map(h => (
                             <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase">{h}</th>
@@ -2572,9 +2592,9 @@ const Leads = () => {
                           const oldPrice = eff.base_price + oldExtra;
                           const savings = oldPrice - d.newPrice;
                           return (
-                            <tr key={d.lead.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                            <tr key={d.lead.id} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
                               <td className="px-3 py-2"><input type="checkbox" checked={simSelected.has(d.lead.id)} onChange={e => { const s = new Set(simSelected); e.target.checked ? s.add(d.lead.id) : s.delete(d.lead.id); setSimSelected(s); }} /></td>
-                              <td className="px-3 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{d.lead.lead_number || "—"}</td>
+                              <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{d.lead.lead_number || "—"}</td>
                               <td className="px-3 py-2 text-xs font-medium">{d.lead.customer_name}</td>
                               <td className="px-3 py-2 text-xs max-w-[150px] truncate">{parseAddress(d.lead.address).zip}</td>
                               <td className="px-3 py-2 text-xs">{d.hqDist.toFixed(1)} mi</td>
@@ -2792,7 +2812,7 @@ const Leads = () => {
                 value={discoverPitId || ""}
                 onChange={e => setDiscoverPitId(e.target.value)}
                 className="h-9 px-3 rounded-md border text-sm"
-                style={{ borderColor: BRAND_NAVY + "40" }}
+                style={{ borderColor: T.textPrimary + "40" }}
               >
                 <option value="">Select PIT to discover...</option>
                 {pits.filter(p => p.status === "active").map(p => (
@@ -2812,7 +2832,7 @@ const Leads = () => {
                 onClick={() => setShowBulkCreateConfirm(true)}
                 disabled={bulkCreating}
                 size="sm"
-                style={{ backgroundColor: BRAND_NAVY, color: "white" }}
+                style={{ backgroundColor: T.tableHeaderBg, color: T.tableHeaderText }}
               >
                 {bulkCreating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Zap className="w-4 h-4 mr-1" />}
                 Create All City Pages
@@ -2843,7 +2863,7 @@ const Leads = () => {
                 value={cityPageFilter}
                 onChange={e => setCityPageFilter(e.target.value)}
                 className="h-9 px-3 rounded-md border text-sm"
-                style={{ borderColor: BRAND_NAVY + "40" }}
+                style={{ borderColor: T.textPrimary + "40" }}
               >
                 <option value="all">All PITs</option>
                 {pits.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -2852,7 +2872,7 @@ const Leads = () => {
                 <button
                   onClick={() => { setCityPageSortKey("city_name"); setCityPageSortDir("asc"); }}
                   className="h-9 px-3 rounded-md border text-xs hover:bg-gray-50"
-                  style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}
+                  style={{ borderColor: T.textPrimary + "30", color: T.textPrimary }}
                 >
                   Reset Sort
                 </button>
@@ -2949,7 +2969,7 @@ const Leads = () => {
             {showRegenAllConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Regen All Pages?</h3>
+                  <h3 className="text-lg font-display font-bold" style={{ color: T.textPrimary }}>Regen All Pages?</h3>
                   <p className="text-sm text-gray-600">
                     This will flag all <strong>{cityPages.filter(c => c.status === "active").length}</strong> active city pages for regeneration with the current prompt version.
                   </p>
@@ -2992,7 +3012,7 @@ const Leads = () => {
             {showDeleteAllConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Delete all city pages?</h3>
+                  <h3 className="text-lg font-display font-bold" style={{ color: T.textPrimary }}>Delete all city pages?</h3>
                   <p className="text-sm text-gray-600">
                     This will permanently delete all <strong>{cityPages.length}</strong> city pages and clear the discovery cache on all PITs. This cannot be undone.
                   </p>
@@ -3018,14 +3038,14 @@ const Leads = () => {
             {showDeleteAllTypeConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Type DELETE to confirm</h3>
+                  <h3 className="text-lg font-display font-bold" style={{ color: T.textPrimary }}>Type DELETE to confirm</h3>
                   <input
                     type="text"
                     value={deleteAllTypeInput}
                     onChange={e => setDeleteAllTypeInput(e.target.value)}
                     placeholder="Type DELETE here"
                     className="w-full h-10 px-3 rounded-md border text-sm"
-                    style={{ borderColor: BRAND_NAVY + "40" }}
+                    style={{ borderColor: T.textPrimary + "40" }}
                     autoFocus
                   />
                   <div className="flex gap-3 justify-end">
@@ -3063,14 +3083,14 @@ const Leads = () => {
             {showBulkCreateConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Create city pages for all PITs?</h3>
+                  <h3 className="text-lg font-display font-bold" style={{ color: T.textPrimary }}>Create city pages for all PITs?</h3>
                   <p className="text-sm text-gray-600">
                     This will discover cities near all {pits.filter(p => p.status === "active").length} active PITs and create pages for any cities not already covered. Each city will be assigned to its closest PIT. Existing pages will not be overwritten.
                   </p>
                   <div className="flex gap-3 justify-end">
                     <Button variant="outline" onClick={() => setShowBulkCreateConfirm(false)}>Cancel</Button>
                     <Button
-                      style={{ backgroundColor: BRAND_NAVY, color: "white" }}
+                      style={{ backgroundColor: T.tableHeaderBg, color: T.tableHeaderText }}
                       onClick={async () => {
                         setShowBulkCreateConfirm(false);
                         setBulkCreating(true);
@@ -3099,7 +3119,7 @@ const Leads = () => {
             {showDeduplicateConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Remove duplicate city pages?</h3>
+                  <h3 className="text-lg font-display font-bold" style={{ color: T.textPrimary }}>Remove duplicate city pages?</h3>
                   <p className="text-sm text-gray-600">
                     This will deactivate duplicate city pages, keeping only the page assigned to the closest PIT for each city. {duplicateCount} duplicate pages will be deactivated.
                   </p>
@@ -3133,8 +3153,8 @@ const Leads = () => {
 
             {/* Bulk Actions Bar */}
             {selectedCityPages.size > 0 && (
-              <div className="mb-4 flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: BRAND_NAVY + "08", borderColor: BRAND_NAVY + "20" }}>
-                <span className="text-sm font-bold" style={{ color: BRAND_NAVY }}>{selectedCityPages.size} selected</span>
+              <div className="mb-4 flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: T.textPrimary + "08", borderColor: T.textPrimary + "20" }}>
+                <span className="text-sm font-bold" style={{ color: T.textPrimary }}>{selectedCityPages.size} selected</span>
                 <button
                   onClick={() => setShowBulkDeleteConfirm(true)}
                   className="text-xs px-3 py-1.5 rounded border font-bold hover:bg-red-50"
@@ -3172,7 +3192,7 @@ const Leads = () => {
                 <button
                   onClick={() => setSelectedCityPages(new Set())}
                   className="text-xs px-3 py-1.5 rounded border hover:bg-gray-50"
-                  style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}
+                  style={{ borderColor: T.textPrimary + "30", color: T.textPrimary }}
                 >Clear Selection</button>
               </div>
             )}
@@ -3181,7 +3201,7 @@ const Leads = () => {
             {showBulkDeleteConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                  <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Delete {selectedCityPages.size} city pages?</h3>
+                  <h3 className="text-lg font-display font-bold" style={{ color: T.textPrimary }}>Delete {selectedCityPages.size} city pages?</h3>
                   <p className="text-sm text-gray-600">This cannot be undone. All selected pages and their content will be permanently deleted.</p>
                   <div className="flex gap-3 justify-end">
                     <Button variant="outline" onClick={() => setShowBulkDeleteConfirm(false)}>Cancel</Button>
@@ -3224,7 +3244,7 @@ const Leads = () => {
               return (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                   <div className="bg-white rounded-xl p-6 max-w-md mx-4 space-y-4">
-                    <h3 className="text-lg font-display font-bold" style={{ color: BRAND_NAVY }}>Keep Best, Deactivate Rest</h3>
+                    <h3 className="text-lg font-display font-bold" style={{ color: T.textPrimary }}>Keep Best, Deactivate Rest</h3>
                     <p className="text-sm text-gray-600">
                       This will deactivate <strong>{toDeactivate.length}</strong> duplicate pages, keeping the one with the most views for each city.
                     </p>
@@ -3255,13 +3275,13 @@ const Leads = () => {
 
 
             {/* Table */}
-            <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+            <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
               {cityPagesLoading ? (
                 <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: BRAND_GOLD }} /></div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       <th className="px-3 py-2 text-left">
                         <input
                           type="checkbox"
@@ -3327,7 +3347,7 @@ const Leads = () => {
                             className="rounded"
                           />
                         </td>
-                        <td className="px-3 py-2 font-medium" style={{ color: BRAND_NAVY }}>
+                        <td className="px-3 py-2 font-medium" style={{ color: T.textPrimary }}>
                           {cp.city_name}
                           {cp.multi_pit_coverage && pits.filter(p => p.status === "active").length > 1 && (
                             <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>Multi-PIT</span>
@@ -3337,7 +3357,7 @@ const Leads = () => {
                           )}
                         </td>
                         <td className="px-3 py-2 text-xs">{cp.state}</td>
-                        <td className="px-3 py-2 text-xs" style={{ color: cp.region ? BRAND_NAVY : "#ccc" }}>{cp.region || "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: cp.region ? T.textPrimary : T.textSecond }}>{cp.region || "—"}</td>
                         <td className="px-3 py-2 text-xs">
                           <a href={`https://riversand.net/${cp.city_slug}/river-sand-delivery`} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: BRAND_GOLD }}>
                             /{cp.city_slug}/river-sand-delivery
@@ -3375,7 +3395,7 @@ const Leads = () => {
                         <td className="px-3 py-2 text-xs text-gray-400">{cp.prompt_version || "—"}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
-                            <button onClick={() => window.open(`https://riversand.net/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: BRAND_NAVY + "30", color: BRAND_NAVY }}>View</button>
+                            <button onClick={() => window.open(`https://riversand.net/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: T.textPrimary + "30", color: T.textPrimary }}>View</button>
                             <button onClick={() => {
                               const parsed = parseCityPageContent(cp);
                               setEditingCityPage({ ...cp, ...parsed });
@@ -3399,7 +3419,7 @@ const Leads = () => {
             {showDiscoverModal && (
               <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !creatingPages && setShowDiscoverModal(false)}>
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                  <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+                  <div className="px-6 py-4" style={{ backgroundColor: T.tableHeaderBg }}>
                     <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Discovered {discoveredCities.length} Cities</h2>
                     <p className="text-white/60 text-sm">Select cities to create landing pages for</p>
                   </div>
@@ -3421,8 +3441,8 @@ const Leads = () => {
                             <td className="px-2 py-2">
                               {!c.duplicate && <input type="checkbox" checked={discoverChecked.has(i)} onChange={e => { const s = new Set(discoverChecked); e.target.checked ? s.add(i) : s.delete(i); setDiscoverChecked(s); }} />}
                             </td>
-                            <td className="px-2 py-2 font-medium" style={{ color: BRAND_NAVY }}>{c.city_name}</td>
-                            <td className="px-2 py-2 text-xs" style={{ color: SECTION_LABEL }}>{c.closest_pit_name || "—"}</td>
+                            <td className="px-2 py-2 font-medium" style={{ color: T.textPrimary }}>{c.city_name}</td>
+                            <td className="px-2 py-2 text-xs" style={{ color: T.textSecond }}>{c.closest_pit_name || "—"}</td>
                             <td className="px-2 py-2 text-xs">{c.distance} mi</td>
                             <td className="px-2 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${c.price}</td>
                             <td className="px-2 py-2 text-xs">
@@ -3437,7 +3457,7 @@ const Leads = () => {
                       </tbody>
                     </table>
                   </div>
-                  <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                  <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                     <Button onClick={createPages} disabled={creatingPages || discoverChecked.size === 0} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {creatingPages ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                       Generate Pages for Selected ({discoverChecked.size})
@@ -3453,8 +3473,8 @@ const Leads = () => {
             {editingCityPage && (
               <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingCityPage(null)}>
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                  <div className="px-6 py-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
-                    <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>Edit — {editingCityPage.city_name}</h2>
+                  <div className="px-6 py-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                    <h2 className="text-lg font-bold" style={{ color: T.textPrimary }}>Edit — {editingCityPage.city_name}</h2>
                   </div>
                   <div className="p-6 space-y-4">
                     {/* Basic Info */}
@@ -3555,7 +3575,7 @@ const Leads = () => {
                       Regenerate with AI
                     </Button>
                   </div>
-                  <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                  <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                     <Button onClick={saveCityPage} className="flex-1" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>Save Changes</Button>
                     <Button onClick={() => setEditingCityPage(null)} variant="outline" className="flex-1">Cancel</Button>
                   </div>
@@ -3570,7 +3590,7 @@ const Leads = () => {
         return (
           <>
             <SearchAndFilters />
-            <div className="bg-white rounded-xl border shadow-sm" style={{ borderColor: CARD_BORDER }}>
+            <div className="rounded-xl border shadow-sm" style={{ borderColor: T.cardBorder }}>
               <LeadsTable data={paginatedLeads} />
               <Pagination />
             </div>
@@ -3581,7 +3601,7 @@ const Leads = () => {
         return (
           <>
             <div className="flex justify-between items-center mb-4">
-              <p className="text-sm" style={{ color: BRAND_NAVY }}>Orders flagged for review due to billing/delivery address mismatch or fraud signals.</p>
+              <p className="text-sm" style={{ color: T.textPrimary }}>Orders flagged for review due to billing/delivery address mismatch or fraud signals.</p>
               <Button size="sm" onClick={fetchPendingReview} disabled={pendingReviewLoading} variant="outline">
                 {pendingReviewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               </Button>
@@ -3591,13 +3611,13 @@ const Leads = () => {
             ) : (
               <div className="space-y-4">
                 {pendingReviewOrders.map((order: any) => (
-                  <div key={order.id} className="bg-white rounded-xl border shadow-sm p-4" style={{ borderColor: CARD_BORDER }}>
+                  <div key={order.id} className="rounded-xl border shadow-sm p-4" style={{ borderColor: T.cardBorder }}>
                     <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 mb-3 flex items-center gap-2">
                       <AlertTriangle className="w-5 h-5 text-amber-600" />
                       <span className="text-sm font-bold text-amber-800">⚠️ Call customer before dispatch — no exceptions</span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
-                      <div><p className="text-xs text-gray-400">Order #</p><p className="font-bold" style={{ color: BRAND_NAVY }}>{order.order_number || "—"}</p></div>
+                      <div><p className="text-xs text-gray-400">Order #</p><p className="font-bold" style={{ color: T.textPrimary }}>{order.order_number || "—"}</p></div>
                       <div><p className="text-xs text-gray-400">Customer</p><p>{order.customer_name}</p></div>
                       <div><p className="text-xs text-gray-400">Phone</p><p>{order.customer_phone}</p></div>
                       <div><p className="text-xs text-gray-400">Price</p><p className="font-bold" style={{ color: BRAND_GOLD }}>${order.price}</p></div>
@@ -3650,10 +3670,10 @@ const Leads = () => {
             ) : waitlistData.length === 0 ? (
               <div className="text-center py-12 text-gray-500">No waitlist signups yet.</div>
             ) : (
-              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["City", "Signups", "Latest Signup", "Action"].map(h => (
                         <th key={h} className="px-4 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
                       ))}
@@ -3663,8 +3683,8 @@ const Leads = () => {
                     {Object.entries(cityGroups).sort((a, b) => (b[1] as any[]).length - (a[1] as any[]).length).map(([city, leads], i) => {
                       const leadsArr = leads as any[];
                       return (
-                        <tr key={city} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
-                          <td className="px-4 py-3 font-medium" style={{ color: BRAND_NAVY }}>{city}</td>
+                        <tr key={city} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
+                          <td className="px-4 py-3 font-medium" style={{ color: T.textPrimary }}>{city}</td>
                           <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>{leadsArr.length}</td>
                           <td className="px-4 py-3 text-gray-500 text-xs">{new Date(leadsArr[0].created_at).toLocaleDateString()}</td>
                           <td className="px-4 py-3">
@@ -3839,9 +3859,9 @@ const Leads = () => {
         return (
           <>
             {/* SITE MODE TOGGLE */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Site Mode</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Site Mode</h3>
+              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
                 Control whether the public site is live or showing maintenance page. Admin dashboard always accessible.
               </p>
               <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
@@ -3881,9 +3901,9 @@ const Leads = () => {
             </div>
 
             {/* STRIPE MODE TOGGLE */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Stripe Payment Mode</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Stripe Payment Mode</h3>
+              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
                 Switch between test and live Stripe keys. Test mode shows a modal and banner to visitors. No code changes or key swapping required.
               </p>
               <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
@@ -3923,7 +3943,7 @@ const Leads = () => {
               {globalSettings.stripe_mode === 'test' && (
                 <div className="mt-3 p-3 rounded-lg text-xs font-mono" style={{
                   backgroundColor: '#F8F7F2',
-                  border: `1px solid ${CARD_BORDER}`,
+                  border: `1px solid ${T.cardBorder}`,
                   color: '#0D2137',
                 }}>
                   <p className="font-bold mb-1">Test card details:</p>
@@ -3933,8 +3953,42 @@ const Leads = () => {
               )}
             </div>
 
+            {/* DASHBOARD THEME TOGGLE */}
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Dashboard Theme</h3>
+              <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
+                Switch the LMT dashboard between light and dark appearance. Applies to all tabs.
+              </p>
+              <div className="flex items-center gap-3">
+                {([['light', '☀️ Light'], ['dark', '🌙 Dark']] as const).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    onClick={async () => {
+                      try {
+                        await supabase.functions.invoke("leads-auth", {
+                          body: { password: storedPassword(), action: "save_settings", settings: { dashboard_theme: mode } },
+                        });
+                        setGlobalSettings({ ...globalSettings, dashboard_theme: mode });
+                        toast({ title: mode === 'dark' ? '🌙 Dark theme applied' : '☀️ Light theme applied' });
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err.message, variant: "destructive" });
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
+                    style={{
+                      backgroundColor: globalSettings.dashboard_theme === mode || (!globalSettings.dashboard_theme && mode === 'light') ? BRAND_GOLD : T.cardBg,
+                      color: globalSettings.dashboard_theme === mode || (!globalSettings.dashboard_theme && mode === 'light') ? 'white' : T.textPrimary,
+                      border: `1px solid ${globalSettings.dashboard_theme === mode || (!globalSettings.dashboard_theme && mode === 'light') ? BRAND_GOLD : T.cardBorder}`,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Tabs */}
-            <div className="flex gap-1 mb-6" style={{ borderBottom: `2px solid ${CARD_BORDER}` }}>
+            <div className="flex gap-1 mb-6" style={{ borderBottom: `2px solid ${T.cardBorder}` }}>
               {([["pricing", "Pricing"], ["profile", "Business Profile"], ["seo", "SEO"], ["tracking", "Tracking"]] as const).map(([id, label]) => (
                 <button key={id} onClick={() => {
                   setSettingsTab(id as any);
@@ -3957,9 +4011,9 @@ const Leads = () => {
             {settingsTab === "pricing" && (
               <>
                 {/* Pricing Notice */}
-                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Pricing is configured per PIT. Edit each PIT to set its base price, free miles, extra per mile, and max distance.</p>
+                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Pricing</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Pricing is configured per PIT. Edit each PIT to set its base price, free miles, extra per mile, and max distance.</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
@@ -3976,8 +4030,8 @@ const Leads = () => {
                   </div>
 
                   {/* Processing Fee Settings */}
-                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: BRAND_NAVY }}>Processing Fees</h4>
-                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Applied to card payments and COD late payment conversions</p>
+                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: T.textPrimary }}>Processing Fees</h4>
+                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Applied to card payments and COD late payment conversions</p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Card processing fee (%)</label>
@@ -4010,8 +4064,8 @@ const Leads = () => {
                   </div>
 
                   {/* Pricing Mode */}
-                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: BRAND_NAVY }}>Pricing Display Mode</h4>
-                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: T.textPrimary }}>Pricing Display Mode</h4>
+                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
                     <strong>Transparent:</strong> Processing fee shown as separate line item.{" "}
                     <strong>Baked In:</strong> Fee included in base price; COD customers get a discount.
                   </p>
@@ -4022,7 +4076,7 @@ const Leads = () => {
                         value={editSettings.pricing_mode || "transparent"}
                         onChange={e => setEditSettings({ ...editSettings, pricing_mode: e.target.value })}
                         className="h-9 w-full rounded border px-3 text-sm"
-                        style={{ borderColor: CARD_BORDER }}
+                        style={{ borderColor: T.cardBorder }}
                       >
                         <option value="transparent">Transparent — Show fee separately</option>
                         <option value="baked">Baked In — Fee in base price, COD gets discount</option>
@@ -4044,7 +4098,7 @@ const Leads = () => {
                     </div>
                   )}
 
-                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
                       Save Pricing Settings
@@ -4053,9 +4107,9 @@ const Leads = () => {
                 </div>
 
                 {/* Delivery Schedule */}
-                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Delivery Schedule</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Configure delivery days and cutoff times</p>
+                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Delivery Schedule</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Configure delivery days and cutoff times</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Same-day cutoff</label>
@@ -4080,14 +4134,14 @@ const Leads = () => {
                         const key = `operating_${day.toLowerCase()}`;
                         const active = editSettings[key] !== "false";
                         return (
-                          <button key={day} onClick={() => setEditSettings({ ...editSettings, [key]: active ? "false" : "true" })} className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors" style={{ backgroundColor: active ? BRAND_NAVY : "#f3f3f3", color: active ? "white" : "#999" }}>
+                          <button key={day} onClick={() => setEditSettings({ ...editSettings, [key]: active ? "false" : "true" })} className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors" style={{ backgroundColor: active ? T.textPrimary : T.barBg, color: active ? (isDark ? "#0A0F1E" : "white") : T.textSecond }}>
                             {day}
                           </button>
                         );
                       })}
                     </div>
                   </div>
-                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
                       Save Schedule Settings
@@ -4096,9 +4150,9 @@ const Leads = () => {
                 </div>
 
                 {/* Notifications */}
-                <div className="bg-white rounded-xl border shadow-sm p-6" style={{ borderColor: CARD_BORDER }}>
-                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Notifications</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Email alerts and notifications</p>
+                <div className="rounded-xl border shadow-sm p-6" style={{ borderColor: T.cardBorder }}>
+                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Notifications</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Email alerts and notifications</p>
                   <div className="space-y-3">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Owner dispatch email</label>
@@ -4110,14 +4164,14 @@ const Leads = () => {
                       { key: "daily_summary", label: "Daily summary email" },
                     ].map(({ key, label }) => (
                       <div key={key} className="flex items-center justify-between py-2">
-                        <span className="text-sm" style={{ color: BRAND_NAVY }}>{label}</span>
+                        <span className="text-sm" style={{ color: T.textPrimary }}>{label}</span>
                         <button onClick={() => setEditSettings({ ...editSettings, [key]: editSettings[key] === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: editSettings[key] === "true" ? BRAND_GOLD : "#ddd" }}>
                           <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: editSettings[key] === "true" ? "22px" : "2px" }} />
                         </button>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                     <Button onClick={saveGlobalSettings} disabled={savingSettings} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {savingSettings ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
                       Save Notification Settings
@@ -4130,7 +4184,7 @@ const Leads = () => {
             {settingsTab === "profile" && (
               <>
                 {/* Redirect to profile page */}
-                <div className="bg-white rounded-xl border shadow-sm p-6" style={{ borderColor: CARD_BORDER }}>
+                <div className="rounded-xl border shadow-sm p-6" style={{ borderColor: T.cardBorder }}>
                   <p className="text-sm text-gray-500">Business profile settings are available in the <button onClick={() => setActivePage("profile")} className="font-medium underline" style={{ color: BRAND_GOLD }}>Business Profile</button> page.</p>
                 </div>
               </>
@@ -4139,15 +4193,15 @@ const Leads = () => {
             {settingsTab === "seo" && (
               <>
                 {/* ─── SECTION 1: SITE AUDIT ─── */}
-                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium" style={{ color: BRAND_NAVY }}>Site Audit</h3>
+                    <h3 className="font-medium" style={{ color: T.textPrimary }}>Site Audit</h3>
                     <Button onClick={runSeoAudit} disabled={seoAuditing} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {seoAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Search className="w-4 h-4 mr-1" />}
                       Scan riversand.net
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Automated scan based on Art of SEO framework</p>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Automated scan based on Art of SEO framework</p>
 
                   {seoAuditResults && (
                     <>
@@ -4156,14 +4210,14 @@ const Leads = () => {
                           {seoAuditResults.grade}
                         </div>
                         <div>
-                          <p className="text-2xl font-bold" style={{ color: BRAND_NAVY }}>{seoAuditResults.overall}/100</p>
+                          <p className="text-2xl font-bold" style={{ color: T.textPrimary }}>{seoAuditResults.overall}/100</p>
                           <p className="text-xs text-gray-400">Last scanned: {new Date(seoAuditResults.scannedAt).toLocaleString()}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                         {seoAuditResults.categories?.map((cat: any) => (
                           <div key={cat.name} className="rounded-xl p-3 border" style={{ borderColor: scoreColor(cat.score), borderWidth: 2 }}>
-                            <p className="text-xs font-bold mb-1" style={{ color: BRAND_NAVY }}>{cat.name}</p>
+                            <p className="text-xs font-bold mb-1" style={{ color: T.textPrimary }}>{cat.name}</p>
                             <p className="text-2xl font-black" style={{ color: scoreColor(cat.score) }}>{cat.score}</p>
                             <p className="text-[10px] text-gray-500 mt-1 truncate" title={cat.found}>{cat.found || "—"}</p>
                             {cat.issues?.map((issue: string, i: number) => (
@@ -4177,19 +4231,19 @@ const Leads = () => {
                 </div>
 
                 {/* ─── SECTION 2: MANUAL CHECKLIST ─── */}
-                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
+                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium" style={{ color: BRAND_NAVY }}>Manual Checklist</h3>
+                    <h3 className="font-medium" style={{ color: T.textPrimary }}>Manual Checklist</h3>
                     <span className="text-xs font-bold" style={{ color: BRAND_GOLD }}>{checklistDone} of {checklistTotal} complete</span>
                   </div>
-                  <p className="text-xs text-gray-500 mb-2 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Items requiring human judgment</p>
+                  <p className="text-xs text-gray-500 mb-2 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Items requiring human judgment</p>
                   <div className="w-full h-2 rounded-full overflow-hidden mb-4" style={{ backgroundColor: "#f3f3f3" }}>
                     <div className="h-full rounded-full transition-all" style={{ width: `${(checklistDone / checklistTotal) * 100}%`, backgroundColor: BRAND_GOLD }} />
                   </div>
 
                   {SEO_CHECKLIST_ITEMS.map(section => (
                     <div key={section.section} className="mb-4">
-                      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: SECTION_LABEL }}>{section.section}</p>
+                      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: T.textSecond }}>{section.section}</p>
                       {section.items.map(item => {
                         const state = seoChecklist[item.id] || { done: false, notes: "" };
                         return (
@@ -4199,11 +4253,11 @@ const Leads = () => {
                               saveChecklist(u);
                             }} className="w-4 h-4 mt-0.5 rounded accent-current" style={{ accentColor: BRAND_GOLD }} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm" style={{ color: state.done ? "#22C55E" : BRAND_NAVY, textDecoration: state.done ? "line-through" : "none" }}>{item.label}</p>
+                              <p className="text-sm" style={{ color: state.done ? "#22C55E" : T.textPrimary, textDecoration: state.done ? "line-through" : "none" }}>{item.label}</p>
                               <input type="text" placeholder="Add notes..." value={state.notes} onChange={e => {
                                 const u = { ...seoChecklist, [item.id]: { ...state, notes: e.target.value } };
                                 saveChecklist(u);
-                              }} className="w-full text-[10px] text-gray-400 border-0 border-b bg-transparent px-0 py-0.5 focus:outline-none focus:border-gray-300" style={{ borderColor: state.notes ? CARD_BORDER : "transparent" }} />
+                              }} className="w-full text-[10px] text-gray-400 border-0 border-b bg-transparent px-0 py-0.5 focus:outline-none focus:border-gray-300" style={{ borderColor: state.notes ? T.cardBorder : "transparent" }} />
                             </div>
                           </div>
                         );
@@ -4213,12 +4267,12 @@ const Leads = () => {
                 </div>
 
                 {/* ─── SECTION 3: SEO SETTINGS ─── */}
-                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>SEO Settings</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>Editable fields — changes apply to live site</p>
+                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>SEO Settings</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Editable fields — changes apply to live site</p>
 
                   {/* Homepage Meta */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: SECTION_LABEL }}>HOMEPAGE META</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: T.textSecond }}>HOMEPAGE META</p>
                   <div className="space-y-3 mb-6">
                     <div>
                       <div className="flex justify-between mb-1">
@@ -4241,7 +4295,7 @@ const Leads = () => {
                   </div>
 
                   {/* Open Graph */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>OPEN GRAPH</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>OPEN GRAPH</p>
                   <div className="space-y-3 mb-6">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">OG Title</label>
@@ -4256,7 +4310,7 @@ const Leads = () => {
                       <div className="flex gap-2">
                         <Input className="h-9 flex-1" value={seoSettings.seo_og_image || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_og_image: e.target.value })} placeholder="https://..." />
                         {seoSettings.seo_og_image && (
-                          <div className="h-9 w-16 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                          <div className="h-9 w-16 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: T.cardBorder }}>
                             <img src={seoSettings.seo_og_image} alt="OG" className="max-h-8 object-contain" />
                           </div>
                         )}
@@ -4265,7 +4319,7 @@ const Leads = () => {
                   </div>
 
                   {/* Schema Markup */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>SCHEMA MARKUP</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>SCHEMA MARKUP</p>
                   <div className="space-y-2 mb-6">
                     {[
                       { key: "seo_schema_localbusiness", label: "LocalBusiness schema" },
@@ -4273,7 +4327,7 @@ const Leads = () => {
                       { key: "seo_schema_faq", label: "FAQPage schema" },
                     ].map(({ key, label }) => (
                       <div key={key} className="flex items-center justify-between py-1.5">
-                        <span className="text-sm" style={{ color: BRAND_NAVY }}>{label}</span>
+                        <span className="text-sm" style={{ color: T.textPrimary }}>{label}</span>
                         <button onClick={() => setSeoSettings({ ...seoSettings, [key]: seoSettings[key] === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: seoSettings[key] === "true" ? BRAND_GOLD : "#ddd" }}>
                           <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: seoSettings[key] === "true" ? "22px" : "2px" }} />
                         </button>
@@ -4282,14 +4336,14 @@ const Leads = () => {
                   </div>
 
                   {/* Product Image */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>PRODUCT IMAGE</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>PRODUCT IMAGE</p>
                   <div className="space-y-3 mb-6">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Product Image URL</label>
                       <div className="flex gap-2">
                         <Input className="h-9 flex-1" value={seoSettings.product_image_url || ""} onChange={e => setSeoSettings({ ...seoSettings, product_image_url: e.target.value })} placeholder="https://..." />
                         {seoSettings.product_image_url && (
-                          <div className="h-9 w-16 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                          <div className="h-9 w-16 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: T.cardBorder }}>
                             <img src={seoSettings.product_image_url} alt="Product" className="max-h-8 object-contain" />
                           </div>
                         )}
@@ -4299,7 +4353,7 @@ const Leads = () => {
                   </div>
 
                   {/* Technical */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>TECHNICAL</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>TECHNICAL</p>
                   <div className="space-y-3 mb-6">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Canonical URL</label>
@@ -4307,7 +4361,7 @@ const Leads = () => {
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Robots</label>
-                      <select value={seoSettings.seo_robots || "index, follow"} onChange={e => setSeoSettings({ ...seoSettings, seo_robots: e.target.value })} className="w-full h-9 rounded-md border px-3 text-sm" style={{ borderColor: CARD_BORDER }}>
+                      <select value={seoSettings.seo_robots || "index, follow"} onChange={e => setSeoSettings({ ...seoSettings, seo_robots: e.target.value })} className="w-full h-9 rounded-md border px-3 text-sm" style={{ borderColor: T.cardBorder }}>
                         <option value="index, follow">index, follow</option>
                         <option value="noindex, nofollow">noindex, nofollow</option>
                         <option value="noindex, follow">noindex, follow</option>
@@ -4320,7 +4374,7 @@ const Leads = () => {
                   </div>
 
                   {/* Google Integrations */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>GOOGLE INTEGRATIONS</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>GOOGLE INTEGRATIONS</p>
                   <div className="space-y-3 mb-6">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Google Search Console ID</label>
@@ -4340,7 +4394,7 @@ const Leads = () => {
                   </div>
 
                   {/* Google Business Profile */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: SECTION_LABEL, borderTop: `1px solid ${CARD_BORDER}` }}>GOOGLE BUSINESS PROFILE</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>GOOGLE BUSINESS PROFILE</p>
                   <div className="space-y-3 mb-6">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">GBP URL</label>
@@ -4348,7 +4402,7 @@ const Leads = () => {
                     </div>
                     <div className="flex items-center justify-between py-1.5">
                       <div>
-                        <span className="text-sm" style={{ color: BRAND_NAVY }}>Show Google Reviews on landing page</span>
+                        <span className="text-sm" style={{ color: T.textPrimary }}>Show Google Reviews on landing page</span>
                         <p className="text-[10px] text-gray-400">Activate when you have 5+ reviews</p>
                       </div>
                       <button onClick={() => setSeoSettings({ ...seoSettings, seo_gbp_reviews_enabled: seoSettings.seo_gbp_reviews_enabled === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: seoSettings.seo_gbp_reviews_enabled === "true" ? BRAND_GOLD : "#ddd" }}>
@@ -4368,9 +4422,9 @@ const Leads = () => {
 
             {settingsTab === "tracking" && (
               <>
-                <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-                  <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>No-Track IP Addresses</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>No-Track IP Addresses</h3>
+                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
                     IP addresses listed here will be silently excluded from visitor session tracking, lead capture, and analytics.
                     Use this to prevent your own browsing from polluting data.
                   </p>
@@ -4378,8 +4432,8 @@ const Leads = () => {
                   {notrackDetectedIp && (
                     <div className="flex items-center justify-between p-3 rounded-lg mb-4" style={{ backgroundColor: "#F0F7FF", border: "1px solid #D0E3F7" }}>
                       <div>
-                        <p className="text-xs font-medium" style={{ color: BRAND_NAVY }}>Your current IP</p>
-                        <p className="text-sm font-mono" style={{ color: BRAND_NAVY }}>{notrackDetectedIp}</p>
+                        <p className="text-xs font-medium" style={{ color: T.textPrimary }}>Your current IP</p>
+                        <p className="text-sm font-mono" style={{ color: T.textPrimary }}>{notrackDetectedIp}</p>
                       </div>
                       {!notrackIps.includes(notrackDetectedIp) ? (
                         <Button size="sm" onClick={() => {
@@ -4423,7 +4477,7 @@ const Leads = () => {
                           else toast({ title: "Added", description: `${ip} added to no-track list` });
                         })
                         .finally(() => setNotrackSaving(false));
-                    }} style={{ backgroundColor: BRAND_NAVY, color: "white" }}>
+                    }} style={{ backgroundColor: T.tableHeaderBg, color: T.tableHeaderText }}>
                       Add IP
                     </Button>
                   </div>
@@ -4435,8 +4489,8 @@ const Leads = () => {
                   ) : (
                     <div className="space-y-2">
                       {notrackIps.map((ip, i) => (
-                        <div key={ip} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ backgroundColor: i % 2 === 0 ? "#FAFAFA" : "white", border: `1px solid ${CARD_BORDER}` }}>
-                          <span className="text-sm font-mono" style={{ color: BRAND_NAVY }}>{ip}</span>
+                        <div key={ip} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ backgroundColor: i % 2 === 0 ? "#FAFAFA" : "white", border: `1px solid ${T.cardBorder}` }}>
+                          <span className="text-sm font-mono" style={{ color: T.textPrimary }}>{ip}</span>
                           <button onClick={() => {
                             const updated = notrackIps.filter(x => x !== ip);
                             setNotrackIps(updated);
@@ -4465,9 +4519,9 @@ const Leads = () => {
         return (
           <>
             {/* Brand Identity */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Brand Identity</h3>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Brand Identity</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Legal business name</label>
@@ -4493,9 +4547,9 @@ const Leads = () => {
             </div>
 
             {/* Contact & Address */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Contact Information</h3>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Contact Information</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Customer email (display)</label>
@@ -4528,10 +4582,10 @@ const Leads = () => {
             </div>
 
             {/* Email Settings */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Email Settings</h3>
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Email Settings</h3>
               <p className="text-xs text-gray-400 mb-4">Control where order notifications and customer emails are sent from.</p>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Dispatch Notification Email</label>
@@ -4554,10 +4608,10 @@ const Leads = () => {
             </div>
 
             {/* Color Palette Picker */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1 flex items-center gap-2" style={{ color: BRAND_NAVY }}><Palette className="w-4 h-4" /> Color Palette</h3>
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1 flex items-center gap-2" style={{ color: T.textPrimary }}><Palette className="w-4 h-4" /> Color Palette</h3>
               <p className="text-xs text-gray-400 mb-4">Select a preset palette. Colors apply site-wide to all customer-facing pages.</p>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
                 {PALETTES.map(p => {
                   const isActive = (profileSettings.brand_palette || "original_navy") === p.id;
@@ -4575,7 +4629,7 @@ const Leads = () => {
                       }))}
                       className="relative rounded-lg border-2 p-3 transition-all hover:shadow-md text-left"
                       style={{
-                        borderColor: isActive ? p.accent : CARD_BORDER,
+                        borderColor: isActive ? p.accent : T.cardBorder,
                         backgroundColor: isActive ? `${p.background}` : "white",
                       }}
                     >
@@ -4587,7 +4641,7 @@ const Leads = () => {
                       <div className="flex gap-1 mb-2">
                         <div className="w-6 h-6 rounded" style={{ backgroundColor: p.primary }} title="Primary" />
                         <div className="w-6 h-6 rounded" style={{ backgroundColor: p.accent }} title="Accent" />
-                        <div className="w-6 h-6 rounded border" style={{ backgroundColor: p.background, borderColor: CARD_BORDER }} title="Background" />
+                        <div className="w-6 h-6 rounded border" style={{ backgroundColor: p.background, borderColor: T.cardBorder }} title="Background" />
                       </div>
                       <p className="text-xs font-medium truncate" style={{ color: p.primary }}>{p.name}</p>
                       <p className="text-[10px] text-gray-400 truncate">{p.vibe}</p>
@@ -4600,7 +4654,7 @@ const Leads = () => {
               <p className="text-xs font-medium text-gray-500 mb-3">Manual overrides</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {([
-                  { label: "Primary color", key: "brand_primary", fallbackKey: "primary_color", fallback: BRAND_NAVY, extra: "primary_color" },
+                  { label: "Primary color", key: "brand_primary", fallbackKey: "primary_color", fallback: "#0D2137", extra: "primary_color" },
                   { label: "Accent color", key: "brand_accent", fallbackKey: "accent_color", fallback: BRAND_GOLD, extra: "accent_color" },
                   { label: "Background color", key: "brand_background", fallbackKey: "", fallback: "#F2EDE4", extra: "" },
                 ] as const).map(({ label, key, fallbackKey, fallback, extra }) => {
@@ -4613,7 +4667,7 @@ const Leads = () => {
                         <input
                           type="color"
                           className="w-9 h-9 rounded border cursor-pointer p-0.5"
-                          style={{ borderColor: CARD_BORDER }}
+                          style={{ borderColor: T.cardBorder }}
                           value={safeHex}
                           onChange={e => {
                             const update: Record<string, string> = { ...profileSettings, [key]: e.target.value };
@@ -4640,16 +4694,16 @@ const Leads = () => {
             </div>
 
             {/* Branding Assets */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Branding Assets</h3>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Branding Assets</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
                   <label className="text-xs text-gray-500 block mb-1">Logo URL</label>
                   <div className="flex gap-2">
                     <Input className="h-9 flex-1" value={profileSettings.logo_url || ""} onChange={e => setProfileSettings({ ...profileSettings, logo_url: e.target.value })} placeholder="https://..." />
                     {profileSettings.logo_url && (
-                      <div className="h-9 w-9 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                      <div className="h-9 w-9 rounded border flex items-center justify-center overflow-hidden" style={{ borderColor: T.cardBorder }}>
                         <img src={profileSettings.logo_url} alt="Logo" className="max-h-8 max-w-8 object-contain" />
                       </div>
                     )}
@@ -4663,9 +4717,9 @@ const Leads = () => {
             </div>
 
             {/* Legal & Tax */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Legal & Tax Information</h3>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Legal & Tax Information</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Legal entity</label>
@@ -4695,10 +4749,10 @@ const Leads = () => {
             </div>
 
             {/* Email Sender Identity */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Email Sender Identity</h3>
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Email Sender Identity</h3>
               <p className="text-xs text-gray-400 mb-4">Name and title shown in outbound email signatures</p>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Sender name</label>
@@ -4712,9 +4766,9 @@ const Leads = () => {
             </div>
 
             {/* Additional Contact */}
-            <div className="bg-white rounded-xl border shadow-sm p-6 mb-6" style={{ borderColor: CARD_BORDER }}>
-              <h3 className="font-medium mb-1" style={{ color: BRAND_NAVY }}>Additional Contact Channels</h3>
-              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} />
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Additional Contact Channels</h3>
+              <div className="pb-3 mb-4" style={{ borderBottom: `1px solid ${T.cardBorder}` }} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">WhatsApp number</label>
@@ -4790,7 +4844,7 @@ const Leads = () => {
                 { label: "Collected Today", value: collectedToday.length, color: "#22C55E" },
                 { label: "Total Outstanding", value: `$${totalOutstanding.toFixed(2)}`, color: BRAND_GOLD },
               ].map(m => (
-                <div key={m.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: BRAND_NAVY }}>
+                <div key={m.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
                   <p className="text-2xl font-bold" style={{ color: m.color }}>{m.value}</p>
                   <p className="text-xs text-white/60 mt-1">{m.label}</p>
                 </div>
@@ -4801,9 +4855,9 @@ const Leads = () => {
             <div className="flex gap-1 mb-4">
               {(["all", "pending", "overdue", "collected"] as const).map(f => (
                 <button key={f} onClick={() => setCashFilter(f)} className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors" style={{
-                  backgroundColor: cashFilter === f ? BRAND_NAVY : "white",
+                  backgroundColor: cashFilter === f ? T.textPrimary : T.cardBg,
                   color: cashFilter === f ? BRAND_GOLD : "#666",
-                  border: `1px solid ${CARD_BORDER}`,
+                  border: `1px solid ${T.cardBorder}`,
                 }}>
                   {f}
                 </button>
@@ -4813,10 +4867,10 @@ const Leads = () => {
             {cashLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
             ) : (
-              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action", "Email", "Last Email Sent"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
                       ))}
@@ -4830,8 +4884,8 @@ const Leads = () => {
                       const isToday = o.delivery_date === today;
                       const isPast = o.delivery_date && o.delivery_date < today && !o.cash_collected;
                       return (
-                        <tr key={o.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
-                          <td className="px-3 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{o.order_number || "—"}</td>
+                        <tr key={o.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
+                          <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{o.order_number || "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(o.created_at)}</td>
                           <td className="px-3 py-2">
                             <p className="text-xs font-medium">{o.customer_name}</p>
@@ -4875,7 +4929,7 @@ const Leads = () => {
                                 <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                                   Mark Paid
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}>
+                                <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
                                   {sendingPaymentLink === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link className="w-3 h-3 mr-1" />}
                                   Pay Link
                                 </Button>
@@ -4906,16 +4960,16 @@ const Leads = () => {
             {todaysOrders.length > 0 && (
               <div className="mt-6" id="cash-daily-schedule">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold" style={{ color: BRAND_NAVY }}>Today's Cash Schedule</h3>
+                  <h3 className="text-sm font-bold" style={{ color: T.textPrimary }}>Today's Cash Schedule</h3>
                   <Button size="sm" variant="outline" onClick={() => window.print()} className="text-xs">
                     Print Today's Sheet
                   </Button>
                 </div>
-                <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+                <div className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: T.cardBorder }}>
                   {todaysOrders.map((o, i) => (
-                    <div key={o.id} className="px-4 py-3 flex items-center justify-between" style={{ borderTop: i > 0 ? `1px solid ${CARD_BORDER}` : undefined }}>
+                    <div key={o.id} className="px-4 py-3 flex items-center justify-between" style={{ borderTop: i > 0 ? `1px solid ${T.cardBorder}` : undefined }}>
                       <div>
-                        <p className="text-sm font-medium" style={{ color: BRAND_NAVY }}>{o.customer_name}</p>
+                        <p className="text-sm font-medium" style={{ color: T.textPrimary }}>{o.customer_name}</p>
                         <p className="text-xs text-gray-500">{o.delivery_address}</p>
                         <p className="text-xs text-gray-400">{o.customer_phone} · {o.order_number}</p>
                       </div>
@@ -4956,10 +5010,10 @@ const Leads = () => {
             {customersLoading && customersData.length === 0 ? (
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
             ) : (
-              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Name", "Email", "Phone", "Company", "Total Orders", "Total Spent", "First Order", "Last Order", "Actions"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
                       ))}
@@ -4967,7 +5021,7 @@ const Leads = () => {
                   </thead>
                   <tbody>
                     {filteredCustomers.map(c => (
-                      <tr key={c.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
+                      <tr key={c.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
                         <td className="px-3 py-2 text-xs font-medium">{c.name || "—"}</td>
                         <td className="px-3 py-2 text-xs">{c.email}</td>
                         <td className="px-3 py-2 text-xs">{c.phone || "—"}</td>
@@ -4977,7 +5031,7 @@ const Leads = () => {
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 flex gap-1">
-                          <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}>
+                          <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
                             View Orders
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => { setEditCustomerEmail(c); setEditCustomerEmailValue(c.email || ""); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}>
@@ -5017,10 +5071,10 @@ const Leads = () => {
             {abandonedLoading && abandonedSessions.length === 0 ? (
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
             ) : (
-              <div className="bg-white rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: CARD_BORDER }}>
+              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ backgroundColor: BRAND_NAVY }}>
+                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Date", "Address", "Location", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
                       ))}
@@ -5028,7 +5082,7 @@ const Leads = () => {
                   </thead>
                   <tbody>
                     {abandonedSessions.map(s => (
-                      <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: CARD_BORDER }}>
+                      <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
                         <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : s.delivery_address ? s.delivery_address.split(",")[1]?.trim() || "—" : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
@@ -5151,9 +5205,9 @@ const Leads = () => {
               }
 
               return (
-                <div className="bg-white rounded-xl border shadow-sm p-5 mb-6" style={{ borderColor: CARD_BORDER }}>
+                <div className="rounded-xl border shadow-sm p-5 mb-6" style={{ borderColor: T.cardBorder }}>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold tracking-wider" style={{ color: BRAND_NAVY }}>CONVERSION FUNNEL</h3>
+                    <h3 className="text-sm font-bold tracking-wider" style={{ color: T.textPrimary }}>CONVERSION FUNNEL</h3>
                     <span className="text-[11px] text-gray-400">Last 30 days</span>
                   </div>
                   <div className="space-y-1.5">
@@ -5196,7 +5250,7 @@ const Leads = () => {
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: CARD_BORDER }}>
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: T.cardBorder }}>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500">Overall conversion:</span>
                       <span className="text-sm font-bold" style={{ color: "#22C55E" }}>{overallRate}%</span>
@@ -5227,7 +5281,7 @@ const Leads = () => {
                 {liveVisitors.map(s => {
                   const stageInfo = LIVE_STAGE_CONFIG[s.stage] || { label: s.stage || "Unknown", color: "#9CA3AF" };
                   return (
-                    <div key={s.id} className="bg-white rounded-xl border shadow-sm p-4" style={{ borderColor: CARD_BORDER, borderLeftWidth: 4, borderLeftColor: stageInfo.color }}>
+                    <div key={s.id} className="rounded-xl border shadow-sm p-4" style={{ borderColor: T.cardBorder, borderLeftWidth: 4, borderLeftColor: stageInfo.color }}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: stageInfo.color }}>
                           {stageInfo.label}
@@ -5250,7 +5304,7 @@ const Leads = () => {
                       {s.calculated_price && (
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <DollarSign className="w-3.5 h-3.5 text-gray-400" />
-                          <span className="text-sm font-semibold" style={{ color: BRAND_NAVY }}>${Number(s.calculated_price).toFixed(0)}</span>
+                          <span className="text-sm font-semibold" style={{ color: T.textPrimary }}>${Number(s.calculated_price).toFixed(0)}</span>
                         </div>
                       )}
                       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-gray-500">
@@ -5278,16 +5332,16 @@ const Leads = () => {
             {/* Month nav + Today */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: BRAND_NAVY }}>←</button>
-                <span style={{ fontSize: "18px", fontWeight: 700, color: BRAND_NAVY }}>{scheduleDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
-                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() + 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: BRAND_NAVY }}>→</button>
+                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: T.textPrimary }}>←</button>
+                <span style={{ fontSize: "18px", fontWeight: 700, color: T.textPrimary }}>{scheduleDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() + 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: T.textPrimary }}>→</button>
               </div>
-              <button onClick={() => setScheduleDate(new Date())} style={{ padding: "6px 14px", borderRadius: "6px", border: `1px solid ${CARD_BORDER}`, background: "white", fontSize: "13px", cursor: "pointer" }}>Today</button>
+              <button onClick={() => setScheduleDate(new Date())} style={{ padding: "6px 14px", borderRadius: "6px", border: `1px solid ${T.cardBorder}`, background: "white", fontSize: "13px", cursor: "pointer" }}>Today</button>
             </div>
 
             {/* Week strip with nav arrows */}
             <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "16px" }}>
-              <button onClick={() => { const d = new Date(scheduleDate); d.setDate(d.getDate() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: BRAND_NAVY, padding: "8px", flexShrink: 0 }}>‹</button>
+              <button onClick={() => { const d = new Date(scheduleDate); d.setDate(d.getDate() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: T.textPrimary, padding: "8px", flexShrink: 0 }}>‹</button>
               <div ref={weekStripRef} style={{ display: "flex", gap: "4px", overflowX: "auto", paddingBottom: "12px", flex: 1 }}>
                 {Array.from({ length: 90 }, (_, i) => {
                   const stripStart = new Date(scheduleDate); stripStart.setDate(stripStart.getDate() - 7 + i);
@@ -5298,14 +5352,14 @@ const Leads = () => {
                   const count = weekCounts[dateStr];
                   const isFirstOfMonth = d.getDate() === 1;
                   return (
-                    <button key={dateStr} data-selected={isSelected ? "true" : "false"} onClick={() => setScheduleDate(new Date(d))} style={{ minWidth: "52px", padding: "8px 4px", borderRadius: "10px", border: "none", background: isSelected ? BRAND_NAVY : "transparent", cursor: "pointer", position: "relative", textAlign: "center", flexShrink: 0, marginTop: isFirstOfMonth ? "18px" : "0" }}>
+                    <button key={dateStr} data-selected={isSelected ? "true" : "false"} onClick={() => setScheduleDate(new Date(d))} style={{ minWidth: "52px", padding: "8px 4px", borderRadius: "10px", border: "none", background: isSelected ? T.textPrimary : "transparent", cursor: "pointer", position: "relative", textAlign: "center", flexShrink: 0, marginTop: isFirstOfMonth ? "18px" : "0" }}>
                       {isFirstOfMonth && (
                         <div style={{ position: "absolute", top: "-18px", left: "0", fontSize: "10px", color: BRAND_GOLD, fontWeight: 700, whiteSpace: "nowrap" }}>
                           {d.toLocaleDateString("en-US", { month: "short" })}
                         </div>
                       )}
                       <div style={{ fontSize: "11px", color: isSelected ? "white" : "#888", marginBottom: "2px" }}>{DAY_NAMES[d.getDay()]}</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: isSelected ? "white" : isToday ? BRAND_GOLD : BRAND_NAVY }}>{d.getDate()}</div>
+                      <div style={{ fontSize: "16px", fontWeight: 700, color: isSelected ? "white" : isToday ? BRAND_GOLD : T.textPrimary }}>{d.getDate()}</div>
                       {count && count.orders > 0 && (
                         <div style={{ position: "absolute", top: isFirstOfMonth ? "22px" : "4px", right: "6px", background: "#EF4444", color: "white", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{count.orders}</div>
                       )}
@@ -5313,19 +5367,19 @@ const Leads = () => {
                   );
                 })}
               </div>
-              <button onClick={() => { const d = new Date(scheduleDate); d.setDate(d.getDate() + 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: BRAND_NAVY, padding: "8px", flexShrink: 0 }}>›</button>
+              <button onClick={() => { const d = new Date(scheduleDate); d.setDate(d.getDate() + 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: T.textPrimary, padding: "8px", flexShrink: 0 }}>›</button>
             </div>
 
             {/* Day summary */}
-            <div style={{ padding: "16px", borderRadius: "12px", background: "white", border: `1px solid ${CARD_BORDER}`, marginBottom: "16px" }}>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: BRAND_NAVY, marginBottom: "12px" }}>
+            <div style={{ padding: "16px", borderRadius: "12px", background: "white", border: `1px solid ${T.cardBorder}`, marginBottom: "16px" }}>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: T.textPrimary, marginBottom: "12px" }}>
                 {scheduleDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                 <span style={{ marginLeft: "12px", fontSize: "12px", color: "#888", fontWeight: 400 }}>{scheduleSummary.orders} orders · {scheduleSummary.loads} loads</span>
               </div>
               <div style={{ display: "flex", gap: "32px", flexWrap: "wrap" }}>
                 <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Revenue</div><div style={{ fontSize: "20px", fontWeight: 700, color: "#16A34A" }}>${scheduleSummary.revenue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</div></div>
-                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Loads</div><div style={{ fontSize: "20px", fontWeight: 700, color: BRAND_NAVY }}>{scheduleSummary.loads}</div></div>
-                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Orders</div><div style={{ fontSize: "20px", fontWeight: 700, color: BRAND_NAVY }}>{scheduleSummary.orders}</div></div>
+                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Loads</div><div style={{ fontSize: "20px", fontWeight: 700, color: T.textPrimary }}>{scheduleSummary.loads}</div></div>
+                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Orders</div><div style={{ fontSize: "20px", fontWeight: 700, color: T.textPrimary }}>{scheduleSummary.orders}</div></div>
                 <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>COD</div><div style={{ fontSize: "20px", fontWeight: 700, color: BRAND_GOLD }}>{scheduleSummary.pending}</div></div>
                 <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Pre-Paid</div><div style={{ fontSize: "20px", fontWeight: 700, color: "#16A34A" }}>{scheduleSummary.paid}</div></div>
               </div>
@@ -5342,11 +5396,11 @@ const Leads = () => {
                 const isPaid = order.payment_status === "paid";
                 const isCOD = order.payment_method === "COD" || order.payment_method === "PAY AT DELIVERY";
                 return (
-                  <div key={order.id} style={{ background: "white", border: `1px solid ${CARD_BORDER}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
+                  <div key={order.id} style={{ background: "white", border: `1px solid ${T.cardBorder}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                       <div>
                         <span style={{ fontSize: "13px", fontWeight: 700, color: BRAND_GOLD }}>#{order.order_number}</span>
-                        <div style={{ fontSize: "15px", fontWeight: 700, color: BRAND_NAVY, marginTop: "2px" }}>{order.customer_name}</div>
+                        <div style={{ fontSize: "15px", fontWeight: 700, color: T.textPrimary, marginTop: "2px" }}>{order.customer_name}</div>
                       </div>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                         <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: isPaid ? "#DCFCE7" : "#FEF9C3", color: isPaid ? "#16A34A" : "#92400E" }}>{isPaid ? "✓ Pre-Paid" : "$ COD"}</span>
@@ -5358,7 +5412,7 @@ const Leads = () => {
                       <span>📍 {order.delivery_address}</span>
                       {order.notes && <span style={{ color: "#888", fontStyle: "italic" }}>📝 {order.notes}</span>}
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${CARD_BORDER}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${T.cardBorder}` }}>
                       <span style={{ fontSize: "13px", color: "#888" }}>{order.quantity} load{order.quantity > 1 ? "s" : ""} · 9 cu yds each</span>
                       <span style={{ fontSize: "16px", fontWeight: 700, color: "#16A34A" }}>${Number(order.price).toFixed(2)}</span>
                     </div>
@@ -5377,7 +5431,7 @@ const Leads = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: CONTENT_BG }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: "#FAFAF9" }}>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
@@ -5386,11 +5440,11 @@ const Leads = () => {
       {/* Sidebar */}
       <aside
         className={`fixed md:sticky top-0 left-0 z-50 md:z-auto h-screen flex flex-col transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ width: 220, minWidth: 220, backgroundColor: SIDEBAR_BG, borderRight: `1px solid ${CARD_BORDER}` }}
+        style={{ width: 220, minWidth: 220, backgroundColor: T.sidebarBg, borderRight: `1px solid ${T.sidebarBorder}` }}
       >
         <div className="px-4 py-4">
           <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>LMT</h2>
-          <p className="text-xs mt-0.5" style={{ color: SECTION_LABEL }}>Live: {livePricing}</p>
+          <p className="text-xs mt-0.5" style={{ color: T.textSecond }}>Live: {livePricing}</p>
           {globalSettings.site_mode === 'maintenance' && (
             <div className="text-xs font-bold px-2 py-1 rounded mt-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B' }}>
               🔴 MAINTENANCE
@@ -5411,6 +5465,7 @@ const Leads = () => {
                 key={section.section}
                 title={section.section}
                 defaultOpen={sectionHasActive}
+                textColor={T.textSecond}
               >
                 {section.items.map(item => {
                   const Icon = item.icon;
@@ -5424,12 +5479,12 @@ const Leads = () => {
                         height: 36,
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 400,
-                        color: isActive ? BRAND_GOLD : BRAND_NAVY,
-                        backgroundColor: isActive ? SIDEBAR_ACTIVE_BG : "transparent",
+                        color: isActive ? BRAND_GOLD : T.textPrimary,
+                        backgroundColor: isActive ? T.activeNavBg : "transparent",
                         borderRadius: 6,
                       }}
-                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = SIDEBAR_HOVER; }}
-                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? SIDEBAR_ACTIVE_BG : "transparent"; }}
+                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = T.hoverNavBg; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
                     >
                       <Icon className="w-[16px] h-[16px]" />
                       <span>{item.label}</span>
@@ -5453,30 +5508,30 @@ const Leads = () => {
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 rounded-lg text-left transition-colors"
             style={{ height: 40, fontSize: 13, color: "#999" }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = SIDEBAR_HOVER)}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.hoverNavBg)}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
           >
             <LogOut className="w-[18px] h-[18px]" />
             <span>Logout</span>
           </button>
-          <p className="text-center py-3 text-[10px]" style={{ color: SECTION_LABEL }}>Powered by Haulogix, LLC</p>
+          <p className="text-center py-3 text-[10px]" style={{ color: T.textSecond }}>Powered by Haulogix, LLC</p>
         </div>
       </aside>
 
       {/* Main content */}
       <main className="flex-1 min-w-0">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 px-4 md:px-6 lg:px-8 py-3 flex items-center justify-between border-b bg-white" style={{ borderColor: CARD_BORDER }}>
+        <div className="sticky top-0 z-30 px-4 md:px-6 lg:px-8 py-3 flex items-center justify-between border-b" style={{ backgroundColor: T.headerBg, borderColor: T.cardBorder }}>
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1">
-              <Menu className="w-5 h-5" style={{ color: BRAND_NAVY }} />
+              <Menu className="w-5 h-5" style={{ color: T.textPrimary }} />
             </button>
             <div>
               <div className="flex items-center gap-1" style={{ fontSize: 11 }}>
-                <span style={{ color: SECTION_LABEL }}>LMT ›</span>
+                <span style={{ color: T.textSecond }}>LMT ›</span>
                 <span style={{ color: BRAND_GOLD, fontWeight: 600 }}>{currentPage.title}</span>
               </div>
-              {currentPage.subtitle && <p className="text-[10px] mt-0.5" style={{ color: SECTION_LABEL }}>{currentPage.subtitle}</p>}
+              {currentPage.subtitle && <p className="text-[10px] mt-0.5" style={{ color: T.textSecond }}>{currentPage.subtitle}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -5489,7 +5544,7 @@ const Leads = () => {
                 }}
                 className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <Bell className="w-5 h-5" style={{ color: BRAND_NAVY }} />
+                <Bell className="w-5 h-5" style={{ color: T.textPrimary }} />
                 {unreadCount > 0 && (
                   <span
                     className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white"
@@ -5502,9 +5557,9 @@ const Leads = () => {
 
               {/* Notification panel */}
               {showNotifPanel && (
-                <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border z-50" style={{ borderColor: CARD_BORDER }}>
-                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: CARD_BORDER }}>
-                    <h3 className="text-sm font-bold" style={{ color: BRAND_NAVY }}>Notifications</h3>
+                <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl shadow-2xl border z-50" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: T.cardBorder }}>
+                    <h3 className="text-sm font-bold" style={{ color: T.textPrimary }}>Notifications</h3>
                     <button onClick={() => setShowNotifPanel(false)} className="text-gray-400 hover:text-gray-600">
                       <X className="w-4 h-4" />
                     </button>
@@ -5516,10 +5571,10 @@ const Leads = () => {
                       <div
                         key={n.id}
                         className="px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors cursor-default"
-                        style={{ borderColor: CARD_BORDER, backgroundColor: n.read ? "transparent" : "#FFFDF5" }}
+                        style={{ borderColor: T.cardBorder, backgroundColor: n.read ? "transparent" : "#FFFDF5" }}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold" style={{ color: BRAND_NAVY }}>{n.title}</p>
+                          <p className="text-sm font-semibold" style={{ color: T.textPrimary }}>{n.title}</p>
                           <span className="text-[10px] text-gray-400 whitespace-nowrap">
                             {(() => {
                               try {
@@ -5564,7 +5619,7 @@ const Leads = () => {
       {selectedLead && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelectedLead(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4 border-b" style={{ backgroundColor: T.tableHeaderBg }}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-mono text-sm" style={{ color: BRAND_GOLD }}>{selectedLead.lead_number || "—"}</p>
@@ -5583,7 +5638,7 @@ const Leads = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left: Customer Info */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>Customer Info</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.textPrimary }}>Customer Info</h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div><p className="text-xs text-gray-400">Submitted</p><p className="font-medium">{formatLeadDate(selectedLead.created_at)}</p></div>
                     <div><p className="text-xs text-gray-400">Distance</p><p>{selectedLead.distance_miles?.toFixed(1) || "—"} mi</p></div>
@@ -5618,14 +5673,14 @@ const Leads = () => {
                     <label className="text-xs text-gray-400 block mb-1">Add Note</label>
                     <Textarea rows={2} value={detailNote} onChange={e => setDetailNote(e.target.value)} placeholder="Type a note..." />
                   </div>
-                  <Button onClick={saveDetail} disabled={savingDetail} className="w-full" style={{ backgroundColor: BRAND_NAVY, color: "white" }}>
+                  <Button onClick={saveDetail} disabled={savingDetail} className="w-full" style={{ backgroundColor: T.tableHeaderBg, color: T.tableHeaderText }}>
                     {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
                   </Button>
                 </div>
 
                 {/* Right: Fraud Panel */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: BRAND_NAVY }}>Fraud Analysis</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.textPrimary }}>Fraud Analysis</h3>
                   <div className="bg-gray-50 rounded-lg p-4 border space-y-3 text-sm">
                     <div><p className="text-xs text-gray-400">Fraud Score</p>
                       <p className="text-xl font-bold" style={{ color: (selectedLead.fraud_score || 0) >= 80 ? "#EF4444" : (selectedLead.fraud_score || 0) >= 40 ? "#F59E0B" : "#22C55E" }}>
@@ -5716,7 +5771,7 @@ const Leads = () => {
       {showProposal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !sendingProposals && setShowProposal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4 border-b" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Send Proposals</h2>
               <p className="text-white/60 text-sm">{simSelected.size} leads selected</p>
             </div>
@@ -5767,7 +5822,7 @@ const Leads = () => {
       {quickProposalLead && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !qpSending && setQuickProposalLead(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4 border-b" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Send Delivery Offer</h2>
               <p className="text-white/60 text-sm">{quickProposalLead.lead_number || "—"} — {quickProposalLead.customer_name}</p>
             </div>
@@ -5847,9 +5902,9 @@ const Leads = () => {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 md:p-0" onClick={() => setShowAddPit(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto md:my-auto" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
               <div>
-                <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>Add New PIT</h2>
+                <h2 className="text-lg font-bold" style={{ color: T.textPrimary }}>Add New PIT</h2>
                 <p className="text-xs text-gray-500">Point of Dispatch — delivery origin</p>
               </div>
               <button onClick={() => setShowAddPit(false)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button>
@@ -5859,7 +5914,7 @@ const Leads = () => {
             <div className="p-6 space-y-5">
               {/* Section 1 — Location */}
               <div>
-                <p className="text-sm font-medium mb-3" style={{ color: BRAND_NAVY }}>Location</p>
+                <p className="text-sm font-medium mb-3" style={{ color: T.textPrimary }}>Location</p>
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
@@ -5903,7 +5958,7 @@ const Leads = () => {
                       </div>
                     )}
                     <div className="mt-2">
-                      <p className="text-xs mb-1 font-medium" style={{ color: SECTION_LABEL }}>
+                      <p className="text-xs mb-1 font-medium" style={{ color: T.textSecond }}>
                         GPS Coordinates (optional — use if address is not a full street address)
                       </p>
                       <div className="flex gap-2">
@@ -5964,11 +6019,11 @@ const Leads = () => {
                 </div>
               </div>
 
-              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+              <div style={{ borderTop: `1px solid ${T.cardBorder}` }} />
 
               {/* Section 2 — Pricing (Required) */}
               <div>
-                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing (Required)</p>
+                <p className="text-sm font-medium mb-1" style={{ color: T.textPrimary }}>Pricing (Required)</p>
                 <p className="text-xs text-gray-500 mb-3">All pricing fields are required before a PIT can be activated.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -5990,11 +6045,11 @@ const Leads = () => {
                 </div>
               </div>
 
-              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+              <div style={{ borderTop: `1px solid ${T.cardBorder}` }} />
 
               {/* Section 2.5 — Operating Schedule */}
               <div>
-                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Operating Schedule</p>
+                <p className="text-sm font-medium mb-1" style={{ color: T.textPrimary }}>Operating Schedule</p>
                 <p className="text-xs text-gray-500 mb-3">Set the days this PIT accepts deliveries. Leave all unchecked to allow all days.</p>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, idx) => {
@@ -6083,7 +6138,7 @@ const Leads = () => {
                 const hasValid = newPit.base_price != null && !isNaN(Number(newPit.base_price)) && newPit.free_miles != null && !isNaN(Number(newPit.free_miles)) && newPit.price_per_extra_mile != null && !isNaN(Number(newPit.price_per_extra_mile)) && newPit.max_distance != null && !isNaN(Number(newPit.max_distance));
                 if (!hasValid) return (
                   <div>
-                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <p className="text-sm font-medium mb-2" style={{ color: T.textPrimary }}>Live Price Preview</p>
                     <p className="text-xs" style={{ color: "#888" }}>Fill in all pricing fields to see preview</p>
                   </div>
                 );
@@ -6095,7 +6150,7 @@ const Leads = () => {
                 const atMax = effMax > effFree ? effBase + (effMax - effFree) * effEpm : effBase;
                 return (
                   <div>
-                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <p className="text-sm font-medium mb-2" style={{ color: T.textPrimary }}>Live Price Preview</p>
                     <div className="text-xs space-y-1" style={{ color: BRAND_GOLD }}>
                       <p>Within {effFree} mi: ${effBase.toFixed(2)}</p>
                       <p>At 20 mi: ${at20.toFixed(2)}</p>
@@ -6116,7 +6171,7 @@ const Leads = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 flex flex-col gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+            <div className="px-6 py-4 flex flex-col gap-2" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
               <Button onClick={addPit} disabled={geocoding} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                 {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                 Add PIT
@@ -6135,9 +6190,9 @@ const Leads = () => {
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto md:my-auto" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
               <div>
-                <h2 className="text-lg font-bold" style={{ color: BRAND_NAVY }}>Edit PIT — {editPitData.name || ""}</h2>
+                <h2 className="text-lg font-bold" style={{ color: T.textPrimary }}>Edit PIT — {editPitData.name || ""}</h2>
               </div>
               <button onClick={cancelEditPit} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button>
             </div>
@@ -6146,7 +6201,7 @@ const Leads = () => {
             <div className="p-6 space-y-5">
               {/* Location */}
               <div>
-                <p className="text-sm font-medium mb-3" style={{ color: BRAND_NAVY }}>Location</p>
+                <p className="text-sm font-medium mb-3" style={{ color: T.textPrimary }}>Location</p>
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
@@ -6204,7 +6259,7 @@ const Leads = () => {
                       </div>
                     )}
                     <div className="mt-2">
-                      <p className="text-xs mb-1 font-medium" style={{ color: SECTION_LABEL }}>
+                      <p className="text-xs mb-1 font-medium" style={{ color: T.textSecond }}>
                         GPS Coordinates (optional — use if address is not a full street address)
                       </p>
                       <div className="flex gap-2">
@@ -6265,11 +6320,11 @@ const Leads = () => {
                 </div>
               </div>
 
-              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+              <div style={{ borderTop: `1px solid ${T.cardBorder}` }} />
 
               {/* Pricing (Required) */}
               <div>
-                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Pricing (Required)</p>
+                <p className="text-sm font-medium mb-1" style={{ color: T.textPrimary }}>Pricing (Required)</p>
                 <p className="text-xs text-gray-500 mb-3">All pricing fields are required before a PIT can be activated.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -6291,11 +6346,11 @@ const Leads = () => {
                 </div>
               </div>
 
-              <div style={{ borderTop: `1px solid ${CARD_BORDER}` }} />
+              <div style={{ borderTop: `1px solid ${T.cardBorder}` }} />
 
               {/* Operating Schedule */}
               <div>
-                <p className="text-sm font-medium mb-1" style={{ color: BRAND_NAVY }}>Operating Schedule</p>
+                <p className="text-sm font-medium mb-1" style={{ color: T.textPrimary }}>Operating Schedule</p>
                 <p className="text-xs text-gray-500 mb-3">
                   {!editPitData.operating_days || (editPitData.operating_days as number[]).length === 0
                     ? "No schedule set — all days currently available"
@@ -6389,7 +6444,7 @@ const Leads = () => {
                 const hasValid = editPitData.base_price != null && !isNaN(Number(editPitData.base_price)) && editPitData.free_miles != null && !isNaN(Number(editPitData.free_miles)) && editPitData.price_per_extra_mile != null && !isNaN(Number(editPitData.price_per_extra_mile)) && editPitData.max_distance != null && !isNaN(Number(editPitData.max_distance));
                 if (!hasValid) return (
                   <div>
-                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <p className="text-sm font-medium mb-2" style={{ color: T.textPrimary }}>Live Price Preview</p>
                     <p className="text-xs" style={{ color: "#888" }}>Fill in all pricing fields to see preview</p>
                   </div>
                 );
@@ -6401,7 +6456,7 @@ const Leads = () => {
                 const atMax = effMax > effFree ? effBase + (effMax - effFree) * effEpm : effBase;
                 return (
                   <div>
-                    <p className="text-sm font-medium mb-2" style={{ color: BRAND_NAVY }}>Live Price Preview</p>
+                    <p className="text-sm font-medium mb-2" style={{ color: T.textPrimary }}>Live Price Preview</p>
                     <div className="text-xs space-y-1" style={{ color: BRAND_GOLD }}>
                       <p>Within {effFree} mi: ${effBase.toFixed(2)}</p>
                       <p>At 20 mi: ${at20.toFixed(2)}</p>
@@ -6422,14 +6477,14 @@ const Leads = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 space-y-3" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+            <div className="px-6 py-4 space-y-3" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
               <Button onClick={saveEditPit} disabled={savingPit} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                 {savingPit ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                 Save Changes
               </Button>
               <Button onClick={cancelEditPit} variant="outline" className="w-full">Cancel</Button>
               {!editPitData.is_default && (
-                <div className="pt-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+                <div className="pt-2" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                   {!showDeleteConfirm ? (
                     <button onClick={() => setShowDeleteConfirm(true)} className="text-sm text-red-500 hover:text-red-700 w-full text-center">Delete PIT</button>
                   ) : (
@@ -6452,16 +6507,16 @@ const Leads = () => {
       {editCustomerEmail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !editCustomerEmailSaving && setEditCustomerEmail(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Edit Customer Email</h2>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-2 text-sm">
-                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {editCustomerEmail.name || "—"}</p>
-                <p><strong style={{ color: BRAND_NAVY }}>Current Email:</strong> {editCustomerEmail.email}</p>
+                <p><strong style={{ color: T.textPrimary }}>Customer:</strong> {editCustomerEmail.name || "—"}</p>
+                <p><strong style={{ color: T.textPrimary }}>Current Email:</strong> {editCustomerEmail.email}</p>
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: BRAND_NAVY }}>New Email</label>
+                <label className="text-xs font-medium mb-1 block" style={{ color: T.textPrimary }}>New Email</label>
                 <Input type="email" value={editCustomerEmailValue} onChange={e => setEditCustomerEmailValue(e.target.value)} placeholder="customer@example.com" className="h-10 text-sm" />
               </div>
               <div className="flex gap-2">
@@ -6551,7 +6606,7 @@ const Leads = () => {
                   disabled={editCustomerEmailSaving}
                   variant="outline"
                   className="flex-1 h-10 text-xs"
-                  style={{ borderColor: BRAND_NAVY, color: BRAND_NAVY }}
+                  style={{ borderColor: T.cardBorder, color: T.textPrimary }}
                 >
                   {editCustomerEmailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
                   Save Only
@@ -6568,7 +6623,7 @@ const Leads = () => {
       {showActivationModal && activationPit && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !activationSending && setShowActivationModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>PIT Activated — {activationLeads.length} Leads in Range</h2>
               <p className="text-white/60 text-sm">{activationPit.name} can now serve {activationLeads.length} leads that were out of area.</p>
             </div>
@@ -6588,13 +6643,13 @@ const Leads = () => {
                   </thead>
                   <tbody>
                     {activationLeads.map((r, i) => (
-                      <tr key={r.lead.id} style={{ backgroundColor: i % 2 === 0 ? "white" : "#F9F9F9" }}>
+                      <tr key={r.lead.id} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
                         <td className="px-2 py-2">
                           {r.hasEmail ? (
                             <input type="checkbox" checked={activationChecked.has(r.lead.id)} onChange={e => { const s = new Set(activationChecked); e.target.checked ? s.add(r.lead.id) : s.delete(r.lead.id); setActivationChecked(s); }} />
                           ) : null}
                         </td>
-                        <td className="px-2 py-2 font-mono text-xs" style={{ color: BRAND_NAVY }}>{r.lead.lead_number || "—"}</td>
+                        <td className="px-2 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{r.lead.lead_number || "—"}</td>
                         <td className="px-2 py-2 text-xs font-medium">{r.lead.customer_name}</td>
                         <td className="px-2 py-2 text-xs max-w-[150px] truncate">{r.lead.address}</td>
                         <td className="px-2 py-2 text-xs">{r.distance.toFixed(1)} mi</td>
@@ -6616,7 +6671,7 @@ const Leads = () => {
                 </div>
               )}
             </div>
-            <div className="px-6 py-4 flex flex-wrap gap-2 items-center justify-between" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+            <div className="px-6 py-4 flex flex-wrap gap-2 items-center justify-between" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
               <div className="flex gap-2">
                 <Button onClick={() => { setActivationChecked(new Set(activationLeads.filter(r => r.hasEmail).map(r => r.lead.id))); sendActivationProposals(); }} disabled={activationSending} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                   {activationSending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
@@ -6638,16 +6693,16 @@ const Leads = () => {
       {cashOrderToMark && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !markingPaid && setCashOrderToMark(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Confirm Payment Received</h2>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-2 text-sm">
-                <p><strong style={{ color: BRAND_NAVY }}>Order #:</strong> {cashOrderToMark.order_number || "—"}</p>
-                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {cashOrderToMark.customer_name}</p>
-                <p><strong style={{ color: BRAND_NAVY }}>Amount:</strong> <span style={{ color: BRAND_GOLD, fontWeight: 700 }}>${Number(cashOrderToMark.price || 0).toFixed(2)}</span></p>
-                <p><strong style={{ color: BRAND_NAVY }}>Method:</strong> {cashOrderToMark.payment_method === "check" ? "Check" : "Cash"}</p>
-                <p><strong style={{ color: BRAND_NAVY }}>Delivery:</strong> {cashOrderToMark.delivery_date || "TBD"}</p>
+                <p><strong style={{ color: T.textPrimary }}>Order #:</strong> {cashOrderToMark.order_number || "—"}</p>
+                <p><strong style={{ color: T.textPrimary }}>Customer:</strong> {cashOrderToMark.customer_name}</p>
+                <p><strong style={{ color: T.textPrimary }}>Amount:</strong> <span style={{ color: BRAND_GOLD, fontWeight: 700 }}>${Number(cashOrderToMark.price || 0).toFixed(2)}</span></p>
+                <p><strong style={{ color: T.textPrimary }}>Method:</strong> {cashOrderToMark.payment_method === "check" ? "Check" : "Cash"}</p>
+                <p><strong style={{ color: T.textPrimary }}>Delivery:</strong> {cashOrderToMark.delivery_date || "TBD"}</p>
               </div>
               <div>
                 <label className="text-xs mb-1 block" style={{ color: "#666" }}>Collected by (optional)</label>
@@ -6660,7 +6715,7 @@ const Leads = () => {
                 </label>
               )}
             </div>
-            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
               <Button onClick={markCashPaid} disabled={markingPaid} className="flex-1 h-10" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                 {markingPaid ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
                 Confirm Payment
@@ -6675,13 +6730,13 @@ const Leads = () => {
       {editEmailOrder && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !editEmailSaving && setEditEmailOrder(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4" style={{ backgroundColor: BRAND_NAVY }}>
+            <div className="px-6 py-4" style={{ backgroundColor: T.tableHeaderBg }}>
               <h2 className="text-lg font-bold" style={{ color: BRAND_GOLD }}>Edit Customer Email</h2>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-2 text-sm">
-                <p><strong style={{ color: BRAND_NAVY }}>Order #:</strong> {editEmailOrder.order_number || "—"}</p>
-                <p><strong style={{ color: BRAND_NAVY }}>Customer:</strong> {editEmailOrder.customer_name}</p>
+                <p><strong style={{ color: T.textPrimary }}>Order #:</strong> {editEmailOrder.order_number || "—"}</p>
+                <p><strong style={{ color: T.textPrimary }}>Customer:</strong> {editEmailOrder.customer_name}</p>
               </div>
               <div>
                 <label className="text-xs mb-1 block" style={{ color: "#666" }}>Email address</label>
@@ -6694,7 +6749,7 @@ const Leads = () => {
                 />
               </div>
             </div>
-            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
+            <div className="px-6 py-4 flex gap-2" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
               <Button
                 onClick={async () => {
                   if (!editEmailValue.trim() || !editEmailValue.includes("@")) {
