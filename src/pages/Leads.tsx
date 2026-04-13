@@ -4984,7 +4984,7 @@ const Leads = () => {
                   <thead>
                     <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action", "Email", "Last Email Sent"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -4996,7 +4996,9 @@ const Leads = () => {
                       const isToday = o.delivery_date === today;
                       const isPast = o.delivery_date && o.delivery_date < today && !o.cash_collected;
                       return (
-                        <tr key={o.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
+                        <tr key={o.id} className="border-t" style={{ borderColor: T.cardBorder }}
+onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                           <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{o.order_number || "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(o.created_at)}</td>
                           <td className="px-3 py-2">
@@ -5127,13 +5129,15 @@ const Leads = () => {
                   <thead>
                     <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Name", "Email", "Phone", "Company", "Total Orders", "Total Spent", "First Order", "Last Order", "Actions"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredCustomers.map(c => (
-                      <tr key={c.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
+                      <tr key={c.id} className="border-t" style={{ borderColor: T.cardBorder }}
+onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                         <td className="px-3 py-2 text-xs font-medium">{c.name || "—"}</td>
                         <td className="px-3 py-2 text-xs">{c.email}</td>
                         <td className="px-3 py-2 text-xs">{c.phone || "—"}</td>
@@ -5188,13 +5192,15 @@ const Leads = () => {
                   <thead>
                     <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       {["Date", "Address", "Location", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-white/80 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {abandonedSessions.map(s => (
-                      <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: T.cardBorder }}>
+                      <tr key={s.id} className="border-t" style={{ borderColor: T.cardBorder }}
+onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
+onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
                         <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
                         <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : s.delivery_address ? s.delivery_address.split(",")[1]?.trim() || "—" : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
@@ -5647,7 +5653,7 @@ const Leads = () => {
             </div>
 
             {/* Section 2 — Processing Fees */}
-            <div style={SECTION_LABEL_F}>PROCESSING FEES</div>
+            <SectionHeader title="PROCESSING FEES" />
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div style={METRIC_CARD_F}>
                 <div style={{ ...METRIC_NUM_F, color: ALERT_RED }}>{fmtD(feesCalculated)}</div>
@@ -5670,7 +5676,7 @@ const Leads = () => {
             </div>
 
             {/* Section 3 — Operations Metrics */}
-            <div style={SECTION_LABEL_F}>OPERATIONS METRICS</div>
+            <SectionHeader title="OPERATIONS METRICS" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div style={METRIC_CARD_F}>
                 <div style={METRIC_NUM_F}>{totalMiles.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
@@ -5701,7 +5707,7 @@ const Leads = () => {
             </div>
 
             {/* Section 4 — Revenue Breakdown */}
-            <div style={SECTION_LABEL_F}>REVENUE BREAKDOWN</div>
+            <SectionHeader title="REVENUE BREAKDOWN" />
             <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '24px 28px' }}>
               <div className="space-y-3">
                 <div className="flex justify-between items-center" style={{ borderBottom: `1px solid ${T.cardBorder}`, paddingBottom: 10 }}>
@@ -5722,7 +5728,7 @@ const Leads = () => {
                 </div>
               </div>
               <div style={{ marginTop: 24, borderTop: `1px solid ${T.cardBorder}`, paddingTop: 16 }}>
-                <div style={{ ...SECTION_LABEL_F, marginBottom: 8 }}>REVENUE COMPONENTS</div>
+                <SectionHeader title="REVENUE COMPONENTS" />
                 <div className="space-y-2">
                   <div className="flex justify-between" style={{ fontSize: 13 }}>
                     <span style={{ color: T.textSecond }}>Sand Base Revenue</span>
@@ -5741,7 +5747,7 @@ const Leads = () => {
             </div>
             {/* ── SECTION 5 — Revenue Recovery ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL_F}>ABANDONED REVENUE</div>
+              <SectionHeader title="ABANDONED REVENUE" />
               {(() => {
                 const sessionsWithPrice = abandonedSessions.filter((s: any) => Number(s.calculated_price || 0) > 0);
                 const abandonedValue = sessionsWithPrice.reduce((s: number, sess: any) => s + Number(sess.calculated_price || 0), 0);
@@ -5789,7 +5795,7 @@ const Leads = () => {
 
             {/* ── SECTION 6 — ZIP Conversion Intelligence ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL_F}>ZIP SESSION INTELLIGENCE</div>
+              <SectionHeader title="ZIP SESSION INTELLIGENCE" />
               {(() => {
                 const zipStats = abandonedSessions.reduce((acc: Record<string, { sessions: number; withPrice: number; totalPrice: number; stages: Record<string, number> }>, s: any) => {
                   const zip = s.geo_zip || 'Unknown';
@@ -5853,7 +5859,7 @@ const Leads = () => {
 
             {/* ── SECTION 7 — Daily P&L Estimate ── */}
             <div style={{ marginTop: 32 }}>
-              <div style={SECTION_LABEL_F}>TODAY'S P&L ESTIMATE</div>
+              <SectionHeader title="TODAY'S P&L ESTIMATE" />
               {(() => {
                 const todayStr = new Date().toDateString();
                 const todayOrders = cashOrders.filter((o: any) => new Date(o.created_at).toDateString() === todayStr);
