@@ -1830,9 +1830,14 @@ serve(async (req) => {
         .order("last_seen_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      console.log("[list_live_visitors] found:", data?.length, "active sessions");
+      // Filter out no-track IPs
+      const ntSb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: ntData } = await ntSb.from("global_settings").select("value").eq("key", "notrack_ips").single();
+      const ntIps: string[] = ntData ? JSON.parse(ntData.value) : [];
+      const filtered = (data || []).filter((s: any) => !ntIps.includes(s.ip_address));
+      console.log("[list_live_visitors] found:", data?.length, "total,", filtered.length, "after notrack filter");
       return new Response(
-        JSON.stringify({ sessions: data }),
+        JSON.stringify({ sessions: filtered }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -1842,14 +1847,21 @@ serve(async (req) => {
       const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from("visitor_sessions")
-        .select("address_lat, address_lng, stage, calculated_price, delivery_address, geo_city, entry_city_name, created_at")
+        .select("address_lat, address_lng, stage, calculated_price, delivery_address, geo_city, entry_city_name, created_at, ip_address")
         .not("address_lat", "is", null)
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
+      // Filter out no-track IPs
+      const ntSbM = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: ntDataM } = await ntSbM.from("global_settings").select("value").eq("key", "notrack_ips").single();
+      const ntIpsM: string[] = ntDataM ? JSON.parse(ntDataM.value) : [];
+      const filteredPts = (data || []).filter((s: any) => !ntIpsM.includes(s.ip_address));
+      // Strip ip_address from response
+      const points = filteredPts.map(({ ip_address, ...rest }: any) => rest);
       return new Response(
-        JSON.stringify({ points: data }),
+        JSON.stringify({ points }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -1867,10 +1879,14 @@ serve(async (req) => {
         .order("updated_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      console.log("[list_abandoned] found:", data?.length, "sessions");
-      console.log("[list_abandoned] stages:", data?.slice(0, 5).map((s: any) => s.stage));
+      // Filter out no-track IPs
+      const ntSbA = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: ntDataA } = await ntSbA.from("global_settings").select("value").eq("key", "notrack_ips").single();
+      const ntIpsA: string[] = ntDataA ? JSON.parse(ntDataA.value) : [];
+      const filtered = (data || []).filter((s: any) => !ntIpsA.includes(s.ip_address));
+      console.log("[list_abandoned] found:", data?.length, "total,", filtered.length, "after notrack filter");
       return new Response(
-        JSON.stringify({ sessions: data }),
+        JSON.stringify({ sessions: filtered }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
