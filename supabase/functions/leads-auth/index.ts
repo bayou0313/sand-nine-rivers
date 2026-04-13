@@ -2777,7 +2777,10 @@ serve(async (req) => {
           const effBP = closestPit.base_price ?? parseFloat(gs.default_base_price || "195");
           const effFM = closestPit.free_miles ?? parseFloat(gs.default_free_miles || "15");
           const effEPM = closestPit.price_per_extra_mile ?? parseFloat(gs.default_extra_per_mile || "5");
-          const extraMiles = Math.max(0, closestDistance - effFM);
+          // Northshore phantom miles for toll recovery (region-based)
+          const cityIsNorthshore = isNorthshoreRegion(city.region || '');
+          const billedDistance = cityIsNorthshore ? closestDistance + PHANTOM_MILES : closestDistance;
+          const extraMiles = Math.max(0, billedDistance - effFM);
           const price = Math.max(effBP, Math.round(effBP + extraMiles * effEPM));
           city.pit_id = closestPit.id;
           city.pit_name = closestPit.name;
