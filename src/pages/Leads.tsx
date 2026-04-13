@@ -2085,14 +2085,35 @@ const Leads = () => {
           return { stage, count: sl.length, value: val };
         });
 
-        const MetricBox = ({ label, value, sub, onClick, accent = GOLD }: { label: string; value: string; sub: string; onClick: () => void; accent?: string }) => (
+        const AnimatedNum = ({ target, prefix = "", suffix = "", decimals = 0, color }: { target: number; prefix?: string; suffix?: string; decimals?: number; color: string }) => {
+          const ref = useRef<HTMLSpanElement>(null);
+          const motionVal = useMotionValue(0);
+          const rounded = useTransform(motionVal, (v: number) => {
+            const n = decimals > 0 ? v.toFixed(decimals) : Math.round(v).toString();
+            return `${prefix}${Number(n).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`;
+          });
+          useEffect(() => {
+            motionVal.set(0);
+            const ctrl = animate(motionVal, target, { duration: 1.2, ease: "easeOut" });
+            return () => ctrl.stop();
+          }, [target]);
+          useEffect(() => {
+            const unsub = rounded.on("change", (v: string) => { if (ref.current) ref.current.textContent = v; });
+            return unsub;
+          }, [rounded]);
+          return <span ref={ref} style={{ color }}>{`${prefix}0${suffix}`}</span>;
+        };
+
+        const MetricBox = ({ label, numValue, sub, onClick, accent = GOLD, prefix = "", suffix = "", decimals = 0, displayOverride }: { label: string; numValue: number; sub: string; onClick: () => void; accent?: string; prefix?: string; suffix?: string; decimals?: number; displayOverride?: string }) => (
           <div
             onClick={onClick}
             className="rounded-lg p-4 cursor-pointer transition-all duration-200 hover:border-[#C07A00]/60 group"
             style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER_CLR}` }}
           >
             <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: TEXT_SEC }}>{label}</p>
-            <p className="text-2xl md:text-3xl font-bold font-mono leading-none" style={{ color: accent }}>{value}</p>
+            <p className="text-2xl md:text-3xl font-bold font-mono leading-none">
+              {displayOverride != null ? <span style={{ color: accent }}>{displayOverride}</span> : <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accent} />}
+            </p>
             <p className="text-[11px] mt-1.5" style={{ color: TEXT_SEC }}>{sub}</p>
           </div>
         );
