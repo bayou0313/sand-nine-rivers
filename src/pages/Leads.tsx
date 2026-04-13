@@ -1285,8 +1285,11 @@ const Leads = () => {
   }, [activePage, authenticated]);
 
   // Auto-process regen queue — extracted so it can be called on-demand after pit save
+  const regenInFlightRef = useRef(false);
   const runRegenQueue = useCallback(async () => {
     if (!authenticated) return;
+    if (regenInFlightRef.current) return;
+    regenInFlightRef.current = true;
     try {
       const { count } = await supabase
         .from("city_pages")
@@ -1305,21 +1308,23 @@ const Leads = () => {
         console.log(`[regen] Processed ${data.processed} pages. ${data.remaining} remaining.`);
         if (data.remaining === 0) setRegenQueuePending(0);
         await fetchCityPages();
-        // Force re-render of city pages list
         setCityPages(prev => [...prev]);
       }
       if (data?.remaining === 0 && data?.processed === 0) setRegenQueuePending(0);
     } catch (err) {
       console.warn("[regen] Queue error:", err);
+    } finally {
+      regenInFlightRef.current = false;
     }
   }, [authenticated]);
 
   useEffect(() => {
     if (!authenticated) return;
+    if (activePage !== 'city_pages') return;
     runRegenQueue();
-    const interval = setInterval(runRegenQueue, 10000);
+    const interval = setInterval(runRegenQueue, 30000);
     return () => clearInterval(interval);
-  }, [authenticated, runRegenQueue]);
+  }, [authenticated, activePage, runRegenQueue]);
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
