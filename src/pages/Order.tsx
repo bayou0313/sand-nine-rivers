@@ -854,6 +854,7 @@ const Order = () => {
   }, [searchParams]);
 
   const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
+  const [detectedZip, setDetectedZip] = useState('');
 
   const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
     setAddress(result.formattedAddress);
@@ -861,6 +862,10 @@ const Order = () => {
     if (result.addressComponents) {
       const parish = getParishFromPlaceResult(result.addressComponents);
       setDetectedParish(parish);
+      const zipComponent = result.addressComponents.find(
+        (c: any) => c.types.includes('postal_code')
+      );
+      setDetectedZip(zipComponent?.short_name || '');
     }
   }, []);
 
@@ -1069,6 +1074,7 @@ const Order = () => {
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,
       tax_parish: taxInfo.parish,
+      zip_code: detectedZip,
       delivery_terms_accepted: deliveryTermsAccepted,
       delivery_terms_timestamp: new Date().toISOString(),
       card_authorization_accepted: cardAuthAccepted,
