@@ -369,6 +369,7 @@ export type Database = {
           billing_zip: string | null
           call_verified_at: string | null
           call_verified_by: string | null
+          cancelled_at: string | null
           capture_attempted_at: string | null
           capture_status: string | null
           card_authorization_accepted: boolean | null
@@ -442,6 +443,7 @@ export type Database = {
           billing_zip?: string | null
           call_verified_at?: string | null
           call_verified_by?: string | null
+          cancelled_at?: string | null
           capture_attempted_at?: string | null
           capture_status?: string | null
           card_authorization_accepted?: boolean | null
@@ -515,6 +517,7 @@ export type Database = {
           billing_zip?: string | null
           call_verified_at?: string | null
           call_verified_by?: string | null
+          cancelled_at?: string | null
           capture_attempted_at?: string | null
           capture_status?: string | null
           card_authorization_accepted?: boolean | null
