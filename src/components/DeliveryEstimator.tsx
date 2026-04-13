@@ -41,6 +41,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
 
   const [globalPricing, setGlobalPricing] = useState<GlobalPricing>(FALLBACK_GLOBAL_PRICING);
   const [pits, setPits] = useState<PitData[]>([]);
@@ -157,6 +158,43 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
       address_lng: result.lng,
     });
     trackEvent("address_entered", { address: result.formattedAddress });
+  }, []);
+
+  const handleAddressMismatch = useCallback((data: AddressMismatchData) => {
+    setMismatchData(data);
+  }, []);
+
+  const handleMismatchUseResolved = useCallback(() => {
+    if (!mismatchData) return;
+    handlePlaceSelect({
+      formattedAddress: mismatchData.resolved,
+      lat: mismatchData.lat,
+      lng: mismatchData.lng,
+      addressComponents: mismatchData.addressComponents,
+    });
+    // Update the input field to show the resolved address
+    const input = containerRef.current?.querySelector("input");
+    if (input) input.value = mismatchData.resolved;
+    setMismatchData(null);
+  }, [mismatchData, handlePlaceSelect]);
+
+  const handleMismatchKeepTyped = useCallback(() => {
+    if (!mismatchData) return;
+    handlePlaceSelect({
+      formattedAddress: mismatchData.typed,
+      lat: mismatchData.lat,
+      lng: mismatchData.lng,
+      addressComponents: mismatchData.addressComponents,
+    });
+    setMismatchData(null);
+  }, [mismatchData, handlePlaceSelect]);
+
+  const handleMismatchChange = useCallback(() => {
+    setMismatchData(null);
+    setAddress("");
+    setCustomerCoords(null);
+    const input = containerRef.current?.querySelector("input");
+    if (input) { input.value = ""; input.focus(); }
   }, []);
 
   // Auto-calculate price when coordinates are set (address selected from dropdown)
