@@ -357,8 +357,8 @@ serve(async (req) => {
 
     // Calculate pricing
     const qty = order.quantity || 1;
-    const dist = Number(order.distance_miles || 0);
-    const rawDistanceFee = dist > baseMiles ? (dist - baseMiles) * perMileExtra * qty : 0;
+    // Use stored pricing from order — no recalculation
+    const rawDistanceFee = Number(order.distance_fee || 0);
     // In baked mode, combine base + distance into one line item
     const baseLine = isBakedMode
       ? (basePrice + rawDistanceFee / qty) * qty
@@ -369,12 +369,11 @@ serve(async (req) => {
     const discountAmount = Number(order.discount_amount || 0);
     const taxAmount = Number(order.tax_amount || 0);
     const combinedRate = Number(order.tax_rate || 0);
-    const subtotalBeforeFee = baseLine + distanceFee + satSurcharge + sunSurcharge - discountAmount + taxAmount;
-    // In baked mode, no processing fee line — fee is included in base price
+    // Use stored processing fee — no recalculation
     const processingFee = !isBakedMode && isCard
-      ? parseFloat((subtotalBeforeFee * feeRate + feeFixed).toFixed(2))
+      ? Number(order.processing_fee || 0)
       : 0;
-    console.log("[invoice] pricing breakdown:", { basePrice, baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, subtotalBeforeFee, processingFee, feeRate, feeFixed, orderPrice: order.price, isBakedMode });
+    console.log("[invoice] pricing breakdown:", { basePrice, baseLine, distanceFee, satSurcharge, sunSurcharge, discountAmount, taxAmount, processingFee, orderPrice: order.price, isBakedMode });
 
     // Parish detection for tax breakdown
     const PARISH_TAX_RATES: Record<string, number> = {
