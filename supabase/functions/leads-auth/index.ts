@@ -735,7 +735,7 @@ serve(async (req) => {
         .select("delivery_date")
         .eq("pit_id", loadPitId)
         .in("delivery_date", loadDates)
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "captured", "authorized"])
         .eq("status", "confirmed");
       if (orderErr) throw orderErr;
 
@@ -750,7 +750,7 @@ serve(async (req) => {
         .from("orders")
         .select("delivery_date")
         .in("delivery_date", loadDates)
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "captured", "authorized"])
         .eq("status", "confirmed");
       if (globalOrderErr) throw globalOrderErr;
 

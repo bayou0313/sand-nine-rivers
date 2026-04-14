@@ -71,7 +71,7 @@ serve(async (req) => {
     }
 
     // If payment is complete, mark the token as used (one-time use)
-    if (order.payment_status === "paid") {
+    if (["paid", "authorized", "captured"].includes(order.payment_status)) {
       await supabase
         .from("orders")
         .update({ lookup_token_used: true })

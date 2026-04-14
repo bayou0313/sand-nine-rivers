@@ -1869,7 +1869,7 @@ const Leads = () => {
       loads: orders.reduce((sum, o) => sum + (Number(o.quantity) || 0), 0),
       orders: orders.length,
       pending: orders.filter(o => o.payment_status === "pending" || o.payment_method === "COD").length,
-      paid: orders.filter(o => o.payment_status === "paid").length,
+      paid: orders.filter(o => ["paid", "captured", "authorized"].includes(o.payment_status)).length,
     });
   }, []);
 

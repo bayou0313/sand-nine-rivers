@@ -193,7 +193,7 @@ serve(async (req) => {
     let y = 0;
 
     const invoiceNum = order.order_number || `RS-${order.id.substring(0, 8).toUpperCase()}`;
-    const isPaid = order.payment_status === "paid";
+    const isPaid = ["paid", "authorized", "captured"].includes(order.payment_status ?? "");
     const isCard = !["cash", "check", "cod", "COD"].includes(order.payment_method || "");
     // For card payments, treat as paid even if payment_status hasn't been updated yet
     const effectivelyPaid = isPaid || isCard;
