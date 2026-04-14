@@ -5218,199 +5218,567 @@ const Leads = () => {
         );
 
       case "cash_orders": {
-        const today = new Date().toISOString().slice(0, 10);
-        const getCashStatus = (o: any) => {
-          if (o.cash_collected) return "collected";
-          if (o.delivery_date && o.delivery_date < today) return "overdue";
-          return "pending";
+        const STATUS_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
+          pending:   { label: "Pending",   badgeBg: "#FEF3C7", badgeColor: "#92400E" },
+          confirmed: { label: "Confirmed", badgeBg: "#EFF6FF", badgeColor: "#1E40AF" },
+          en_route:  { label: "En route",  badgeBg: "#F5F3FF", badgeColor: "#5B21B6" },
+          delivered: { label: "Delivered", badgeBg: "#ECFDF5", badgeColor: "#065F46" },
+          cancelled: { label: "Cancelled", badgeBg: "#FEF2F2", badgeColor: "#991B1B" },
         };
-        const filtered = cashOrders.filter(o => {
-          if (cashFilter === "all") return true;
-          return getCashStatus(o) === cashFilter;
+        const PAY_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
+          "stripe-link": { label: "Card",  badgeBg: "#EFF6FF", badgeColor: "#1E40AF" },
+          cash:          { label: "COD",   badgeBg: "#FFFBEB", badgeColor: "#92400E" },
+          check:         { label: "Check", badgeBg: "#FFFBEB", badgeColor: "#92400E" },
+          COD:           { label: "COD",   badgeBg: "#FFFBEB", badgeColor: "#92400E" },
+        };
+
+        const fmtMoney = (n: number) =>
+          "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const fmtDate = (d: string | null) => {
+          if (!d) return "—";
+          const p = d.slice(0, 10).split("-");
+          return `${p[1]}/${p[2]}/${p[0].slice(2)}`;
+        };
+
+        const filteredOrders = allOrders.filter((o: any) => {
+          if (ordersTab !== "all" && o.status !== ordersTab) return false;
+          if (ordersPayFilter && o.payment_method !== ordersPayFilter) return false;
+          if (ordersSearch) {
+            const q = ordersSearch.toLowerCase();
+            if (!o.order_number?.toLowerCase().includes(q) &&
+                !o.customer_name?.toLowerCase().includes(q) &&
+                !o.delivery_address?.toLowerCase().includes(q) &&
+                !o.customer_phone?.toLowerCase().includes(q)) return false;
+          }
+          return true;
         });
-        const pendingToday = cashOrders.filter(o => !o.cash_collected && o.delivery_date === today);
-        const overdueOrders = cashOrders.filter(o => !o.cash_collected && o.delivery_date && o.delivery_date < today);
-        const collectedToday = cashOrders.filter(o => o.cash_collected && o.cash_collected_at?.slice(0, 10) === today);
-        const totalOutstanding = cashOrders.filter(o => !o.cash_collected).reduce((s: number, o: any) => s + Number(o.price || 0), 0);
-        const expectedToday = pendingToday.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
-        const todaysOrders = cashOrders.filter(o => o.delivery_date === today);
+
+        const selectedOrder = allOrders.find((o: any) => o.id === selectedOrderId) || null;
+
+        const doOrderAction = async (action: string, orderId: string, extra?: Record<string, any>) => {
+          setOrderActionLoading(action + orderId);
+          try {
+            if (action === "update_status") {
+              await supabase.functions.invoke("leads-auth", {
+                body: { password: storedPassword(), action: "update_order", order_id: orderId, ...extra },
+              });
+              setAllOrders(prev => prev.map((o: any) => o.id === orderId ? { ...o, ...extra } : o));
+              toast({ title: "Status updated" });
+            } else if (action === "save_notes") {
+              await supabase.functions.invoke("leads-auth", {
+                body: { password: storedPassword(), action: "update_order", order_id: orderId, notes: orderNotesDraft },
+              });
+              setAllOrders(prev => prev.map((o: any) => o.id === orderId ? { ...o, notes: orderNotesDraft } : o));
+              toast({ title: "Notes saved" });
+            } else if (action === "resend_email") {
+              await supabase.functions.invoke("send-email", {
+                body: { type: "order_confirmation", order_id: orderId },
+              });
+              toast({ title: "Confirmation email sent" });
+            } else if (action === "resend_invoice") {
+              await supabase.functions.invoke("send-email", {
+                body: { type: "invoice", order_id: orderId },
+              });
+              toast({ title: "Invoice sent" });
+            } else if (action === "send_payment_link") {
+              const order = allOrders.find((o: any) => o.id === orderId);
+              if (!order) return;
+              await supabase.functions.invoke("leads-auth", {
+                body: { password: storedPassword(), action: "send_payment_link", order_id: orderId,
+                        customer_email: order.customer_email, order_number: order.order_number },
+              });
+              toast({ title: "Payment link sent" });
+            } else if (action === "mark_cash_collected") {
+              await supabase.functions.invoke("leads-auth", {
+                body: { password: storedPassword(), action: "mark_cash_collected", order_id: orderId, collected_by: "Admin" },
+              });
+              setAllOrders(prev => prev.map((o: any) => o.id === orderId ? { ...o, cash_collected: true, payment_status: "paid" } : o));
+              toast({ title: "Cash collected" });
+            } else if (action === "sync_stripe") {
+              await supabase.functions.invoke("leads-auth", {
+                body: { password: storedPassword(), action: "sync_stripe_payment", order_id: orderId },
+              });
+              await fetchAllOrders();
+              toast({ title: "Stripe synced" });
+            } else if (action === "cancel_order") {
+              if (!window.confirm("Cancel this order? This cannot be undone.")) return;
+              await supabase.functions.invoke("leads-auth", {
+                body: { password: storedPassword(), action: "cancel_order", order_id: orderId },
+              });
+              setAllOrders(prev => prev.map((o: any) => o.id === orderId ? { ...o, status: "cancelled" } : o));
+              toast({ title: "Order cancelled" });
+            }
+          } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          } finally {
+            setOrderActionLoading(null);
+          }
+        };
+
+        const StatusBadge = ({ status }: { status: string }) => {
+          const m = STATUS_META[status] || { label: status, badgeBg: "#F3F4F6", badgeColor: "#374151" };
+          return (
+            <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10,
+              fontWeight:500, background:m.badgeBg, color:m.badgeColor, whiteSpace:"nowrap" }}>
+              {m.label}
+            </span>
+          );
+        };
+
+        const PayBadge = ({ method, payStatus }: { method: string; payStatus: string }) => {
+          const m = PAY_META[method] || { label: method, badgeBg: "#F3F4F6", badgeColor: "#374151" };
+          return (
+            <div>
+              <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10,
+                fontWeight:500, background:m.badgeBg, color:m.badgeColor }}>
+                {m.label}
+              </span>
+              <div style={{ fontSize:10, marginTop:2,
+                color: payStatus==="paid" ? "#16A34A" : payStatus==="refunded" ? "#DC2626" : "#D97706" }}>
+                {payStatus}
+              </div>
+            </div>
+          );
+        };
+
+        const TABS: Array<{ key: typeof ordersTab; label: string }> = [
+          { key: "all", label: "All" },
+          { key: "pending", label: "Pending" },
+          { key: "confirmed", label: "Confirmed" },
+          { key: "en_route", label: "En route" },
+          { key: "delivered", label: "Delivered" },
+          { key: "cancelled", label: "Cancelled" },
+        ];
+
+        const cardStyle: React.CSSProperties = {
+          background: "white", border: "0.5px solid #F3F4F6", borderRadius: 12, overflow: "hidden"
+        };
 
         return (
-          <>
-            {/* Expected today */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-500">{cashOrders.length} total orders</p>
-                <Button size="sm" variant="outline" onClick={fetchCashOrders} disabled={cashLoading} className="h-7 text-xs px-2">
-                  {cashLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                  <span className="ml-1">Refresh</span>
-                </Button>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${expectedToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                <p className="text-xs text-gray-500">Expected today across {pendingToday.length} orders</p>
-              </div>
-            </div>
-
-            {/* Overdue alert */}
-            {overdueOrders.length > 0 && !cashOverdueDismissed && (
-              <div className="mb-4 p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: "#FEF3C7", border: "1px solid #F59E0B40" }}>
-                <p className="text-sm" style={{ color: "#92400E" }}>
-                  <strong>{overdueOrders.length} orders overdue</strong> — delivery date has passed without payment confirmation.
-                </p>
-                <button onClick={() => { setCashOverdueDismissed(true); sessionStorage.setItem("cash_overdue_dismissed", "1"); }} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
-              </div>
-            )}
-
-            {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div>
+            {/* Metric cards */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(5,minmax(0,1fr))", gap:10, marginBottom:16 }}>
               {[
-                { label: "Pending Today", value: pendingToday.length, color: "#F59E0B" },
-                { label: "Overdue", value: overdueOrders.length, color: overdueOrders.length > 0 ? "#EF4444" : "#999" },
-                { label: "Collected Today", value: collectedToday.length, color: "#22C55E" },
-                { label: "Total Outstanding", value: `$${totalOutstanding.toFixed(2)}`, color: BRAND_GOLD },
-              ].map(m => (
-                <div key={m.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
-                  <p className="text-2xl font-bold" style={{ color: m.color }}>{m.value}</p>
-                  <p className="text-xs text-white/60 mt-1">{m.label}</p>
+                { label:"Total orders",      val: ordersMetrics?.total ?? allOrders.length, color:undefined },
+                { label:"Pending",           val: ordersMetrics?.pending ?? 0,              color:"#D97706" },
+                { label:"Confirmed",         val: ordersMetrics?.confirmed ?? 0,            color:"#2563EB" },
+                { label:"Today's deliveries",val: ordersMetrics?.today_deliveries ?? 0,     color:"#16A34A" },
+                { label:"Revenue (30d)",     val: ordersMetrics ? fmtMoney(ordersMetrics.revenue_30d) : "—", color:"#16A34A" },
+              ].map((m, i) => (
+                <div key={i} style={{ background:"#F9FAFB", borderRadius:8, padding:"12px 14px" }}>
+                  <div style={{ fontSize:10, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:".05em", marginBottom:5 }}>{m.label}</div>
+                  <div style={{ fontSize:22, fontWeight:500, lineHeight:1, color: m.color || "inherit" }}>{m.val}</div>
+                  {i===4 && ordersMetrics && <div style={{ fontSize:10, color:"#9CA3AF", marginTop:4 }}>{ordersMetrics.paid_count_30d} paid orders</div>}
                 </div>
               ))}
             </div>
 
-            {/* Filter tabs */}
-            <div className="flex gap-1 mb-4">
-              {(["all", "pending", "overdue", "collected"] as const).map(f => (
-                <button key={f} onClick={() => setCashFilter(f)} className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors" style={{
-                  backgroundColor: cashFilter === f ? T.textPrimary : T.cardBg,
-                  color: cashFilter === f ? BRAND_GOLD : "#666",
-                  border: `1px solid ${T.cardBorder}`,
-                }}>
-                  {f}
-                </button>
-              ))}
-            </div>
-
-            {cashLoading ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
-            ) : (
-              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                      {["Order #", "Date", "Customer", "Address", "Amount", "Delivery Date", "Method", "Status", "Action", "Email", "Last Email Sent"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map(o => {
-                      const status = getCashStatus(o);
-                      const statusColor = status === "collected" ? "#22C55E" : status === "overdue" ? "#EF4444" : "#F59E0B";
-                      const statusLabel = status === "collected" ? "Collected" : status === "overdue" ? "Overdue" : "Pending";
-                      const isToday = o.delivery_date === today;
-                      const isPast = o.delivery_date && o.delivery_date < today && !o.cash_collected;
-                      return (
-                        <tr key={o.id} className="border-t" style={{ borderColor: T.cardBorder }}
-onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
-onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                          <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{o.order_number || "—"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(o.created_at)}</td>
-                          <td className="px-3 py-2">
-                            <p className="text-xs font-medium">{o.customer_name}</p>
-                            <p className="text-[10px] text-gray-400">{o.customer_phone}</p>
-                          </td>
-                          <td className="px-3 py-2 text-xs max-w-[160px] truncate">{o.delivery_address}</td>
-                          <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toFixed(2)}</td>
-                          <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: isPast ? "#EF4444" : isToday ? BRAND_GOLD : undefined }}>
-                            {isToday ? "Today" : o.delivery_date ? new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD"}
-                          </td>
-                          <td className="px-3 py-2">
-                            {(() => {
-                              const pm = (o.payment_method || "").toLowerCase();
-                              if (pm === "stripe" || pm === "stripe-link" || pm === "card") {
-                                return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: "#3B82F6" }}>CARD</span>;
-                              }
-                              if (pm === "check") {
-                                return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#E5E7EB", color: "#374151" }}>CHECK</span>;
-                              }
-                              return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: "#F59E0B" }}>CASH</span>;
-                            })()}
-                          </td>
-                          <td className="px-3 py-2">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: statusColor }}>
-                              {statusLabel}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2">
-                            {o.payment_status === "paid" || o.cash_collected ? (
-                              <span className="text-[10px]" style={{ color: "#22C55E" }}>
-                                Paid {o.cash_collected_at ? new Date(o.cash_collected_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
-                              </span>
-                            ) : (
-                              <div className="flex gap-1 flex-wrap">
-                                {["stripe", "stripe-link", "card"].includes((o.payment_method || "").toLowerCase()) && o.payment_status === "pending" && (
-                                  <Button size="sm" onClick={() => syncStripePayment(o)} disabled={syncingPayment === o.id} className="h-7 text-[10px] px-2" style={{ backgroundColor: "#3B82F6", color: "white" }}>
-                                    {syncingPayment === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                                    Sync
-                                  </Button>
-                                )}
-                                <Button size="sm" onClick={() => { setCashOrderToMark(o); setCashCollectedBy(""); setCashSendEmail(true); }} className="h-7 text-[10px] px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                                  Mark Paid
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => sendPaymentLink(o)} disabled={sendingPaymentLink === o.id} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
-                                  {sendingPaymentLink === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link className="w-3 h-3 mr-1" />}
-                                  Pay Link
-                                </Button>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-2">
-                            <Button size="sm" variant="outline" onClick={() => { setEditEmailOrder(o); setEditEmailValue(o.customer_email || ""); }} className="h-7 text-[10px] px-2" style={{ borderColor: "#6B7280", color: "#6B7280" }}>
-                              <Edit2 className="w-3 h-3 mr-1" />
-                              Email
-                            </Button>
-                          </td>
-                          <td className="px-3 py-2 text-[10px] text-gray-500 whitespace-nowrap">
-                            {o.last_confirmation_sent_at ? new Date(o.last_confirmation_sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {filtered.length === 0 && (
-                      <tr><td colSpan={11} className="px-3 py-8 text-center text-gray-400">No orders found</td></tr>
-                    )}
-                  </tbody>
-                </table>
+            {/* Toolbar */}
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+              <div style={{ display:"flex", gap:2, background:"#F3F4F6", padding:3, borderRadius:8, flexShrink:0 }}>
+                {TABS.map(t => (
+                  <button key={t.key} onClick={() => setOrdersTab(t.key)}
+                    style={{ padding:"5px 12px", borderRadius:6, fontSize:12, cursor:"pointer", border:"none",
+                      fontFamily:"inherit", whiteSpace:"nowrap", transition:"all .15s",
+                      background: ordersTab===t.key ? "white" : "transparent",
+                      color: ordersTab===t.key ? "#111827" : "#6B7280",
+                      fontWeight: ordersTab===t.key ? 500 : 400,
+                      boxShadow: ordersTab===t.key ? "0 0 0 0.5px #E5E7EB" : "none",
+                    }}>
+                    {t.label}
+                  </button>
+                ))}
               </div>
-            )}
+              <input
+                value={ordersSearch}
+                onChange={e => setOrdersSearch(e.target.value)}
+                placeholder="Search order #, name, address, phone..."
+                style={{ flex:1, minWidth:180, padding:"7px 10px", border:"0.5px solid #E5E7EB",
+                  borderRadius:8, fontSize:12, fontFamily:"inherit", background:"white",
+                  color:"inherit" }}
+              />
+              <select value={ordersPayFilter} onChange={e => setOrdersPayFilter(e.target.value)}
+                style={{ padding:"7px 10px", border:"0.5px solid #E5E7EB", borderRadius:8,
+                  fontSize:12, fontFamily:"inherit", background:"white", color:"#6B7280", cursor:"pointer" }}>
+                <option value="">All payment types</option>
+                <option value="stripe-link">Card (Stripe)</option>
+                <option value="cash">Cash / COD</option>
+                <option value="check">Check</option>
+              </select>
+              <Button onClick={fetchAllOrders} disabled={ordersLoading} size="sm" variant="outline">
+                {ordersLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                <span style={{ marginLeft:4 }}>Refresh</span>
+              </Button>
+            </div>
 
-            {/* Today's Cash Schedule */}
-            {todaysOrders.length > 0 && (
-              <div className="mt-6" id="cash-daily-schedule">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold" style={{ color: T.textPrimary }}>Today's Cash Schedule</h3>
-                  <Button size="sm" variant="outline" onClick={() => window.print()} className="text-xs">
-                    Print Today's Sheet
-                  </Button>
-                </div>
-                <div className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: T.cardBorder }}>
-                  {todaysOrders.map((o, i) => (
-                    <div key={o.id} className="px-4 py-3 flex items-center justify-between" style={{ borderTop: i > 0 ? `1px solid ${T.cardBorder}` : undefined }}>
-                      <div>
-                        <p className="text-sm font-medium" style={{ color: T.textPrimary }}>{o.customer_name}</p>
-                        <p className="text-xs text-gray-500">{o.delivery_address}</p>
-                        <p className="text-xs text-gray-400">{o.customer_phone} · {o.order_number}</p>
+            {/* Main grid — table + detail panel */}
+            <div style={{ display:"grid", gap:14,
+              gridTemplateColumns: selectedOrderId ? "1fr 340px" : "1fr" }}>
+
+              {/* Orders table */}
+              <div style={cardStyle}>
+                {ordersLoading && !allOrders.length ? (
+                  <div style={{ textAlign:"center", padding:"48px 0", color:"#9CA3AF", fontSize:13 }}>
+                    <Loader2 size={20} style={{ animation:"spin 1s linear infinite", margin:"0 auto 8px" }} />
+                    Loading orders...
+                  </div>
+                ) : (
+                  <div style={{ overflowX:"auto" }}>
+                    <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+                      <thead>
+                        <tr style={{ background:"#F9FAFB" }}>
+                          {["Order #","Customer","Address","Delivery","Amount","Payment","Status","Actions"].map(h => (
+                            <th key={h} style={{ textAlign:"left", padding:"9px 12px", fontSize:10,
+                              fontWeight:500, color:"#9CA3AF", textTransform:"uppercase",
+                              letterSpacing:".05em", borderBottom:"0.5px solid #F3F4F6", whiteSpace:"nowrap" }}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredOrders.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} style={{ textAlign:"center", padding:"48px 0", color:"#9CA3AF", fontSize:13 }}>
+                              No orders match filters
+                            </td>
+                          </tr>
+                        ) : filteredOrders.map((o: any) => {
+                          const isSel = o.id === selectedOrderId;
+                          return (
+                            <tr key={o.id}
+                              onClick={() => {
+                                if (selectedOrderId === o.id) { setSelectedOrderId(null); }
+                                else { setSelectedOrderId(o.id); setOrderNotesDraft(o.notes || ""); }
+                              }}
+                              style={{ background: isSel ? "#F9FAFB" : "white", cursor:"pointer",
+                                borderBottom:"0.5px solid #F9FAFB", transition:"background .1s" }}
+                              onMouseEnter={e => { if(!isSel)(e.currentTarget as HTMLTableRowElement).style.background="#F9FAFB"; }}
+                              onMouseLeave={e => { if(!isSel)(e.currentTarget as HTMLTableRowElement).style.background="white"; }}
+                            >
+                              <td style={{ padding:"10px 12px" }}>
+                                <span style={{ fontFamily:"monospace", fontSize:11, color:"#2563EB", fontWeight:500 }}>
+                                  {o.order_number}
+                                </span>
+                              </td>
+                              <td style={{ padding:"10px 12px" }}>
+                                <div style={{ fontSize:12, fontWeight:500 }}>{o.customer_name}</div>
+                                <div style={{ fontSize:10, color:"#9CA3AF" }}>{o.customer_phone}</div>
+                              </td>
+                              <td style={{ padding:"10px 12px", maxWidth:160 }}>
+                                <span style={{ fontSize:11, color:"#6B7280", display:"block",
+                                  overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                                  {o.delivery_address}
+                                </span>
+                              </td>
+                              <td style={{ padding:"10px 12px" }}>
+                                <div style={{ fontSize:12, fontWeight:500 }}>{fmtDate(o.delivery_date)}</div>
+                                <div style={{ fontSize:10, color:"#9CA3AF" }}>{o.delivery_day_of_week}</div>
+                              </td>
+                              <td style={{ padding:"10px 12px", fontSize:12, fontWeight:500 }}>
+                                {fmtMoney(Number(o.price) * (o.quantity || 1))}
+                                {o.quantity > 1 && <div style={{ fontSize:10, color:"#9CA3AF" }}>{o.quantity} loads</div>}
+                              </td>
+                              <td style={{ padding:"10px 12px" }}>
+                                <PayBadge method={o.payment_method} payStatus={o.payment_status} />
+                              </td>
+                              <td style={{ padding:"10px 12px" }}>
+                                <StatusBadge status={o.status} />
+                                {o.saturday_surcharge && (
+                                  <div style={{ fontSize:10, color:"#D97706", marginTop:2 }}>Sat +$35</div>
+                                )}
+                              </td>
+                              <td style={{ padding:"10px 12px" }} onClick={e => e.stopPropagation()}>
+                                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                                  {o.status === "pending" && o.payment_status === "paid" && (
+                                    <button onClick={() => doOrderAction("update_status", o.id, { status:"confirmed" })}
+                                      style={{ padding:"3px 8px", border:"0.5px solid #E5E7EB", borderRadius:6,
+                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
+                                        color:"#374151", transition:"background .15s" }}>
+                                      Confirm
+                                    </button>
+                                  )}
+                                  {o.status === "confirmed" && (
+                                    <button onClick={() => doOrderAction("update_status", o.id, { status:"en_route" })}
+                                      style={{ padding:"3px 8px", border:"0.5px solid #E5E7EB", borderRadius:6,
+                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
+                                        color:"#374151" }}>
+                                      En route
+                                    </button>
+                                  )}
+                                  {o.status === "en_route" && (
+                                    <button onClick={() => doOrderAction("update_status", o.id, { status:"delivered" })}
+                                      style={{ padding:"3px 8px", border:"0.5px solid #E5E7EB", borderRadius:6,
+                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
+                                        color:"#374151" }}>
+                                      Delivered
+                                    </button>
+                                  )}
+                                  {o.payment_status === "pending" && o.payment_method === "stripe-link" && (
+                                    <button onClick={() => doOrderAction("send_payment_link", o.id)}
+                                      style={{ padding:"3px 8px", border:"0.5px solid #D97706", borderRadius:6,
+                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
+                                        color:"#D97706" }}>
+                                      Send link
+                                    </button>
+                                  )}
+                                  {!["cancelled","delivered"].includes(o.status) && (
+                                    <button onClick={() => doOrderAction("cancel_order", o.id)}
+                                      style={{ padding:"3px 8px", border:"0.5px solid #DC2626", borderRadius:6,
+                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
+                                        color:"#DC2626" }}>
+                                      Cancel
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Detail panel */}
+              {selectedOrder && (
+                <div style={{ ...cardStyle, display:"flex", flexDirection:"column", maxHeight:"80vh", overflowY:"auto" }}>
+                  {/* Panel header */}
+                  <div style={{ padding:"14px 16px", borderBottom:"0.5px solid #F3F4F6",
+                    display:"flex", alignItems:"flex-start", justifyContent:"space-between", position:"sticky", top:0, background:"white", zIndex:1 }}>
+                    <div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+                        <span style={{ fontFamily:"monospace", fontSize:13, color:"#2563EB", fontWeight:500 }}>
+                          {selectedOrder.order_number}
+                        </span>
+                        <StatusBadge status={selectedOrder.status} />
+                        <PayBadge method={selectedOrder.payment_method} payStatus={selectedOrder.payment_status} />
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold" style={{ color: BRAND_GOLD }}>${Number(o.price || 0).toFixed(2)}</p>
-                        <p className="text-[10px] text-gray-400">{o.payment_method === "check" ? "Check" : "Cash"}{o.cash_collected ? " ✓" : ""}</p>
+                      <div style={{ fontSize:15, fontWeight:500 }}>{selectedOrder.customer_name}</div>
+                    </div>
+                    <button onClick={() => setSelectedOrderId(null)}
+                      style={{ padding:"4px 8px", border:"0.5px solid #E5E7EB", borderRadius:6,
+                        fontSize:11, cursor:"pointer", background:"transparent", color:"#6B7280", fontFamily:"inherit" }}>
+                      Close
+                    </button>
+                  </div>
+
+                  <div style={{ padding:16, flex:1 }}>
+
+                    {/* Status change */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
+                        textTransform:"uppercase", marginBottom:8 }}>Change status</div>
+                      <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                        {(["pending","confirmed","en_route","delivered","cancelled"] as const).map(s => {
+                          const m = STATUS_META[s];
+                          const isActive = selectedOrder.status === s;
+                          return (
+                            <button key={s}
+                              onClick={() => doOrderAction("update_status", selectedOrder.id, { status: s })}
+                              style={{ padding:"4px 10px", borderRadius:20, fontSize:10, cursor:"pointer",
+                                border:"0.5px solid #E5E7EB", fontFamily:"inherit", transition:"all .15s",
+                                background: isActive ? m.badgeBg : "transparent",
+                                color: isActive ? m.badgeColor : "#6B7280",
+                                fontWeight: isActive ? 500 : 400 }}>
+                              {m.label}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
-                  ))}
+
+                    {/* Customer */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
+                        textTransform:"uppercase", marginBottom:8 }}>Customer</div>
+                      {[
+                        ["Name", selectedOrder.customer_name],
+                        ["Phone", selectedOrder.customer_phone],
+                        ["Email", selectedOrder.customer_email || "—"],
+                      ].map(([l,v]) => (
+                        <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0",
+                          borderBottom:"0.5px solid #F9FAFB", fontSize:12 }}>
+                          <span style={{ color:"#6B7280" }}>{l}</span>
+                          <span style={{ fontWeight:500, textAlign:"right", maxWidth:200 }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Order details */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
+                        textTransform:"uppercase", marginBottom:8 }}>Order details</div>
+                      {[
+                        ["Address", selectedOrder.delivery_address],
+                        ["Delivery", `${fmtDate(selectedOrder.delivery_date)} · ${selectedOrder.delivery_day_of_week || ""}`],
+                        ["Distance", `${selectedOrder.distance_miles} mi`],
+                        ["Quantity", `${selectedOrder.quantity} load${selectedOrder.quantity > 1 ? "s" : ""}`],
+                      ].map(([l,v]) => (
+                        <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0",
+                          borderBottom:"0.5px solid #F9FAFB", fontSize:12 }}>
+                          <span style={{ color:"#6B7280" }}>{l}</span>
+                          <span style={{ fontWeight:500, textAlign:"right", maxWidth:190, fontSize:l==="Address"?11:12 }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pricing */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
+                        textTransform:"uppercase", marginBottom:8 }}>Pricing</div>
+                      {[
+                        ["Base price", fmtMoney(Number(selectedOrder.price) * (selectedOrder.quantity||1) - (selectedOrder.saturday_surcharge_amount||0) + (selectedOrder.discount_amount||0))],
+                        ...(selectedOrder.saturday_surcharge_amount > 0 ? [["Sat surcharge", `+${fmtMoney(selectedOrder.saturday_surcharge_amount)}`]] : []),
+                        ...(selectedOrder.discount_amount > 0 ? [["Discount", `-${fmtMoney(selectedOrder.discount_amount)}`]] : []),
+                        [`Tax (${(Number(selectedOrder.tax_rate)*100).toFixed(2)}%)`, `+${fmtMoney(selectedOrder.tax_amount)}`],
+                      ].map(([l,v]) => (
+                        <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0",
+                          borderBottom:"0.5px solid #F9FAFB", fontSize:12 }}>
+                          <span style={{ color:"#6B7280" }}>{l}</span>
+                          <span style={{ fontWeight:500, color: String(l).includes("Discount") ? "#16A34A" : undefined }}>{v}</span>
+                        </div>
+                      ))}
+                      <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0",
+                        fontSize:14, fontWeight:500, borderTop:"0.5px solid #E5E7EB", marginTop:4 }}>
+                        <span>Total</span>
+                        <span>{fmtMoney(Number(selectedOrder.price) * (selectedOrder.quantity||1) + Number(selectedOrder.tax_amount))}</span>
+                      </div>
+                      <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontSize:12 }}>
+                        <span style={{ color:"#6B7280" }}>Payment status</span>
+                        <span style={{ fontWeight:500,
+                          color: selectedOrder.payment_status==="paid" ? "#16A34A" : selectedOrder.payment_status==="refunded" ? "#DC2626" : "#D97706" }}>
+                          {selectedOrder.payment_status}
+                        </span>
+                      </div>
+                      {selectedOrder.stripe_payment_id && (
+                        <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontSize:11 }}>
+                          <span style={{ color:"#9CA3AF" }}>Stripe ID</span>
+                          <span style={{ fontFamily:"monospace", color:"#6B7280" }}>{selectedOrder.stripe_payment_id}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
+                        textTransform:"uppercase", marginBottom:8 }}>Notes</div>
+                      <textarea
+                        value={orderNotesDraft}
+                        onChange={e => setOrderNotesDraft(e.target.value)}
+                        placeholder="Add delivery notes..."
+                        style={{ width:"100%", padding:8, border:"0.5px solid #E5E7EB", borderRadius:8,
+                          fontSize:12, fontFamily:"inherit", background:"white",
+                          color:"inherit", resize:"vertical", minHeight:60 }}
+                      />
+                      <button onClick={() => doOrderAction("save_notes", selectedOrder.id)}
+                        disabled={orderActionLoading === "save_notes" + selectedOrder.id}
+                        style={{ marginTop:6, width:"100%", padding:"7px 12px", border:"0.5px solid #E5E7EB",
+                          borderRadius:8, fontSize:12, cursor:"pointer", background:"transparent",
+                          fontFamily:"inherit", textAlign:"left", color:"#374151" }}>
+                        Save notes
+                      </button>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div style={{ marginBottom:8 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
+                        textTransform:"uppercase", marginBottom:8 }}>Actions</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+
+                        {selectedOrder.status === "pending" && selectedOrder.payment_status === "paid" && (
+                          <button onClick={() => doOrderAction("update_status", selectedOrder.id, { status:"confirmed" })}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"#111827", border:"0.5px solid #111827",
+                              color:"white", fontFamily:"inherit", textAlign:"left" }}>
+                            Confirm order
+                          </button>
+                        )}
+
+                        {selectedOrder.status === "confirmed" && (
+                          <button onClick={() => doOrderAction("update_status", selectedOrder.id, { status:"en_route" })}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"#111827", border:"0.5px solid #111827",
+                              color:"white", fontFamily:"inherit", textAlign:"left" }}>
+                            Mark en route
+                          </button>
+                        )}
+
+                        {selectedOrder.status === "en_route" && (
+                          <button onClick={() => doOrderAction("update_status", selectedOrder.id, { status:"delivered" })}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"#111827", border:"0.5px solid #111827",
+                              color:"white", fontFamily:"inherit", textAlign:"left" }}>
+                            Mark delivered
+                          </button>
+                        )}
+
+                        {selectedOrder.customer_email && (
+                          <button onClick={() => doOrderAction("resend_email", selectedOrder.id)}
+                            disabled={orderActionLoading === "resend_email" + selectedOrder.id}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"transparent", border:"0.5px solid #E5E7EB",
+                              color:"#374151", fontFamily:"inherit", textAlign:"left" }}>
+                            Resend confirmation email
+                          </button>
+                        )}
+
+                        <button onClick={() => doOrderAction("resend_invoice", selectedOrder.id)}
+                          disabled={orderActionLoading === "resend_invoice" + selectedOrder.id}
+                          style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                            cursor:"pointer", background:"transparent", border:"0.5px solid #E5E7EB",
+                            color:"#374151", fontFamily:"inherit", textAlign:"left" }}>
+                          Resend invoice PDF
+                        </button>
+
+                        {selectedOrder.payment_status !== "paid" && selectedOrder.payment_method === "stripe-link" && (
+                          <button onClick={() => doOrderAction("send_payment_link", selectedOrder.id)}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"transparent", border:"0.5px solid #D97706",
+                              color:"#D97706", fontFamily:"inherit", textAlign:"left" }}>
+                            Send payment link
+                          </button>
+                        )}
+
+                        {selectedOrder.payment_method === "cash" && !selectedOrder.cash_collected && selectedOrder.status !== "cancelled" && (
+                          <button onClick={() => doOrderAction("mark_cash_collected", selectedOrder.id)}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"transparent", border:"0.5px solid #D97706",
+                              color:"#D97706", fontFamily:"inherit", textAlign:"left" }}>
+                            Mark cash collected
+                          </button>
+                        )}
+
+                        {selectedOrder.payment_method === "stripe-link" && (
+                          <button onClick={() => doOrderAction("sync_stripe", selectedOrder.id)}
+                            disabled={orderActionLoading === "sync_stripe" + selectedOrder.id}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"transparent", border:"0.5px solid #E5E7EB",
+                              color:"#374151", fontFamily:"inherit", textAlign:"left" }}>
+                            Sync Stripe payment
+                          </button>
+                        )}
+
+                        {!["cancelled","delivered"].includes(selectedOrder.status) && (
+                          <button onClick={() => doOrderAction("cancel_order", selectedOrder.id)}
+                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
+                              cursor:"pointer", background:"transparent", border:"0.5px solid #DC2626",
+                              color:"#DC2626", fontFamily:"inherit", textAlign:"left" }}>
+                            Cancel order
+                          </button>
+                        )}
+
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
+              )}
+
+            </div>
+          </div>
         );
       }
 
