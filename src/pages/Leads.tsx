@@ -5571,18 +5571,30 @@ const Leads = () => {
                     <div style={{ marginBottom:16 }}>
                       <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
                         textTransform:"uppercase", marginBottom:8 }}>Change status</div>
-                      <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                         {(["pending","confirmed","en_route","delivered","cancelled"] as const).map(s => {
                           const m = STATUS_META[s];
                           const isActive = selectedOrder.status === s;
                           return (
                             <button key={s}
                               onClick={() => doOrderAction("update_status", selectedOrder.id, { status: s })}
-                              style={{ padding:"4px 10px", borderRadius:20, fontSize:10, cursor:"pointer",
-                                border:"0.5px solid #E5E7EB", fontFamily:"inherit", transition:"all .15s",
+                              style={{
+                                width: 80,
+                                height: 28,
+                                borderRadius: 20,
+                                fontSize: 10,
+                                cursor: "pointer",
+                                border: "0.5px solid #E5E7EB",
+                                fontFamily: "inherit",
+                                transition: "all .15s",
                                 background: isActive ? m.badgeBg : "transparent",
                                 color: isActive ? m.badgeColor : "#6B7280",
-                                fontWeight: isActive ? 500 : 400 }}>
+                                fontWeight: isActive ? 500 : 400,
+                                whiteSpace: "nowrap" as const,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}>
                               {m.label}
                             </button>
                           );
