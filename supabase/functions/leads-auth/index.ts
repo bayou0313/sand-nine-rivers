@@ -18,6 +18,90 @@ const corsHeaders = {
  * crossing Lake Pontchartrain (Causeway toll recovery).
  * Customer sees actual distance; pricing uses billed distance.
  */
+/**
+ * Internal fraud check — reusable by session_init and check_fraud action.
+ * Returns { blocked: boolean, reason?: string }
+ */
+async function checkFraudInternal(
+  sb: any,
+  params: { ip?: string | null; phone?: string | null; email?: string | null; session_id?: string | null; address?: string | null }
+): Promise<{ blocked: boolean; reason?: string }> {
+  const { ip, phone, email, session_id, address } = params;
+  const now = new Date().toISOString();
+
+  // 1. Blocklist check
+  if (ip || phone || email) {
+    const { data: blocked } = await sb
+      .from("fraud_blocklist")
+      .select("*")
+      .or(`and(type.eq.ip,value.eq.${ip || "___none___"}),and(type.eq.phone,value.eq.${phone || "___none___"}),and(type.eq.email,value.eq.${email || "___none___"})`)
+      .or(`expires_at.is.null,expires_at.gt.${now}`);
+
+    if (blocked && blocked.length > 0) {
+      await sb.from("fraud_events").insert({ ip_address: ip, phone, email, session_id, event_type: "blocked_attempt", details: { blocked } });
+      return { blocked: true, reason: blocked[0].reason || "Blocked" };
+    }
+  }
+
+  // 2. Rate limit: max 5 sessions per IP per hour
+  if (ip) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: sessionCount } = await sb
+      .from("visitor_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_address", ip)
+      .gt("created_at", oneHourAgo);
+
+    if ((sessionCount || 0) >= 5) {
+      await sb.from("fraud_events").insert({ ip_address: ip, event_type: "velocity_flag", details: { sessionCount, reason: "IP session rate limit" } });
+      return { blocked: true, reason: "Too many requests from this IP" };
+    }
+  }
+
+  // 3. Payment attempt limit: max 5 failed per IP per day
+  if (ip) {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count: ipPayments } = await sb
+      .from("payment_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_address", ip)
+      .eq("status", "failed")
+      .gt("created_at", oneDayAgo);
+
+    if ((ipPayments || 0) >= 5) {
+      await sb.from("fraud_blocklist").upsert(
+        { type: "ip", value: ip, reason: "Auto-blocked: 5+ failed payments in 24hr", blocked_by: "system" },
+        { onConflict: "type,value" }
+      );
+      return { blocked: true, reason: "Payment attempt limit exceeded" };
+    }
+  }
+
+  // 4. Address velocity: 3+ orders same address in 24hr → alert only
+  if (address) {
+    const streetPart = address.split(",")[0]?.trim();
+    if (streetPart) {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count: addressOrders } = await sb
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .ilike("delivery_address", `%${streetPart}%`)
+        .gt("created_at", oneDayAgo);
+
+      if ((addressOrders || 0) >= 3) {
+        await sb.from("fraud_events").insert({ ip_address: ip, event_type: "velocity_flag", details: { addressOrders, reason: "Address velocity" } });
+        await sb.from("notifications").insert({
+          type: "fraud_alert", title: "🚨 Fraud Alert",
+          message: `⚠️ Velocity Alert: ${addressOrders} orders to same address in 24hr — ${streetPart}`,
+          entity_type: "fraud", entity_id: null
+        });
+      }
+    }
+  }
+
+  return { blocked: false };
+}
+
 const NORTHSHORE_ZIPS = new Set([
   '70433','70434','70435','70436','70437','70438',
   '70441','70443','70444','70445','70446','70447',
