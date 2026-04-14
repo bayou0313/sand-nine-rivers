@@ -572,6 +572,17 @@ const Leads = () => {
   const [cashSendEmail, setCashSendEmail] = useState(true);
   const [cashOverdueDismissed, setCashOverdueDismissed] = useState(() => sessionStorage.getItem("cash_overdue_dismissed") === "1");
 
+  // All orders state
+  const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersMetrics, setOrdersMetrics] = useState<{total:number;pending:number;confirmed:number;today_deliveries:number;revenue_30d:number;paid_count_30d:number} | null>(null);
+  const [ordersTab, setOrdersTab] = useState<"all"|"pending"|"confirmed"|"en_route"|"delivered"|"cancelled">("all");
+  const [ordersSearch, setOrdersSearch] = useState("");
+  const [ordersPayFilter, setOrdersPayFilter] = useState("");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderNotesDraft, setOrderNotesDraft] = useState("");
+  const [orderActionLoading, setOrderActionLoading] = useState<string | null>(null);
+
   // SEO state
   const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
   const [notrackIps, setNotrackIps] = useState<string[]>([]);
