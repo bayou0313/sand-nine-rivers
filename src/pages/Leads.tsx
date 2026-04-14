@@ -5280,6 +5280,7 @@ const Leads = () => {
           return `${p[1]}/${p[2]}/${p[0].slice(2)}`;
         };
 
+        console.log("[RENDER] allOrders.length=", allOrders.length, "filteredOrders will derive from:", allOrders.map((o:any)=>o.order_number));
         const filteredOrders = allOrders.filter((o: any) => {
           if (ordersTab !== "all" && o.status !== ordersTab) return false;
           if (ordersPayFilter && o.payment_method !== ordersPayFilter) return false;
