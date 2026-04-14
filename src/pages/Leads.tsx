@@ -5578,11 +5578,23 @@ const Leads = () => {
                           return (
                             <button key={s}
                               onClick={() => doOrderAction("update_status", selectedOrder.id, { status: s })}
-                              style={{ padding:"4px 10px", borderRadius:20, fontSize:10, cursor:"pointer",
-                                border:"0.5px solid #E5E7EB", fontFamily:"inherit", transition:"all .15s",
+                              style={{
+                                width: 80,
+                                height: 28,
+                                borderRadius: 20,
+                                fontSize: 10,
+                                cursor: "pointer",
+                                border: "0.5px solid #E5E7EB",
+                                fontFamily: "inherit",
+                                transition: "all .15s",
                                 background: isActive ? m.badgeBg : "transparent",
                                 color: isActive ? m.badgeColor : "#6B7280",
-                                fontWeight: isActive ? 500 : 400 }}>
+                                fontWeight: isActive ? 500 : 400,
+                                whiteSpace: "nowrap" as const,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}>
                               {m.label}
                             </button>
                           );
