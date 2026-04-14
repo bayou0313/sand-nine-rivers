@@ -14,141 +14,182 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, description, customer_name, customer_email, order_id, order_number, origin_url, return_mode, same_day_requested, delivery_date } = await req.json();
+    const body = await req.json();
+    const {
+      amount,
+      description,
+      customer_name,
+      customer_email,
+      order_id,
+      order_number,
+      origin_url,
+      return_mode,
+    } = body;
 
-    // Validate email format before passing to Stripe
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const safeEmail = customer_email && emailRegex.test(customer_email.trim())
-      ? customer_email.trim()
-      : undefined;
-
-    if (!amount || typeof amount !== "number" || amount < 50) {
+    if (!amount || !order_id) {
       return new Response(
-        JSON.stringify({ error: "Invalid amount" }),
+        JSON.stringify({ error: "Missing required fields: amount, order_id" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Determine stripe mode from global_settings
+    // ── Supabase client (service role) ──────────────────────────────────────
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: settingsRows } = await supabase
+    // ── Stripe mode ──────────────────────────────────────────────────────────
+    const { data: modeData } = await supabase
       .from("global_settings")
-      .select("key, value")
-      .in("key", ["stripe_mode", "pricing_mode"]);
-
-    const settingsMap: Record<string, string> = {};
-    (settingsRows || []).forEach((r: any) => { settingsMap[r.key] = r.value; });
-
-    const stripeMode = settingsMap["stripe_mode"] || "live";
-    const pricingMode = settingsMap["pricing_mode"] || "transparent";
+      .select("value")
+      .eq("key", "stripe_mode")
+      .maybeSingle();
+    const stripeMode = modeData?.value || "live";
     const stripeKey = stripeMode === "test"
-      ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
-      : Deno.env.get("STRIPE_SECRET_KEY");
-
-    console.log(`[create-checkout-link] stripe_mode: ${stripeMode}, key starts with: ${stripeKey?.slice(0, 8)}`);
-
-    // In test mode, return mock checkout URL without creating real Stripe session
-    if (stripeMode === "test") {
-      console.log("[create-checkout-link] TEST MODE — returning mock URL");
-      const safeOriginTest = origin_url || "https://riversand.net";
-      return new Response(
-        JSON.stringify({ url: `${safeOriginTest}/order?payment=test&order_id=${encodeURIComponent(order_id || "")}`, test_mode: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const stripe = new Stripe(stripeKey || "", {
+      ? Deno.env.get("STRIPE_TEST_SECRET_KEY")!
+      : Deno.env.get("STRIPE_SECRET_KEY")!;
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
 
-    const safeOrigin = origin_url || "https://riversand.net";
-    const encodedOrderId = encodeURIComponent(order_id || "");
-    const encodedOrderNumber = encodeURIComponent(order_number || "");
+    // ── Fetch order record for context ───────────────────────────────────────
+    const { data: orderRecord } = await supabase
+      .from("orders")
+      .select("customer_phone, customer_email, same_day_requested, delivery_date")
+      .eq("id", order_id)
+      .maybeSingle();
 
-    // Payment attempt tracking
-    if (order_id) {
-      const { data: orderRow } = await supabase
+    const phone = orderRecord?.customer_phone ?? null;
+    const todayDate = new Date().toISOString().slice(0, 10);
+    const deliveryDate = orderRecord?.delivery_date ?? null;
+
+    // Same-day: delivery_date is today OR same_day_requested flag is set
+    const isSameDay =
+      orderRecord?.same_day_requested === true ||
+      (deliveryDate !== null && deliveryDate === todayDate);
+
+    // ── Customer tier lookup ─────────────────────────────────────────────────
+    let customerTier = 1;
+    let threeDSecure: "any" | "automatic" = "any";
+    let existingStripeCustomerId: string | undefined;
+
+    if (phone) {
+      const { data: prevOrders } = await supabase
         .from("orders")
-        .select("payment_attempts")
-        .eq("id", order_id)
-        .maybeSingle();
-      const currentAttempts = orderRow?.payment_attempts || 0;
-      if (currentAttempts >= 3) {
-        return new Response(
-          JSON.stringify({ error: "Maximum payment attempts reached. Please contact support." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        .select("id, stripe_customer_id")
+        .eq("customer_phone", phone)
+        .in("payment_status", ["paid", "captured"])
+        .not("status", "eq", "cancelled")
+        .order("created_at", { ascending: false });
+
+      const paidCount = prevOrders?.length ?? 0;
+      existingStripeCustomerId = prevOrders?.find(
+        (o: any) => o.stripe_customer_id
+      )?.stripe_customer_id;
+
+      if (paidCount >= 3) {
+        customerTier = 3;        // VIP — frictionless where possible
+        threeDSecure = "automatic";
+      } else if (paidCount >= 1) {
+        customerTier = 2;        // Returning — let Stripe decide
+        threeDSecure = "automatic";
       }
-      await supabase
-        .from("orders")
-        .update({ payment_attempts: currentAttempts + 1 })
-        .eq("id", order_id);
+      // paidCount === 0 → Tier 1, "any" (always challenge new customers)
     }
 
-    // Determine capture method based on delivery timing
-    const isSameDay = !!same_day_requested;
-    const daysUntilDelivery = delivery_date
-      ? Math.floor((new Date(delivery_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-      : 0;
-    const captureMethod = isSameDay || daysUntilDelivery > 6 ? "automatic" : "manual";
+    // ── Capture method ───────────────────────────────────────────────────────
+    // Same-day orders: capture immediately — nightly cron only runs for delivery_date = tomorrow
+    // Future orders: manual capture — nightly cron captures the night before delivery
+    const captureMethod: "automatic" | "manual" = isSameDay ? "automatic" : "manual";
 
-    console.log(`[create-checkout-link] same_day: ${isSameDay}, daysUntilDelivery: ${daysUntilDelivery}, capture_method: ${captureMethod}`);
+    console.log(
+      `[create-checkout-link] order=${order_number} tier=${customerTier} ` +
+      `3ds=${threeDSecure} capture=${captureMethod} same_day=${isSameDay} ` +
+      `returning_customer=${!!existingStripeCustomerId}`
+    );
 
-    const session = await stripe.checkout.sessions.create({
+    // ── Success / cancel URLs ────────────────────────────────────────────────
+    const baseOrigin = origin_url || "https://riversand.net";
+    const successUrl =
+      return_mode === "popup"
+        ? `${baseOrigin}/order?payment=success&order_number=${order_number}&order_id=${order_id}&session_id={CHECKOUT_SESSION_ID}&return_mode=popup`
+        : `${baseOrigin}/order?payment=success&order_number=${order_number}&order_id=${order_id}&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${baseOrigin}/order?payment=cancelled&order_number=${order_number}`;
+
+    // ── Build Stripe checkout session ────────────────────────────────────────
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: "payment",
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: {
-              name: pricingMode === "baked"
-                ? (description || "River Sand Delivery").replace(/\s*\(incl\..*?fee\)/i, "").replace(/\s*—\s*Processing fees non-refundable\.?/i, "").trim()
-                : description || "River Sand Delivery — Processing fees non-refundable. Cancel 2+ hrs before delivery for full refund.",
+              name: description || `River Sand Delivery — ${order_number}`,
             },
-            unit_amount: amount, // in cents
+            unit_amount: Math.round(amount),
           },
           quantity: 1,
         },
       ],
-      mode: "payment",
-      customer_email: safeEmail,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       customer_creation: "always",
-      client_reference_id: order_id || undefined,
-      billing_address_collection: "required",
-      payment_method_options: {
-        card: {
-          request_three_d_secure: "automatic",
+      payment_intent_data: {
+        capture_method: captureMethod,
+        setup_future_usage: "off_session",
+        metadata: {
+          order_id: order_id,
+          order_number: order_number ?? "",
+          customer_name: customer_name ?? "",
+          customer_tier: String(customerTier),
+          is_same_day: String(isSameDay),
         },
       },
-      payment_intent_data: {
-        setup_future_usage: "off_session",
-        capture_method: captureMethod,
-        metadata: {
-          order_id: order_id || "",
-          order_number: order_number || "",
-          customer_name: customer_name || "",
+      payment_method_options: {
+        card: {
+          request_three_d_secure: threeDSecure,
         },
       },
       metadata: {
-        order_id: order_id || "",
-        order_number: order_number || "",
-        customer_name: customer_name || "",
+        order_id: order_id,
+        order_number: order_number ?? "",
       },
-      success_url: `${safeOrigin}/order?payment=success&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}&session_id={CHECKOUT_SESSION_ID}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
-      cancel_url: `${safeOrigin}/order?payment=canceled&order_id=${encodedOrderId}&order_number=${encodedOrderNumber}${return_mode === "popup" ? "&return_mode=popup" : ""}`,
-    });
+    };
 
-    console.log(`[create-checkout-link] session created: ${session.id}, order_id: ${order_id}, order_number: ${order_number}`);
+    // Attach existing Stripe customer for Tier 2/3 (pre-fills their saved card)
+    if (existingStripeCustomerId && customerTier >= 2) {
+      sessionParams.customer = existingStripeCustomerId;
+    } else {
+      const email = customer_email || orderRecord?.customer_email;
+      if (email) {
+        sessionParams.customer_email = email;
+      }
+    }
+
+    // ── Create session ───────────────────────────────────────────────────────
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    // Store resolved tier on the order (fire-and-forget)
+    supabase
+      .from("orders")
+      .update({ customer_tier: customerTier })
+      .eq("id", order_id)
+      .then(({ error }) => {
+        if (error) console.warn("[create-checkout-link] Failed to store tier:", error.message);
+      });
+
+    console.log(
+      `[create-checkout-link] session created: ${session.id} for order ${order_number}`
+    );
 
     return new Response(
-      JSON.stringify({ url: session.url }),
+      JSON.stringify({ url: session.url, session_id: session.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Error creating checkout session:", error);
+
+  } catch (error: any) {
+    console.error("[create-checkout-link] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Failed to create checkout link" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
