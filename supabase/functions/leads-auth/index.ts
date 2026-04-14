@@ -274,6 +274,19 @@ serve(async (req) => {
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const sb = createClient(supabaseUrl, serviceRoleKey);
 
+      // ── Fraud gate — block known bad actors before session creation ──
+      const fraudResult = await checkFraudInternal(sb, {
+        ip: visitorIp !== "unknown" ? visitorIp : null,
+        phone: null, email: null, session_id: session_token, address: null
+      });
+      if (fraudResult.blocked) {
+        console.log(`[session_init] Blocked by fraud check: ${fraudResult.reason}`);
+        return new Response(
+          JSON.stringify({ blocked: true, reason: fraudResult.reason }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // Geolocate IP (free tier, best-effort)
       let geo: Record<string, any> = {};
       if (visitorIp && visitorIp !== "unknown") {
