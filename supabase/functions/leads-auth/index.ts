@@ -2092,9 +2092,9 @@ serve(async (req) => {
         confirmed: all.filter((o: any) => o.status === "confirmed").length,
         today_deliveries: all.filter((o: any) => o.delivery_date === today && ["confirmed","en_route"].includes(o.status)).length,
         revenue_30d: all
-          .filter((o: any) => o.payment_status === "paid" && o.created_at >= since30)
+          .filter((o: any) => ["paid", "captured", "authorized"].includes(o.payment_status) && o.created_at >= since30)
           .reduce((sum: number, o: any) => sum + Number(o.price) * Number(o.quantity || 1), 0),
-        paid_count_30d: all.filter((o: any) => o.payment_status === "paid" && o.created_at >= since30).length,
+        paid_count_30d: all.filter((o: any) => ["paid", "captured", "authorized"].includes(o.payment_status) && o.created_at >= since30).length,
       };
       return new Response(
         JSON.stringify({ orders: all, metrics }),
