@@ -746,8 +746,6 @@ const Leads = () => {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: { password: storedPassword(), action: "list_all_orders" },
       });
-      console.log("[fetchAllOrders] response:", JSON.stringify(data));
-      console.log("[fetchAllOrders] error:", fnError);
       if (!fnError && data?.orders) {
         setAllOrders(data.orders);
         if (data.metrics) setOrdersMetrics(data.metrics);
@@ -1809,7 +1807,7 @@ const Leads = () => {
       const interval = setInterval(() => {
         fetchCashOrders();
         fetchAllOrders();
-      }, 60000);
+      }, 15000);
       return () => clearInterval(interval);
     }
   }, [activePage, authenticated, fetchCashOrders, fetchAllOrders]);
@@ -5280,7 +5278,6 @@ const Leads = () => {
           return `${p[1]}/${p[2]}/${p[0].slice(2)}`;
         };
 
-        console.log("[RENDER] allOrders.length=", allOrders.length, "filteredOrders will derive from:", allOrders.map((o:any)=>o.order_number));
         const filteredOrders = allOrders.filter((o: any) => {
           if (ordersTab !== "all" && o.status !== ordersTab) return false;
           if (ordersPayFilter && o.payment_method !== ordersPayFilter) return false;
@@ -6918,7 +6915,18 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
 
         {/* Page content */}
         <div className="px-4 md:px-6 lg:px-8 py-6">
-          {renderPageContent()}
+          {(() => {
+            try {
+              return renderPageContent();
+            } catch (err: any) {
+              console.error("[renderPageContent] ERROR:", err);
+              return (
+                <div style={{ padding: 32, color: "#DC2626" }}>
+                  Dashboard error: {err.message}
+                </div>
+              );
+            }
+          })()}
         </div>
       </main>
 
