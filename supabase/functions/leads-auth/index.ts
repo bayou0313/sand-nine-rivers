@@ -52,7 +52,7 @@ async function checkFraudInternal(
       .eq("ip_address", ip)
       .gt("created_at", oneHourAgo);
 
-    if ((sessionCount || 0) >= 5) {
+    if ((sessionCount || 0) >= 10) {
       await sb.from("fraud_events").insert({ ip_address: ip, event_type: "velocity_flag", details: { sessionCount, reason: "IP session rate limit" } });
       return { blocked: true, reason: "Too many requests from this IP" };
     }
