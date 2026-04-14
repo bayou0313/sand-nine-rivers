@@ -582,6 +582,9 @@ const Leads = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orderNotesDraft, setOrderNotesDraft] = useState("");
   const [orderActionLoading, setOrderActionLoading] = useState<string | null>(null);
+  const [showGenLinkForm, setShowGenLinkForm] = useState(false);
+  const [generatedStripeUrl, setGeneratedStripeUrl] = useState<string | null>(null);
+  const [genLinkEmail, setGenLinkEmail] = useState("");
 
   // SEO state
   const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
@@ -688,6 +691,40 @@ const Leads = () => {
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally { setSendingPaymentLink(null); }
+  }, [toast]);
+
+  const generateAndShowLink = useCallback(async (order: any, emailOverride?: string) => {
+    setOrderActionLoading("gen_link" + order.id);
+    try {
+      const amountCents = Math.round(
+        (Number(order.price) * (order.quantity || 1) + Number(order.tax_amount || 0)) * 100
+      );
+      const { data, error: fnError } = await supabase.functions.invoke("create-checkout-link", {
+        body: {
+          amount: amountCents,
+          description: `River Sand Delivery — ${order.order_number || "N/A"} (Card Payment)`,
+          customer_name: order.customer_name,
+          customer_email: emailOverride || order.customer_email || undefined,
+          order_id: order.id,
+          order_number: order.order_number,
+          origin_url: "https://riversand.net",
+          return_mode: "popup",
+        },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+      const url = data?.url;
+      if (!url) throw new Error("No URL returned from Stripe");
+      setGeneratedStripeUrl(url);
+      toast({
+        title: emailOverride ? "Link generated" : "Stripe link ready",
+        description: emailOverride ? "Copy below or send manually" : "Copy the link below to share",
+      });
+    } catch (err: any) {
+      toast({ title: "Error generating link", description: err.message, variant: "destructive" });
+    } finally {
+      setOrderActionLoading(null);
+    }
   }, [toast]);
 
   const fetchCashOrders = useCallback(async () => {
@@ -5450,7 +5487,7 @@ const Leads = () => {
                             <tr key={o.id}
                               onClick={() => {
                                 if (selectedOrderId === o.id) { setSelectedOrderId(null); }
-                                else { setSelectedOrderId(o.id); setOrderNotesDraft(o.notes || ""); }
+                                else { setSelectedOrderId(o.id); setOrderNotesDraft(o.notes || ""); setShowGenLinkForm(false); setGeneratedStripeUrl(null); setGenLinkEmail(""); }
                               }}
                               style={{ background: isSel ? "#F9FAFB" : "white", cursor:"pointer",
                                 borderBottom:"0.5px solid #F9FAFB", transition:"background .1s" }}
@@ -5673,6 +5710,239 @@ const Leads = () => {
                       )}
                     </div>
 
+                    <div style={{ height: "0.5px", background: "#F3F4F6" }} />
+
+                    {/* Payment card — NEW SECTION */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF", textTransform:"uppercase", marginBottom:8 }}>
+                        Payment
+                      </div>
+                      <div style={{ border:"0.5px solid #E5E7EB", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ padding:"10px 14px", background:"#F9FAFB", borderBottom:"0.5px solid #F3F4F6", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                          <div>
+                            <div style={{ fontSize:11, color:"#9CA3AF", marginBottom:2 }}>Payment status</div>
+                            <div style={{ fontSize:13, fontWeight:500,
+                              color: selectedOrder.payment_status === "paid" ? "#16A34A" : selectedOrder.payment_status === "refunded" ? "#DC2626" : "#D97706" }}>
+                              {selectedOrder.payment_status === "paid"
+                                ? `Paid${selectedOrder.stripe_payment_id ? " · " + selectedOrder.stripe_payment_id.slice(0, 14) + "…" : ""}`
+                                : selectedOrder.payment_status === "refunded" ? "Refunded"
+                                : (selectedOrder.payment_method === "cash" || selectedOrder.payment_method === "check")
+                                ? `Unpaid — ${selectedOrder.payment_method === "check" ? "Check" : "Cash on delivery"}`
+                                : "Awaiting card payment"}
+                            </div>
+                          </div>
+                          <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:20, fontSize:10, fontWeight:500,
+                            background: selectedOrder.payment_method === "stripe-link" ? "#EFF6FF" : "#FFFBEB",
+                            color: selectedOrder.payment_method === "stripe-link" ? "#1E40AF" : "#92400E" }}>
+                            {selectedOrder.payment_method === "stripe-link" ? "Card" : selectedOrder.payment_method === "check" ? "Check" : "COD"}
+                          </span>
+                        </div>
+
+                        {/* COD unpaid */}
+                        {(selectedOrder.payment_method === "cash" || selectedOrder.payment_method === "check") &&
+                         !selectedOrder.cash_collected && selectedOrder.payment_status !== "paid" &&
+                         selectedOrder.status !== "cancelled" && (
+                          <>
+                            <button onClick={() => doOrderAction("mark_cash_collected", selectedOrder.id)}
+                              disabled={!!orderActionLoading}
+                              style={{ width:"100%", padding:"10px 14px", border:"none", borderBottom:"0.5px solid #F3F4F6",
+                                background:"white", fontSize:12, cursor:"pointer", fontFamily:"inherit",
+                                textAlign:"left", color:"#16A34A", display:"flex", alignItems:"center", gap:8, transition:"background .15s" }}
+                              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#F0FDF4"}
+                              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                              ✓ Mark cash collected
+                            </button>
+                            <button onClick={() => { setShowGenLinkForm(v => !v); setGeneratedStripeUrl(null); }}
+                              style={{ width:"100%", padding:"10px 14px", border:"none",
+                                borderBottom: showGenLinkForm ? "0.5px solid #F3F4F6" : "none",
+                                background:"white", fontSize:12, cursor:"pointer", fontFamily:"inherit",
+                                textAlign:"left", color:"#D97706", display:"flex", alignItems:"center", gap:8, transition:"background .15s" }}
+                              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#FFFBEB"}
+                              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                              ⟶ Customer wants to pay by card — generate link
+                            </button>
+                          </>
+                        )}
+
+                        {/* Stripe unpaid */}
+                        {selectedOrder.payment_method === "stripe-link" && selectedOrder.payment_status !== "paid" && selectedOrder.status !== "cancelled" && (
+                          <>
+                            {selectedOrder.customer_email && (
+                              <button onClick={() => doOrderAction("send_payment_link", selectedOrder.id)}
+                                disabled={!!orderActionLoading}
+                                style={{ width:"100%", padding:"10px 14px", border:"none", borderBottom:"0.5px solid #F3F4F6",
+                                  background:"white", fontSize:12, cursor:"pointer", fontFamily:"inherit",
+                                  textAlign:"left", color:"#D97706", display:"flex", alignItems:"center", gap:8, transition:"background .15s" }}
+                                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#FFFBEB"}
+                                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                                ✉ Resend payment link to {selectedOrder.customer_email}
+                              </button>
+                            )}
+                            <button onClick={() => { setShowGenLinkForm(v => !v); setGeneratedStripeUrl(null); }}
+                              style={{ width:"100%", padding:"10px 14px", border:"none",
+                                borderBottom: showGenLinkForm ? "0.5px solid #F3F4F6" : "none",
+                                background:"white", fontSize:12, cursor:"pointer", fontFamily:"inherit",
+                                textAlign:"left", color:"#374151", display:"flex", alignItems:"center", gap:8, transition:"background .15s" }}
+                              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB"}
+                              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                              + Generate new Stripe checkout link
+                            </button>
+                          </>
+                        )}
+
+                        {/* Paid Stripe */}
+                        {selectedOrder.payment_status === "paid" && selectedOrder.payment_method === "stripe-link" && (
+                          <button onClick={() => doOrderAction("sync_stripe", selectedOrder.id)} disabled={!!orderActionLoading}
+                            style={{ width:"100%", padding:"10px 14px", border:"none", background:"white",
+                              fontSize:12, cursor:"pointer", fontFamily:"inherit",
+                              textAlign:"left", color:"#6B7280", display:"flex", alignItems:"center", gap:8, transition:"background .15s" }}
+                            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB"}
+                            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                            ↺ Sync Stripe payment status
+                          </button>
+                        )}
+
+                        {/* Cash already collected */}
+                        {selectedOrder.cash_collected && (
+                          <div style={{ padding:"10px 14px", fontSize:12, color:"#16A34A", display:"flex", alignItems:"center", gap:6 }}>
+                            ✓ Cash collected{selectedOrder.cash_collected_by ? ` by ${selectedOrder.cash_collected_by}` : ""}
+                          </div>
+                        )}
+
+                        {/* Expandable generate link form */}
+                        {showGenLinkForm && (
+                          <div style={{ padding:14, background:"#FAFAFA", borderTop:"0.5px solid #F3F4F6" }}>
+                            <div style={{ fontSize:11, color:"#6B7280", marginBottom:10 }}>
+                              Generate a Stripe checkout link for{" "}
+                              <strong style={{ color:"#111" }}>
+                                {"$" + (Number(selectedOrder.price) * (selectedOrder.quantity || 1) + Number(selectedOrder.tax_amount || 0)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </strong>
+                            </div>
+                            <input value={genLinkEmail} onChange={e => setGenLinkEmail(e.target.value)}
+                              placeholder="Customer email (optional — to send automatically)"
+                              style={{ width:"100%", padding:"7px 10px", border:"0.5px solid #E5E7EB",
+                                borderRadius:8, fontSize:12, fontFamily:"inherit", background:"white", color:"inherit", marginBottom:10 }} />
+                            <div style={{ display:"flex", gap:6 }}>
+                              <button onClick={() => generateAndShowLink(selectedOrder, genLinkEmail || undefined)}
+                                disabled={orderActionLoading === "gen_link" + selectedOrder.id}
+                                style={{ flex:1, padding:"8px 12px", border:"none", borderRadius:8, fontSize:12,
+                                  cursor:"pointer", background:"#111827", color:"white", fontFamily:"inherit",
+                                  display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                                  opacity: orderActionLoading === "gen_link" + selectedOrder.id ? 0.6 : 1 }}>
+                                {orderActionLoading === "gen_link" + selectedOrder.id
+                                  ? <Loader2 size={12} style={{ animation:"spin 1s linear infinite" }} /> : null}
+                                {genLinkEmail ? "Generate & send" : "Generate link"}
+                              </button>
+                              <button onClick={() => { setShowGenLinkForm(false); setGeneratedStripeUrl(null); setGenLinkEmail(""); }}
+                                style={{ padding:"8px 14px", border:"0.5px solid #E5E7EB", borderRadius:8,
+                                  fontSize:12, cursor:"pointer", background:"transparent", color:"#6B7280", fontFamily:"inherit" }}>
+                                Cancel
+                              </button>
+                            </div>
+                            {generatedStripeUrl && (
+                              <div style={{ marginTop:10 }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px",
+                                  background:"white", border:"0.5px solid #E5E7EB", borderRadius:8 }}>
+                                  <span style={{ flex:1, fontSize:10, fontFamily:"monospace", color:"#2563EB",
+                                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                                    {generatedStripeUrl}
+                                  </span>
+                                  <button onClick={() => { navigator.clipboard.writeText(generatedStripeUrl); toast({ title:"Link copied to clipboard" }); }}
+                                    style={{ padding:"3px 10px", border:"0.5px solid #E5E7EB", borderRadius:6,
+                                      fontSize:10, cursor:"pointer", background:"transparent", color:"#374151",
+                                      fontFamily:"inherit", flexShrink:0 }}>
+                                    Copy
+                                  </button>
+                                </div>
+                                <div style={{ fontSize:10, color:"#9CA3AF", marginTop:4 }}>
+                                  Valid 24 hours · Customer pays with any major card
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ height: "0.5px", background: "#F3F4F6" }} />
+
+                    {/* Invoice card — NEW SECTION */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF", textTransform:"uppercase", marginBottom:8 }}>
+                        Invoice
+                      </div>
+                      <div style={{ border:"0.5px solid #E5E7EB", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ padding:"10px 14px", background:"#F9FAFB", borderBottom:"0.5px solid #F3F4F6" }}>
+                          <div style={{ fontSize:12, fontWeight:500 }}>Invoice {selectedOrder.order_number}</div>
+                          <div style={{ fontSize:10, color:"#9CA3AF", marginTop:2 }}>
+                            {"$" + (Number(selectedOrder.price) * (selectedOrder.quantity || 1) + Number(selectedOrder.tax_amount || 0)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · {selectedOrder.customer_name} · {fmtDate(selectedOrder.delivery_date)}
+                          </div>
+                        </div>
+                        <div style={{ display:"flex" }}>
+                          <button onClick={async () => {
+                              setOrderActionLoading("inv_dl" + selectedOrder.id);
+                              try {
+                                const { data, error: fnError } = await supabase.functions.invoke("generate-invoice", { body: { order_id: selectedOrder.id } });
+                                if (fnError || !data?.pdf) throw new Error("Failed to generate invoice");
+                                const link = document.createElement("a");
+                                link.href = "data:application/pdf;base64," + data.pdf;
+                                link.download = `invoice-${selectedOrder.order_number}.pdf`;
+                                link.click();
+                                toast({ title: "Invoice downloaded" });
+                              } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+                              finally { setOrderActionLoading(null); }
+                            }}
+                            disabled={orderActionLoading === "inv_dl" + selectedOrder.id}
+                            style={{ flex:1, padding:"10px 6px", border:"none", background:"white", fontSize:11,
+                              cursor:"pointer", fontFamily:"inherit", color:"#374151",
+                              display:"flex", alignItems:"center", justifyContent:"center", gap:4,
+                              borderRight:"0.5px solid #F3F4F6", transition:"background .15s",
+                              opacity: orderActionLoading === "inv_dl" + selectedOrder.id ? 0.5 : 1 }}
+                            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB"}
+                            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                            ↓ Download
+                          </button>
+                          <button onClick={async () => {
+                              setOrderActionLoading("inv_pr" + selectedOrder.id);
+                              try {
+                                const { data, error: fnError } = await supabase.functions.invoke("generate-invoice", { body: { order_id: selectedOrder.id } });
+                                if (fnError || !data?.pdf) throw new Error("Failed to generate invoice");
+                                const byteChars = atob(data.pdf);
+                                const byteArr = new Uint8Array(byteChars.length);
+                                for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+                                const blob = new Blob([byteArr], { type: "application/pdf" });
+                                const url = URL.createObjectURL(blob);
+                                const win = window.open(url);
+                                if (win) win.onload = () => { win.print(); URL.revokeObjectURL(url); };
+                                toast({ title: "Opening print dialog…" });
+                              } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+                              finally { setOrderActionLoading(null); }
+                            }}
+                            disabled={orderActionLoading === "inv_pr" + selectedOrder.id}
+                            style={{ flex:1, padding:"10px 6px", border:"none", background:"white", fontSize:11,
+                              cursor:"pointer", fontFamily:"inherit", color:"#374151",
+                              display:"flex", alignItems:"center", justifyContent:"center", gap:4,
+                              borderRight:"0.5px solid #F3F4F6", transition:"background .15s",
+                              opacity: orderActionLoading === "inv_pr" + selectedOrder.id ? 0.5 : 1 }}
+                            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB"}
+                            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                            ⊡ Print
+                          </button>
+                          <button onClick={() => doOrderAction("resend_invoice", selectedOrder.id)}
+                            disabled={orderActionLoading === "resend_invoice" + selectedOrder.id}
+                            style={{ flex:1, padding:"10px 6px", border:"none", background:"white", fontSize:11,
+                              cursor:"pointer", fontFamily:"inherit", color:"#374151",
+                              display:"flex", alignItems:"center", justifyContent:"center", gap:4,
+                              transition:"background .15s",
+                              opacity: orderActionLoading === "resend_invoice" + selectedOrder.id ? 0.5 : 1 }}
+                            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB"}
+                            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "white"}>
+                            ✉ Email
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Notes */}
                     <div style={{ marginBottom:16 }}>
                       <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
@@ -5694,94 +5964,32 @@ const Leads = () => {
                       </button>
                     </div>
 
-                    {/* Action buttons */}
+                    {/* Other actions — Resend confirmation + Cancel only */}
                     <div style={{ marginBottom:8 }}>
                       <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
-                        textTransform:"uppercase", marginBottom:8 }}>Actions</div>
+                        textTransform:"uppercase", marginBottom:8 }}>Other actions</div>
                       <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-
-                        {selectedOrder.status === "pending" && selectedOrder.payment_status === "paid" && (
-                          <button onClick={() => doOrderAction("update_status", selectedOrder.id, { status:"confirmed" })}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"#111827", border:"0.5px solid #111827",
-                              color:"white", fontFamily:"inherit", textAlign:"left" }}>
-                            Confirm order
-                          </button>
-                        )}
-
-                        {selectedOrder.status === "confirmed" && (
-                          <button onClick={() => doOrderAction("update_status", selectedOrder.id, { status:"en_route" })}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"#111827", border:"0.5px solid #111827",
-                              color:"white", fontFamily:"inherit", textAlign:"left" }}>
-                            Mark en route
-                          </button>
-                        )}
-
-                        {selectedOrder.status === "en_route" && (
-                          <button onClick={() => doOrderAction("update_status", selectedOrder.id, { status:"delivered" })}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"#111827", border:"0.5px solid #111827",
-                              color:"white", fontFamily:"inherit", textAlign:"left" }}>
-                            Mark delivered
-                          </button>
-                        )}
-
                         {selectedOrder.customer_email && (
                           <button onClick={() => doOrderAction("resend_email", selectedOrder.id)}
                             disabled={orderActionLoading === "resend_email" + selectedOrder.id}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"transparent", border:"0.5px solid #E5E7EB",
-                              color:"#374151", fontFamily:"inherit", textAlign:"left" }}>
-                            Resend confirmation email
+                            style={{ width:"100%", padding:"9px 12px", border:"0.5px solid #E5E7EB", borderRadius:8,
+                              fontSize:12, cursor:"pointer", background:"transparent", color:"#374151",
+                              fontFamily:"inherit", textAlign:"left", transition:"background .15s" }}
+                            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB"}
+                            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "transparent"}>
+                            Resend order confirmation
                           </button>
                         )}
-
-                        <button onClick={() => doOrderAction("resend_invoice", selectedOrder.id)}
-                          disabled={orderActionLoading === "resend_invoice" + selectedOrder.id}
-                          style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                            cursor:"pointer", background:"transparent", border:"0.5px solid #E5E7EB",
-                            color:"#374151", fontFamily:"inherit", textAlign:"left" }}>
-                          Resend invoice PDF
-                        </button>
-
-                        {selectedOrder.payment_status !== "paid" && selectedOrder.payment_method === "stripe-link" && (
-                          <button onClick={() => doOrderAction("send_payment_link", selectedOrder.id)}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"transparent", border:"0.5px solid #D97706",
-                              color:"#D97706", fontFamily:"inherit", textAlign:"left" }}>
-                            Send payment link
-                          </button>
-                        )}
-
-                        {selectedOrder.payment_method === "cash" && !selectedOrder.cash_collected && selectedOrder.status !== "cancelled" && (
-                          <button onClick={() => doOrderAction("mark_cash_collected", selectedOrder.id)}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"transparent", border:"0.5px solid #D97706",
-                              color:"#D97706", fontFamily:"inherit", textAlign:"left" }}>
-                            Mark cash collected
-                          </button>
-                        )}
-
-                        {selectedOrder.payment_method === "stripe-link" && (
-                          <button onClick={() => doOrderAction("sync_stripe", selectedOrder.id)}
-                            disabled={orderActionLoading === "sync_stripe" + selectedOrder.id}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"transparent", border:"0.5px solid #E5E7EB",
-                              color:"#374151", fontFamily:"inherit", textAlign:"left" }}>
-                            Sync Stripe payment
-                          </button>
-                        )}
-
-                        {!["cancelled","delivered"].includes(selectedOrder.status) && (
+                        {!["cancelled", "delivered"].includes(selectedOrder.status) && (
                           <button onClick={() => doOrderAction("cancel_order", selectedOrder.id)}
-                            style={{ width:"100%", padding:"8px 12px", borderRadius:8, fontSize:12,
-                              cursor:"pointer", background:"transparent", border:"0.5px solid #DC2626",
-                              color:"#DC2626", fontFamily:"inherit", textAlign:"left" }}>
+                            style={{ width:"100%", padding:"9px 12px", border:"0.5px solid #FCA5A5", borderRadius:8,
+                              fontSize:12, cursor:"pointer", background:"transparent", color:"#DC2626",
+                              fontFamily:"inherit", textAlign:"left", transition:"background .15s" }}
+                            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "#FEF2F2"}
+                            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "transparent"}>
                             Cancel order
                           </button>
                         )}
-
                       </div>
                     </div>
 
