@@ -452,6 +452,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string
           customer_phone: string
+          customer_tier: number
           delivery_address: string
           delivery_date: string | null
           delivery_day_of_week: string | null
@@ -463,6 +464,7 @@ export type Database = {
           distance_miles: number
           fraud_score: number | null
           fraud_signals: Json | null
+          fraud_window_cleared_at: string | null
           id: string
           is_northshore: boolean | null
           last_confirmation_sent_at: string | null
@@ -526,6 +528,7 @@ export type Database = {
           customer_id?: string | null
           customer_name: string
           customer_phone: string
+          customer_tier?: number
           delivery_address: string
           delivery_date?: string | null
           delivery_day_of_week?: string | null
@@ -537,6 +540,7 @@ export type Database = {
           distance_miles: number
           fraud_score?: number | null
           fraud_signals?: Json | null
+          fraud_window_cleared_at?: string | null
           id?: string
           is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
@@ -600,6 +604,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string
           customer_phone?: string
+          customer_tier?: number
           delivery_address?: string
           delivery_date?: string | null
           delivery_day_of_week?: string | null
@@ -611,6 +616,7 @@ export type Database = {
           distance_miles?: number
           fraud_score?: number | null
           fraud_signals?: Json | null
+          fraud_window_cleared_at?: string | null
           id?: string
           is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
