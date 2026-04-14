@@ -703,6 +703,20 @@ const Leads = () => {
     finally { setCashLoading(false); }
   }, []);
 
+  const fetchAllOrders = useCallback(async () => {
+    setOrdersLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_all_orders" },
+      });
+      if (!fnError && data?.orders) {
+        setAllOrders(data.orders);
+        if (data.metrics) setOrdersMetrics(data.metrics);
+      }
+    } catch (err) { console.warn("Failed to fetch orders:", err); }
+    finally { setOrdersLoading(false); }
+  }, []);
+
   const syncStripePayment = useCallback(async (order: any) => {
     setSyncingPayment(order.id);
     try {
