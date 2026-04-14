@@ -1566,6 +1566,13 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchLiveVisitors]);
 
+  // 5-second ticker for "updated Xs ago" display
+  useEffect(() => {
+    if (activePage !== "live") return;
+    const ticker = setInterval(() => setRefreshCounter(c => c + 5), 5000);
+    return () => clearInterval(ticker);
+  }, [activePage]);
+
   // Fetch pending review orders when navigating to that page
   useEffect(() => {
     if (activePage === "pending_review" && authenticated) {
