@@ -3886,6 +3886,205 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── CAPTURE PAYMENT (manual admin trigger) ───────────────────────────────────
+    if (action === "capture_payment") {
+      const { order_id } = body as any;
+      if (!order_id) {
+        return new Response(
+          JSON.stringify({ error: "Missing order_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .select("id, order_number, stripe_payment_id, payment_status, status")
+        .eq("id", order_id)
+        .single();
+
+      if (orderErr || !order) {
+        return new Response(
+          JSON.stringify({ error: "Order not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (["captured", "paid"].includes(order.payment_status)) {
+        return new Response(
+          JSON.stringify({ success: true, message: "Already captured", payment_status: order.payment_status }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!order.stripe_payment_id) {
+        return new Response(
+          JSON.stringify({ error: "No Stripe payment intent on this order (COD or not yet paid)" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: modeRow } = await supabase
+        .from("global_settings").select("value").eq("key", "stripe_mode").maybeSingle();
+      const stripeMode = modeRow?.value || "live";
+      const stripeKey = stripeMode === "test"
+        ? Deno.env.get("STRIPE_TEST_SECRET_KEY")!
+        : Deno.env.get("STRIPE_SECRET_KEY")!;
+
+      const captureRes = await fetch(
+        `https://api.stripe.com/v1/payment_intents/${order.stripe_payment_id}/capture`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${stripeKey}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      const captureData = await captureRes.json();
+
+      if (captureData.error) {
+        console.error("[leads-auth] capture_payment Stripe error:", captureData.error);
+        await supabase
+          .from("orders")
+          .update({ payment_status: "capture_failed", updated_at: new Date().toISOString() })
+          .eq("id", order_id);
+        return new Response(
+          JSON.stringify({ error: captureData.error.message, stripe_code: captureData.error.code }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await supabase
+        .from("orders")
+        .update({ payment_status: "captured", updated_at: new Date().toISOString() })
+        .eq("id", order_id);
+
+      console.log(`[leads-auth] capture_payment: order ${order.order_number} captured successfully`);
+
+      return new Response(
+        JSON.stringify({ success: true, payment_status: "captured", stripe_status: captureData.status, order_number: order.order_number }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── RELEASE HOLD (cancel authorization, zero fee) ────────────────────────────
+    if (action === "release_hold") {
+      const { order_id } = body as any;
+      if (!order_id) {
+        return new Response(
+          JSON.stringify({ error: "Missing order_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: order } = await supabase
+        .from("orders")
+        .select("id, order_number, stripe_payment_id, payment_status, status")
+        .eq("id", order_id)
+        .single();
+
+      if (!order) {
+        return new Response(
+          JSON.stringify({ error: "Order not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (["released", "captured", "paid"].includes(order.payment_status)) {
+        return new Response(
+          JSON.stringify({ success: true, message: "Already resolved", payment_status: order.payment_status }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!order.stripe_payment_id) {
+        await supabase
+          .from("orders")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("id", order_id);
+        return new Response(
+          JSON.stringify({ success: true, message: "COD order cancelled" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: modeRow } = await supabase
+        .from("global_settings").select("value").eq("key", "stripe_mode").maybeSingle();
+      const stripeMode = modeRow?.value || "live";
+      const stripeKey = stripeMode === "test"
+        ? Deno.env.get("STRIPE_TEST_SECRET_KEY")!
+        : Deno.env.get("STRIPE_SECRET_KEY")!;
+
+      const cancelRes = await fetch(
+        `https://api.stripe.com/v1/payment_intents/${order.stripe_payment_id}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${stripeKey}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      const cancelData = await cancelRes.json();
+
+      if (cancelData.error && cancelData.error.code !== "payment_intent_unexpected_state") {
+        console.error("[leads-auth] release_hold Stripe error:", cancelData.error);
+        return new Response(
+          JSON.stringify({ error: cancelData.error.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await supabase
+        .from("orders")
+        .update({ payment_status: "released", status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", order_id);
+
+      console.log(`[leads-auth] release_hold: order ${order.order_number} — hold released, zero fee`);
+
+      return new Response(
+        JSON.stringify({ success: true, payment_status: "released", order_number: order.order_number, message: "Hold released — zero processing fee charged" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── GET CUSTOMER TIER (used by create-checkout-link and future driver app) ───
+    if (action === "get_customer_tier") {
+      const { customer_phone } = body as any;
+      if (!customer_phone) {
+        return new Response(
+          JSON.stringify({ error: "Missing customer_phone" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: prevOrders } = await supabase
+        .from("orders")
+        .select("id, stripe_customer_id, customer_name")
+        .eq("customer_phone", customer_phone)
+        .in("payment_status", ["paid", "captured"])
+        .not("status", "eq", "cancelled")
+        .order("created_at", { ascending: false });
+
+      const paidCount = prevOrders?.length ?? 0;
+      const existingStripeCustomerId = prevOrders?.find(
+        (o: any) => o.stripe_customer_id
+      )?.stripe_customer_id ?? null;
+      const customerName = prevOrders?.[0]?.customer_name ?? null;
+
+      const tier = paidCount >= 3 ? 3 : paidCount >= 1 ? 2 : 1;
+      const threeDSecure = tier === 1 ? "any" : "automatic";
+
+      console.log(`[leads-auth] get_customer_tier: phone=${customer_phone.slice(-4)} count=${paidCount} tier=${tier}`);
+
+      return new Response(
+        JSON.stringify({ tier, order_count: paidCount, three_d_secure: threeDSecure, stripe_customer_id: existingStripeCustomerId, customer_name: customerName }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
 
     // ── LIST PAYMENT ATTEMPTS (password required) ──
     if (action === "list_payment_attempts") {
