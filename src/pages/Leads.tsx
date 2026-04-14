@@ -5395,16 +5395,16 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
         );
 
       case "live": {
-        // ─── STAGE CONFIG ───
-        const LIVE_STAGE_CONFIG: Record<string, { label: string; color: string; order: number }> = {
-          visited:          { label: "Browsing",       color: "#6B7280", order: 0 },
-          entered_address:  { label: "Entered Address",color: "#3B82F6", order: 1 },
-          got_price:        { label: "Got Price",      color: "#8B5CF6", order: 2 },
-          got_out_of_area:  { label: "Out of Area",    color: "#EF4444", order: -1 },
-          clicked_order_now:{ label: "Order Now",      color: "#EA580C", order: 3 },
-          started_checkout: { label: "At Checkout",    color: "#F59E0B", order: 4 },
-          reached_payment:  { label: "At Payment",     color: "#EF4444", order: 5 },
-          completed_order:  { label: "Converted",      color: "#059669", order: 6 },
+        // ── helpers ──
+        const STAGE_CONFIG: Record<string, { label: string; color: string; bg: string; dotColor: string }> = {
+          visited:           { label: "Browsing",    color: "#6B7280", bg: "#F3F4F6", dotColor: "#9CA3AF" },
+          entered_address:   { label: "Got address", color: "#2563EB", bg: "#EFF6FF", dotColor: "#60A5FA" },
+          got_price:         { label: "Got price",   color: "#D97706", bg: "#FFFBEB", dotColor: "#FBBF24" },
+          got_out_of_area:   { label: "Out of area", color: "#9CA3AF", bg: "#F9FAFB", dotColor: "#D1D5DB" },
+          clicked_order_now: { label: "Clicked order", color: "#7C3AED", bg: "#F5F3FF", dotColor: "#A78BFA" },
+          started_checkout:  { label: "Checkout",    color: "#EA580C", bg: "#FFF7ED", dotColor: "#FB923C" },
+          reached_payment:   { label: "Payment",     color: "#DC2626", bg: "#FEF2F2", dotColor: "#F87171" },
+          completed_order:   { label: "Converted",   color: "#16A34A", bg: "#F0FDF4", dotColor: "#4ADE80" },
         };
 
         const timeAgo = (iso: string) => {
@@ -5414,890 +5414,343 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
           return `${Math.floor(diff / 3600)}h ago`;
         };
 
-        const isBot = (v: any) => {
-          const org = (v.ip_org || "").toLowerCase();
-          return /(bot|crawler|datacenter|amazon|google|microsoft|cloudflare|digitalocean|linode|vultr|hetzner)/i.test(org);
+        const fmtDuration = (secs: number | null) => {
+          if (!secs) return "—";
+          const m = Math.floor(secs / 60), s = secs % 60;
+          return m > 0 ? `${m}m ${s}s` : `${s}s`;
         };
 
-        // ─── CITY COORDS for LA map ───
-        const CITY_COORDS: Record<string, [number, number]> = {
-          "New Orleans": [387, 280], "Metairie": [370, 275], "Chalmette": [405, 278],
-          "Kenner": [355, 270], "Slidell": [420, 260], "Baton Rouge": [280, 220],
-          "Lafayette": [180, 240], "Mandeville": [395, 250], "Covington": [388, 240],
-          "Hammond": [340, 215], "Houma": [355, 320], "Gretna": [380, 290],
-          "Harvey": [375, 292], "Marrero": [370, 295], "Laplace": [340, 265],
-          "Destrehan": [345, 268], "Gonzales": [295, 230], "Prairieville": [290, 235],
-          "Denham Springs": [300, 210], "Thibodaux": [330, 305],
+        const fmtRefreshed = () => {
+          if (!lastRefreshed) return "Never refreshed";
+          const secs = Math.round((Date.now() - lastRefreshed.getTime()) / 1000) + refreshCounter;
+          if (secs < 10) return "Updated just now";
+          if (secs < 60) return `Updated ${secs}s ago`;
+          return `Updated ${Math.floor(secs / 60)}m ago`;
         };
 
-        // Group visitors by city for map
-        const cityGroups = liveVisitors.reduce((acc: Record<string, { count: number; topStage: string }>, v: any) => {
-          const city = v.geo_city || v.ip_city;
-          if (!city) return acc;
-          if (!acc[city]) acc[city] = { count: 0, topStage: "visited" };
-          acc[city].count++;
-          const cur = LIVE_STAGE_CONFIG[v.stage]?.order ?? 0;
-          const prev = LIVE_STAGE_CONFIG[acc[city].topStage]?.order ?? 0;
-          if (cur > prev) acc[city].topStage = v.stage;
-          return acc;
-        }, {} as Record<string, { count: number; topStage: string }>);
-
-        // Page performance grouping
-        const pageGroups = liveVisitors.reduce((acc: Record<string, { visitors: number; prices: number[]; stages: string[] }>, v: any) => {
-          const page = v.entry_city_name || v.entry_city_page || v.entry_page || "/";
-          if (!acc[page]) acc[page] = { visitors: 0, prices: [], stages: [] };
-          acc[page].visitors++;
-          if (v.calculated_price) acc[page].prices.push(Number(v.calculated_price));
-          if (v.stage) acc[page].stages.push(v.stage);
-          return acc;
-        }, {} as Record<string, { visitors: number; prices: number[]; stages: string[] }>);
-        const sortedPages = (Object.entries(pageGroups) as [string, { visitors: number; prices: number[]; stages: string[] }][]).sort((a, b) => b[1].visitors - a[1].visitors).slice(0, 8);
-
-        // Funnel stages for current live sessions
-        const FUNNEL_LIVE = [
-          { key: "visited", label: "Homepage", color: "#6B7280" },
-          { key: "entered_address", label: "Estimator", color: "#3B82F6" },
-          { key: "got_price", label: "Got Price", color: "#8B5CF6" },
-          { key: "started_checkout", label: "Checkout", color: "#F59E0B" },
-          { key: "reached_payment", label: "Payment", color: "#EF4444" },
-          { key: "completed_order", label: "Completed", color: "#059669" },
+        const FUNNEL_STAGES = [
+          { key: "visited",           label: "Visited site",    dim: false },
+          { key: "entered_address",   label: "Got address",     dim: false },
+          { key: "got_price",         label: "Got price",       dim: false },
+          { key: "got_out_of_area",   label: "Out of area",     dim: true  },
+          { key: "clicked_order_now", label: "Clicked order",   dim: false },
+          { key: "started_checkout",  label: "At checkout",     dim: false },
+          { key: "reached_payment",   label: "At payment",      dim: false },
+          { key: "completed_order",   label: "Completed",       dim: false },
         ];
-        const liveFunnelCounts = FUNNEL_LIVE.map(s => ({
-          ...s,
-          count: liveVisitors.filter(v => (LIVE_STAGE_CONFIG[v.stage]?.order ?? 0) >= (LIVE_STAGE_CONFIG[s.key]?.order ?? 99)).length,
-        }));
 
-        // Sort visitors: highest stage first, then most recent
-        const sortedVisitors = [...liveVisitors].sort((a, b) => {
-          const stageA = LIVE_STAGE_CONFIG[a.stage]?.order ?? 0;
-          const stageB = LIVE_STAGE_CONFIG[b.stage]?.order ?? 0;
-          if (stageB !== stageA) return stageB - stageA;
-          return new Date(b.last_seen_at || 0).getTime() - new Date(a.last_seen_at || 0).getTime();
-        });
+        const funnelMap: Record<string, number> = {};
+        if (funnelData) {
+          Object.entries(funnelData).forEach(([k, v]) => { funnelMap[k] = v as number; });
+        }
+        const totalVisited = funnelMap["visited"] || 1;
+        const totalCompleted = funnelMap["completed_order"] || 0;
+        const convRate = totalVisited > 0 ? ((totalCompleted / totalVisited) * 100).toFixed(1) : "0.0";
 
-        const humanVisitors = sortedVisitors.filter(v => !isBot(v));
-        const botVisitors = sortedVisitors.filter(v => isBot(v));
+        const CITY_MAP: Record<string, { x: number; y: number }> = {
+          "New Orleans":  { x: 300, y: 222 },
+          "Metairie":     { x: 248, y: 210 },
+          "Kenner":       { x: 205, y: 202 },
+          "Harahan":      { x: 220, y: 218 },
+          "Chalmette":    { x: 362, y: 232 },
+          "Bridge City":  { x: 155, y: 240 },
+          "Hahnville":    { x: 90,  y: 238 },
+          "Algiers":      { x: 282, y: 252 },
+          "Mandeville":   { x: 295, y: 78  },
+          "Covington":    { x: 235, y: 58  },
+          "Slidell":      { x: 418, y: 90  },
+          "Gretna":       { x: 268, y: 248 },
+          "Harvey":       { x: 250, y: 255 },
+          "Westwego":     { x: 195, y: 248 },
+          "Marrero":      { x: 235, y: 255 },
+          "Laplace":      { x: 130, y: 190 },
+        };
 
-        // Louisiana SVG outline path (simplified)
-        const LA_PATH = "M120,120 L170,100 L220,95 L260,100 L300,95 L340,100 L380,105 L420,110 L450,120 L455,140 L450,170 L445,200 L440,220 L438,240 L440,255 L435,260 L430,250 L420,260 L430,275 L415,280 L410,290 L400,295 L395,310 L380,315 L370,325 L355,330 L345,320 L330,315 L320,305 L310,290 L300,280 L280,270 L260,265 L240,270 L220,275 L200,270 L180,260 L160,255 L140,250 L125,240 L120,220 L118,190 L115,160 Z";
+        const STAGE_SHORT: Record<string, string> = {
+          visited: "Browsing", entered_address: "Got address", got_price: "Got price",
+          started_checkout: "Checkout", reached_payment: "Payment", completed_order: "Converted",
+        };
+        const STAGE_SHORT_COLOR: Record<string, string> = {
+          visited: "#9CA3AF", entered_address: "#2563EB", got_price: "#D97706",
+          started_checkout: "#EA580C", reached_payment: "#DC2626", completed_order: "#16A34A",
+        };
+
+        const cardStyle = "bg-white border border-gray-100 rounded-xl p-4";
+        const sectionLabel = "text-[10px] font-medium tracking-widest text-gray-400 uppercase mb-3";
 
         return (
-          <>
-            {/* ── HEADER BAR ── */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ position: "relative", display: "inline-flex", width: 12, height: 12 }}>
-                  <span style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#22C55E", opacity: 0.6, animation: "ping 1.5s cubic-bezier(0,0,0.2,1) infinite" }} />
-                  <span style={{ position: "relative", display: "inline-flex", width: 12, height: 12, borderRadius: "50%", background: "#22C55E" }} />
+          <div className="space-y-4">
+
+            {/* ── HEADER ── */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
                 </span>
-                <span style={{ fontSize: 20, fontWeight: 800, color: T.textPrimary, letterSpacing: "-0.02em" }}>LIVE VISITORS</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: T.textSecond, fontFamily: "monospace", background: T.subtleBg, padding: "3px 10px", borderRadius: 20 }}>
-                  {humanVisitors.length} active
+                <h2 className="text-base font-medium text-gray-900">Live visitors</h2>
+                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full" style={{ background: "#FEF3C7", color: "#92400E" }}>
+                  {liveVisitors.length} active
                 </span>
-                {botVisitors.length > 0 && (
-                  <span style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "monospace" }}>
-                    +{botVisitors.length} 🤖
-                  </span>
-                )}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, color: T.textSecond }}>Auto-refresh 30s</span>
-                <button onClick={fetchLiveVisitors} disabled={liveLoading} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 6, border: `1px solid ${T.cardBorder}`, background: T.cardBg, cursor: "pointer", fontSize: 12, fontWeight: 600, color: T.textPrimary }}>
-                  {liveLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400">{fmtRefreshed()}</span>
+                <button
+                  onClick={fetchLiveVisitors}
+                  disabled={liveLoading}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw size={11} className={liveLoading ? "animate-spin" : ""} />
                   Refresh
                 </button>
               </div>
             </div>
 
-            {liveLoading && liveVisitors.length === 0 ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
-            ) : liveVisitors.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "80px 0", color: T.textSecond }}>
-                <Users className="w-14 h-14 mx-auto mb-4" style={{ opacity: 0.2 }} />
-                <p style={{ fontSize: 15, fontWeight: 600 }}>No active visitors right now</p>
-                <p style={{ fontSize: 12, marginTop: 4 }}>Auto-refreshes every 30 seconds</p>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 20, alignItems: "start" }}>
+            {/* ── METRIC CARDS ── */}
+            <div className="grid grid-cols-5 gap-3">
+              {[
+                { label: "Active now",      val: liveVisitors.length,                        sub: "last 30 min",       valColor: "#16A34A" },
+                { label: "Sessions today",  val: totalVisited,                               sub: "vs yesterday",      valColor: undefined },
+                { label: "Conversion rate", val: `${convRate}%`,                             sub: "last 30 days",      valColor: "#B87333" },
+                { label: "Completed",       val: totalCompleted,                             sub: "last 30 days",      valColor: totalCompleted > 0 ? "#16A34A" : undefined },
+                { label: "Out of area",     val: funnelMap["got_out_of_area"] || 0,          sub: "last 30 days",      valColor: "#9CA3AF" },
+              ].map((m, i) => (
+                <div key={i} className="bg-gray-50 rounded-xl p-3.5">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">{m.label}</p>
+                  <p className="text-2xl font-medium leading-none" style={{ color: m.valColor || "#111827" }}>{m.val}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{m.sub}</p>
+                </div>
+              ))}
+            </div>
 
-                {/* ── LEFT: VISITOR LIST ── */}
-                <div style={{ maxHeight: "calc(100vh - 200px)", overflowY: "auto", paddingRight: 4 }}>
-                  {humanVisitors.map((v: any) => {
-                    const stg = LIVE_STAGE_CONFIG[v.stage] || { label: v.stage || "Unknown", color: "#9CA3AF" };
-                    const maskedIp = v.ip_address ? v.ip_address.replace(/\.\d+$/, ".xxx") : "";
-                    return (
-                      <div key={v.id} style={{
-                        background: T.cardBg, border: `1px solid ${T.cardBorder}`, borderLeft: `3px solid ${stg.color}`,
-                        borderRadius: 8, padding: "12px 16px", marginBottom: 8, transition: "box-shadow 0.2s",
-                      }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontFamily: "monospace", fontSize: 11, color: T.textSecond }}>{maskedIp}</span>
-                          <span style={{ fontSize: 11, color: T.textSecond }}>{v.last_seen_at ? timeAgo(v.last_seen_at) : "—"}</span>
-                        </div>
-                        <div style={{ fontWeight: 600, color: T.textPrimary, marginTop: 4, fontSize: 13 }}>
-                          {v.geo_city || v.ip_city || "Unknown"}{v.geo_region ? `, ${v.geo_region}` : ""}
-                        </div>
-                        <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "white", background: stg.color, padding: "2px 8px", borderRadius: 20 }}>
-                            {stg.label}
-                          </span>
-                          {v.ip_is_business && (
-                            <span style={{ fontSize: 10, background: "#EFF6FF", color: "#3B82F6", padding: "2px 6px", borderRadius: 20 }}>🏢 Business</span>
-                          )}
-                          {v.visit_count > 1 && (
-                            <span style={{ fontSize: 10, background: "#FEF3C7", color: "#92400E", padding: "2px 6px", borderRadius: 20, fontWeight: 600 }}>
-                              {v.visit_count}× visits
+            {/* ── MAIN GRID: Session list | Map ── */}
+            <div className="grid gap-4" style={{ gridTemplateColumns: "300px 1fr" }}>
+
+              {/* Session list */}
+              <div className={cardStyle}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Current sessions</p>
+                  <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">{liveVisitors.length} active</span>
+                </div>
+                <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 420 }}>
+                  {liveVisitors.length === 0 ? (
+                    <p className="text-center text-sm text-gray-400 py-10">No active sessions</p>
+                  ) : (
+                    liveVisitors.map((v: any) => {
+                      const cfg = STAGE_CONFIG[v.stage] || STAGE_CONFIG.visited;
+                      const isHot = v.stage === "started_checkout" || v.stage === "reached_payment";
+                      return (
+                        <div
+                          key={v.id}
+                          className="p-2.5 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors"
+                          style={{ borderColor: isHot ? (v.stage === "reached_payment" ? "#FCA5A5" : "#FCD34D") : "#F3F4F6" }}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-mono text-gray-400">{(v.ip_address || "—").replace(/\.\d+$/, ".xxx")}</span>
+                            <span className="text-[10px] text-gray-400">{timeAgo(v.last_seen_at || v.created_at)}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-sm font-medium text-gray-900">{v.geo_city || "Unknown"}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: cfg.bg, color: cfg.color }}>
+                              {cfg.label}
                             </span>
-                          )}
+                            {v.ip_is_business && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-50 text-blue-600">Biz</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-gray-400">
+                            {v.calculated_price ? <><span className="text-gray-700 font-medium">${Math.round(v.calculated_price)}</span> est · </> : ""}
+                            {v.entry_page || "/"}
+                          </p>
                         </div>
-                        {v.calculated_price > 0 && (
-                          <div style={{ marginTop: 5, fontSize: 14, color: BRAND_GOLD, fontWeight: 700, fontFamily: "monospace" }}>
-                            ${Number(v.calculated_price).toFixed(0)}
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Map */}
+              <div className={cardStyle}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Activity map — Gulf South</p>
+                  <div className="flex items-center gap-3">
+                    {["Browsing","Estimating","Checkout","Converted"].map((l, i) => (
+                      <span key={l} className="flex items-center gap-1 text-[10px] text-gray-400">
+                        <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: ["#9CA3AF","#60A5FA","#FB923C","#4ADE80"][i] }} />
+                        {l}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-lg overflow-hidden">
+                  <svg width="100%" viewBox="0 0 500 300">
+                    {/* Simplified SE Louisiana landmass */}
+                    <path
+                      d="M 20 30 L 480 30 L 482 268 Q 452 288 420 266 Q 395 284 370 258 Q 340 276 310 254 Q 280 270 246 250 Q 210 264 176 246 Q 150 258 120 238 Q 85 248 55 224 Q 30 210 20 180 Z"
+                      fill="white" stroke="#E5E7EB" strokeWidth="0.5"
+                    />
+                    {/* Lake Pontchartrain */}
+                    <ellipse cx="265" cy="132" rx="148" ry="56" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="0.5" />
+                    <text x="265" y="136" textAnchor="middle" fontSize="8" fill="#93C5FD" fontFamily="system-ui">Lake Pontchartrain</text>
+                    {/* Mississippi River */}
+                    <path
+                      d="M 80 238 Q 122 225 158 232 Q 196 240 228 228 Q 258 218 285 228 Q 316 240 348 228 Q 375 218 412 232 Q 442 240 475 228"
+                      fill="none" stroke="#6EE7B7" strokeWidth="5" strokeOpacity="0.5"
+                    />
+                    {/* Static city labels for unoccupied cities */}
+                    {Object.entries(CITY_MAP)
+                      .filter(([city]) => !liveVisitors.find((v: any) => v.geo_city === city))
+                      .map(([city, coord]) => (
+                        <text key={city} x={coord.x} y={coord.y} textAnchor="middle" fontSize="7" fill="#D1D5DB" fontFamily="system-ui">{city}</text>
+                      ))
+                    }
+                    {/* Active visitor dots */}
+                    {liveVisitors.map((v: any) => {
+                      const coord = CITY_MAP[v.geo_city];
+                      if (!coord) return null;
+                      const cfg = STAGE_CONFIG[v.stage] || STAGE_CONFIG.visited;
+                      return (
+                        <g key={v.id}>
+                          <circle cx={coord.x} cy={coord.y} r={14} fill={cfg.dotColor} fillOpacity={0.15} />
+                          <circle cx={coord.x} cy={coord.y} r={5} fill={cfg.dotColor} />
+                          <text x={coord.x} y={coord.y + 16} textAnchor="middle" fontSize="8" fill="#6B7280" fontFamily="system-ui">{v.geo_city}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+                {/* Parish pills */}
+                {liveVisitors.length > 0 && (
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    {Array.from(new Set(liveVisitors.map((v: any) => v.geo_region || v.geo_city || "Unknown"))).map((region: any) => (
+                      <span key={region} className="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-md">
+                        {region} <strong className="text-gray-800">{liveVisitors.filter((v: any) => (v.geo_region || v.geo_city) === region).length}</strong>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* ── ANALYTICS GRID: Funnel | Page performance ── */}
+            <div className="grid gap-4" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
+
+              {/* Funnel */}
+              <div className={cardStyle}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Conversion funnel — last 30 days</p>
+                  <span className="text-xs font-medium text-green-600">{convRate}% overall</span>
+                </div>
+                <div className="space-y-2">
+                  {FUNNEL_STAGES.map((fs, i) => {
+                    const count = funnelMap[fs.key] || 0;
+                    const pct = totalVisited > 0 ? (count / totalVisited) * 100 : 0;
+                    const prevKey = FUNNEL_STAGES[i - 1]?.key;
+                    const prevCount = prevKey ? (funnelMap[prevKey] || 0) : null;
+                    const drop = (!fs.dim && prevCount && prevCount > 0 && count < prevCount)
+                      ? `-${Math.round(((prevCount - count) / prevCount) * 100)}%`
+                      : null;
+                    return (
+                      <div key={fs.key} style={{ opacity: fs.dim ? 0.4 : 1 }}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-500">{fs.label}</span>
+                          <div className="flex items-center gap-2">
+                            {drop && <span className="text-[10px] text-red-500">{drop}</span>}
+                            <span className="text-xs font-medium text-gray-800">{count}</span>
                           </div>
-                        )}
-                        {v.delivery_address && (
-                          <div style={{ fontSize: 11, color: T.textSecond, marginTop: 3 }}>
-                            📍 {v.delivery_address.split(",")[0]}
-                          </div>
-                        )}
-                        {v.customer_name && (
-                          <div style={{ fontSize: 11, color: T.textSecond, marginTop: 2 }}>👤 {v.customer_name}</div>
-                        )}
-                        {v.entry_city_name && (
-                          <div style={{ fontSize: 10, color: "#3B82F6", marginTop: 2 }}>🏙️ Via: {v.entry_city_name}</div>
-                        )}
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, background: fs.dim ? "#D1D5DB" : "#B87333" }}
+                          />
+                        </div>
                       </div>
                     );
                   })}
-                  {/* Bot visitors collapsed */}
-                  {botVisitors.length > 0 && (
-                    <div style={{ marginTop: 12, padding: "8px 12px", background: T.subtleBg, borderRadius: 8, border: `1px solid ${T.cardBorder}` }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: T.textSecond, marginBottom: 6 }}>🤖 BOTS / CRAWLERS ({botVisitors.length})</div>
-                      {botVisitors.map((v: any) => (
-                        <div key={v.id} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", opacity: 0.5, fontSize: 11, color: T.textSecond }}>
-                          <span style={{ fontFamily: "monospace" }}>{v.ip_address?.replace(/\.\d+$/, ".xxx") || "—"}</span>
-                          <span>{v.ip_org?.slice(0, 20) || "bot"}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* ── RIGHT: MAP + PAGE PERF + FUNNEL ── */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-                  {/* ── ACTIVITY MAP ── */}
-                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
-                      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>ACTIVITY MAP</span>
-                    </div>
-                    <svg viewBox="100 80 380 280" style={{ width: "100%", height: "auto", maxHeight: 240 }}>
-                      {/* LA outline */}
-                      <path d={LA_PATH} fill={isDark ? "#1a2540" : "#F3F4F6"} stroke={isDark ? "#2a3a5a" : "#D1D5DB"} strokeWidth={1.5} />
-                      {/* City dots */}
-                      {(Object.entries(cityGroups) as [string, { count: number; topStage: string }][]).map(([city, data]) => {
-                        const coords = CITY_COORDS[city];
-                        if (!coords) return null;
-                        const stgColor = LIVE_STAGE_CONFIG[data.topStage]?.color || "#9CA3AF";
-                        const r = Math.min(6 + data.count * 3, 18);
-                        return (
-                          <g key={city}>
-                            <circle cx={coords[0]} cy={coords[1]} r={r + 4} fill={stgColor} opacity={0.15} />
-                            <circle cx={coords[0]} cy={coords[1]} r={r} fill={stgColor} stroke="white" strokeWidth={1.5} />
-                            <text x={coords[0]} y={coords[1] + 3} textAnchor="middle" fill="white" fontSize={r > 8 ? 9 : 7} fontWeight={700}>
-                              {data.count}
-                            </text>
-                            <text x={coords[0]} y={coords[1] + r + 12} textAnchor="middle" fill={T.textSecond} fontSize={8} fontWeight={600}>
-                              {city}
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </svg>
-                    {/* Legend */}
-                    <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                      {[
-                        { label: "Browsing", color: "#6B7280" }, { label: "Address", color: "#3B82F6" },
-                        { label: "Checkout", color: "#F59E0B" }, { label: "Payment", color: "#EF4444" },
-                        { label: "Converted", color: "#059669" },
-                      ].map(l => (
-                        <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color }} />
-                          <span style={{ fontSize: 10, color: T.textSecond }}>{l.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ── PAGE PERFORMANCE ── */}
-                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
-                      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>PAGE PERFORMANCE</span>
-                    </div>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr>
-                          {["Page", "Visitors", "Avg $", "Top Stage"].map(h => (
-                            <th key={h} style={{ textAlign: h === "Page" ? "left" : "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedPages.map(([page, data], i) => {
-                          const avgPrice = data.prices.length > 0 ? data.prices.reduce((a, b) => a + b, 0) / data.prices.length : 0;
-                          const topStage = data.stages.reduce((best: string, s: string) => {
-                            return (LIVE_STAGE_CONFIG[s]?.order ?? 0) > (LIVE_STAGE_CONFIG[best]?.order ?? 0) ? s : best;
-                          }, "visited");
-                          const topStgInfo = LIVE_STAGE_CONFIG[topStage] || { label: "—", color: "#9CA3AF" };
-                          return (
-                            <tr key={page} style={{ background: i % 2 === 1 ? T.tableStripeBg : "transparent" }}>
-                              <td style={{ padding: "7px 8px", fontSize: 12, fontWeight: 500, color: T.textPrimary, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {page}
-                              </td>
-                              <td style={{ padding: "7px 8px", fontSize: 13, fontWeight: 700, fontFamily: "monospace", textAlign: "right", color: T.textPrimary }}>
-                                {data.visitors}
-                              </td>
-                              <td style={{ padding: "7px 8px", fontSize: 13, fontFamily: "monospace", textAlign: "right", color: avgPrice > 0 ? BRAND_GOLD : T.textSecond }}>
-                                {avgPrice > 0 ? `$${avgPrice.toFixed(0)}` : "—"}
-                              </td>
-                              <td style={{ padding: "7px 8px", textAlign: "right" }}>
-                                <span style={{ fontSize: 10, fontWeight: 600, color: topStgInfo.color, background: `${topStgInfo.color}15`, padding: "2px 6px", borderRadius: 10 }}>
-                                  {topStgInfo.label}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {sortedPages.length === 0 && (
-                          <tr><td colSpan={4} style={{ textAlign: "center", padding: 20, fontSize: 12, color: T.textSecond }}>No page data</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* ── LIVE FUNNEL ── */}
-                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
-                      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>FUNNEL — CURRENT SESSIONS</span>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {liveFunnelCounts.map((stage, i) => {
-                        const maxC = liveFunnelCounts[0]?.count || 1;
-                        const barW = Math.max((stage.count / maxC) * 100, 4);
-                        const dropoff = i > 0 && liveFunnelCounts[i - 1].count > 0
-                          ? ((liveFunnelCounts[i - 1].count - stage.count) / liveFunnelCounts[i - 1].count * 100).toFixed(0)
-                          : null;
-                        return (
-                          <div key={stage.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ width: 80, textAlign: "right", fontSize: 11, fontWeight: 700, color: stage.color, flexShrink: 0 }}>
-                              {stage.label}
-                            </span>
-                            <div style={{ flex: 1, height: 28, background: T.barBg, borderRadius: 6, overflow: "hidden", position: "relative" }}>
-                              <div style={{
-                                width: `${barW}%`, height: "100%", background: stage.color, borderRadius: 6,
-                                display: "flex", alignItems: "center", paddingLeft: 8, minWidth: 32, transition: "width 0.5s ease",
-                              }}>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: "white", fontFamily: "monospace" }}>{stage.count}</span>
-                              </div>
-                            </div>
-                            <span style={{ width: 40, textAlign: "right", fontSize: 10, fontFamily: "monospace", color: dropoff && Number(dropoff) > 50 ? "#EF4444" : T.textSecond, flexShrink: 0 }}>
-                              {dropoff !== null ? `-${dropoff}%` : ""}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Overall conversion */}
-                    {liveFunnelCounts[0]?.count > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.cardBorder}` }}>
-                        <span style={{ fontSize: 11, color: T.textSecond }}>Overall conversion</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "#059669", fontFamily: "monospace" }}>
-                          {((liveFunnelCounts[liveFunnelCounts.length - 1].count / liveFunnelCounts[0].count) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ── 30-DAY FUNNEL (existing data) ── */}
-                  {funnelData && (() => {
-                    const FUNNEL_30 = [
-                      { key: "visited", label: "VISITED", color: "#6B7280" },
-                      { key: "entered_address", label: "GOT ADDRESS", color: "#3B82F6" },
-                      { key: "got_price", label: "GOT PRICE", color: "#8B5CF6" },
-                      { key: "got_out_of_area", label: "OUT OF AREA", color: "#EF4444", isSideMetric: true },
-                      { key: "clicked_order_now", label: "ORDER NOW", color: "#EA580C" },
-                      { key: "started_checkout", label: "AT CHECKOUT", color: "#F59E0B" },
-                      { key: "reached_payment", label: "AT PAYMENT", color: "#EF4444" },
-                      { key: "completed_order", label: "COMPLETED", color: "#059669" },
-                    ];
-                    const maxCount = Math.max(funnelData.visited || 1, 1);
-                    const mainStages30 = FUNNEL_30.filter(s => !(s as any).isSideMetric);
-                    const overallRate = funnelData.visited > 0
-                      ? ((funnelData.completed_order / funnelData.visited) * 100).toFixed(1) : "0";
-                    let biggestDrop = { label: "", pct: 0 };
-                    for (let i = 1; i < mainStages30.length; i++) {
-                      const prev = funnelData[mainStages30[i - 1].key] || 0;
-                      const curr = funnelData[mainStages30[i].key] || 0;
-                      if (prev > 0) {
-                        const drop = ((prev - curr) / prev) * 100;
-                        if (drop > biggestDrop.pct) biggestDrop = { label: `${mainStages30[i - 1].label} → ${mainStages30[i].label}`, pct: drop };
-                      }
-                    }
-                    return (
-                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
-                            <span style={{ ...LABEL_STYLE, color: T.textSecond }}>CONVERSION FUNNEL</span>
-                          </div>
-                          <span style={{ fontSize: 11, color: T.textSecond }}>Last 30 days</span>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          {FUNNEL_30.map((stage, i) => {
-                            const count = funnelData[stage.key] || 0;
-                            const barWidth = maxCount > 0 ? Math.max((count / maxCount) * 100, 2) : 2;
-                            let convPct = "";
-                            if (!(stage as any).isSideMetric && i > 0) {
-                              const prevMain = FUNNEL_30.slice(0, i).filter(s => !(s as any).isSideMetric).pop();
-                              if (prevMain) {
-                                const prevCount = funnelData[prevMain.key] || 0;
-                                convPct = prevCount > 0 ? `${((count / prevCount) * 100).toFixed(0)}%` : "—";
-                              }
-                            }
-                            if ((stage as any).isSideMetric) {
-                              convPct = funnelData.entered_address > 0 ? `${((count / funnelData.entered_address) * 100).toFixed(0)}%` : "—";
-                            }
-                            return (
-                              <div key={stage.key} style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: (stage as any).isSideMetric ? 24 : 0, opacity: (stage as any).isSideMetric ? 0.8 : 1 }}>
-                                <span style={{ width: 90, textAlign: "right", fontSize: 11, fontWeight: 700, color: stage.color, flexShrink: 0 }}>{stage.label}</span>
-                                <div style={{ flex: 1, height: 26, background: T.barBg, borderRadius: 5, overflow: "hidden" }}>
-                                  <div style={{ width: `${barWidth}%`, height: "100%", background: stage.color, borderRadius: 5, display: "flex", alignItems: "center", paddingLeft: 8, minWidth: 32, transition: "width 0.5s" }}>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: "white", fontFamily: "monospace" }}>{count.toLocaleString()}</span>
-                                  </div>
-                                </div>
-                                <span style={{ width: 40, textAlign: "right", fontSize: 10, fontFamily: "monospace", color: (stage as any).isSideMetric ? "#EF4444" : T.textSecond, flexShrink: 0 }}>{convPct}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.cardBorder}` }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 11, color: T.textSecond }}>Overall conversion:</span>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#059669" }}>{overallRate}%</span>
-                          </div>
-                          {biggestDrop.pct > 0 && (
-                            <span style={{ fontSize: 11, fontWeight: 600, background: "#FEF3C7", color: "#92400E", padding: "2px 8px", borderRadius: 20 }}>
-                              Biggest drop: {biggestDrop.label} ({biggestDrop.pct.toFixed(0)}%)
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </div>
               </div>
-            )}
-          </>
-        );
-      }
 
-      case "schedule": {
-        const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-        return (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-            {/* Month nav + Today */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: T.textPrimary }}>←</button>
-                <span style={{ fontSize: "18px", fontWeight: 700, color: T.textPrimary }}>{scheduleDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
-                <button onClick={() => { const d = new Date(scheduleDate); d.setMonth(d.getMonth() + 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: T.textPrimary }}>→</button>
-              </div>
-              <button onClick={() => setScheduleDate(new Date())} style={{ padding: "6px 14px", borderRadius: "6px", border: `1px solid ${T.cardBorder}`, background: "white", fontSize: "13px", cursor: "pointer" }}>Today</button>
-            </div>
-
-            {/* Week strip with nav arrows */}
-            <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "16px" }}>
-              <button onClick={() => { const d = new Date(scheduleDate); d.setDate(d.getDate() - 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: T.textPrimary, padding: "8px", flexShrink: 0 }}>‹</button>
-              <div ref={weekStripRef} style={{ display: "flex", gap: "4px", overflowX: "auto", paddingBottom: "12px", flex: 1 }}>
-                {Array.from({ length: 90 }, (_, i) => {
-                  const stripStart = new Date(scheduleDate); stripStart.setDate(stripStart.getDate() - 7 + i);
-                  const d = new Date(stripStart);
-                  const dateStr = d.toISOString().split("T")[0];
-                  const isSelected = dateStr === scheduleDate.toISOString().split("T")[0];
-                  const isToday = dateStr === new Date().toISOString().split("T")[0];
-                  const count = weekCounts[dateStr];
-                  const isFirstOfMonth = d.getDate() === 1;
-                  return (
-                    <button key={dateStr} data-selected={isSelected ? "true" : "false"} onClick={() => setScheduleDate(new Date(d))} style={{ minWidth: "52px", padding: "8px 4px", borderRadius: "10px", border: "none", background: isSelected ? T.textPrimary : "transparent", cursor: "pointer", position: "relative", textAlign: "center", flexShrink: 0, marginTop: isFirstOfMonth ? "18px" : "0" }}>
-                      {isFirstOfMonth && (
-                        <div style={{ position: "absolute", top: "-18px", left: "0", fontSize: "10px", color: BRAND_GOLD, fontWeight: 700, whiteSpace: "nowrap" }}>
-                          {d.toLocaleDateString("en-US", { month: "short" })}
-                        </div>
-                      )}
-                      <div style={{ fontSize: "11px", color: isSelected ? "white" : "#888", marginBottom: "2px" }}>{DAY_NAMES[d.getDay()]}</div>
-                      <div style={{ fontSize: "16px", fontWeight: 700, color: isSelected ? "white" : isToday ? BRAND_GOLD : T.textPrimary }}>{d.getDate()}</div>
-                      {count && count.orders > 0 && (
-                        <div style={{ position: "absolute", top: isFirstOfMonth ? "22px" : "4px", right: "6px", background: "#EF4444", color: "white", borderRadius: "50%", width: "16px", height: "16px", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{count.orders}</div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <button onClick={() => { const d = new Date(scheduleDate); d.setDate(d.getDate() + 1); setScheduleDate(d); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", color: T.textPrimary, padding: "8px", flexShrink: 0 }}>›</button>
-            </div>
-
-            {/* Day summary */}
-            <div style={{ padding: "16px", borderRadius: "12px", background: "white", border: `1px solid ${T.cardBorder}`, marginBottom: "16px" }}>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: T.textPrimary, marginBottom: "12px" }}>
-                {scheduleDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                <span style={{ marginLeft: "12px", fontSize: "12px", color: "#888", fontWeight: 400 }}>{scheduleSummary.orders} orders · {scheduleSummary.loads} loads</span>
-              </div>
-              <div style={{ display: "flex", gap: "32px", flexWrap: "wrap" }}>
-                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Revenue</div><div style={{ fontSize: "20px", fontWeight: 700, color: "#16A34A" }}>${scheduleSummary.revenue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</div></div>
-                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Loads</div><div style={{ fontSize: "20px", fontWeight: 700, color: T.textPrimary }}>{scheduleSummary.loads}</div></div>
-                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Total Orders</div><div style={{ fontSize: "20px", fontWeight: 700, color: T.textPrimary }}>{scheduleSummary.orders}</div></div>
-                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>COD</div><div style={{ fontSize: "20px", fontWeight: 700, color: BRAND_GOLD }}>{scheduleSummary.pending}</div></div>
-                <div><div style={{ fontSize: "11px", color: "#888", marginBottom: "2px" }}>Pre-Paid</div><div style={{ fontSize: "20px", fontWeight: 700, color: "#16A34A" }}>{scheduleSummary.paid}</div></div>
-              </div>
-            </div>
-
-            {/* Order cards */}
-            {scheduleOrders.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 0", color: "#888" }}>
-                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p style={{ fontSize: "15px" }}>No orders scheduled for this day</p>
-              </div>
-            ) : (
-              scheduleOrders.map(order => {
-                const isPaid = order.payment_status === "paid";
-                const isCOD = order.payment_method === "COD" || order.payment_method === "PAY AT DELIVERY";
-                return (
-                  <div key={order.id} style={{ background: T.cardBg, border: `1px solid ${T.cardBorder}`, borderLeft: `4px solid ${isPaid ? "#16A34A" : BRAND_GOLD}`, borderRadius: "10px", padding: "16px", marginBottom: "12px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
-                      <div>
-                        <span style={{ fontSize: "13px", fontWeight: 700, color: BRAND_GOLD }}>#{order.order_number}</span>
-                        <div style={{ fontSize: "15px", fontWeight: 700, color: T.textPrimary, marginTop: "2px" }}>{order.customer_name}</div>
-                      </div>
-                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: isPaid ? "#DCFCE7" : "#FEF9C3", color: isPaid ? "#16A34A" : "#92400E" }}>{isPaid ? "✓ Pre-Paid" : "$ COD"}</span>
-                        <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: order.status === "delivered" ? "#DCFCE7" : "#F3F4F6", color: order.status === "delivered" ? "#16A34A" : "#6B7280" }}>{order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}</span>
-                      </div>
-                    </div>
-                    <div style={{ fontSize: "13px", color: "#666", marginBottom: "10px", display: "flex", flexDirection: "column", gap: "3px" }}>
-                      <span>📞 {order.customer_phone}</span>
-                      <span>📍 {order.delivery_address}</span>
-                      {order.notes && <span style={{ color: "#888", fontStyle: "italic" }}>📝 {order.notes}</span>}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${T.cardBorder}` }}>
-                      <span style={{ fontSize: "13px", color: "#888" }}>{order.quantity} load{order.quantity > 1 ? "s" : ""} · 9 cu yds each</span>
-                      <span style={{ fontSize: "16px", fontWeight: 700, color: "#16A34A" }}>${Number(order.price).toFixed(2)}</span>
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#888", marginTop: "6px" }}>🕗 {order.delivery_window || "8:00 AM – 5:00 PM"}</div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        );
-      }
-
-      case "finances": {
-        const now = new Date();
-        const filterOrders = (orders: any[]) => orders.filter(o => {
-          const d = new Date(o.created_at);
-          if (financeRange === 'mtd') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          if (financeRange === 'qtd') return Math.floor(d.getMonth()/3) === Math.floor(now.getMonth()/3) && d.getFullYear() === now.getFullYear();
-          return d.getFullYear() === now.getFullYear();
-        });
-        const rangeOrders = filterOrders(cashOrders);
-        const stateTaxCollected = rangeOrders.reduce((s: number, o: any) => s + Number(o.state_tax_amount || 0), 0);
-        const parishTaxCollected = rangeOrders.reduce((s: number, o: any) => s + Number(o.parish_tax_amount || 0), 0);
-        const totalTaxCollected = stateTaxCollected + parishTaxCollected;
-
-        // Parish breakdown from delivery address
-        const parishBreakdown = rangeOrders.reduce((acc: Record<string, { tax: number; orders: number; rate: number }>, o: any) => {
-          // Try to extract parish-like info from address
-          const addr = o.delivery_address || '';
-          const parishMatch = addr.match(/,\s*([^,]+?)\s*,\s*LA/i);
-          const parish = parishMatch ? parishMatch[1].trim() : 'Unknown';
-          if (!acc[parish]) acc[parish] = { tax: 0, orders: 0, rate: Number(o.parish_tax_rate || o.tax_rate || 0) };
-          acc[parish].tax += Number(o.parish_tax_amount || 0) + Number(o.state_tax_amount || 0);
-          acc[parish].orders += 1;
-          return acc;
-        }, {});
-
-        const cardOrders = rangeOrders.filter((o: any) => o.payment_method === 'stripe-link');
-        const codOrders = rangeOrders.filter((o: any) => o.payment_method !== 'stripe-link');
-        const feesCalculated = cardOrders.reduce((s: number, o: any) => s + Number(o.processing_fee || (Number(o.price || 0) * 0.035)), 0);
-        const feesSavedCOD = codOrders.reduce((s: number, o: any) => s + (Number(o.price || 0) * 0.035), 0);
-
-        const totalMiles = rangeOrders.reduce((s: number, o: any) => s + Number(o.distance_miles || 0), 0);
-        const avgMiles = rangeOrders.length ? totalMiles / rangeOrders.length : 0;
-        const distanceFeeRevenue = rangeOrders.reduce((s: number, o: any) => s + Number(o.distance_fee || 0), 0);
-        const fuelCostEst = totalMiles * 2 * 0.867;
-        const netDistanceFees = distanceFeeRevenue - fuelCostEst;
-
-        const grossRevenue = rangeOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
-        const saturdayRevenue = rangeOrders.reduce((s: number, o: any) => s + Number(o.saturday_surcharge_amount || 0), 0);
-        const baseRevenue = grossRevenue - distanceFeeRevenue - saturdayRevenue;
-        const netRevenue = grossRevenue - totalTaxCollected - feesCalculated;
-        const fmtD = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        const pctCard = rangeOrders.length ? ((cardOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
-        const pctCOD = rangeOrders.length ? ((codOrders.length / rangeOrders.length) * 100).toFixed(0) : '0';
-
-        const SECTION_LABEL_F: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: T.textSecond, marginBottom: 12 };
-        const METRIC_CARD_F: React.CSSProperties = { ...CARD_STYLE_T, borderRadius: 10, padding: '16px 20px', borderLeft: `3px solid ${BRAND_GOLD}` };
-        const METRIC_NUM_F: React.CSSProperties = { fontSize: 24, fontWeight: 700, color: T.textPrimary };
-        const METRIC_LABEL_F: React.CSSProperties = { fontSize: 12, color: T.textSecond, marginTop: 2 };
-
-        return (
-          <div>
-            {/* Range toggle */}
-            <div className="flex gap-2 mb-6">
-              {(['mtd', 'qtd', 'ytd'] as const).map(r => (
-                <button
-                  key={r}
-                  onClick={() => setFinanceRange(r)}
-                  style={{
-                    padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                    backgroundColor: financeRange === r ? BRAND_GOLD : T.cardBg,
-                    color: financeRange === r ? '#fff' : T.textPrimary,
-                    border: `1px solid ${financeRange === r ? BRAND_GOLD : T.cardBorder}`,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {r.toUpperCase()}
-                </button>
-              ))}
-              <span style={{ fontSize: 12, color: T.textSecond, alignSelf: 'center', marginLeft: 8 }}>
-                {rangeOrders.length} orders in range
-              </span>
-            </div>
-
-            {/* Section 1 — Tax Liability */}
-            <SectionHeader title="TAX LIABILITY" right={`${rangeOrders.length} orders`} />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <MetricCard label="State Tax Collected" value={fmtD(stateTaxCollected)} accent />
-              <MetricCard label="Parish Tax Collected" value={fmtD(parishTaxCollected)} accent />
-              <MetricCard label="Total Tax to Remit" value={fmtD(totalTaxCollected)} accent />
-            </div>
-            {/* Parish breakdown table */}
-            <div style={{ ...CARD_STYLE_T, borderRadius: 10, overflow: 'hidden', marginBottom: 24 }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                    <th className="text-left px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Parish / City</th>
-                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Rate</th>
-                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Tax Collected</th>
-                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>Orders</th>
-                    <th className="text-right px-4 py-2.5 font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>To Remit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(Object.entries(parishBreakdown) as [string, { tax: number; orders: number; rate: number }][]).sort((a, b) => b[1].tax - a[1].tax).map(([parish, data], i) => (
-                    <tr key={parish} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}` }}>
-                      <td className="px-4 py-2" style={{ color: T.textPrimary, fontWeight: 500 }}>{parish}</td>
-                      <td className="px-4 py-2 text-right" style={{ color: T.textSecond }}>{(data.rate * 100).toFixed(2)}%</td>
-                      <td className="px-4 py-2 text-right" style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(data.tax)}</td>
-                      <td className="px-4 py-2 text-right" style={{ color: T.textSecond }}>{data.orders}</td>
-                      <td className="px-4 py-2 text-right" style={{ color: BRAND_GOLD, fontWeight: 600 }}>{fmtD(data.tax)}</td>
+              {/* Page performance */}
+              <div className={cardStyle}>
+                <p className={sectionLabel}>Page performance</p>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Page</th>
+                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Visits</th>
+                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Avg $</th>
+                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Top stage</th>
                     </tr>
-                  ))}
-                  {Object.keys(parishBreakdown).length === 0 && (
-                    <tr><td colSpan={5} className="text-center py-6" style={{ color: T.textSecond }}>No orders in selected range</td></tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pagePerf.length === 0 ? (
+                      <tr><td colSpan={4} className="text-center text-gray-400 py-6 text-xs">No data yet</td></tr>
+                    ) : pagePerf.map((p, i) => (
+                      <tr key={i} className="border-b border-gray-50 last:border-0">
+                        <td className="py-2 pr-2">
+                          <span className="font-mono text-[10px] text-blue-500 truncate block max-w-[120px]">{p.page}</span>
+                        </td>
+                        <td className="py-2 text-right text-gray-700">{p.visits}</td>
+                        <td className="py-2 text-right text-gray-700">{p.avgPrice ? `$${p.avgPrice}` : "—"}</td>
+                        <td className="py-2 text-right">
+                          <span style={{ color: STAGE_SHORT_COLOR[p.topStage] || "#9CA3AF" }} className="text-[10px]">
+                            {STAGE_SHORT[p.topStage] || p.topStage}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
             </div>
 
-            {/* Section 2 — Processing Fees */}
-            <SectionHeader title="PROCESSING FEES" />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div style={METRIC_CARD_F}>
-                <div style={{ ...METRIC_NUM_F, color: ALERT_RED }}>{fmtD(feesCalculated)}</div>
-                <div style={METRIC_LABEL_F}>Stripe Fees Paid</div>
-              </div>
-              <div style={METRIC_CARD_F}>
-                <div style={{ ...METRIC_NUM_F, color: POSITIVE }}>{fmtD(feesSavedCOD)}</div>
-                <div style={METRIC_LABEL_F}>Fees Saved (COD)</div>
-              </div>
-              <div style={METRIC_CARD_F}>
-                <div style={{ ...METRIC_NUM_F, color: feesSavedCOD - feesCalculated > 0 ? POSITIVE : ALERT_RED }}>{fmtD(feesSavedCOD - feesCalculated)}</div>
-                <div style={METRIC_LABEL_F}>Net Fee Impact</div>
-              </div>
-              <div style={METRIC_CARD_F}>
-                <div style={{ fontSize: 14, color: T.textPrimary }}>
-                  <span style={{ fontWeight: 700 }}>{pctCard}%</span> Card · <span style={{ fontWeight: 700 }}>{pctCOD}%</span> COD
-                </div>
-                <div style={METRIC_LABEL_F}>Payment Split ({cardOrders.length} / {codOrders.length})</div>
-              </div>
-            </div>
+            {/* ── BOTTOM GRID: Entry pages | City intel ── */}
+            <div className="grid grid-cols-2 gap-4">
 
-            {/* Section 3 — Operations Metrics */}
-            <SectionHeader title="OPERATIONS METRICS" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div style={METRIC_CARD_F}>
-                <div style={METRIC_NUM_F}>{totalMiles.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                <div style={METRIC_LABEL_F}>Total Miles Driven</div>
-              </div>
-              <div style={METRIC_CARD_F}>
-                <div style={METRIC_NUM_F}>{avgMiles.toFixed(1)}</div>
-                <div style={METRIC_LABEL_F}>Avg Miles / Order</div>
-              </div>
-              <div style={METRIC_CARD_F}>
-                <div style={METRIC_NUM_F}>{fmtD(distanceFeeRevenue)}</div>
-                <div style={METRIC_LABEL_F}>Distance Fee Revenue</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div style={METRIC_CARD_F}>
-                <div style={{ ...METRIC_NUM_F, color: ALERT_RED }}>{fmtD(fuelCostEst)}</div>
-                <div style={METRIC_LABEL_F}>Fuel Cost Est. ($0.87/mi RT)</div>
-              </div>
-              <div style={METRIC_CARD_F}>
-                <div style={{ ...METRIC_NUM_F, color: netDistanceFees >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netDistanceFees)}</div>
-                <div style={METRIC_LABEL_F}>Net on Distance Fees</div>
-              </div>
-              <div style={METRIC_CARD_F}>
-                <div style={{ ...METRIC_NUM_F, color: BRAND_GOLD }}>{fmtD(saturdayRevenue)}</div>
-                <div style={METRIC_LABEL_F}>Saturday Surcharge Revenue</div>
-              </div>
-            </div>
-
-            {/* Section 4 — Revenue Breakdown */}
-            <SectionHeader title="REVENUE BREAKDOWN" />
-            <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '24px 28px' }}>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center" style={{ borderBottom: `1px solid ${T.cardBorder}`, paddingBottom: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary }}>Gross Revenue</span>
-                  <span style={{ fontSize: 20, fontWeight: 700, color: T.textPrimary }}>{fmtD(grossRevenue)}</span>
+              {/* Entry pages + time */}
+              <div className={cardStyle}>
+                <p className={sectionLabel}>Entry pages & time on page</p>
+                <div className="grid text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 mb-1" style={{ gridTemplateColumns: "1fr 40px 52px 44px" }}>
+                  <span>Page</span><span className="text-right">Sessions</span><span className="text-right">Avg time</span><span className="text-right">Bounce</span>
                 </div>
-                <div className="flex justify-between items-center" style={{ paddingLeft: 16 }}>
-                  <span style={{ fontSize: 13, color: ALERT_RED }}>− Tax Collected</span>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: ALERT_RED }}>({fmtD(totalTaxCollected)})</span>
-                </div>
-                <div className="flex justify-between items-center" style={{ paddingLeft: 16 }}>
-                  <span style={{ fontSize: 13, color: ALERT_RED }}>− Stripe Fees</span>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: ALERT_RED }}>({fmtD(feesCalculated)})</span>
-                </div>
-                <div className="flex justify-between items-center" style={{ borderTop: `2px solid ${BRAND_GOLD}`, paddingTop: 12, marginTop: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: T.textPrimary }}>= Net Revenue</span>
-                  <span style={{ fontSize: 22, fontWeight: 700, color: POSITIVE }}>{fmtD(netRevenue)}</span>
-                </div>
-              </div>
-              <div style={{ marginTop: 24, borderTop: `1px solid ${T.cardBorder}`, paddingTop: 16 }}>
-                <SectionHeader title="REVENUE COMPONENTS" />
-                <div className="space-y-2">
-                  <div className="flex justify-between" style={{ fontSize: 13 }}>
-                    <span style={{ color: T.textSecond }}>Sand Base Revenue</span>
-                    <span style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(baseRevenue)}</span>
-                  </div>
-                  <div className="flex justify-between" style={{ fontSize: 13 }}>
-                    <span style={{ color: T.textSecond }}>Distance Fee Revenue</span>
-                    <span style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(distanceFeeRevenue)}</span>
-                  </div>
-                  <div className="flex justify-between" style={{ fontSize: 13 }}>
-                    <span style={{ color: T.textSecond }}>Saturday Surcharge</span>
-                    <span style={{ color: T.textPrimary, fontWeight: 600 }}>{fmtD(saturdayRevenue)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* ── SECTION 5 — Revenue Recovery ── */}
-            <div style={{ marginTop: 32 }}>
-              <SectionHeader title="ABANDONED REVENUE" />
-              {(() => {
-                const sessionsWithPrice = abandonedSessions.filter((s: any) => Number(s.calculated_price || 0) > 0);
-                const abandonedValue = sessionsWithPrice.reduce((s: number, sess: any) => s + Number(sess.calculated_price || 0), 0);
-                const emailsSent = abandonedSessions.filter((s: any) => s.email_1hr_sent || s.email_24hr_sent || s.email_72hr_sent).length;
-                const withEmail = abandonedSessions.filter((s: any) => s.customer_email).length;
-                return (
-                  <>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div style={METRIC_CARD_F}>
-                        <div style={METRIC_NUM_F}>{abandonedSessions.length}</div>
-                        <div style={METRIC_LABEL_F}>Total Abandoned</div>
-                      </div>
-                      <div style={METRIC_CARD_F}>
-                        <div style={METRIC_NUM_F}>{sessionsWithPrice.length}</div>
-                        <div style={METRIC_LABEL_F}>Got a Price</div>
-                      </div>
-                      <div style={METRIC_CARD_F}>
-                        <div style={{ ...METRIC_NUM_F, color: BRAND_GOLD }}>{fmtD(abandonedValue)}</div>
-                        <div style={METRIC_LABEL_F}>Abandoned Value</div>
-                      </div>
-                      <div style={METRIC_CARD_F}>
-                        <div style={METRIC_NUM_F}>{emailsSent}</div>
-                        <div style={METRIC_LABEL_F}>Recovery Emails Sent</div>
-                      </div>
+                {pagePerf.length === 0
+                  ? <p className="text-center text-xs text-gray-400 py-6">No data yet</p>
+                  : pagePerf.map((p, i) => (
+                    <div key={i} className="grid items-center border-b border-gray-50 last:border-0 py-1.5 gap-1" style={{ gridTemplateColumns: "1fr 40px 52px 44px" }}>
+                      <span className="font-mono text-[10px] text-blue-500 truncate">{p.page}</span>
+                      <span className="text-[11px] text-gray-600 text-right">{p.visits}</span>
+                      <span className="text-[11px] text-gray-600 text-right">{fmtDuration(p.avgDuration)}</span>
+                      <span className="text-[11px] text-right text-gray-400">—</span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2">
-                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '12px 16px' }}>
-                        <span style={{ fontSize: 12, color: T.textSecond }}>Have Email</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary, marginLeft: 8 }}>{withEmail} of {abandonedSessions.length}</span>
+                  ))
+                }
+              </div>
+
+              {/* City intelligence */}
+              <div className={cardStyle}>
+                <p className={sectionLabel}>City intelligence — last 30 days</p>
+                <div className="grid text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 mb-1" style={{ gridTemplateColumns: "1fr 50px" }}>
+                  <span>City</span><span className="text-right">Sessions</span>
+                </div>
+                {cityIntel.length === 0
+                  ? <p className="text-center text-xs text-gray-400 py-6">No data yet</p>
+                  : cityIntel.map((c, i) => (
+                    <div key={i} className="grid items-center border-b border-gray-50 last:border-0 py-1.5 gap-1" style={{ gridTemplateColumns: "1fr 50px" }}>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 rounded-full bg-amber-400" style={{ width: `${Math.round((c.visits / (cityIntel[0]?.visits || 1)) * 60)}px`, minWidth: 4 }} />
+                        <span className="text-xs text-gray-700">{c.city}</span>
                       </div>
-                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '12px 16px' }}>
-                        <span style={{ fontSize: 12, color: T.textSecond }}>Email Rate</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary, marginLeft: 8 }}>{abandonedSessions.length > 0 ? ((withEmail / abandonedSessions.length) * 100).toFixed(0) : 0}%</span>
-                      </div>
-                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '12px 16px' }}>
-                        <span style={{ fontSize: 12, color: T.textSecond }}>Avg Abandoned $</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: BRAND_GOLD, marginLeft: 8 }}>{sessionsWithPrice.length > 0 ? fmtD(abandonedValue / sessionsWithPrice.length) : '$0'}</span>
-                      </div>
+                      <span className="text-[11px] text-gray-500 text-right">{c.visits}</span>
                     </div>
-                    <p style={{ fontSize: 11, color: T.textSecond, fontStyle: 'italic', marginTop: 4 }}>Recovery conversion tracking requires session→order linking (not yet implemented)</p>
-                  </>
-                );
-              })()}
+                  ))
+                }
+              </div>
+
             </div>
 
-            {/* ── SECTION 6 — ZIP Conversion Intelligence ── */}
-            <div style={{ marginTop: 32 }}>
-              <SectionHeader title="ZIP SESSION INTELLIGENCE" />
-              {(() => {
-                const zipStats = abandonedSessions.reduce((acc: Record<string, { sessions: number; withPrice: number; totalPrice: number; stages: Record<string, number> }>, s: any) => {
-                  const zip = s.geo_zip || 'Unknown';
-                  if (!acc[zip]) acc[zip] = { sessions: 0, withPrice: 0, totalPrice: 0, stages: {} };
-                  acc[zip].sessions++;
-                  if (Number(s.calculated_price || 0) > 0) {
-                    acc[zip].withPrice++;
-                    acc[zip].totalPrice += Number(s.calculated_price || 0);
-                  }
-                  const stage = s.stage || 'unknown';
-                  acc[zip].stages[stage] = (acc[zip].stages[stage] || 0) + 1;
-                  return acc;
-                }, {});
-                const zipRows = (Object.entries(zipStats) as [string, { sessions: number; withPrice: number; totalPrice: number; stages: Record<string, number> }][])
-                  .filter(([, d]) => d.sessions >= 2)
-                  .sort((a, b) => b[1].sessions - a[1].sessions)
-                  .slice(0, 20)
-                  .map(([zip, d]) => {
-                    const hotStages = ['started_checkout', 'reached_payment', 'clicked_order_now'];
-                    const hotCount = hotStages.reduce((s, st) => s + (d.stages[st] || 0), 0);
-                    const status = hotCount > 0 ? '🔥 Hot' : d.withPrice > 0 ? '⚠️ Interest' : '❄️ Cold';
-                    return { zip, ...d, avgPrice: d.withPrice > 0 ? d.totalPrice / d.withPrice : 0, hotCount, status };
-                  });
-                return (
-                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, overflow: 'hidden' }}>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                          {['ZIP', 'Sessions', 'Got Price', 'Avg $', 'Hot Leads', 'Status'].map(h => (
-                            <th key={h} className="px-4 py-2.5 text-left font-semibold" style={{ color: T.tableHeaderText, fontSize: 12 }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {zipRows.map((r, i) => (
-                          <tr
-                            key={r.zip}
-                            style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}`, cursor: 'pointer' }}
-                            onClick={() => { setActivePage('cash_orders'); }}
-                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
-                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? T.cardBg : T.tableStripeBg)}
-                          >
-                            <td className="px-4 py-2 font-mono" style={{ color: T.textPrimary, fontWeight: 600 }}>{r.zip}</td>
-                            <td className="px-4 py-2" style={{ color: T.textPrimary }}>{r.sessions}</td>
-                            <td className="px-4 py-2" style={{ color: T.textPrimary }}>{r.withPrice}</td>
-                            <td className="px-4 py-2" style={{ color: BRAND_GOLD, fontWeight: 600 }}>{r.avgPrice > 0 ? fmtD(r.avgPrice) : '—'}</td>
-                            <td className="px-4 py-2" style={{ color: r.hotCount > 0 ? ALERT_RED : T.textSecond, fontWeight: r.hotCount > 0 ? 700 : 400 }}>{r.hotCount}</td>
-                            <td className="px-4 py-2" style={{ fontSize: 12 }}>{r.status}</td>
-                          </tr>
-                        ))}
-                        {zipRows.length === 0 && (
-                          <tr><td colSpan={6} className="text-center py-6" style={{ color: T.textSecond }}>Not enough session data yet (min 2 per ZIP)</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })()}
-              <p style={{ fontSize: 11, color: T.textSecond, fontStyle: 'italic', marginTop: 6 }}>Based on abandoned session data. ZIPs with &lt;2 sessions hidden.</p>
-            </div>
-
-            {/* ── SECTION 7 — Daily P&L Estimate ── */}
-            <div style={{ marginTop: 32 }}>
-              <SectionHeader title="TODAY'S P&L ESTIMATE" />
-              {(() => {
-                const todayStr = new Date().toDateString();
-                const todayOrders = cashOrders.filter((o: any) => new Date(o.created_at).toDateString() === todayStr);
-                const grossToday = todayOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
-                const taxToday = todayOrders.reduce((s: number, o: any) => s + Number(o.state_tax_amount || 0) + Number(o.parish_tax_amount || 0), 0);
-                const feesToday = todayOrders.filter((o: any) => o.payment_method === 'stripe-link')
-                  .reduce((s: number, o: any) => s + Number(o.processing_fee || (Number(o.price || 0) * 0.035)), 0);
-                const driverCostToday = todayOrders.length * 30;
-                const fuelCostToday = todayOrders.reduce((s: number, o: any) => s + (Number(o.distance_miles || 0) * 2 * 0.867), 0);
-                const netToday = grossToday - taxToday - feesToday - driverCostToday - fuelCostToday;
-                const netPerLoad = todayOrders.length > 0 ? netToday / todayOrders.length : 0;
-                const TARGET_PER_LOAD = 130;
-                const onTarget = netPerLoad >= TARGET_PER_LOAD;
-
-                return (
-                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: '24px 28px', borderLeft: `3px solid ${BRAND_GOLD}` }}>
-                    <div className="flex items-center justify-between mb-4">
-                      <span style={{ fontSize: 14, fontWeight: 600, color: T.textPrimary }}>{todayOrders.length} orders today</span>
-                      <span style={{ fontSize: 12, color: T.textSecond }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between" style={{ fontSize: 14 }}>
-                        <span style={{ color: T.textPrimary, fontWeight: 600 }}>Gross Collected</span>
-                        <span style={{ color: T.textPrimary, fontWeight: 700, fontSize: 18 }}>{fmtD(grossToday)}</span>
-                      </div>
-                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
-                        <span style={{ color: ALERT_RED }}>− Tax Collected</span>
-                        <span style={{ color: ALERT_RED, fontWeight: 600 }}>({fmtD(taxToday)})</span>
-                      </div>
-                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
-                        <span style={{ color: ALERT_RED }}>− Stripe Fees</span>
-                        <span style={{ color: ALERT_RED, fontWeight: 600 }}>({fmtD(feesToday)})</span>
-                      </div>
-                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
-                        <span style={{ color: WARN_YELLOW }}>− Driver Costs est</span>
-                        <span style={{ color: WARN_YELLOW, fontWeight: 600 }}>({fmtD(driverCostToday)})</span>
-                      </div>
-                      <div className="flex justify-between" style={{ fontSize: 13, paddingLeft: 16 }}>
-                        <span style={{ color: WARN_YELLOW }}>− Fuel Cost est</span>
-                        <span style={{ color: WARN_YELLOW, fontWeight: 600 }}>({fmtD(fuelCostToday)})</span>
-                      </div>
-                      <div style={{ borderTop: `2px solid ${BRAND_GOLD}`, paddingTop: 12, marginTop: 8 }}>
-                        <div className="flex justify-between">
-                          <span style={{ fontSize: 15, fontWeight: 700, color: T.textPrimary }}>= Estimated Net</span>
-                          <span style={{ fontSize: 22, fontWeight: 700, color: netToday >= 0 ? POSITIVE : ALERT_RED }}>{fmtD(netToday)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {todayOrders.length > 0 && (
-                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.cardBorder}` }}>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <div style={{ fontSize: 11, color: T.textSecond }}>Per Load Net</div>
-                            <div style={{ fontSize: 18, fontWeight: 700, color: T.textPrimary }}>{fmtD(netPerLoad)}</div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 11, color: T.textSecond }}>Target / Load</div>
-                            <div style={{ fontSize: 18, fontWeight: 700, color: T.textSecond }}>{fmtD(TARGET_PER_LOAD)}</div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 11, color: T.textSecond }}>Status</div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: onTarget ? POSITIVE : ALERT_RED }}>
-                              {onTarget ? '✅ ON TARGET' : '🔴 BELOW TARGET'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <p style={{ fontSize: 10, color: T.textSecond, fontStyle: 'italic', marginTop: 12 }}>Estimated — actual driver costs may vary. Fuel based on $0.867/mi round trip.</p>
-                  </div>
-                );
-              })()}
-            </div>
           </div>
         );
       }
