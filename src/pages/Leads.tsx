@@ -459,6 +459,10 @@ const Leads = () => {
   const [flaggingRegenAll, setFlaggingRegenAll] = useState(false);
   const [regenQueue, setRegenQueue] = useState<{ total: number; current: number; currentCity: string; status: "idle" | "running" | "complete" } | null>(null);
   const regenCancelRef = useRef(false);
+  const liveMapRef = useRef<HTMLDivElement>(null);
+  const liveMapInstance = useRef<any>(null);
+  const liveMapMarkers = useRef<any[]>([]);
+  const liveMapInfoWindow = useRef<any>(null);
   const [deleteAllTypeInput, setDeleteAllTypeInput] = useState("");
   const [cityPageSortKey, setCityPageSortKey] = useState<"city_name" | "state" | "distance_from_pit" | "base_price" | "status" | "page_views">("city_name");
   const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
@@ -1572,6 +1576,142 @@ const Leads = () => {
     const ticker = setInterval(() => setRefreshCounter(c => c + 5), 5000);
     return () => clearInterval(ticker);
   }, [activePage]);
+
+  // Reset map instance when leaving live tab so it re-initializes on return
+  useEffect(() => {
+    if (activePage !== "live") {
+      liveMapMarkers.current.forEach((m: any) => {
+        try { m.setMap(null); } catch {}
+      });
+      liveMapMarkers.current = [];
+      liveMapInstance.current = null;
+      if (liveMapInfoWindow.current) {
+        try { (liveMapInfoWindow.current as any).close(); } catch {}
+      }
+    }
+  }, [activePage]);
+
+  // Initialize Google Map when live tab is active and Google is loaded
+  useEffect(() => {
+    if (activePage !== "live" || !googleLoaded) return;
+
+    const MINIMAL_STYLE = [
+      { elementType: "geometry", stylers: [{ color: "#f8f7f2" }] },
+      { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#8a8880" }] },
+      { elementType: "labels.text.stroke", stylers: [{ color: "#f8f7f2" }] },
+      { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
+      { featureType: "administrative.neighborhood", stylers: [{ visibility: "off" }] },
+      { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#edf2ec" }] },
+      { featureType: "poi", stylers: [{ visibility: "off" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+      { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#f0ede8" }] },
+      { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#e8e4dc" }] },
+      { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#d8d4cc" }] },
+      { featureType: "transit", stylers: [{ visibility: "off" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#cde0f0" }] },
+      { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#9ab8cc" }] },
+    ] as any[];
+
+    const timer = setTimeout(() => {
+      if (!liveMapRef.current || liveMapInstance.current || !window.google?.maps) return;
+
+      liveMapInstance.current = new window.google.maps.Map(liveMapRef.current, {
+        center: { lat: 29.9511, lng: -90.0715 },
+        zoom: 10,
+        mapTypeId: "roadmap",
+        disableDefaultUI: true,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_BOTTOM,
+        },
+        styles: MINIMAL_STYLE,
+      });
+
+      liveMapInfoWindow.current = new window.google.maps.InfoWindow({ maxWidth: 220 });
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [activePage, googleLoaded]);
+
+  // Update visitor and PIT markers whenever liveVisitors data changes
+  useEffect(() => {
+    if (!liveMapInstance.current || !window.google?.maps) return;
+
+    liveMapMarkers.current.forEach((m: any) => {
+      try { m.setMap(null); } catch {}
+    });
+    liveMapMarkers.current = [];
+
+    const STAGE_MAP_COLOR: Record<string, string> = {
+      visited: "#9CA3AF", entered_address: "#3B82F6", got_price: "#F59E0B",
+      got_out_of_area: "#D1D5DB", clicked_order_now: "#8B5CF6",
+      started_checkout: "#EA580C", reached_payment: "#DC2626", completed_order: "#16A34A",
+    };
+    const STAGE_MAP_LABEL: Record<string, string> = {
+      visited: "Browsing", entered_address: "Got address", got_price: "Got price",
+      got_out_of_area: "Out of area", clicked_order_now: "Clicked order",
+      started_checkout: "At checkout", reached_payment: "At payment", completed_order: "Converted",
+    };
+    const timeSince = (iso: string) => {
+      const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+      if (s < 60) return `${s}s ago`;
+      if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+      return `${Math.floor(s / 3600)}h ago`;
+    };
+
+    // PIT markers
+    (pits || []).filter((p: any) => p.status === "active" && p.lat && p.lon).forEach((pit: any) => {
+      const marker = new window.google.maps.Marker({
+        position: { lat: Number(pit.lat), lng: Number(pit.lon) },
+        map: liveMapInstance.current,
+        title: pit.name,
+        icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 6, fillColor: "#B87333", fillOpacity: 0.85, strokeColor: "#ffffff", strokeWeight: 2 },
+        zIndex: 5,
+      });
+      marker.addListener("click", () => {
+        liveMapInfoWindow.current?.setContent(`<div style="font-family:system-ui;padding:4px"><strong style="font-size:12px">${pit.name}</strong><div style="font-size:10px;color:#6B7280;margin-top:2px">${pit.address}</div><div style="font-size:9px;color:#B87333;margin-top:4px">Active PIT</div></div>`);
+        liveMapInfoWindow.current?.open(liveMapInstance.current, marker);
+      });
+      liveMapMarkers.current.push(marker);
+    });
+
+    // Visitor markers
+    const visitorsWithCoords = (liveVisitors as any[]).filter((v) => v.address_lat && v.address_lng);
+    visitorsWithCoords.forEach((v: any) => {
+      const color = STAGE_MAP_COLOR[v.stage] || "#9CA3AF";
+      const label = STAGE_MAP_LABEL[v.stage] || v.stage;
+      const isHot = v.stage === "reached_payment" || v.stage === "started_checkout";
+      const marker = new window.google.maps.Marker({
+        position: { lat: Number(v.address_lat), lng: Number(v.address_lng) },
+        map: liveMapInstance.current,
+        title: v.geo_city || "Visitor",
+        icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: isHot ? 11 : 9, fillColor: color, fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2.5 },
+        zIndex: 20,
+        animation: isHot ? window.google.maps.Animation.BOUNCE : undefined,
+      });
+      if (isHot) setTimeout(() => { try { marker.setAnimation(null); } catch {} }, 6500);
+
+      marker.addListener("click", () => {
+        const priceStr = v.calculated_price ? `$${Math.round(v.calculated_price)} estimated` : "";
+        const pitStr = v.nearest_pit_name ? `<div style="font-size:9px;color:#6B7280;margin-top:2px">Nearest pit: ${v.nearest_pit_name}</div>` : "";
+        liveMapInfoWindow.current?.setContent(`<div style="font-family:system-ui;padding:4px"><div style="display:flex;align-items:center;gap:6px"><strong style="font-size:12px">${v.geo_city || "Unknown"}</strong><span style="font-size:9px;padding:1px 6px;border-radius:4px;background:${color}20;color:${color}">${label}</span></div>${priceStr ? `<div style="font-size:11px;color:#374151;margin-top:4px">${priceStr}</div>` : ""}${v.delivery_address ? `<div style="font-size:10px;color:#6B7280;margin-top:2px">${v.delivery_address.split(",").slice(0, 2).join(",")}</div>` : ""}${pitStr}<div style="font-size:9px;color:#9CA3AF;margin-top:4px">${timeSince(v.last_seen_at || v.created_at)}</div></div>`);
+        liveMapInfoWindow.current?.open(liveMapInstance.current, marker);
+      });
+      liveMapMarkers.current.push(marker);
+    });
+
+    // Auto-fit bounds
+    if (visitorsWithCoords.length > 0) {
+      const bounds = new window.google.maps.LatLngBounds();
+      visitorsWithCoords.forEach((v: any) => bounds.extend({ lat: Number(v.address_lat), lng: Number(v.address_lng) }));
+      (pits || []).filter((p: any) => p.status === "active" && p.lat && p.lon).forEach((p: any) => bounds.extend({ lat: Number(p.lat), lng: Number(p.lon) }));
+      liveMapInstance.current.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
+      window.google.maps.event.addListenerOnce(liveMapInstance.current, "bounds_changed", () => {
+        if (liveMapInstance.current?.getZoom() > 13) liveMapInstance.current.setZoom(13);
+      });
+    }
+  }, [liveVisitors, pits]);
 
   // Fetch pending review orders when navigating to that page
   useEffect(() => {
@@ -5447,24 +5587,7 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
         const totalCompleted = funnelMap["completed_order"] || 0;
         const convRate = totalVisited > 0 ? ((totalCompleted / totalVisited) * 100).toFixed(1) : "0.0";
 
-        const CITY_MAP: Record<string, { x: number; y: number }> = {
-          "New Orleans":  { x: 300, y: 222 },
-          "Metairie":     { x: 248, y: 210 },
-          "Kenner":       { x: 205, y: 202 },
-          "Harahan":      { x: 220, y: 218 },
-          "Chalmette":    { x: 362, y: 232 },
-          "Bridge City":  { x: 155, y: 240 },
-          "Hahnville":    { x: 90,  y: 238 },
-          "Algiers":      { x: 282, y: 252 },
-          "Mandeville":   { x: 295, y: 78  },
-          "Covington":    { x: 235, y: 58  },
-          "Slidell":      { x: 418, y: 90  },
-          "Gretna":       { x: 268, y: 248 },
-          "Harvey":       { x: 250, y: 255 },
-          "Westwego":     { x: 195, y: 248 },
-          "Marrero":      { x: 235, y: 255 },
-          "Laplace":      { x: 130, y: 190 },
-        };
+        // CITY_MAP removed — replaced by real Google Map
 
         const STAGE_SHORT: Record<string, string> = {
           visited: "Browsing", entered_address: "Got address", got_price: "Got price",
@@ -5582,51 +5705,20 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                     ))}
                   </div>
                 </div>
-                <div className="bg-gray-50 rounded-lg overflow-hidden">
-                  <svg width="100%" viewBox="0 0 500 300">
-                    {/* Simplified SE Louisiana landmass */}
-                    <path
-                      d="M 20 30 L 480 30 L 482 268 Q 452 288 420 266 Q 395 284 370 258 Q 340 276 310 254 Q 280 270 246 250 Q 210 264 176 246 Q 150 258 120 238 Q 85 248 55 224 Q 30 210 20 180 Z"
-                      fill="white" stroke="#E5E7EB" strokeWidth="0.5"
-                    />
-                    {/* Lake Pontchartrain */}
-                    <ellipse cx="265" cy="132" rx="148" ry="56" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="0.5" />
-                    <text x="265" y="136" textAnchor="middle" fontSize="8" fill="#93C5FD" fontFamily="system-ui">Lake Pontchartrain</text>
-                    {/* Mississippi River */}
-                    <path
-                      d="M 80 238 Q 122 225 158 232 Q 196 240 228 228 Q 258 218 285 228 Q 316 240 348 228 Q 375 218 412 232 Q 442 240 475 228"
-                      fill="none" stroke="#6EE7B7" strokeWidth="5" strokeOpacity="0.5"
-                    />
-                    {/* Static city labels for unoccupied cities */}
-                    {Object.entries(CITY_MAP)
-                      .filter(([city]) => !liveVisitors.find((v: any) => v.geo_city === city))
-                      .map(([city, coord]) => (
-                        <text key={city} x={coord.x} y={coord.y} textAnchor="middle" fontSize="7" fill="#D1D5DB" fontFamily="system-ui">{city}</text>
-                      ))
-                    }
-                    {/* Active visitor dots */}
-                    {liveVisitors.map((v: any) => {
-                      const coord = CITY_MAP[v.geo_city];
-                      if (!coord) return null;
-                      const cfg = STAGE_CONFIG[v.stage] || STAGE_CONFIG.visited;
-                      return (
-                        <g key={v.id}>
-                          <circle cx={coord.x} cy={coord.y} r={14} fill={cfg.dotColor} fillOpacity={0.15} />
-                          <circle cx={coord.x} cy={coord.y} r={5} fill={cfg.dotColor} />
-                          <text x={coord.x} y={coord.y + 16} textAnchor="middle" fontSize="8" fill="#6B7280" fontFamily="system-ui">{v.geo_city}</text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                </div>
+                {/* Google Map */}
+                <div ref={liveMapRef} className="rounded-lg overflow-hidden" style={{ width: "100%", height: 380, background: "#f8f7f2" }} />
                 {/* Parish pills */}
                 {liveVisitors.length > 0 && (
                   <div className="flex gap-2 flex-wrap mt-2">
-                    {Array.from(new Set(liveVisitors.map((v: any) => v.geo_region || v.geo_city || "Unknown"))).map((region: any) => (
+                    {Array.from(new Set((liveVisitors as any[]).map((v: any) => v.geo_region || v.geo_city || "Unknown"))).map((region: any) => (
                       <span key={region} className="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-md">
-                        {region} <strong className="text-gray-800">{liveVisitors.filter((v: any) => (v.geo_region || v.geo_city) === region).length}</strong>
+                        {region}{" "}
+                        <strong className="text-gray-800">{(liveVisitors as any[]).filter((v: any) => (v.geo_region || v.geo_city) === region).length}</strong>
                       </span>
                     ))}
+                    <span className="text-[10px] text-gray-400 ml-auto">
+                      {(liveVisitors as any[]).filter((v: any) => v.address_lat).length} plotted on map
+                    </span>
                   </div>
                 )}
               </div>
