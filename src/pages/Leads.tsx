@@ -746,6 +746,8 @@ const Leads = () => {
       const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
         body: { password: storedPassword(), action: "list_all_orders" },
       });
+      console.log("[fetchAllOrders] response:", JSON.stringify(data));
+      console.log("[fetchAllOrders] error:", fnError);
       if (!fnError && data?.orders) {
         setAllOrders(data.orders);
         if (data.metrics) setOrdersMetrics(data.metrics);
