@@ -5571,7 +5571,7 @@ const Leads = () => {
                     <div style={{ marginBottom:16 }}>
                       <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
                         textTransform:"uppercase", marginBottom:8 }}>Change status</div>
-                      <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                         {(["pending","confirmed","en_route","delivered","cancelled"] as const).map(s => {
                           const m = STATUS_META[s];
                           const isActive = selectedOrder.status === s;
