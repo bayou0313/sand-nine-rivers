@@ -299,6 +299,159 @@ const SidebarAccordion = ({ title, children, defaultOpen = false, textColor }: {
   );
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const LIVE_MAP_STYLE = [
+  { elementType: "geometry", stylers: [{ color: "#f8f7f2" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8a8880" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#f8f7f2" }] },
+  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.neighborhood", stylers: [{ visibility: "off" }] },
+  { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#edf2ec" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#f0ede8" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#e8e4dc" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#d8d4cc" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#cde0f0" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#9ab8cc" }] },
+];
+
+const STAGE_MAP_COLOR: Record<string, string> = {
+  visited: "#9CA3AF", entered_address: "#3B82F6", got_price: "#F59E0B",
+  got_out_of_area: "#D1D5DB", clicked_order_now: "#8B5CF6",
+  started_checkout: "#EA580C", reached_payment: "#DC2626", completed_order: "#16A34A",
+};
+
+const STAGE_MAP_LABEL: Record<string, string> = {
+  visited: "Browsing", entered_address: "Got address", got_price: "Got price",
+  got_out_of_area: "Out of area", clicked_order_now: "Clicked order",
+  started_checkout: "At checkout", reached_payment: "At payment", completed_order: "Converted",
+};
+
+interface LiveGoogleMapProps {
+  visitors: any[];
+  pits: any[];
+}
+
+function LiveGoogleMap({ visitors, pits }: LiveGoogleMapProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const infoWindowRef = useRef<any>(null);
+  const initIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const tryInit = () => {
+      if (!containerRef.current || mapRef.current) return;
+      if (!window.google?.maps?.Map) return;
+
+      mapRef.current = new window.google.maps.Map(containerRef.current, {
+        center: { lat: 29.9511, lng: -90.0715 },
+        zoom: 10,
+        mapTypeId: "roadmap",
+        disableDefaultUI: true,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_BOTTOM,
+        },
+        styles: LIVE_MAP_STYLE,
+      });
+
+      infoWindowRef.current = new window.google.maps.InfoWindow({ maxWidth: 240 });
+
+      if (initIntervalRef.current) {
+        clearInterval(initIntervalRef.current);
+        initIntervalRef.current = null;
+      }
+    };
+
+    tryInit();
+    if (!mapRef.current) {
+      initIntervalRef.current = setInterval(tryInit, 200);
+    }
+
+    return () => {
+      if (initIntervalRef.current) clearInterval(initIntervalRef.current);
+      markersRef.current.forEach((m) => { try { m.setMap(null); } catch {} });
+      markersRef.current = [];
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !window.google?.maps) return;
+
+    markersRef.current.forEach((m) => { try { m.setMap(null); } catch {} });
+    markersRef.current = [];
+
+    const timeSince = (iso: string) => {
+      const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+      if (s < 60) return `${s}s ago`;
+      if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+      return `${Math.floor(s / 3600)}h ago`;
+    };
+
+    (pits || []).filter((p: any) => p.status === "active" && p.lat && p.lon).forEach((pit: any) => {
+      const m = new window.google.maps.Marker({
+        position: { lat: Number(pit.lat), lng: Number(pit.lon) },
+        map,
+        title: pit.name,
+        icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#B87333", fillOpacity: 0.9, strokeColor: "#ffffff", strokeWeight: 2 },
+        zIndex: 5,
+      });
+      m.addListener("click", () => {
+        infoWindowRef.current?.setContent(`<div style="font-family:system-ui;padding:4px"><strong style="font-size:12px">${pit.name}</strong><div style="font-size:10px;color:#6B7280;margin-top:2px">${pit.address}</div><div style="font-size:9px;color:#B87333;margin-top:4px">▲ Active PIT</div></div>`);
+        infoWindowRef.current?.open(map, m);
+      });
+      markersRef.current.push(m);
+    });
+
+    const withCoords = visitors.filter((v: any) => v.address_lat && v.address_lng);
+    withCoords.forEach((v: any) => {
+      const color = STAGE_MAP_COLOR[v.stage] || "#9CA3AF";
+      const label = STAGE_MAP_LABEL[v.stage] || v.stage;
+      const isHot = v.stage === "reached_payment" || v.stage === "started_checkout";
+
+      const m = new window.google.maps.Marker({
+        position: { lat: Number(v.address_lat), lng: Number(v.address_lng) },
+        map,
+        title: v.geo_city || "Visitor",
+        icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: isHot ? 11 : 9, fillColor: color, fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2.5 },
+        zIndex: 20,
+        animation: isHot ? window.google.maps.Animation.BOUNCE : undefined,
+      });
+
+      if (isHot) setTimeout(() => { try { m.setAnimation(null); } catch {} }, 6500);
+
+      m.addListener("click", () => {
+        infoWindowRef.current?.setContent(`<div style="font-family:system-ui;padding:4px"><div style="display:flex;align-items:center;gap:6px"><strong style="font-size:12px">${v.geo_city || "Unknown"}</strong><span style="font-size:9px;padding:1px 6px;border-radius:4px;background:${color}20;color:${color}">${label}</span></div>${v.calculated_price ? `<div style="font-size:11px;color:#374151;margin-top:4px">$${Math.round(v.calculated_price)} estimated</div>` : ""}${v.delivery_address ? `<div style="font-size:10px;color:#6B7280;margin-top:2px">${v.delivery_address.split(",").slice(0, 2).join(",")}</div>` : ""}${v.nearest_pit_name ? `<div style="font-size:9px;color:#6B7280;margin-top:2px">→ ${v.nearest_pit_name}</div>` : ""}<div style="font-size:9px;color:#9CA3AF;margin-top:4px">${timeSince(v.last_seen_at || v.created_at)}</div></div>`);
+        infoWindowRef.current?.open(map, m);
+      });
+
+      markersRef.current.push(m);
+    });
+
+    if (withCoords.length > 0) {
+      const bounds = new window.google.maps.LatLngBounds();
+      withCoords.forEach((v: any) => bounds.extend({ lat: Number(v.address_lat), lng: Number(v.address_lng) }));
+      (pits || []).filter((p: any) => p.status === "active" && p.lat && p.lon).forEach((p: any) => bounds.extend({ lat: Number(p.lat), lng: Number(p.lon) }));
+      map.fitBounds(bounds, { top: 48, right: 48, bottom: 48, left: 48 });
+      window.google.maps.event.addListenerOnce(map, "bounds_changed", () => {
+        if (map.getZoom() > 13) map.setZoom(13);
+      });
+    }
+  }, [visitors, pits]);
+
+  return (
+    <div style={{ width: "100%", height: 380, background: "#f8f7f2", borderRadius: 8, overflow: "hidden" }}>
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+    </div>
+  );
+}
+
 const Leads = () => {
   const { toast } = useToast();
   const [password, setPassword] = useState("");
@@ -459,10 +612,6 @@ const Leads = () => {
   const [flaggingRegenAll, setFlaggingRegenAll] = useState(false);
   const [regenQueue, setRegenQueue] = useState<{ total: number; current: number; currentCity: string; status: "idle" | "running" | "complete" } | null>(null);
   const regenCancelRef = useRef(false);
-  const liveMapRef = useRef<HTMLDivElement>(null);
-  const liveMapInstance = useRef<any>(null);
-  const liveMapMarkers = useRef<any[]>([]);
-  const liveMapInfoWindow = useRef<any>(null);
   const [deleteAllTypeInput, setDeleteAllTypeInput] = useState("");
   const [cityPageSortKey, setCityPageSortKey] = useState<"city_name" | "state" | "distance_from_pit" | "base_price" | "status" | "page_views">("city_name");
   const [cityPageSortDir, setCityPageSortDir] = useState<"asc" | "desc">("asc");
@@ -1577,141 +1726,6 @@ const Leads = () => {
     return () => clearInterval(ticker);
   }, [activePage]);
 
-  // Reset map instance when leaving live tab so it re-initializes on return
-  useEffect(() => {
-    if (activePage !== "live") {
-      liveMapMarkers.current.forEach((m: any) => {
-        try { m.setMap(null); } catch {}
-      });
-      liveMapMarkers.current = [];
-      liveMapInstance.current = null;
-      if (liveMapInfoWindow.current) {
-        try { (liveMapInfoWindow.current as any).close(); } catch {}
-      }
-    }
-  }, [activePage]);
-
-  // Initialize Google Map when live tab is active and Google is loaded
-  useEffect(() => {
-    if (activePage !== "live" || !googleLoaded) return;
-
-    const MINIMAL_STYLE = [
-      { elementType: "geometry", stylers: [{ color: "#f8f7f2" }] },
-      { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-      { elementType: "labels.text.fill", stylers: [{ color: "#8a8880" }] },
-      { elementType: "labels.text.stroke", stylers: [{ color: "#f8f7f2" }] },
-      { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
-      { featureType: "administrative.neighborhood", stylers: [{ visibility: "off" }] },
-      { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#edf2ec" }] },
-      { featureType: "poi", stylers: [{ visibility: "off" }] },
-      { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-      { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#f0ede8" }] },
-      { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#e8e4dc" }] },
-      { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#d8d4cc" }] },
-      { featureType: "transit", stylers: [{ visibility: "off" }] },
-      { featureType: "water", elementType: "geometry", stylers: [{ color: "#cde0f0" }] },
-      { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#9ab8cc" }] },
-    ] as any[];
-
-    const timer = setTimeout(() => {
-      if (!liveMapRef.current || liveMapInstance.current || !window.google?.maps) return;
-
-      liveMapInstance.current = new window.google.maps.Map(liveMapRef.current, {
-        center: { lat: 29.9511, lng: -90.0715 },
-        zoom: 10,
-        mapTypeId: "roadmap",
-        disableDefaultUI: true,
-        zoomControl: true,
-        zoomControlOptions: {
-          position: window.google.maps.ControlPosition.RIGHT_BOTTOM,
-        },
-        styles: MINIMAL_STYLE,
-      });
-
-      liveMapInfoWindow.current = new window.google.maps.InfoWindow({ maxWidth: 220 });
-    }, 150);
-
-    return () => clearTimeout(timer);
-  }, [activePage, googleLoaded]);
-
-  // Update visitor and PIT markers whenever liveVisitors data changes
-  useEffect(() => {
-    if (!liveMapInstance.current || !window.google?.maps) return;
-
-    liveMapMarkers.current.forEach((m: any) => {
-      try { m.setMap(null); } catch {}
-    });
-    liveMapMarkers.current = [];
-
-    const STAGE_MAP_COLOR: Record<string, string> = {
-      visited: "#9CA3AF", entered_address: "#3B82F6", got_price: "#F59E0B",
-      got_out_of_area: "#D1D5DB", clicked_order_now: "#8B5CF6",
-      started_checkout: "#EA580C", reached_payment: "#DC2626", completed_order: "#16A34A",
-    };
-    const STAGE_MAP_LABEL: Record<string, string> = {
-      visited: "Browsing", entered_address: "Got address", got_price: "Got price",
-      got_out_of_area: "Out of area", clicked_order_now: "Clicked order",
-      started_checkout: "At checkout", reached_payment: "At payment", completed_order: "Converted",
-    };
-    const timeSince = (iso: string) => {
-      const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-      if (s < 60) return `${s}s ago`;
-      if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-      return `${Math.floor(s / 3600)}h ago`;
-    };
-
-    // PIT markers
-    (pits || []).filter((p: any) => p.status === "active" && p.lat && p.lon).forEach((pit: any) => {
-      const marker = new window.google.maps.Marker({
-        position: { lat: Number(pit.lat), lng: Number(pit.lon) },
-        map: liveMapInstance.current,
-        title: pit.name,
-        icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 6, fillColor: "#B87333", fillOpacity: 0.85, strokeColor: "#ffffff", strokeWeight: 2 },
-        zIndex: 5,
-      });
-      marker.addListener("click", () => {
-        liveMapInfoWindow.current?.setContent(`<div style="font-family:system-ui;padding:4px"><strong style="font-size:12px">${pit.name}</strong><div style="font-size:10px;color:#6B7280;margin-top:2px">${pit.address}</div><div style="font-size:9px;color:#B87333;margin-top:4px">Active PIT</div></div>`);
-        liveMapInfoWindow.current?.open(liveMapInstance.current, marker);
-      });
-      liveMapMarkers.current.push(marker);
-    });
-
-    // Visitor markers
-    const visitorsWithCoords = (liveVisitors as any[]).filter((v) => v.address_lat && v.address_lng);
-    visitorsWithCoords.forEach((v: any) => {
-      const color = STAGE_MAP_COLOR[v.stage] || "#9CA3AF";
-      const label = STAGE_MAP_LABEL[v.stage] || v.stage;
-      const isHot = v.stage === "reached_payment" || v.stage === "started_checkout";
-      const marker = new window.google.maps.Marker({
-        position: { lat: Number(v.address_lat), lng: Number(v.address_lng) },
-        map: liveMapInstance.current,
-        title: v.geo_city || "Visitor",
-        icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: isHot ? 11 : 9, fillColor: color, fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2.5 },
-        zIndex: 20,
-        animation: isHot ? window.google.maps.Animation.BOUNCE : undefined,
-      });
-      if (isHot) setTimeout(() => { try { marker.setAnimation(null); } catch {} }, 6500);
-
-      marker.addListener("click", () => {
-        const priceStr = v.calculated_price ? `$${Math.round(v.calculated_price)} estimated` : "";
-        const pitStr = v.nearest_pit_name ? `<div style="font-size:9px;color:#6B7280;margin-top:2px">Nearest pit: ${v.nearest_pit_name}</div>` : "";
-        liveMapInfoWindow.current?.setContent(`<div style="font-family:system-ui;padding:4px"><div style="display:flex;align-items:center;gap:6px"><strong style="font-size:12px">${v.geo_city || "Unknown"}</strong><span style="font-size:9px;padding:1px 6px;border-radius:4px;background:${color}20;color:${color}">${label}</span></div>${priceStr ? `<div style="font-size:11px;color:#374151;margin-top:4px">${priceStr}</div>` : ""}${v.delivery_address ? `<div style="font-size:10px;color:#6B7280;margin-top:2px">${v.delivery_address.split(",").slice(0, 2).join(",")}</div>` : ""}${pitStr}<div style="font-size:9px;color:#9CA3AF;margin-top:4px">${timeSince(v.last_seen_at || v.created_at)}</div></div>`);
-        liveMapInfoWindow.current?.open(liveMapInstance.current, marker);
-      });
-      liveMapMarkers.current.push(marker);
-    });
-
-    // Auto-fit bounds
-    if (visitorsWithCoords.length > 0) {
-      const bounds = new window.google.maps.LatLngBounds();
-      visitorsWithCoords.forEach((v: any) => bounds.extend({ lat: Number(v.address_lat), lng: Number(v.address_lng) }));
-      (pits || []).filter((p: any) => p.status === "active" && p.lat && p.lon).forEach((p: any) => bounds.extend({ lat: Number(p.lat), lng: Number(p.lon) }));
-      liveMapInstance.current.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
-      window.google.maps.event.addListenerOnce(liveMapInstance.current, "bounds_changed", () => {
-        if (liveMapInstance.current?.getZoom() > 13) liveMapInstance.current.setZoom(13);
-      });
-    }
-  }, [liveVisitors, pits]);
 
   // Fetch pending review orders when navigating to that page
   useEffect(() => {
@@ -5706,7 +5720,7 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                   </div>
                 </div>
                 {/* Google Map */}
-                <div ref={liveMapRef} className="rounded-lg overflow-hidden" style={{ width: "100%", height: 380, background: "#f8f7f2" }} />
+                <LiveGoogleMap visitors={liveVisitors} pits={pits} />
                 {/* Parish pills */}
                 {liveVisitors.length > 0 && (
                   <div className="flex gap-2 flex-wrap mt-2">
