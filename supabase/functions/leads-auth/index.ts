@@ -2069,6 +2069,58 @@ serve(async (req) => {
       );
     }
 
+    // ── LIST ALL ORDERS ──
+    if (action === "list_all_orders") {
+      const statusFilter = body.status_filter as string | undefined;
+      let query = supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (statusFilter && statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const all = data || [];
+      const today = new Date().toISOString().slice(0, 10);
+      const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const metrics = {
+        total: all.length,
+        pending: all.filter((o: any) => o.status === "pending").length,
+        confirmed: all.filter((o: any) => o.status === "confirmed").length,
+        today_deliveries: all.filter((o: any) => o.delivery_date === today && ["confirmed","en_route"].includes(o.status)).length,
+        revenue_30d: all
+          .filter((o: any) => o.payment_status === "paid" && o.created_at >= since30)
+          .reduce((sum: number, o: any) => sum + Number(o.price) * Number(o.quantity || 1), 0),
+        paid_count_30d: all.filter((o: any) => o.payment_status === "paid" && o.created_at >= since30).length,
+      };
+      return new Response(
+        JSON.stringify({ orders: all, metrics }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── UPDATE ORDER ──
+    if (action === "update_order") {
+      const { order_id, status, notes, delivery_date, delivery_day_of_week } = body as any;
+      if (!order_id) throw new Error("Missing order_id");
+
+      const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+      if (status !== undefined) updates.status = status;
+      if (notes !== undefined) updates.notes = notes;
+      if (delivery_date !== undefined) updates.delivery_date = delivery_date;
+      if (delivery_day_of_week !== undefined) updates.delivery_day_of_week = delivery_day_of_week;
+
+      const { error } = await supabase.from("orders").update(updates).eq("id", order_id);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── LIST CASH ORDERS ──
     if (action === "list_cash_orders") {
       try {
