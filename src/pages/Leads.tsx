@@ -1766,12 +1766,14 @@ const Leads = () => {
   useEffect(() => {
     if (activePage === "cash_orders" && authenticated) {
       fetchCashOrders();
+      fetchAllOrders();
       const interval = setInterval(() => {
         fetchCashOrders();
+        fetchAllOrders();
       }, 60000);
       return () => clearInterval(interval);
     }
-  }, [activePage, authenticated, fetchCashOrders]);
+  }, [activePage, authenticated, fetchCashOrders, fetchAllOrders]);
 
   // Fetch customers
   const fetchCustomers = useCallback(async () => {
