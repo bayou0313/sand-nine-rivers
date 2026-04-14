@@ -1593,7 +1593,7 @@ const Leads = () => {
 
   // Initialize Google Map when live tab is active and Google is loaded
   useEffect(() => {
-    if (activePage !== "live" || !loaded) return;
+    if (activePage !== "live" || !googleLoaded) return;
 
     const MINIMAL_STYLE = [
       { elementType: "geometry", stylers: [{ color: "#f8f7f2" }] },
@@ -1632,7 +1632,7 @@ const Leads = () => {
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [activePage, loaded]);
+  }, [activePage, googleLoaded]);
 
   // Update visitor and PIT markers whenever liveVisitors data changes
   useEffect(() => {
