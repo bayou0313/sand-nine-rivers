@@ -399,6 +399,10 @@ const Leads = () => {
   const [liveVisitors, setLiveVisitors] = useState<any[]>([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [funnelData, setFunnelData] = useState<Record<string, number> | null>(null);
+  const [pagePerf, setPagePerf] = useState<Array<{page:string;visits:number;avgPrice:number|null;avgDuration:number|null;topStage:string}>>([]);
+  const [cityIntel, setCityIntel] = useState<Array<{city:string;visits:number}>>([]);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   // Notifications state
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -578,16 +582,23 @@ const Leads = () => {
   const fetchLiveVisitors = useCallback(async () => {
     setLiveLoading(true);
     try {
-      const [visitorsRes, funnelRes] = await Promise.all([
+      const [visitorsRes, funnelRes, perfRes] = await Promise.all([
         supabase.functions.invoke("leads-auth", {
           body: { password: storedPassword(), action: "list_live_visitors" },
         }),
         supabase.functions.invoke("leads-auth", {
           body: { password: storedPassword(), action: "get_funnel" },
         }),
+        supabase.functions.invoke("leads-auth", {
+          body: { password: storedPassword(), action: "get_page_performance" },
+        }),
       ]);
       if (!visitorsRes.error && visitorsRes.data?.sessions) setLiveVisitors(visitorsRes.data.sessions);
       if (!funnelRes.error && funnelRes.data?.funnel) setFunnelData(funnelRes.data.funnel);
+      if (!perfRes.error && perfRes.data?.pagePerf) setPagePerf(perfRes.data.pagePerf);
+      if (!perfRes.error && perfRes.data?.cityIntel) setCityIntel(perfRes.data.cityIntel);
+      setLastRefreshed(new Date());
+      setRefreshCounter(0);
     } catch (err) { console.warn("Failed to fetch live visitors:", err); }
     finally { setLiveLoading(false); }
   }, []);

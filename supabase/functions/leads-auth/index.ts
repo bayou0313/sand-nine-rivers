@@ -3855,6 +3855,61 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── GET PAGE PERFORMANCE ──
+    if (action === "get_page_performance") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("entry_page, entry_city_page, stage, calculated_price, created_at, last_seen_at, geo_city, ip_address")
+        .gte("created_at", since30)
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+
+      const pageMap: Record<string, { visits: number; prices: number[]; stages: string[]; durations: number[] }> = {};
+      for (const row of (data || [])) {
+        const page = row.entry_page || "/";
+        if (!pageMap[page]) pageMap[page] = { visits: 0, prices: [], stages: [], durations: [] };
+        pageMap[page].visits++;
+        if (row.calculated_price) pageMap[page].prices.push(Number(row.calculated_price));
+        if (row.stage) pageMap[page].stages.push(row.stage);
+        if (row.created_at && row.last_seen_at) {
+          const dur = new Date(row.last_seen_at).getTime() - new Date(row.created_at).getTime();
+          if (dur > 0 && dur < 3600000) pageMap[page].durations.push(Math.floor(dur / 1000));
+        }
+      }
+
+      const STAGE_ORDER = ["visited","entered_address","got_price","started_checkout","reached_payment","completed_order"];
+      const pagePerf = Object.entries(pageMap)
+        .map(([page, d]) => {
+          const avgPrice = d.prices.length ? Math.round(d.prices.reduce((a, b) => a + b, 0) / d.prices.length) : null;
+          const avgDur = d.durations.length ? Math.round(d.durations.reduce((a, b) => a + b, 0) / d.durations.length) : null;
+          const topStage = d.stages.sort((a, b) => STAGE_ORDER.indexOf(b) - STAGE_ORDER.indexOf(a))[0] || "visited";
+          return { page, visits: d.visits, avgPrice, avgDuration: avgDur, topStage };
+        })
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 8);
+
+      const cityMap: Record<string, { visits: number }> = {};
+      for (const row of (data || [])) {
+        const city = row.geo_city || "Unknown";
+        if (!cityMap[city]) cityMap[city] = { visits: 0 };
+        cityMap[city].visits++;
+      }
+      const cityIntel = Object.entries(cityMap)
+        .map(([city, d]) => ({ city, visits: d.visits }))
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 8);
+
+      return new Response(
+        JSON.stringify({ pagePerf, cityIntel }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
