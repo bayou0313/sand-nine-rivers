@@ -299,7 +299,7 @@ const OrderMobile = () => {
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
       try {
         const { data, error } = await supabase.functions.invoke("get-order-status", { body: { order_id: orderId, lookup_token: token } });
-        if (!error && data?.payment_status === "paid") return data;
+        if (!error && ["paid", "authorized", "captured"].includes(data?.payment_status)) return data;
       } catch {}
       if (i < MAX_ATTEMPTS - 1) await new Promise(r => setTimeout(r, POLL_INTERVAL));
     }

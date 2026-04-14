@@ -227,7 +227,7 @@ const Order = () => {
           body: { order_id: orderId, lookup_token: token },
         });
         console.log(`[Order] get-order-status response:`, { payment_status: data?.payment_status, has_address: !!data?.delivery_address, error });
-        if (!error && data?.payment_status === "paid") {
+        if (!error && ["paid", "authorized", "captured"].includes(data?.payment_status)) {
           return data; // Return the full order data
         }
         console.log(`[Order] Payment verification attempt ${i + 1}/${MAX_ATTEMPTS}: status=${data?.payment_status || "unknown"}`);
