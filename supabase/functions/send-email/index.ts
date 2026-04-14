@@ -477,7 +477,7 @@ function orderCustomerEmail(order: any, feePercent = 3.5, feeFixed = 0.30, prici
 }
 
 function orderDispatchEmail(data: any): string {
-  const isPaid = data.payment_status === "paid" ||
+  const isPaid = ["paid", "authorized", "captured"].includes(data.payment_status) ||
     data.payment_method === "stripe-link" ||
     data.payment_method === "stripe";
   const amount = data.total_price || data.price || 0;
@@ -1002,7 +1002,7 @@ serve(async (req) => {
     } else if (type === "order_notification") {
       // Standalone dispatch notification
       const orderNumber = data.order_number || "";
-      const isPaidForSubject = data.payment_status === "paid" || data.payment_method === "stripe-link" || data.payment_method === "stripe";
+      const isPaidForSubject = ["paid", "authorized", "captured"].includes(data.payment_status) || data.payment_method === "stripe-link" || data.payment_method === "stripe";
       const dispatchDeliveryDate = data.delivery_date
         ? new Date(data.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
         : "—";
