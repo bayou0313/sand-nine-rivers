@@ -5433,7 +5433,7 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
           if (v.stage) acc[page].stages.push(v.stage);
           return acc;
         }, {} as Record<string, { visitors: number; prices: number[]; stages: string[] }>);
-        const sortedPages = Object.entries(pageGroups).sort((a, b) => b[1].visitors - a[1].visitors).slice(0, 8);
+        const sortedPages = (Object.entries(pageGroups) as [string, { visitors: number; prices: number[]; stages: string[] }][]).sort((a, b) => b[1].visitors - a[1].visitors).slice(0, 8);
 
         // Funnel stages for current live sessions
         const FUNNEL_LIVE = [
@@ -5578,7 +5578,7 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                       {/* LA outline */}
                       <path d={LA_PATH} fill={isDark ? "#1a2540" : "#F3F4F6"} stroke={isDark ? "#2a3a5a" : "#D1D5DB"} strokeWidth={1.5} />
                       {/* City dots */}
-                      {Object.entries(cityGroups).map(([city, data]) => {
+                      {(Object.entries(cityGroups) as [string, { count: number; topStage: string }][]).map(([city, data]) => {
                         const coords = CITY_COORDS[city];
                         if (!coords) return null;
                         const stgColor = LIVE_STAGE_CONFIG[data.topStage]?.color || "#9CA3AF";
