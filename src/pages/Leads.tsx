@@ -5377,181 +5377,411 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
         );
 
       case "live": {
-        const LIVE_STAGE_CONFIG: Record<string, { label: string; color: string }> = {
-          visited: { label: "Browsing", color: "#9CA3AF" },
-          entered_address: { label: "Entered Address", color: "#3B82F6" },
-          got_price: { label: "Got Price", color: "#F59E0B" },
-          started_checkout: { label: "At Checkout", color: "#EA580C" },
-          reached_payment: { label: "At Payment", color: "#DC2626" },
-          completed_order: { label: "Converted", color: "#22C55E" },
+        // ─── STAGE CONFIG ───
+        const LIVE_STAGE_CONFIG: Record<string, { label: string; color: string; order: number }> = {
+          visited:          { label: "Browsing",       color: "#6B7280", order: 0 },
+          entered_address:  { label: "Entered Address",color: "#3B82F6", order: 1 },
+          got_price:        { label: "Got Price",      color: "#8B5CF6", order: 2 },
+          got_out_of_area:  { label: "Out of Area",    color: "#EF4444", order: -1 },
+          clicked_order_now:{ label: "Order Now",      color: "#EA580C", order: 3 },
+          started_checkout: { label: "At Checkout",    color: "#F59E0B", order: 4 },
+          reached_payment:  { label: "At Payment",     color: "#EF4444", order: 5 },
+          completed_order:  { label: "Converted",      color: "#059669", order: 6 },
         };
+
         const timeAgo = (iso: string) => {
           const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
           if (diff < 60) return `${diff}s ago`;
           if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
           return `${Math.floor(diff / 3600)}h ago`;
         };
+
+        const isBot = (v: any) => {
+          const org = (v.ip_org || "").toLowerCase();
+          return /(bot|crawler|datacenter|amazon|google|microsoft|cloudflare|digitalocean|linode|vultr|hetzner)/i.test(org);
+        };
+
+        // ─── CITY COORDS for LA map ───
+        const CITY_COORDS: Record<string, [number, number]> = {
+          "New Orleans": [387, 280], "Metairie": [370, 275], "Chalmette": [405, 278],
+          "Kenner": [355, 270], "Slidell": [420, 260], "Baton Rouge": [280, 220],
+          "Lafayette": [180, 240], "Mandeville": [395, 250], "Covington": [388, 240],
+          "Hammond": [340, 215], "Houma": [355, 320], "Gretna": [380, 290],
+          "Harvey": [375, 292], "Marrero": [370, 295], "Laplace": [340, 265],
+          "Destrehan": [345, 268], "Gonzales": [295, 230], "Prairieville": [290, 235],
+          "Denham Springs": [300, 210], "Thibodaux": [330, 305],
+        };
+
+        // Group visitors by city for map
+        const cityGroups = liveVisitors.reduce((acc: Record<string, { count: number; topStage: string }>, v: any) => {
+          const city = v.geo_city || v.ip_city;
+          if (!city) return acc;
+          if (!acc[city]) acc[city] = { count: 0, topStage: "visited" };
+          acc[city].count++;
+          const cur = LIVE_STAGE_CONFIG[v.stage]?.order ?? 0;
+          const prev = LIVE_STAGE_CONFIG[acc[city].topStage]?.order ?? 0;
+          if (cur > prev) acc[city].topStage = v.stage;
+          return acc;
+        }, {} as Record<string, { count: number; topStage: string }>);
+
+        // Page performance grouping
+        const pageGroups = liveVisitors.reduce((acc: Record<string, { visitors: number; prices: number[]; stages: string[] }>, v: any) => {
+          const page = v.entry_city_name || v.entry_city_page || v.entry_page || "/";
+          if (!acc[page]) acc[page] = { visitors: 0, prices: [], stages: [] };
+          acc[page].visitors++;
+          if (v.calculated_price) acc[page].prices.push(Number(v.calculated_price));
+          if (v.stage) acc[page].stages.push(v.stage);
+          return acc;
+        }, {} as Record<string, { visitors: number; prices: number[]; stages: string[] }>);
+        const sortedPages = (Object.entries(pageGroups) as [string, { visitors: number; prices: number[]; stages: string[] }][]).sort((a, b) => b[1].visitors - a[1].visitors).slice(0, 8);
+
+        // Funnel stages for current live sessions
+        const FUNNEL_LIVE = [
+          { key: "visited", label: "Homepage", color: "#6B7280" },
+          { key: "entered_address", label: "Estimator", color: "#3B82F6" },
+          { key: "got_price", label: "Got Price", color: "#8B5CF6" },
+          { key: "started_checkout", label: "Checkout", color: "#F59E0B" },
+          { key: "reached_payment", label: "Payment", color: "#EF4444" },
+          { key: "completed_order", label: "Completed", color: "#059669" },
+        ];
+        const liveFunnelCounts = FUNNEL_LIVE.map(s => ({
+          ...s,
+          count: liveVisitors.filter(v => (LIVE_STAGE_CONFIG[v.stage]?.order ?? 0) >= (LIVE_STAGE_CONFIG[s.key]?.order ?? 99)).length,
+        }));
+
+        // Sort visitors: highest stage first, then most recent
+        const sortedVisitors = [...liveVisitors].sort((a, b) => {
+          const stageA = LIVE_STAGE_CONFIG[a.stage]?.order ?? 0;
+          const stageB = LIVE_STAGE_CONFIG[b.stage]?.order ?? 0;
+          if (stageB !== stageA) return stageB - stageA;
+          return new Date(b.last_seen_at || 0).getTime() - new Date(a.last_seen_at || 0).getTime();
+        });
+
+        const humanVisitors = sortedVisitors.filter(v => !isBot(v));
+        const botVisitors = sortedVisitors.filter(v => isBot(v));
+
+        // Louisiana SVG outline path (simplified)
+        const LA_PATH = "M120,120 L170,100 L220,95 L260,100 L300,95 L340,100 L380,105 L420,110 L450,120 L455,140 L450,170 L445,200 L440,220 L438,240 L440,255 L435,260 L430,250 L420,260 L430,275 L415,280 L410,290 L400,295 L395,310 L380,315 L370,325 L355,330 L345,320 L330,315 L320,305 L310,290 L300,280 L280,270 L260,265 L240,270 L220,275 L200,270 L180,260 L160,255 L140,250 L125,240 L120,220 L118,190 L115,160 Z";
+
         return (
           <>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            {/* ── HEADER BAR ── */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ position: "relative", display: "inline-flex", width: 12, height: 12 }}>
+                  <span style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#22C55E", opacity: 0.6, animation: "ping 1.5s cubic-bezier(0,0,0.2,1) infinite" }} />
+                  <span style={{ position: "relative", display: "inline-flex", width: 12, height: 12, borderRadius: "50%", background: "#22C55E" }} />
                 </span>
-                <p className="text-sm text-gray-500">{liveVisitors.length} active visitor{liveVisitors.length !== 1 ? "s" : ""} (last 30 min)</p>
+                <span style={{ fontSize: 20, fontWeight: 800, color: T.textPrimary, letterSpacing: "-0.02em" }}>LIVE VISITORS</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.textSecond, fontFamily: "monospace", background: T.subtleBg, padding: "3px 10px", borderRadius: 20 }}>
+                  {humanVisitors.length} active
+                </span>
+                {botVisitors.length > 0 && (
+                  <span style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "monospace" }}>
+                    +{botVisitors.length} 🤖
+                  </span>
+                )}
               </div>
-              <Button onClick={fetchLiveVisitors} disabled={liveLoading} size="sm" variant="outline">
-                {liveLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
-                Refresh
-              </Button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 11, color: T.textSecond }}>Auto-refresh 30s</span>
+                <button onClick={fetchLiveVisitors} disabled={liveLoading} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 6, border: `1px solid ${T.cardBorder}`, background: T.cardBg, cursor: "pointer", fontSize: 12, fontWeight: 600, color: T.textPrimary }}>
+                  {liveLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  Refresh
+                </button>
+              </div>
             </div>
 
-            {/* ── CONVERSION FUNNEL ── */}
-            {funnelData && (() => {
-              const FUNNEL_STAGES = [
-                { key: "visited", label: "VISITED", color: "#9CA3AF" },
-                { key: "entered_address", label: "GOT ADDRESS", color: "#3B82F6" },
-                { key: "got_price", label: "GOT PRICE", color: "#F59E0B" },
-                { key: "got_out_of_area", label: "OUT OF AREA", color: "#EF4444", isSideMetric: true },
-                { key: "clicked_order_now", label: "ORDER NOW", color: "#EA580C" },
-                { key: "started_checkout", label: "AT CHECKOUT", color: "#DC2626" },
-                { key: "reached_payment", label: "AT PAYMENT", color: "#B91C1C" },
-                { key: "completed_order", label: "COMPLETED", color: "#22C55E" },
-              ];
-              const maxCount = Math.max(funnelData.visited || 1, 1);
-              const mainStages = FUNNEL_STAGES.filter(s => !s.isSideMetric);
-              const overallRate = funnelData.visited > 0
-                ? ((funnelData.completed_order / funnelData.visited) * 100).toFixed(1)
-                : "0";
-              // Find biggest drop-off
-              let biggestDrop = { label: "", pct: 0 };
-              for (let i = 1; i < mainStages.length; i++) {
-                const prev = funnelData[mainStages[i - 1].key] || 0;
-                const curr = funnelData[mainStages[i].key] || 0;
-                if (prev > 0) {
-                  const drop = ((prev - curr) / prev) * 100;
-                  if (drop > biggestDrop.pct) {
-                    biggestDrop = { label: `${mainStages[i - 1].label} → ${mainStages[i].label}`, pct: drop };
-                  }
-                }
-              }
+            {liveLoading && liveVisitors.length === 0 ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            ) : liveVisitors.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "80px 0", color: T.textSecond }}>
+                <Users className="w-14 h-14 mx-auto mb-4" style={{ opacity: 0.2 }} />
+                <p style={{ fontSize: 15, fontWeight: 600 }}>No active visitors right now</p>
+                <p style={{ fontSize: 12, marginTop: 4 }}>Auto-refreshes every 30 seconds</p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 20, alignItems: "start" }}>
 
-              return (
-                <div className="rounded-xl border shadow-sm p-5 mb-6" style={{ borderColor: T.cardBorder }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold tracking-wider" style={{ color: T.textPrimary }}>CONVERSION FUNNEL</h3>
-                    <span className="text-[11px] text-gray-400">Last 30 days</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {FUNNEL_STAGES.map((stage, i) => {
-                      const count = funnelData[stage.key] || 0;
-                      const barWidth = maxCount > 0 ? Math.max((count / maxCount) * 100, 2) : 2;
-                      // Conversion from previous main stage
-                      let convPct = "";
-                      if (!stage.isSideMetric && i > 0) {
-                        const prevMain = FUNNEL_STAGES.slice(0, i).filter(s => !s.isSideMetric).pop();
-                        if (prevMain) {
-                          const prevCount = funnelData[prevMain.key] || 0;
-                          convPct = prevCount > 0 ? `${((count / prevCount) * 100).toFixed(0)}%` : "—";
-                        }
-                      }
-                      if (stage.isSideMetric) {
-                        convPct = funnelData.entered_address > 0
-                          ? `${((count / funnelData.entered_address) * 100).toFixed(0)}%`
-                          : "—";
-                      }
-                      return (
-                        <div key={stage.key} className={`flex items-center gap-3 ${stage.isSideMetric ? "ml-6 opacity-80" : ""}`}>
-                          <span className="text-[11px] font-bold w-[100px] text-right shrink-0" style={{ color: stage.color }}>
-                            {stage.label}
-                          </span>
-                          <div className="flex-1 h-7 rounded-md overflow-hidden" style={{ backgroundColor: "#F3F4F6" }}>
-                            <div
-                              className="h-full rounded-md flex items-center px-2 transition-all duration-500"
-                              style={{ width: `${barWidth}%`, backgroundColor: stage.color, minWidth: 32 }}
-                            >
-                              <span className="text-[11px] font-bold text-white whitespace-nowrap">
-                                {count.toLocaleString()}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-[11px] font-mono w-[40px] text-right shrink-0" style={{ color: stage.isSideMetric ? "#EF4444" : "#6B7280" }}>
-                            {convPct}
-                          </span>
+                {/* ── LEFT: VISITOR LIST ── */}
+                <div style={{ maxHeight: "calc(100vh - 200px)", overflowY: "auto", paddingRight: 4 }}>
+                  {humanVisitors.map((v: any) => {
+                    const stg = LIVE_STAGE_CONFIG[v.stage] || { label: v.stage || "Unknown", color: "#9CA3AF" };
+                    const maskedIp = v.ip_address ? v.ip_address.replace(/\.\d+$/, ".xxx") : "";
+                    return (
+                      <div key={v.id} style={{
+                        background: T.cardBg, border: `1px solid ${T.cardBorder}`, borderLeft: `3px solid ${stg.color}`,
+                        borderRadius: 8, padding: "12px 16px", marginBottom: 8, transition: "box-shadow 0.2s",
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: 11, color: T.textSecond }}>{maskedIp}</span>
+                          <span style={{ fontSize: 11, color: T.textSecond }}>{v.last_seen_at ? timeAgo(v.last_seen_at) : "—"}</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: T.cardBorder }}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">Overall conversion:</span>
-                      <span className="text-sm font-bold" style={{ color: "#22C55E" }}>{overallRate}%</span>
+                        <div style={{ fontWeight: 600, color: T.textPrimary, marginTop: 4, fontSize: 13 }}>
+                          {v.geo_city || v.ip_city || "Unknown"}{v.geo_region ? `, ${v.geo_region}` : ""}
+                        </div>
+                        <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "white", background: stg.color, padding: "2px 8px", borderRadius: 20 }}>
+                            {stg.label}
+                          </span>
+                          {v.ip_is_business && (
+                            <span style={{ fontSize: 10, background: "#EFF6FF", color: "#3B82F6", padding: "2px 6px", borderRadius: 20 }}>🏢 Business</span>
+                          )}
+                          {v.visit_count > 1 && (
+                            <span style={{ fontSize: 10, background: "#FEF3C7", color: "#92400E", padding: "2px 6px", borderRadius: 20, fontWeight: 600 }}>
+                              {v.visit_count}× visits
+                            </span>
+                          )}
+                        </div>
+                        {v.calculated_price > 0 && (
+                          <div style={{ marginTop: 5, fontSize: 14, color: BRAND_GOLD, fontWeight: 700, fontFamily: "monospace" }}>
+                            ${Number(v.calculated_price).toFixed(0)}
+                          </div>
+                        )}
+                        {v.delivery_address && (
+                          <div style={{ fontSize: 11, color: T.textSecond, marginTop: 3 }}>
+                            📍 {v.delivery_address.split(",")[0]}
+                          </div>
+                        )}
+                        {v.customer_name && (
+                          <div style={{ fontSize: 11, color: T.textSecond, marginTop: 2 }}>👤 {v.customer_name}</div>
+                        )}
+                        {v.entry_city_name && (
+                          <div style={{ fontSize: 10, color: "#3B82F6", marginTop: 2 }}>🏙️ Via: {v.entry_city_name}</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {/* Bot visitors collapsed */}
+                  {botVisitors.length > 0 && (
+                    <div style={{ marginTop: 12, padding: "8px 12px", background: T.subtleBg, borderRadius: 8, border: `1px solid ${T.cardBorder}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.textSecond, marginBottom: 6 }}>🤖 BOTS / CRAWLERS ({botVisitors.length})</div>
+                      {botVisitors.map((v: any) => (
+                        <div key={v.id} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", opacity: 0.5, fontSize: 11, color: T.textSecond }}>
+                          <span style={{ fontFamily: "monospace" }}>{v.ip_address?.replace(/\.\d+$/, ".xxx") || "—"}</span>
+                          <span>{v.ip_org?.slice(0, 20) || "bot"}</span>
+                        </div>
+                      ))}
                     </div>
-                    {biggestDrop.pct > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">Biggest drop:</span>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
-                          {biggestDrop.label} ({biggestDrop.pct.toFixed(0)}%)
+                  )}
+                </div>
+
+                {/* ── RIGHT: MAP + PAGE PERF + FUNNEL ── */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                  {/* ── ACTIVITY MAP ── */}
+                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
+                      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>ACTIVITY MAP</span>
+                    </div>
+                    <svg viewBox="100 80 380 280" style={{ width: "100%", height: "auto", maxHeight: 240 }}>
+                      {/* LA outline */}
+                      <path d={LA_PATH} fill={isDark ? "#1a2540" : "#F3F4F6"} stroke={isDark ? "#2a3a5a" : "#D1D5DB"} strokeWidth={1.5} />
+                      {/* City dots */}
+                      {(Object.entries(cityGroups) as [string, { count: number; topStage: string }][]).map(([city, data]) => {
+                        const coords = CITY_COORDS[city];
+                        if (!coords) return null;
+                        const stgColor = LIVE_STAGE_CONFIG[data.topStage]?.color || "#9CA3AF";
+                        const r = Math.min(6 + data.count * 3, 18);
+                        return (
+                          <g key={city}>
+                            <circle cx={coords[0]} cy={coords[1]} r={r + 4} fill={stgColor} opacity={0.15} />
+                            <circle cx={coords[0]} cy={coords[1]} r={r} fill={stgColor} stroke="white" strokeWidth={1.5} />
+                            <text x={coords[0]} y={coords[1] + 3} textAnchor="middle" fill="white" fontSize={r > 8 ? 9 : 7} fontWeight={700}>
+                              {data.count}
+                            </text>
+                            <text x={coords[0]} y={coords[1] + r + 12} textAnchor="middle" fill={T.textSecond} fontSize={8} fontWeight={600}>
+                              {city}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                    {/* Legend */}
+                    <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                      {[
+                        { label: "Browsing", color: "#6B7280" }, { label: "Address", color: "#3B82F6" },
+                        { label: "Checkout", color: "#F59E0B" }, { label: "Payment", color: "#EF4444" },
+                        { label: "Converted", color: "#059669" },
+                      ].map(l => (
+                        <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color }} />
+                          <span style={{ fontSize: 10, color: T.textSecond }}>{l.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ── PAGE PERFORMANCE ── */}
+                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
+                      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>PAGE PERFORMANCE</span>
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr>
+                          {["Page", "Visitors", "Avg $", "Top Stage"].map(h => (
+                            <th key={h} style={{ textAlign: h === "Page" ? "left" : "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedPages.map(([page, data], i) => {
+                          const avgPrice = data.prices.length > 0 ? data.prices.reduce((a, b) => a + b, 0) / data.prices.length : 0;
+                          const topStage = data.stages.reduce((best: string, s: string) => {
+                            return (LIVE_STAGE_CONFIG[s]?.order ?? 0) > (LIVE_STAGE_CONFIG[best]?.order ?? 0) ? s : best;
+                          }, "visited");
+                          const topStgInfo = LIVE_STAGE_CONFIG[topStage] || { label: "—", color: "#9CA3AF" };
+                          return (
+                            <tr key={page} style={{ background: i % 2 === 1 ? T.tableStripeBg : "transparent" }}>
+                              <td style={{ padding: "7px 8px", fontSize: 12, fontWeight: 500, color: T.textPrimary, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {page}
+                              </td>
+                              <td style={{ padding: "7px 8px", fontSize: 13, fontWeight: 700, fontFamily: "monospace", textAlign: "right", color: T.textPrimary }}>
+                                {data.visitors}
+                              </td>
+                              <td style={{ padding: "7px 8px", fontSize: 13, fontFamily: "monospace", textAlign: "right", color: avgPrice > 0 ? BRAND_GOLD : T.textSecond }}>
+                                {avgPrice > 0 ? `$${avgPrice.toFixed(0)}` : "—"}
+                              </td>
+                              <td style={{ padding: "7px 8px", textAlign: "right" }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: topStgInfo.color, background: `${topStgInfo.color}15`, padding: "2px 6px", borderRadius: 10 }}>
+                                  {topStgInfo.label}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {sortedPages.length === 0 && (
+                          <tr><td colSpan={4} style={{ textAlign: "center", padding: 20, fontSize: 12, color: T.textSecond }}>No page data</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* ── LIVE FUNNEL ── */}
+                  <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                      <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
+                      <span style={{ ...LABEL_STYLE, color: T.textSecond }}>FUNNEL — CURRENT SESSIONS</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {liveFunnelCounts.map((stage, i) => {
+                        const maxC = liveFunnelCounts[0]?.count || 1;
+                        const barW = Math.max((stage.count / maxC) * 100, 4);
+                        const dropoff = i > 0 && liveFunnelCounts[i - 1].count > 0
+                          ? ((liveFunnelCounts[i - 1].count - stage.count) / liveFunnelCounts[i - 1].count * 100).toFixed(0)
+                          : null;
+                        return (
+                          <div key={stage.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ width: 80, textAlign: "right", fontSize: 11, fontWeight: 700, color: stage.color, flexShrink: 0 }}>
+                              {stage.label}
+                            </span>
+                            <div style={{ flex: 1, height: 28, background: T.barBg, borderRadius: 6, overflow: "hidden", position: "relative" }}>
+                              <div style={{
+                                width: `${barW}%`, height: "100%", background: stage.color, borderRadius: 6,
+                                display: "flex", alignItems: "center", paddingLeft: 8, minWidth: 32, transition: "width 0.5s ease",
+                              }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: "white", fontFamily: "monospace" }}>{stage.count}</span>
+                              </div>
+                            </div>
+                            <span style={{ width: 40, textAlign: "right", fontSize: 10, fontFamily: "monospace", color: dropoff && Number(dropoff) > 50 ? "#EF4444" : T.textSecond, flexShrink: 0 }}>
+                              {dropoff !== null ? `-${dropoff}%` : ""}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Overall conversion */}
+                    {liveFunnelCounts[0]?.count > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.cardBorder}` }}>
+                        <span style={{ fontSize: 11, color: T.textSecond }}>Overall conversion</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#059669", fontFamily: "monospace" }}>
+                          {((liveFunnelCounts[liveFunnelCounts.length - 1].count / liveFunnelCounts[0].count) * 100).toFixed(1)}%
                         </span>
                       </div>
                     )}
                   </div>
-                </div>
-              );
-            })()}
 
-            {liveLoading && liveVisitors.length === 0 ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
-            ) : liveVisitors.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
-                <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No active visitors right now</p>
-                <p className="text-xs mt-1">Auto-refreshes every 30 seconds</p>
-              </div>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {liveVisitors.map(s => {
-                  const stageInfo = LIVE_STAGE_CONFIG[s.stage] || { label: s.stage || "Unknown", color: "#9CA3AF" };
-                  return (
-                    <div key={s.id} className="rounded-xl border shadow-sm p-4" style={{ borderColor: T.cardBorder, borderLeftWidth: 4, borderLeftColor: stageInfo.color }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: stageInfo.color }}>
-                          {stageInfo.label}
-                        </span>
-                        <span className="text-[11px] text-gray-400">{s.last_seen_at ? timeAgo(s.last_seen_at) : "—"}</span>
-                      </div>
-                      {s.geo_city && (
-                        <p className="text-[11px] text-gray-500 mb-1">📍 {s.geo_city}{s.geo_region ? `, ${s.geo_region}` : ""}{s.ip_address ? ` · ${s.ip_address}` : ""}</p>
-                      )}
-                      {s.entry_city_name && (
-                        <p className="text-[11px] text-blue-500 mb-1">🏙️ Via: {s.entry_city_name} page</p>
-                      )}
-                      {s.referrer && !s.entry_city_name && (() => { try { return <p className="text-[11px] text-gray-400 mb-1">↗ From: {new URL(s.referrer).hostname}</p>; } catch { return null; } })()}
-                      {s.delivery_address && (
-                        <div className="flex items-start gap-1.5 mb-1.5">
-                          <MapPin className="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" />
-                          <span className="text-xs text-gray-700 line-clamp-2">{s.delivery_address}</span>
+                  {/* ── 30-DAY FUNNEL (existing data) ── */}
+                  {funnelData && (() => {
+                    const FUNNEL_30 = [
+                      { key: "visited", label: "VISITED", color: "#6B7280" },
+                      { key: "entered_address", label: "GOT ADDRESS", color: "#3B82F6" },
+                      { key: "got_price", label: "GOT PRICE", color: "#8B5CF6" },
+                      { key: "got_out_of_area", label: "OUT OF AREA", color: "#EF4444", isSideMetric: true },
+                      { key: "clicked_order_now", label: "ORDER NOW", color: "#EA580C" },
+                      { key: "started_checkout", label: "AT CHECKOUT", color: "#F59E0B" },
+                      { key: "reached_payment", label: "AT PAYMENT", color: "#EF4444" },
+                      { key: "completed_order", label: "COMPLETED", color: "#059669" },
+                    ];
+                    const maxCount = Math.max(funnelData.visited || 1, 1);
+                    const mainStages30 = FUNNEL_30.filter(s => !(s as any).isSideMetric);
+                    const overallRate = funnelData.visited > 0
+                      ? ((funnelData.completed_order / funnelData.visited) * 100).toFixed(1) : "0";
+                    let biggestDrop = { label: "", pct: 0 };
+                    for (let i = 1; i < mainStages30.length; i++) {
+                      const prev = funnelData[mainStages30[i - 1].key] || 0;
+                      const curr = funnelData[mainStages30[i].key] || 0;
+                      if (prev > 0) {
+                        const drop = ((prev - curr) / prev) * 100;
+                        if (drop > biggestDrop.pct) biggestDrop = { label: `${mainStages30[i - 1].label} → ${mainStages30[i].label}`, pct: drop };
+                      }
+                    }
+                    return (
+                      <div style={{ ...CARD_STYLE_T, borderRadius: 10, padding: 20 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 3, height: 14, background: BRAND_GOLD, borderRadius: 2 }} />
+                            <span style={{ ...LABEL_STYLE, color: T.textSecond }}>CONVERSION FUNNEL</span>
+                          </div>
+                          <span style={{ fontSize: 11, color: T.textSecond }}>Last 30 days</span>
                         </div>
-                      )}
-                      {s.calculated_price && (
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <DollarSign className="w-3.5 h-3.5 text-gray-400" />
-                          <span className="text-sm font-semibold" style={{ color: T.textPrimary }}>${Number(s.calculated_price).toFixed(0)}</span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {FUNNEL_30.map((stage, i) => {
+                            const count = funnelData[stage.key] || 0;
+                            const barWidth = maxCount > 0 ? Math.max((count / maxCount) * 100, 2) : 2;
+                            let convPct = "";
+                            if (!(stage as any).isSideMetric && i > 0) {
+                              const prevMain = FUNNEL_30.slice(0, i).filter(s => !(s as any).isSideMetric).pop();
+                              if (prevMain) {
+                                const prevCount = funnelData[prevMain.key] || 0;
+                                convPct = prevCount > 0 ? `${((count / prevCount) * 100).toFixed(0)}%` : "—";
+                              }
+                            }
+                            if ((stage as any).isSideMetric) {
+                              convPct = funnelData.entered_address > 0 ? `${((count / funnelData.entered_address) * 100).toFixed(0)}%` : "—";
+                            }
+                            return (
+                              <div key={stage.key} style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: (stage as any).isSideMetric ? 24 : 0, opacity: (stage as any).isSideMetric ? 0.8 : 1 }}>
+                                <span style={{ width: 90, textAlign: "right", fontSize: 11, fontWeight: 700, color: stage.color, flexShrink: 0 }}>{stage.label}</span>
+                                <div style={{ flex: 1, height: 26, background: T.barBg, borderRadius: 5, overflow: "hidden" }}>
+                                  <div style={{ width: `${barWidth}%`, height: "100%", background: stage.color, borderRadius: 5, display: "flex", alignItems: "center", paddingLeft: 8, minWidth: 32, transition: "width 0.5s" }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: "white", fontFamily: "monospace" }}>{count.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                                <span style={{ width: 40, textAlign: "right", fontSize: 10, fontFamily: "monospace", color: (stage as any).isSideMetric ? "#EF4444" : T.textSecond, flexShrink: 0 }}>{convPct}</span>
+                              </div>
+                            );
+                          })}
                         </div>
-                      )}
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-gray-500">
-                        {s.customer_name && <span>👤 {s.customer_name}</span>}
-                        {s.customer_email && <span>✉ {s.customer_email}</span>}
-                        {s.visit_count > 1 && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-                            {s.visit_count}× visits
-                          </span>
-                        )}
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.cardBorder}` }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 11, color: T.textSecond }}>Overall conversion:</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#059669" }}>{overallRate}%</span>
+                          </div>
+                          {biggestDrop.pct > 0 && (
+                            <span style={{ fontSize: 11, fontWeight: 600, background: "#FEF3C7", color: "#92400E", padding: "2px 8px", borderRadius: 20 }}>
+                              Biggest drop: {biggestDrop.label} ({biggestDrop.pct.toFixed(0)}%)
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })()}
+                </div>
               </div>
             )}
           </>
