@@ -608,6 +608,7 @@ const Leads = () => {
   const [notrackLoading, setNotrackLoading] = useState(false);
   const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
   const [savingSeo, setSavingSeo] = useState(false);
+  const [integrationStatus, setIntegrationStatus] = useState<Record<string, "connected" | "invalid" | "not_set" | "checking">>({});
   const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
   const [seoAuditResults, setSeoAuditResults] = useState<any>(null);
   const [seoAuditing, setSeoAuditing] = useState(false);
