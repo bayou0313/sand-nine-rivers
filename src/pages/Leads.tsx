@@ -5005,6 +5005,9 @@ const Leads = () => {
                           <label className="text-xs text-gray-500">{label}</label>
                           <div className="flex items-center gap-1">
                             {statusKey && <StatusDot s={integrationStatus[statusKey]} />}
+                            {statusKey && integrationStatus[statusKey] === "dns_verified" && (
+                              <span className="text-[10px] font-medium" style={{ color: "#3B82F6" }}>DNS Verified</span>
+                            )}
                             {statusKey && (
                               <IconBtn onClick={() => checkIntegrations(statusKey)} title="Re-check this field">
                                 <RefreshCw size={12} className={integrationStatus[statusKey] === "checking" ? "animate-spin" : ""} />
