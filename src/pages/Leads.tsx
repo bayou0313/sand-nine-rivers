@@ -4336,14 +4336,14 @@ const Leads = () => {
                     setExportingDocs(true);
                     setDocsExportError("");
                     try {
-                      const { generateProjectDocs } = await import("@/lib/generateProjectDocs");
+                      const { generateProjectDocs, DOC_VERSION } = await import("@/lib/generateProjectDocs");
                       const md = await generateProjectDocs();
                       const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
                       const today = new Date().toISOString().split("T")[0];
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = `RIVERSAND_DOCS_${today}.md`;
+                      a.download = `RIVERSAND_${DOC_VERSION}_${today}.md`;
                       a.click();
                       URL.revokeObjectURL(url);
                     } catch (e: any) {
@@ -4354,9 +4354,9 @@ const Leads = () => {
                   }}
                   disabled={exportingDocs}
                   className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: "#2563EB", minWidth: "160px" }}
+                  style={{ backgroundColor: "#2563EB", minWidth: "200px" }}
                 >
-                  {exportingDocs ? "Generating..." : "Export Live Docs"}
+                  {exportingDocs ? "Generating..." : "Generate & Download — v1.01"}
                 </button>
               </div>
               {docsExportError && <p className="text-xs mt-2" style={{ color: "#EF4444" }}>{docsExportError}</p>}
