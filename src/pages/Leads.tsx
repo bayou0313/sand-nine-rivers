@@ -609,7 +609,7 @@ const Leads = () => {
   const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
   const [savingSeo, setSavingSeo] = useState(false);
   const [integrationStatus, setIntegrationStatus] = useState<Record<string, "connected" | "invalid" | "not_set" | "checking">>({});
-  const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
+  
   const [seoAuditResults, setSeoAuditResults] = useState<any>(null);
   const [seoAuditing, setSeoAuditing] = useState(false);
 
@@ -982,11 +982,6 @@ const Leads = () => {
         Object.keys(data.settings).filter(k => k.startsWith("seo_")).forEach(k => { seo[k] = data.settings[k]; });
         if (data.settings.product_image_url) seo.product_image_url = data.settings.product_image_url;
         setSeoSettings(seo);
-        // Parse checklist
-        try {
-          const cl = JSON.parse(data.settings.seo_checklist || "{}");
-          setSeoChecklist(cl);
-        } catch { setSeoChecklist({}); }
         // Parse audit
         try {
           const au = JSON.parse(data.settings.seo_last_audit || "null");
@@ -4190,49 +4185,6 @@ const Leads = () => {
       }
 
       case "settings": {
-        const SEO_CHECKLIST_ITEMS = [
-          { section: "E-E-A-T SIGNALS", items: [
-            { id: "eeat_credentials", label: "Business credentials visible on site" },
-            { id: "eeat_sourcing", label: "Real sand sourcing story present" },
-            { id: "eeat_sameday_proof", label: "Same-day delivery claim supported with proof" },
-            { id: "eeat_trust", label: "Local trust signals present" },
-            { id: "eeat_contact", label: "Contact info prominently displayed" },
-            { id: "eeat_owner", label: "Owner name and photo present" },
-          ]},
-          { section: "LOCAL SEO", items: [
-            { id: "local_gbp_created", label: "Google Business Profile created" },
-            { id: "local_gbp_verified", label: "GBP verified" },
-            { id: "local_nap", label: "NAP consistent sitewide (Name, Address, Phone)" },
-            { id: "local_area", label: "Service area clearly stated" },
-            { id: "local_parishes", label: "Louisiana parishes mentioned" },
-            { id: "local_schema", label: "Local schema markup added" },
-          ]},
-          { section: "CONTENT QUALITY", items: [
-            { id: "content_faq", label: "FAQ section present" },
-            { id: "content_faq_detailed", label: "FAQ answers are detailed" },
-            { id: "content_use_cases", label: "River sand use cases explained" },
-            { id: "content_comparison", label: "Comparison vs other materials present" },
-            { id: "content_delivery", label: "Delivery process explained" },
-          ]},
-          { section: "INTERNAL LINKS", items: [
-            { id: "links_order", label: "Homepage links to order page" },
-            { id: "links_faq", label: "FAQ links to relevant sections" },
-            { id: "links_footer", label: "Footer links complete" },
-            { id: "links_city", label: "City pages link back to homepage" },
-          ]},
-          { section: "TECHNICAL", items: [
-            { id: "tech_sitemap", label: "Sitemap submitted to GSC" },
-            { id: "tech_broken", label: "No broken links" },
-            { id: "tech_alt", label: "Images have alt text" },
-            { id: "tech_speed", label: "Page loads under 3 seconds" },
-            { id: "tech_mobile", label: "Mobile friendly confirmed" },
-          ]},
-        ];
-
-        const allChecklistItems = SEO_CHECKLIST_ITEMS.flatMap(s => s.items);
-        const checklistDone = allChecklistItems.filter(i => seoChecklist[i.id]?.done).length;
-        const checklistTotal = allChecklistItems.length;
-
         const saveSeoSettings = async () => {
           setSavingSeo(true);
           try {
@@ -4280,16 +4232,6 @@ const Leads = () => {
           }
         };
 
-        const saveChecklist = async (updated: Record<string, { done: boolean; notes: string }>) => {
-          setSeoChecklist(updated);
-          const json = JSON.stringify(updated);
-          try {
-            await supabase.functions.invoke("leads-auth", {
-              body: { password: storedPassword(), action: "save_settings", settings: { seo_checklist: json } },
-            });
-          } catch { /* silent */ }
-        };
-
         const runSeoAudit = async () => {
           setSeoAuditing(true);
           try {
@@ -4330,27 +4272,7 @@ const Leads = () => {
               results.categories.find((c: any) => c.name === "Technical SEO")?.score >= 75;
 
             // Update checklist state with auto-checked items
-            const autoCheckMap: Record<string, string> = {
-              "sitemap_submitted": "tech_sitemap",
-              "page_loads_fast": "tech_speed",
-              "local_schema_added": "local_schema",
-              "mobile_friendly": "tech_mobile",
-            };
-
-            const updatedChecklist = { ...seoChecklist };
-            for (const [autoKey, checklistId] of Object.entries(autoCheckMap)) {
-              if (autoChecks[autoKey] && updatedChecklist[checklistId] !== undefined) {
-                updatedChecklist[checklistId] = {
-                  ...updatedChecklist[checklistId],
-                  done: true,
-                  notes: "Auto-verified by audit scan"
-                };
-              }
-            }
-
-            if (Object.keys(updatedChecklist).length > 0) {
-              saveChecklist(updatedChecklist);
-            }
+          
           } catch (err: any) {
             toast({ title: "Audit failed", description: err.message, variant: "destructive" });
           } finally { setSeoAuditing(false); }
@@ -4841,42 +4763,6 @@ const Leads = () => {
                       </div>
                     </>
                   )}
-                </div>
-
-                {/* ─── SECTION 2: MANUAL CHECKLIST ─── */}
-                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium" style={{ color: T.textPrimary }}>Manual Checklist</h3>
-                    <span className="text-xs font-bold" style={{ color: BRAND_GOLD }}>{checklistDone} of {checklistTotal} complete</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mb-2 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Items requiring human judgment</p>
-                  <div className="w-full h-2 rounded-full overflow-hidden mb-4" style={{ backgroundColor: "#f3f3f3" }}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${(checklistDone / checklistTotal) * 100}%`, backgroundColor: BRAND_GOLD }} />
-                  </div>
-
-                  {SEO_CHECKLIST_ITEMS.map(section => (
-                    <div key={section.section} className="mb-4">
-                      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: T.textSecond }}>{section.section}</p>
-                      {section.items.map(item => {
-                        const state = seoChecklist[item.id] || { done: false, notes: "" };
-                        return (
-                          <div key={item.id} className="flex items-start gap-2 py-1.5">
-                            <input type="checkbox" checked={state.done} onChange={e => {
-                              const u = { ...seoChecklist, [item.id]: { ...state, done: e.target.checked } };
-                              saveChecklist(u);
-                            }} className="w-4 h-4 mt-0.5 rounded accent-current" style={{ accentColor: BRAND_GOLD }} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm" style={{ color: state.done ? "#22C55E" : T.textPrimary, textDecoration: state.done ? "line-through" : "none" }}>{item.label}</p>
-                              <input type="text" placeholder="Add notes..." value={state.notes} onChange={e => {
-                                const u = { ...seoChecklist, [item.id]: { ...state, notes: e.target.value } };
-                                saveChecklist(u);
-                              }} className="w-full text-[10px] text-gray-400 border-0 border-b bg-transparent px-0 py-0.5 focus:outline-none focus:border-gray-300" style={{ borderColor: state.notes ? T.cardBorder : "transparent" }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
                 </div>
 
                 {/* ─── SECTION 3: SEO SETTINGS ─── */}
