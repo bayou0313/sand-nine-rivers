@@ -233,6 +233,174 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── EXPORT AI KNOWLEDGE SNAPSHOT (password required) ──
+    if (action === "export_knowledge_snapshot") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      // 1. Settings
+      const { data: settingsRows, error: settingsErr } = await sb
+        .from("global_settings").select("key, value");
+      if (settingsErr) {
+        return new Response(JSON.stringify({ ok: false, error: settingsErr.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const s: Record<string, string> = {};
+      (settingsRows || []).forEach((r: any) => { s[r.key] = r.value; });
+
+      // 2. Active pits
+      const { data: pits, error: pitsErr } = await sb
+        .from("pits")
+        .select("name, address, base_price, price_per_extra_mile, max_distance, free_miles, status, operating_days")
+        .eq("status", "active")
+        .order("name");
+      if (pitsErr) {
+        return new Response(JSON.stringify({ ok: false, error: pitsErr.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // 3. City pages
+      const { count: cityCount } = await sb
+        .from("city_pages").select("*", { count: "exact", head: true }).eq("status", "active");
+      const { count: regenCount } = await sb
+        .from("city_pages").select("*", { count: "exact", head: true }).eq("needs_regen", true);
+
+      // 4. Recent orders (30d)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: recentOrders } = await sb
+        .from("orders").select("*", { count: "exact", head: true })
+        .gte("created_at", thirtyDaysAgo);
+
+      // 5. Version state (compute AFTER content built)
+      const prevVersion = s["snapshot_version"] || "v1.00";
+      const prevLength = parseInt(s["snapshot_previous_length"] || "0", 10);
+      const majorThreshold = parseFloat(s["snapshot_version_major_threshold"] || "0.15");
+
+      // Build PIT table
+      const globalRate = s["extra_per_mile"] || "4.49";
+      const globalFree = s["free_miles"] || "15";
+      const pitTable = (pits || []).map((p: any) => {
+        const satOnly = Array.isArray(p.operating_days) &&
+                        p.operating_days.length === 1 &&
+                        p.operating_days[0] === 6;
+        const pitRate = p.price_per_extra_mile != null
+          ? `$${p.price_per_extra_mile}/mi (pit)`
+          : `$${globalRate}/mi (global)`;
+        return `| ${p.name} | ${p.address} | $${p.base_price} | ${pitRate} | ${p.free_miles ?? globalFree}mi free | ${p.max_distance}mi max | ${satOnly ? "Sat only" : "Mon–Sat"} |`;
+      }).join("\n");
+
+      const today = new Date().toISOString().split("T")[0];
+      const pendingNotes = (s["snapshot_pending_notes"] || "").trim();
+
+      // Build content with placeholder for version (replaced after bump calc)
+      const contentTemplate = `# RiverSand AI Knowledge Snapshot
+**Version:** __VERSION__
+**Generated:** ${new Date().toISOString()}
+**Project:** riversand.net | Ways Materials LLC | WAYS®
+**Supabase:** lclbexhytmpfxzcztzva
+
+---
+
+## Pricing
+- Mode: ${s["pricing_mode"] || "baked"}
+- Processing fee: ${s["card_processing_fee_percent"] || "3.5"}% (baked into pit prices)
+- COD discount: ${s["cod_discount_percent"] || "3.5"}%
+- Saturday surcharge: $${s["saturday_surcharge"] || "35"}
+- Global free miles: ${globalFree}
+- Global per-mile rate: $${globalRate}/mi
+
+## Active PITs
+| Name | Address | Base | Rate | Free | Max | Schedule |
+|------|---------|------|------|------|-----|----------|
+${pitTable}
+
+⚠️ Rate column shows pit-level if set, otherwise global fallback. Discrepancy = open risk.
+
+## City Pages
+- Active: ${cityCount ?? 0} pages
+- Pending regen: ${regenCount ?? 0} pages
+
+## Business
+- Phone: ${s["business_phone"] || s["phone"] || "1-855-GOT-WAYS"}
+- Dispatch: ${s["email_dispatch"] || "cmo@haulogix.com"}
+- Address: ${s["business_address"] || s["footer_address"] || ""}
+- Hours: ${s["business_hours_start"] || "07:00"} – ${s["business_hours_end"] || "17:00"}, ${s["business_days"] || "Mon–Sat"}
+- GMB Review: ${s["gmb_review_url"] || "(not set)"}
+
+## Activity (Last 30 Days)
+- Orders: ${recentOrders ?? 0}
+
+## Pending / Known Issues
+${pendingNotes || "_(none recorded — update from /leads → Settings → Pending Notes)_"}
+
+## Stack
+- Storage base: https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/
+- Docs version: ${s["docs_current_version"] || "—"} | Snapshot version: __VERSION__
+`;
+
+      // Compute bump using template length (close enough — version string is short)
+      const tempLength = contentTemplate.length;
+      const changeRatio = prevLength > 0 ? Math.abs(tempLength - prevLength) / prevLength : 0;
+      const isMajor = prevLength > 0 && changeRatio >= majorThreshold;
+
+      const [majorNum, minorStr] = prevVersion.replace("v", "").split(".");
+      const major = parseInt(majorNum, 10);
+      const minor = parseInt(minorStr, 10);
+      let newMajor = major, newMinor = minor + 1;
+      if (isMajor) { newMajor = major + 1; newMinor = 1; }
+      const newVersion = `v${newMajor}.${String(newMinor).padStart(2, "0")}`;
+      const fileName = `riversand_${newVersion}_${today}.md`;
+
+      const finalContent = contentTemplate.replace(/__VERSION__/g, newVersion);
+      const newLength = finalContent.length;
+
+      // Upload to storage
+      const fileBytes = new TextEncoder().encode(finalContent);
+      const { error: uploadErr } = await sb.storage
+        .from("assets")
+        .upload(`snapshots/${fileName}`, fileBytes, {
+          contentType: "text/markdown",
+          upsert: true,
+        });
+      if (uploadErr) {
+        return new Response(JSON.stringify({ ok: false, error: uploadErr.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const publicUrl = `https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/snapshots/${fileName}`;
+
+      // Update version state
+      let history: any[] = [];
+      try { history = JSON.parse(s["snapshot_version_history"] || "[]"); } catch { history = []; }
+      history.push({
+        version: newVersion,
+        previous: prevVersion,
+        timestamp: new Date().toISOString(),
+        change_ratio: `${(changeRatio * 100).toFixed(1)}%`,
+        major_bump: isMajor,
+      });
+
+      await sb.from("global_settings").upsert([
+        { key: "snapshot_version", value: newVersion, is_public: false },
+        { key: "snapshot_previous_length", value: String(newLength), is_public: false },
+        { key: "snapshot_version_history", value: JSON.stringify(history), is_public: false },
+      ], { onConflict: "key" });
+
+      return new Response(JSON.stringify({
+        ok: true,
+        success: true,
+        version: newVersion,
+        previous_version: prevVersion,
+        fileName,
+        url: publicUrl,
+        major_bump: isMajor,
+        change_ratio: `${(changeRatio * 100).toFixed(1)}%`,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── GET ORDER STATS (password required — for docs export) ──
     if (action === "get_order_stats") {
       console.log("[get_order_stats] reached, pw_len:", (password || "").length);

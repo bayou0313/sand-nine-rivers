@@ -462,6 +462,7 @@ const Leads = () => {
   const [exportingDocs, setExportingDocs] = useState(false);
   const [docsExportError, setDocsExportError] = useState("");
   const [docsCurrentVersion, setDocsCurrentVersion] = useState("v1.01");
+  const [exportingSnapshot, setExportingSnapshot] = useState(false);
   useEffect(() => {
     (async () => {
       try {
@@ -4373,6 +4374,73 @@ const Leads = () => {
                 </button>
               </div>
               {docsExportError && <p className="text-xs mt-2" style={{ color: "#EF4444" }}>{docsExportError}</p>}
+            </div>
+
+            {/* ── AI Knowledge Snapshot ── */}
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <div className="mb-4">
+                <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>🧠 AI Knowledge Snapshot</h3>
+                <p className="text-xs" style={{ color: T.textSecond }}>
+                  Compact session-start brief for AI: pricing, active PITs, city counts, pending issues, stack. Auto-versioned, uploaded to Storage.
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: T.textPrimary }}>
+                  Pending / Known Issues (manual notes for AI context)
+                </label>
+                <textarea
+                  value={globalSettings.snapshot_pending_notes || ""}
+                  onChange={(e) => setGlobalSettings({ ...globalSettings, snapshot_pending_notes: e.target.value })}
+                  onBlur={async (e) => {
+                    try {
+                      await supabase.functions.invoke("leads-auth", {
+                        body: { password: storedPassword(), action: "save_settings", settings: { snapshot_pending_notes: e.target.value } },
+                      });
+                    } catch (err: any) {
+                      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+                    }
+                  }}
+                  rows={6}
+                  placeholder="- In-flight: weekday PIT routing fix&#10;- Broken: ___&#10;- Just deployed: ___"
+                  className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                  style={{ backgroundColor: T.inputBg || "#fff", border: `1px solid ${T.cardBorder}`, color: T.textPrimary }}
+                />
+                <p className="text-[11px] mt-1" style={{ color: T.textSecond }}>Saves on blur. Markdown supported.</p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <p className="text-xs" style={{ color: T.textSecond }}>
+                  Current: <span className="font-mono font-bold" style={{ color: T.textPrimary }}>{globalSettings.snapshot_version || "v1.00"}</span>
+                </p>
+                <button
+                  onClick={async () => {
+                    setExportingSnapshot(true);
+                    try {
+                      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+                        body: { password: storedPassword(), action: "export_knowledge_snapshot" },
+                      });
+                      if (fnError) throw fnError;
+                      if (!data?.ok) throw new Error(data?.error || "Export failed");
+                      setGlobalSettings((prev: any) => ({ ...prev, snapshot_version: data.version }));
+                      toast({
+                        title: `Snapshot exported — ${data.version}`,
+                        description: `${data.fileName} • ${data.change_ratio} change${data.major_bump ? " — MAJOR BUMP" : ""}`,
+                      });
+                      window.open(data.url, "_blank");
+                    } catch (err: any) {
+                      toast({ title: "Snapshot export failed", description: err.message, variant: "destructive" });
+                    } finally {
+                      setExportingSnapshot(false);
+                    }
+                  }}
+                  disabled={exportingSnapshot}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: "transparent", border: `2px solid #C9A961`, color: "#C9A961", minWidth: "220px" }}
+                >
+                  {exportingSnapshot ? "Exporting..." : `Export AI Snapshot (${globalSettings.snapshot_version || "v1.00"})`}
+                </button>
+              </div>
             </div>
 
             {/* SITE MODE TOGGLE */}
