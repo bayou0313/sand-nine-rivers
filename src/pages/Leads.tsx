@@ -4990,8 +4990,9 @@ const Leads = () => {
                   {/* Google & Analytics Integrations */}
                   {(() => {
                     const StatusDot = ({ s }: { s?: string }) => {
-                      const color = s === "connected" ? "#10B981" : s === "invalid" ? "#EF4444" : s === "checking" ? "#F59E0B" : "#9CA3AF";
-                      return <span className={`inline-block w-2 h-2 rounded-full ${s === "checking" ? "animate-pulse" : ""}`} style={{ backgroundColor: color }} title={s || "not_set"} />;
+                      const color = s === "connected" ? "#10B981" : s === "invalid" ? "#EF4444" : s === "checking" ? "#F59E0B" : s === "dns_verified" ? "#3B82F6" : "#9CA3AF";
+                      const label = s === "dns_verified" ? "DNS Verified" : (s || "not_set");
+                      return <span className={`inline-block w-2 h-2 rounded-full ${s === "checking" ? "animate-pulse" : ""}`} style={{ backgroundColor: color }} title={label} />;
                     };
                     const IconBtn = ({ onClick, title, children }: any) => (
                       <button type="button" onClick={onClick} title={title} className="p-1 rounded hover:bg-gray-100 transition-colors" style={{ color: BRAND_NAVY }}>
