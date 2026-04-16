@@ -1,4 +1,4 @@
-import{s as l}from"./index-DNAb5oPh.js";const m="v1.01";function u(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const p=`## 1. Architecture Overview
+import{s as l}from"./index-GRrBa4ey.js";const _="v1.01";async function y(){try{const{data:r}=await l.from("global_settings").select("value").eq("key","docs_current_version").maybeSingle();return(r==null?void 0:r.value)||_}catch{return _}}function p(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const E=`## 1. Architecture Overview
 
 **Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind CSS v3 + Supabase (Lovable Cloud)
 
@@ -34,7 +34,7 @@ import{s as l}from"./index-DNAb5oPh.js";const m="v1.01";function u(){try{return 
 - **Baked pricing mode ACTIVE** — PIT base_price includes 3.5% card processing fee baked in. COD orders receive discount back to \`primary_price\` (pre-bake price). See Section 8.
 - **No customer authentication** — admin only via Supabase Auth + \`user_roles\` table. \`/leads\` uses separate LEADS_PASSWORD secret.
 - **Northshore deliveries: +3 phantom miles** — St. Tammany Parish orders have 3 miles added to billed distance for Causeway toll cost recovery.
-`,_="## 2. Routing & Pages\n\n| Route | Component | Purpose |\n|-------|-----------|---------|\n| `/` | Index.tsx / HomeMobile.tsx | Landing page (mobile/desktop split via useIsMobile) |\n| `/order` | Order.tsx / OrderMobile.tsx | Checkout wizard with day-aware PIT routing |\n| `/order?reschedule=true&token=` | Order.tsx | Reschedule mode for existing orders |\n| `/leads` | Leads.tsx | LMT admin dashboard (password: LEADS_PASSWORD) |\n| `/admin` | Admin.tsx | Authenticated admin (Supabase Auth, has_role('admin')) |\n| `/admin/login` | AdminLogin.tsx | Admin sign-in |\n| `/review/:token` | Review.tsx | Customer review collection (24hr post-delivery) |\n| `/:citySlug` | CityPage.tsx | Programmatic SEO city pages (37 active cities) |\n| `/*` | NotFound.tsx | 404 |\n\n**Mobile detection:** 3-signal approach (viewport <768px, touch <1024px, UA string) with `?force_desktop=1` override.\n",S=`## 3. Database Schema (18 tables)
+`,f="## 2. Routing & Pages\n\n| Route | Component | Purpose |\n|-------|-----------|---------|\n| `/` | Index.tsx / HomeMobile.tsx | Landing page (mobile/desktop split via useIsMobile) |\n| `/order` | Order.tsx / OrderMobile.tsx | Checkout wizard with day-aware PIT routing |\n| `/order?reschedule=true&token=` | Order.tsx | Reschedule mode for existing orders |\n| `/leads` | Leads.tsx | LMT admin dashboard (password: LEADS_PASSWORD) |\n| `/admin` | Admin.tsx | Authenticated admin (Supabase Auth, has_role('admin')) |\n| `/admin/login` | AdminLogin.tsx | Admin sign-in |\n| `/review/:token` | Review.tsx | Customer review collection (24hr post-delivery) |\n| `/:citySlug` | CityPage.tsx | Programmatic SEO city pages (37 active cities) |\n| `/*` | NotFound.tsx | 404 |\n\n**Mobile detection:** 3-signal approach (viewport <768px, touch <1024px, UA string) with `?force_desktop=1` override.\n",h=`## 3. Database Schema (18 tables)
 
 ### Table: \`blocked_ips\`
 
@@ -428,7 +428,7 @@ import{s as l}from"./index-DNAb5oPh.js";const m="v1.01";function u(){try{return 
 | local_rate | numeric | NO | 0 |
 | combined_rate | numeric | NO | — |
 | created_at | timestamptz | YES | now() |
-`,g="## 7. Edge Functions Inventory\n\n| Function | Purpose | verify_jwt |\n|----------|---------|------------|\n| `leads-auth` | Admin authentication, lead CRUD, fraud checks, order cancellation | false |\n| `stripe-webhook` | Payment intent lifecycle, card capture, order resolution | false |\n| `create-payment-intent` | Auth-hold or immediate-capture based on customer_tier | false |\n| `create-checkout-link` | Stripe Checkout Session for abandonment recovery | false |\n| `capture-payments` | Manual capture for Tier-1 orders post-delivery | false |\n| `create-refund` | Stripe refund + order status update | false |\n| `generate-invoice` | PDF invoice (monochrome layout, separated taxes) | false |\n| `send-email` | Resend transactional dispatcher (branded templates) | false |\n| `email-inbound` | Resend webhook → forward to dispatch (loop prevention) | false |\n| `abandonment-emails` | Hourly pg_cron (1h/24h/48h/72h sequences with discounts) | false |\n| `generate-city-page` | Claude 4.5 Haiku content generation (Lander v4) | false |\n| `generate-sitemap` | Live sitemap.xml from city_pages | false |\n| `submit-sitemap` | Daily IndexNow + GSC ping | false |\n| `get-maps-key` | Returns scoped GOOGLE_MAPS_BROWSER_KEY | false |\n| `get-order-status` | Public order lookup by token | false |\n| `generate-docs` | (DEPRECATED — replaced by client-side generator) | false |\n",b=`## 8. Pricing Engine
+`,x="## 7. Edge Functions Inventory\n\n| Function | Purpose | verify_jwt |\n|----------|---------|------------|\n| `leads-auth` | Admin authentication, lead CRUD, fraud checks, order cancellation | false |\n| `stripe-webhook` | Payment intent lifecycle, card capture, order resolution | false |\n| `create-payment-intent` | Auth-hold or immediate-capture based on customer_tier | false |\n| `create-checkout-link` | Stripe Checkout Session for abandonment recovery | false |\n| `capture-payments` | Manual capture for Tier-1 orders post-delivery | false |\n| `create-refund` | Stripe refund + order status update | false |\n| `generate-invoice` | PDF invoice (monochrome layout, separated taxes) | false |\n| `send-email` | Resend transactional dispatcher (branded templates) | false |\n| `email-inbound` | Resend webhook → forward to dispatch (loop prevention) | false |\n| `abandonment-emails` | Hourly pg_cron (1h/24h/48h/72h sequences with discounts) | false |\n| `generate-city-page` | Claude 4.5 Haiku content generation (Lander v4) | false |\n| `generate-sitemap` | Live sitemap.xml from city_pages | false |\n| `submit-sitemap` | Daily IndexNow + GSC ping | false |\n| `get-maps-key` | Returns scoped GOOGLE_MAPS_BROWSER_KEY | false |\n| `get-order-status` | Public order lookup by token | false |\n| `generate-docs` | (DEPRECATED — replaced by client-side generator) | false |\n",v=`## 8. Pricing Engine
 
 **Formula (per pit):**
 \`\`\`ts
@@ -453,7 +453,7 @@ const total = Math.max(base_price, subtotal);
 3. Client-sent rate (last resort)
 
 **Discounts:** \`?discount=N\` URL parameter (loyalty/abandonment); never produces negative totals.
-`,y=`## 9. Order Flow
+`,w=`## 9. Order Flow
 
 1. **Address** — Google Places Autocomplete (US-only, type=address)
 2. **Mismatch check** — AddressMismatchDialog if user input drifts from geocoded locality
@@ -467,7 +467,7 @@ const total = Math.max(base_price, subtotal);
 10. **Confirmation** — OrderConfirmation.tsx (authoritative summary, lookup token URL)
 
 **Mobile flow:** OrderMobile.tsx consolidates all steps into a single state-based component tree with popstate back-navigation handling.
-`,E=`## 10. Session & Abandonment
+`,Y=`## 10. Session & Abandonment
 
 **visitor_sessions** captures every visit with IP enrichment (ipapi.co), B2B detection regex, geo data, entry page/city, and serviceability flag.
 
@@ -480,7 +480,7 @@ const total = Math.max(base_price, subtotal);
 Discounts enforced server-side via Stripe Checkout Session metadata (never client-side params).
 
 **Stage progression:** \`visited\` → \`address_entered\` → \`payment_selected\` → \`order_placed\` (or \`abandoned\` after 1hr without progression).
-`,f=`## 12. Admin Dashboard (/leads)
+`,N=`## 12. Admin Dashboard (/leads)
 
 **Authentication:** sessionStorage-persisted password (LEADS_PASSWORD secret, key: \`leads_pw\`).
 
@@ -497,7 +497,7 @@ Discounts enforced server-side via Stripe Checkout Session metadata (never clien
 10. **Settings** — Brand profile, email config, tax rates, site_mode toggle
 
 **Real-time alerts:** Supabase Realtime on \`notifications\` table (leads/payments/fraud, 7-day purge).
-`,h=`## 15. Design System & Brand
+`,O=`## 15. Design System & Brand
 
 **Typography:**
 - \`font-display\` (Bebas Neue): all-caps section titles
@@ -520,7 +520,7 @@ City pages get deterministic palette assignment via slug hash.
 **Motion:** framer-motion fade/slide for section entries, wizard step shifts, hover scaling.
 
 **PDF invoices:** Monochrome professional layout with absolute-positioned status indicators (PAID IN FULL, etc.) and combined distance/fees/separated-taxes breakdown.
-`,x="## 16. Utility Libraries\n\n| File | Purpose |\n|------|---------|\n| `src/lib/pits.ts` | **PROTECTED** — core pricing engine, findAllPitDistances |\n| `src/lib/google-maps.ts` | **PROTECTED** — Maps API loader |\n| `src/hooks/useGoogleMaps.ts` | **PROTECTED** — autocomplete hook |\n| `src/lib/cart.ts` | localStorage cart persistence (24hr TTL) |\n| `src/lib/format.ts` | Currency, distance, date formatters |\n| `src/lib/textFormat.ts` | formatProperName + corporate designator standardization |\n| `src/lib/session.ts` | visitor_sessions wrapper |\n| `src/lib/analytics.ts` | GTM dataLayer push with No-Track guard |\n| `src/lib/palettes.ts` | 5 brand palettes + slug-hash assignment |\n| `src/hooks/useBusinessSettings.ts` | global_settings cache (module-level) |\n| `src/hooks/useBrandPalette.ts` | Per-page palette selection |\n| `src/hooks/use-countdown.ts` | Same-day cutoff timer |\n",v=`## 17. Secrets & Environment
+`,T="## 16. Utility Libraries\n\n| File | Purpose |\n|------|---------|\n| `src/lib/pits.ts` | **PROTECTED** — core pricing engine, findAllPitDistances |\n| `src/lib/google-maps.ts` | **PROTECTED** — Maps API loader |\n| `src/hooks/useGoogleMaps.ts` | **PROTECTED** — autocomplete hook |\n| `src/lib/cart.ts` | localStorage cart persistence (24hr TTL) |\n| `src/lib/format.ts` | Currency, distance, date formatters |\n| `src/lib/textFormat.ts` | formatProperName + corporate designator standardization |\n| `src/lib/session.ts` | visitor_sessions wrapper |\n| `src/lib/analytics.ts` | GTM dataLayer push with No-Track guard |\n| `src/lib/palettes.ts` | 5 brand palettes + slug-hash assignment |\n| `src/hooks/useBusinessSettings.ts` | global_settings cache (module-level) |\n| `src/hooks/useBrandPalette.ts` | Per-page palette selection |\n| `src/hooks/use-countdown.ts` | Same-day cutoff timer |\n",D=`## 17. Secrets & Environment
 
 **Supabase Vault secrets (server-side only):**
 - ANTHROPIC_API_KEY — Claude API for city page generation
@@ -539,7 +539,7 @@ City pages get deterministic palette assignment via slug hash.
 - VITE_SUPABASE_PUBLISHABLE_KEY (anon key)
 - VITE_SUPABASE_PROJECT_ID
 - VITE_GOOGLE_MAPS_KEY (scoped browser key — exception to no-hardcoded policy)
-`,Y=`## 20. Known Issues & Pending Work
+`,C=`## 20. Known Issues & Pending Work
 
 **In progress:**
 - Day-aware PIT routing for weekdays (fix weekday onSelect handler)
@@ -563,7 +563,7 @@ City pages get deterministic palette assignment via slug hash.
 - 7-day pickup / Littlewoods location
 - ways.us master brand integration
 - Multi-tenant replication system
-`,w=`## 21. SEO Issues & Crawl Fixes
+`,k=`## 21. SEO Issues & Crawl Fixes
 
 - **Trailing slash policy:** strict no-trailing-slash, enforced via canonical tags + Vercel rewrites
 - **Sitemap:** real-time generation via \`generate-sitemap\` edge function with daily IndexNow submission
@@ -581,7 +581,7 @@ City pages get deterministic palette assignment via slug hash.
 - alt text on all hero images
 - Lazy loading on below-fold imagery
 - Mobile-friendly viewport on all pages
-`,N=`## 22. DriveDigits Roadmap & WAYS Architecture
+`,P=`## 22. DriveDigits Roadmap & WAYS Architecture
 
 ### Phase Plan
 
@@ -600,7 +600,7 @@ Sequential and parallel dispatch · Cancel/swap/resequence controls · Twilio SM
 River sand · mason sand · concrete sand · fill sand · fill dirt · batture dirt · spillway dirt · topsoil · garden soil · landscaping mulch · crushed concrete · pea gravel · limestone (all sizes) · asphalt millings · road gravel · driveway gravel · washed gravel
 
 **Minimum order:** 2 yards or 3 tons.
-`,O=`## 23. /leads UI Design System
+`,A=`## 23. /leads UI Design System
 
 **Mandatory brand constants** — every tab MUST import these:
 
@@ -723,7 +723,7 @@ function StatusPill({ status }: { status: string }) {
   #{order.order_number}
 </span>
 \`\`\`
-`,T=`### 23.7 Loading states
+`,L=`### 23.7 Loading states
 
 \`\`\`tsx
 import { Loader2 } from "lucide-react";
@@ -884,7 +884,7 @@ Position: top-right (sonner default). Never block UI.
   </DropdownMenuContent>
 </DropdownMenu>
 \`\`\`
-`,C=`## 24. Data Flow Diagrams
+`,I=`## 24. Data Flow Diagrams
 
 ### Customer Order Flow
 
@@ -934,9 +934,9 @@ STOP: once session.order_id is populated
 
 /admin  → Supabase Auth (email/password) → user_roles table → RLS enforcement
 \`\`\`
-`;function d(s){return String(s??"").replace(/\|/g,"\\|").replace(/\n/g," ")}function c(s,e){const i=e instanceof Error?e.message:String(e);return`
-> ⚠️ **${s} fetch failed:** ${i}
-`}async function D(){const s=u();if(s)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:s,action:"list_settings"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"list_settings failed");const a=(e==null?void 0:e.settings)??[];if(a.length===0)return`## 4. Global Settings (Live)
+`;function c(r){return String(r??"").replace(/\|/g,"\\|").replace(/\n/g," ")}function u(r,e){const i=e instanceof Error?e.message:String(e);return`
+> ⚠️ **${r} fetch failed:** ${i}
+`}async function R(){const r=p();if(r)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"list_settings"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"list_settings failed");const a=(e==null?void 0:e.settings)??[];if(a.length===0)return`## 4. Global Settings (Live)
 
 *(no settings found)*
 `;const t=`## 4. Global Settings (Live — full, via service role)
@@ -945,9 +945,9 @@ STOP: once session.order_id is populated
 
 | Key | Value | Public | Description |
 |-----|-------|--------|-------------|
-`,o=a.map(r=>`| ${d(r.key)} | ${d(r.value)} | ${r.is_public?"✓":""} | ${d(r.description??"")} |`).join(`
+`,o=a.map(s=>`| ${c(s.key)} | ${c(s.value)} | ${s.is_public?"✓":""} | ${c(s.description??"")} |`).join(`
 `);return t+o+`
-`}catch(e){console.warn("[docs] list_settings via leads-auth failed, falling back to anon:",e)}try{const{data:e,error:i}=await l.from("global_settings").select("key, value, description, is_public").order("key",{ascending:!0}).limit(1e4);if(i)throw i;const a=e??[],t=s?`> ⚠️ Service-role fetch failed; showing only public rows.
+`}catch(e){console.warn("[docs] list_settings via leads-auth failed, falling back to anon:",e)}try{const{data:e,error:i}=await l.from("global_settings").select("key, value, description, is_public").order("key",{ascending:!0}).limit(1e4);if(i)throw i;const a=e??[],t=r?`> ⚠️ Service-role fetch failed; showing only public rows.
 
 `:"> ℹ️ Showing only `is_public = true` rows. Sign in to /leads (sets `sessionStorage.leads_pw`) to see all keys.\n\n";if(a.length===0)return`## 4. Global Settings (Live)
 
@@ -958,10 +958,10 @@ ${t}**Total keys:** ${a.length}
 
 | Key | Value | Description |
 |-----|-------|-------------|
-`,r=a.map(n=>`| ${d(n.key)} | ${d(n.value)} | ${d(n.description??"")} |`).join(`
-`);return o+r+`
+`,s=a.map(n=>`| ${c(n.key)} | ${c(n.value)} | ${c(n.description??"")} |`).join(`
+`);return o+s+`
 `}catch(e){return`## 4. Global Settings (Live)
-${c("global_settings",e)}`}}async function k(){try{const{data:s,error:e}=await l.from("pits").select("*").order("name",{ascending:!0}).limit(1e4);if(e)throw e;const i=s??[];if(i.length===0)return`## 5. Active PITs (Live)
+${u("global_settings",e)}`}}async function F(){try{const{data:r,error:e}=await l.from("pits").select("*").order("name",{ascending:!0}).limit(1e4);if(e)throw e;const i=r??[];if(i.length===0)return`## 5. Active PITs (Live)
 
 *(no pits found)*
 `;let a=`## 5. Active PITs (Live)
@@ -981,11 +981,11 @@ ${c("global_settings",e)}`}}async function k(){try{const{data:s,error:e}=await l
 `,a+=`- **Default:** ${t.is_default} | **Pickup Only:** ${t.is_pickup_only}
 `,t.notes&&(a+=`- **Notes:** ${t.notes}
 `),a+=`
-`;return a}catch(s){return`## 5. Active PITs (Live)
-${c("pits",s)}`}}async function P(){try{const{data:s,error:e}=await l.from("zip_tax_rates").select("zip_code, tax_region_name, combined_rate, state_rate, local_rate").order("zip_code",{ascending:!0}).limit(1e4);if(e)throw e;const i=s??[];if(i.length===0)return`## 6. Service ZIP Codes (Live)
+`;return a}catch(r){return`## 5. Active PITs (Live)
+${u("pits",r)}`}}async function B(){try{const{data:r,error:e}=await l.from("zip_tax_rates").select("zip_code, tax_region_name, combined_rate, state_rate, local_rate").order("zip_code",{ascending:!0}).limit(1e4);if(e)throw e;const i=r??[];if(i.length===0)return`## 6. Service ZIP Codes (Live)
 
 *(no ZIPs found)*
-`;const a=new Map;for(const r of i){const n=r.tax_region_name||"Unknown";a.has(n)||a.set(n,{zips:[],rate:r.combined_rate}),a.get(n).zips.push(r.zip_code)}const t=[...a.entries()].sort(([r],[n])=>r.localeCompare(n));let o=`## 6. Service ZIP Codes (Live)
+`;const a=new Map;for(const s of i){const n=s.tax_region_name||"Unknown";a.has(n)||a.set(n,{zips:[],rate:s.combined_rate}),a.get(n).zips.push(s.zip_code)}const t=[...a.entries()].sort(([s],[n])=>s.localeCompare(n));let o=`## 6. Service ZIP Codes (Live)
 
 **Total ZIPs:** ${i.length}
 
@@ -993,52 +993,52 @@ ${c("pits",s)}`}}async function P(){try{const{data:s,error:e}=await l.from("zip_
 
 | Parish/Region | ZIP Count | Combined Rate |
 |---------------|-----------|---------------|
-`;for(const[r,n]of t)o+=`| ${d(r)} | ${n.zips.length} | ${(n.rate*100).toFixed(3)}% |
+`;for(const[s,n]of t)o+=`| ${c(s)} | ${n.zips.length} | ${(n.rate*100).toFixed(3)}% |
 `;return o+=`
 **Full ZIP list (comma-separated):**
 
-${i.map(r=>r.zip_code).join(", ")}
-`,o}catch(s){return`## 6. Service ZIP Codes (Live)
-${c("zip_tax_rates",s)}`}}async function A(){try{const{data:s,error:e}=await l.from("city_pages").select("city_slug, status, region, page_views").limit(1e4);if(e)throw e;const i=s??[];if(i.length===0)return`## 11. City Pages & SEO (Live)
+${i.map(s=>s.zip_code).join(", ")}
+`,o}catch(r){return`## 6. Service ZIP Codes (Live)
+${u("zip_tax_rates",r)}`}}async function $(){try{const{data:r,error:e}=await l.from("city_pages").select("city_slug, status, region, page_views").limit(1e4);if(e)throw e;const i=r??[];if(i.length===0)return`## 11. City Pages & SEO (Live)
 
 *(no city pages found)*
-`;const a={};for(const o of i){const r=o.status||"unknown";a[r]||(a[r]=[]),a[r].push(o.city_slug)}Object.values(a).forEach(o=>o.sort());let t=`## 11. City Pages & SEO (Live)
+`;const a={};for(const o of i){const s=o.status||"unknown";a[s]||(a[s]=[]),a[s].push(o.city_slug)}Object.values(a).forEach(o=>o.sort());let t=`## 11. City Pages & SEO (Live)
 
 **Total pages:** ${i.length}
 
 `;for(const o of Object.keys(a).sort())t+=`### ${o.charAt(0).toUpperCase()+o.slice(1)} (${a[o].length})
 
-`,t+=a[o].map(r=>`\`${r}\``).join(", ")+`
+`,t+=a[o].map(s=>`\`${s}\``).join(", ")+`
 
-`;return t}catch(s){return`## 11. City Pages & SEO (Live)
-${c("city_pages",s)}`}}async function L(){try{const{count:s,error:e}=await l.from("fraud_blocklist").select("*",{count:"exact",head:!0});if(e)throw e;return`## 13. Fraud System (Live)
+`;return t}catch(r){return`## 11. City Pages & SEO (Live)
+${u("city_pages",r)}`}}async function z(){try{const{count:r,error:e}=await l.from("fraud_blocklist").select("*",{count:"exact",head:!0});if(e)throw e;return`## 13. Fraud System (Live)
 
-**Active blocklist entries:** ${s??0}
+**Active blocklist entries:** ${r??0}
 
 See \`mem://features/lead-and-fraud-management\` for full architecture.
-`}catch(s){return`## 13. Fraud System (Live)
-${c("fraud_blocklist",s)}`}}async function I(){try{const{count:s,error:e}=await l.from("reviews").select("*",{count:"exact",head:!0});if(e)throw e;return`## 14. Review Collection (Live)
+`}catch(r){return`## 13. Fraud System (Live)
+${u("fraud_blocklist",r)}`}}async function M(){try{const{count:r,error:e}=await l.from("reviews").select("*",{count:"exact",head:!0});if(e)throw e;return`## 14. Review Collection (Live)
 
-**Total reviews captured:** ${s??0}
+**Total reviews captured:** ${r??0}
 
 Automated 24hr post-delivery requests; 4+ stars redirect to Google My Business.
-`}catch(s){return`## 14. Review Collection (Live)
-${c("reviews",s)}`}}async function R(){const s=u();if(s)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_order_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_order_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 18. Live Order Stats (via service role)
+`}catch(r){return`## 14. Review Collection (Live)
+${u("reviews",r)}`}}async function G(){const r=p();if(r)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"get_order_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_order_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 18. Live Order Stats (via service role)
 
 `;t+=`**Total orders:** ${a.total??0}
 `,t+=`**Total revenue (gross):** $${Number(a.revenue??0).toFixed(2)}
 
 `,t+=`### By Status
 
-`;for(const[o,r]of Object.entries(a.byStatus??{}).sort())t+=`- ${o}: ${r}
+`;for(const[o,s]of Object.entries(a.byStatus??{}).sort())t+=`- ${o}: ${s}
 `;t+=`
 ### By Payment Method
 
-`;for(const[o,r]of Object.entries(a.byMethod??{}).sort())t+=`- ${o}: ${r}
+`;for(const[o,s]of Object.entries(a.byMethod??{}).sort())t+=`- ${o}: ${s}
 `;t+=`
 ### By Payment Status
 
-`;for(const[o,r]of Object.entries(a.byPayStatus??{}).sort())t+=`- ${o}: ${r}
+`;for(const[o,s]of Object.entries(a.byPayStatus??{}).sort())t+=`- ${o}: ${s}
 `;return a.latest&&(t+=`
 **Latest order:** ${a.latest}
 `),t+`
@@ -1047,7 +1047,7 @@ ${c("reviews",s)}`}}async function R(){const s=u();if(s)try{const{data:e,error:i
 > ⚠️ Service-role fetch failed: ${e instanceof Error?e.message:String(e)}
 
 Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populate.
-`}return"## 18. Live Order Stats\n\n> ℹ️ Anon role cannot read `orders` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function F(){const s=u();if(s)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_session_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_session_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 19. Live Session Stats (via service role)
+`}return"## 18. Live Order Stats\n\n> ℹ️ Anon role cannot read `orders` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function U(){const r=p();if(r)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"get_session_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_session_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 19. Live Session Stats (via service role)
 
 `;t+=`**Total sessions:** ${a.total??0}
 `,t+=`**Stripe link clicked:** ${a.stripeLinkClicked??0}
@@ -1061,25 +1061,25 @@ Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populat
 
 `,t+=`### By Stage
 
-`;for(const[o,r]of Object.entries(a.byStage??{}).sort())t+=`- ${o}: ${r}
+`;for(const[o,s]of Object.entries(a.byStage??{}).sort())t+=`- ${o}: ${s}
 `;return t+`
 `}catch(e){return console.warn("[docs] get_session_stats via leads-auth failed:",e),`## 19. Live Session Stats
 
 > ⚠️ Service-role fetch failed: ${e instanceof Error?e.message:String(e)}
 
 Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
-`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function z(){const[s,e,i,a,t,o,r,n]=await Promise.all([D(),k(),P(),A(),L(),I(),R(),F()]);return[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
+`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function H(){const[r,e,i,a,t,o,s,n]=await Promise.all([R(),F(),B(),$(),z(),M(),G(),U()]),S=[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
 
-*Version: ${m} — Year 1, Build 01*
+*Version: __DOC_VERSION__ — Year 1, Build 01*
 *Generated: ${new Date().toISOString()} — Live database snapshot*
 *Supabase Project: lclbexhytmpfxzcztzva*
 *GitHub: bayou0313/sand-nine-rivers*
 
 ---
 
-`,p,_,S,s,e,i,g,b,y,E,a,f,t,o,h,x,v,r,n,Y,w,N,O+`
+`,E,f,h,r,e,i,x,v,w,Y,a,N,t,o,O,T,D,s,n,C,k,P,A+`
 
-`+T,C].join(`
+`+L,I].join(`
 ---
 
-`)}export{m as DOC_VERSION,z as generateProjectDocs};
+`);let m=_;const g=p();if(g)try{const{data:d,error:b}=await l.functions.invoke("leads-auth",{body:{action:"increment_doc_version",password:g,newDocLength:String(S.length)}});if(b)throw b;if((d==null?void 0:d.ok)===!1)throw new Error(d.error||"version bump failed");d!=null&&d.version&&(m=d.version)}catch(d){console.warn("[docs] increment_doc_version failed:",d);try{m=await y()}catch{}}else m=await y();return S.replace("__DOC_VERSION__",m)}export{_ as DOC_VERSION,H as generateProjectDocs,y as getCurrentDocsVersion};
