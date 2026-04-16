@@ -4745,41 +4745,7 @@ const Leads = () => {
                   )}
                 </div>
 
-                {/* ─── SECTION 2: MANUAL CHECKLIST ─── */}
-                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium" style={{ color: T.textPrimary }}>Manual Checklist</h3>
-                    <span className="text-xs font-bold" style={{ color: BRAND_GOLD }}>{checklistDone} of {checklistTotal} complete</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mb-2 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Items requiring human judgment</p>
-                  <div className="w-full h-2 rounded-full overflow-hidden mb-4" style={{ backgroundColor: "#f3f3f3" }}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${(checklistDone / checklistTotal) * 100}%`, backgroundColor: BRAND_GOLD }} />
-                  </div>
 
-                  {SEO_CHECKLIST_ITEMS.map(section => (
-                    <div key={section.section} className="mb-4">
-                      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: T.textSecond }}>{section.section}</p>
-                      {section.items.map(item => {
-                        const state = seoChecklist[item.id] || { done: false, notes: "" };
-                        return (
-                          <div key={item.id} className="flex items-start gap-2 py-1.5">
-                            <input type="checkbox" checked={state.done} onChange={e => {
-                              const u = { ...seoChecklist, [item.id]: { ...state, done: e.target.checked } };
-                              saveChecklist(u);
-                            }} className="w-4 h-4 mt-0.5 rounded accent-current" style={{ accentColor: BRAND_GOLD }} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm" style={{ color: state.done ? "#22C55E" : T.textPrimary, textDecoration: state.done ? "line-through" : "none" }}>{item.label}</p>
-                              <input type="text" placeholder="Add notes..." value={state.notes} onChange={e => {
-                                const u = { ...seoChecklist, [item.id]: { ...state, notes: e.target.value } };
-                                saveChecklist(u);
-                              }} className="w-full text-[10px] text-gray-400 border-0 border-b bg-transparent px-0 py-0.5 focus:outline-none focus:border-gray-300" style={{ borderColor: state.notes ? T.cardBorder : "transparent" }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
 
                 {/* ─── SECTION 3: SEO SETTINGS ─── */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
