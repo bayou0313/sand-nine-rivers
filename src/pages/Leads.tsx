@@ -4253,7 +4253,34 @@ const Leads = () => {
           } finally { setSavingSeo(false); }
         };
 
-        const saveChecklist = async (updated: Record<string, { done: boolean; notes: string }>) => {
+        const checkIntegrations = async (only?: "gtm" | "ga4" | "clarity" | "gmb") => {
+          const fields = {
+            gtm_id: seoSettings.seo_gtm_id || "",
+            ga4_id: seoSettings.seo_ga4_id || "",
+            clarity_id: seoSettings.seo_clarity_id || "",
+            gmb_url: seoSettings.gmb_review_url || "",
+          };
+          const payload: any = {};
+          if (only) {
+            const map = { gtm: "gtm_id", ga4: "ga4_id", clarity: "clarity_id", gmb: "gmb_url" } as const;
+            payload[map[only]] = (fields as any)[map[only]];
+            setIntegrationStatus(s => ({ ...s, [only]: "checking" }));
+          } else {
+            Object.assign(payload, fields);
+            setIntegrationStatus({ gtm: "checking", ga4: "checking", clarity: "checking", gmb: "checking" });
+          }
+          try {
+            const { data, error } = await supabase.functions.invoke("leads-auth", {
+              body: { password: storedPassword(), action: "check_google_integrations", ...payload },
+            });
+            if (error) throw error;
+            if (data?.results) setIntegrationStatus(s => ({ ...s, ...data.results }));
+          } catch (err: any) {
+            toast({ title: "Check failed", description: err.message, variant: "destructive" });
+          }
+        };
+
+
           setSeoChecklist(updated);
           const json = JSON.stringify(updated);
           try {
