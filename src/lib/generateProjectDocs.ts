@@ -677,15 +677,25 @@ const SECTION_21_SEO = `## 21. SEO Issues & Crawl Fixes
 - Mobile-friendly viewport on all pages
 `;
 
-const SECTION_22_DRIVEDIGITS = `## 22. DriveDigits Roadmap
+const SECTION_22_DRIVEDIGITS = `## 22. DriveDigits Roadmap & WAYS Architecture
 
-(Future multi-tenant analytics platform — placeholder section)
+### Phase Plan
 
-- Phase 1: tenant_id schema migration (all tables)
-- Phase 2: per-tenant subdomain routing
-- Phase 3: tenant-scoped admin dashboard
-- Phase 4: shared service catalog with tenant overrides
-- Phase 5: cross-tenant analytics for ways.us master brand
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 | **CURRENT** | riversand.net polish + Merchant Center setup + UI cleanup |
+| Phase 2 | Planned | DriveDigits MVP — driver PWA, job acceptance, Stripe hold-to-capture |
+| Phase 3 | Blocked by Phase 2 | Integrate DriveDigits with riversand.net — driver acceptance triggers Stripe capture |
+
+### DriveDigits Feature Scope (Phase 2)
+
+Sequential and parallel dispatch · Cancel/swap/resequence controls · Twilio SMS + WhatsApp + Email · Driver pay $30 flat <20mi then per-mile · Stripe hold → capture on acceptance · 5+ driver drag-drop board · PWA · Settlement · Onboarding
+
+### WAYS Product Catalog
+
+River sand · mason sand · concrete sand · fill sand · fill dirt · batture dirt · spillway dirt · topsoil · garden soil · landscaping mulch · crushed concrete · pea gravel · limestone (all sizes) · asphalt millings · road gravel · driveway gravel · washed gravel
+
+**Minimum order:** 2 yards or 3 tons.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
