@@ -982,11 +982,6 @@ const Leads = () => {
         Object.keys(data.settings).filter(k => k.startsWith("seo_")).forEach(k => { seo[k] = data.settings[k]; });
         if (data.settings.product_image_url) seo.product_image_url = data.settings.product_image_url;
         setSeoSettings(seo);
-        // Parse checklist
-        try {
-          const cl = JSON.parse(data.settings.seo_checklist || "{}");
-          setSeoChecklist(cl);
-        } catch { setSeoChecklist({}); }
         // Parse audit
         try {
           const au = JSON.parse(data.settings.seo_last_audit || "null");
