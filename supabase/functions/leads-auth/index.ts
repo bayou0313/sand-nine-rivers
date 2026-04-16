@@ -1555,7 +1555,47 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       );
     }
 
-    // ── SAVE SETTINGS ──
+    // ── CHECK GOOGLE INTEGRATIONS ──
+    if (action === "check_google_integrations") {
+      const { gtm_id, ga4_id, clarity_id, gmb_url } = body;
+      const results: Record<string, "connected" | "invalid" | "not_set"> = {};
+
+      // GTM
+      if (gtm_id) {
+        try {
+          const r = await fetch(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtm_id)}`);
+          results.gtm = r.ok ? "connected" : "invalid";
+        } catch { results.gtm = "invalid"; }
+      } else { results.gtm = "not_set"; }
+
+      // GA4 — format validation only (no public endpoint)
+      if (ga4_id) {
+        results.ga4 = /^G-[A-Z0-9]+$/.test(ga4_id) ? "connected" : "invalid";
+      } else { results.ga4 = "not_set"; }
+
+      // Clarity
+      if (clarity_id) {
+        try {
+          const r = await fetch(`https://www.clarity.ms/tag/${encodeURIComponent(clarity_id)}`);
+          results.clarity = r.ok ? "connected" : "invalid";
+        } catch { results.clarity = "invalid"; }
+      } else { results.clarity = "not_set"; }
+
+      // GMB URL — try HEAD, fallback to GET
+      if (gmb_url) {
+        try {
+          let r = await fetch(gmb_url, { method: "HEAD", redirect: "follow" });
+          if (!r.ok) r = await fetch(gmb_url, { method: "GET", redirect: "follow" });
+          results.gmb = r.ok ? "connected" : "invalid";
+        } catch { results.gmb = "invalid"; }
+      } else { results.gmb = "not_set"; }
+
+      return new Response(
+        JSON.stringify({ success: true, results }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "save_settings") {
       if (!settings || typeof settings !== "object") {
         return new Response(JSON.stringify({ error: "Missing settings object" }),
