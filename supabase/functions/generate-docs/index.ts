@@ -395,12 +395,14 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const today = now.split("T")[0];
 
-    // ── Query 1: global_settings ──
-    const { data: settings } = await sb.from("global_settings").select("key, value, description").order("key");
+    // ── Query 1: global_settings (FULL VALUES, no truncation) ──
+    const { data: settings } = await sb.from("global_settings").select("key, value, description").order("key").limit(10000);
     let settingsTable = "| Key | Value | Description |\n|-----|-------|-------------|\n";
     for (const s of settings || []) {
-      const val = (s.value || "").length > 80 ? s.value.substring(0, 77) + "..." : s.value;
-      settingsTable += `| \`${s.key}\` | ${val} | ${s.description || ""} |\n`;
+      // Escape pipe chars so they don't break the markdown table
+      const val = String(s.value ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+      const desc = String(s.description ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+      settingsTable += `| \`${s.key}\` | ${val} | ${desc} |\n`;
     }
 
     // ── Query 2: pits ──
