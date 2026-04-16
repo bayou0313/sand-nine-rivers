@@ -1,96 +1,118 @@
 
 
-The user wants me to review the prompt before sending it to Lovable. Let me check the current state of GTM injection.
-<lov-tool-use id="toolu_vrtx_01LFXUzrQiMo6dTAQfZfB9Kj" name="code--search_files" integration-id="code" data="{\"query\": \"GTM-KPKFPCXM|gtm.js|seo_gtm\", \"include_patterns\": \"*.html,*.tsx,*.ts\"}">
+## Investigation
+
+Let me check the current state of the `check_google_integrations` action and pull recent logs to identify the actual failure.
+<lov-tool-use id="toolu_vrtx_01RM4tH2sR25xDNzeQAprrx5" name="supabase--edge_function_logs" integration-id="supabase" data="{\"function_name\": \"leads-auth\", \"search\": \"check_google_integrations\"}">
 </lov-tool-use>
 
-<lov-tool-use id="toolu_vrtx_013EqtcM4CWxakJHdYqmBcwb" name="code--search_files" integration-id="code" data="{\"query\": \"GTM-KPKFPCXM|gtm\\\\.js|seo_gtm\", \"include_patterns\": \"*.html,*.tsx,*.ts\"}">
+<lov-tool-use id="toolu_vrtx_01UJfFUegB8ftp8iFswDNuxy" name="code--search_files" integration-id="code" data="{\"query\": \"check_google_integrations\", \"include_patterns\": \"supabase/functions/leads-auth/index.ts\"}">
 </lov-tool-use>
 
-<lov-tool-use id="toolu_vrtx_01Acc5izsTknVqnWM9g43itK" name="code--search_files" integration-id="code" data="{\"query\": \"seo_gbp_reviews_enabled|seo_gbp_url|gmb_review_url|seo_clarity\"}">
+<lov-tool-use id="toolu_vrtx_01PKhXN45yjCZLUn9R1oFSgj" name="supabase--edge_function_logs" integration-id="supabase" data="{\"function_name\": \"leads-auth\", \"search\": \"check_google_integrations\"}">
 </lov-tool-use>
 
-<lov-tool-use id="toolu_vrtx_017zSde5zto8NUx8noJ1wKTB" name="code--view" integration-id="code" data="{\"file_path\": \"src/pages/Leads.tsx\", \"lines\": \"4940-5050\"}">
+<lov-tool-use id="toolu_vrtx_01Rxj7uad11XtHhRrAxn1uhy" name="code--search_files" integration-id="code" data="{\"query\": \"check_google_integrations\", \"include_patterns\": \"supabase/functions/leads-auth/index.ts\"}">
 </lov-tool-use>
 
-<lov-tool-use id="toolu_vrtx_01TRGXswWzKRMUr2eAbSiuWY" name="code--search_files" integration-id="code" data="{\"query\": \"save_settings|saveSeoSettings\", \"include_patterns\": \"src/pages/Leads.tsx,supabase/functions/leads-auth/index.ts\"}">
+<lov-tool-use id="toolu_vrtx_01EbtL4tWBkrJcXY4w2su8Cn" name="code--view" integration-id="code" data="{\"file_path\": \"supabase/functions/leads-auth/index.ts\", \"lines\": \"1555-1635\"}">
 </lov-tool-use>
-I have enough context. Now I'll review the proposed changes against the codebase and present the plan.
+The code at lines 1559-1621 is syntactically clean — no stripped regex characters, results declaration is correct, try/catch wraps everything, always returns 200. The 400 is not coming from a syntax error.
+
+Let me check what 400 paths exist in the function (auth, body parsing) that could fire before reaching this action.
+<lov-tool-use id="toolu_vrtx_01Qv452R9k5rzEDne1njYs7Z" name="code--search_files" integration-id="code" data="{\"query\": \"status: 400\", \"include_patterns\": \"supabase/functions/leads-auth/index.ts\"}">
+</lov-tool-use>
+
+<lov-tool-use id="toolu_vrtx_01LDGcT3t1t3D4A7owwAXfDp" name="code--view" integration-id="code" data="{\"file_path\": \"supabase/functions/leads-auth/index.ts\", \"lines\": \"1-80\"}">
+</lov-tool-use>
+Let me check the auth gate / password check at the top of the action router to see why a 400 might fire before reaching `check_google_integrations`.
+<lov-tool-use id="toolu_vrtx_011A4h7xRfuWN4Lwx6C8nsFZ" name="code--search_files" integration-id="code" data="{\"include_patterns\": \"supabase/functions/leads-auth/index.ts\", \"query\": \"password|Invalid password|Missing password|Unauthorized\"}">
+</lov-tool-use>
+
+<lov-tool-use id="toolu_vrtx_019egycuNfeZioU4z4GX1gMn" name="code--search_files" integration-id="code" data="{\"include_patterns\": \"src/pages/Leads.tsx\", \"query\": \"check_google_integrations\"}">
+</lov-tool-use>
+Found the bug. The action checker in `check_google_integrations` has NO password gate — it falls through. But there's likely a global password check at the bottom of the router (the unmatched `else` returning 400). Let me verify.
+<lov-tool-use id="toolu_vrtx_01MdpMF5LA5ncKHB1D9Uee7L" name="code--view" integration-id="code" data="{\"file_path\": \"supabase/functions/leads-auth/index.ts\", \"lines\": \"200-235\"}">
+</lov-tool-use>
+
+<lov-tool-use id="toolu_vrtx_01DPVC3tU3VRyuyjej85UqFn" name="code--view" integration-id="code" data="{\"file_path\": \"supabase/functions/leads-auth/index.ts\", \"lines\": \"540-595\"}">
+</lov-tool-use>
+Now let me check what's between `check_google_integrations` (line 1559) and the previous action — there must be a global gate above it that bounces non-listed actions, OR there's an unrecognized-action 400 at the end. Let me check around line 1500-1560 and the file's end.
+<lov-tool-use id="toolu_vrtx_01VTTUfxUNtujKpR82dgAjpF" name="code--view" integration-id="code" data="{\"file_path\": \"supabase/functions/leads-auth/index.ts\", \"lines\": \"1490-1560\"}">
+</lov-tool-use>
+
+<lov-tool-use id="toolu_vrtx_01BmFmkwjUj5maajjLQjqbQw" name="code--search_files" integration-id="code" data="{\"include_patterns\": \"supabase/functions/leads-auth/index.ts\", \"query\": \"Unknown action|Invalid action|Unrecognized\"}">
+</lov-tool-use>
+Got the picture. The `check_google_integrations` action body is syntactically clean and ends with a 200 — but it's at line 1559, near the **middle** of a 4577-line file. There's a **huge action router below it (lines 1622–4569)**. The 400 "Invalid action" only fires if no action matched.
+
+Two possible scenarios:
+1. The frontend is sending the wrong action name (typo / different casing)
+2. There's a syntax error somewhere ABOVE line 1559 OR between 1559 and 4569 that breaks the entire file's parsing — causing the function to crash on EVERY request, then maybe surfacing as a different error (the user is calling it "400" but it could be 500 / network error / function failed to deploy).
+
+Let me check the supabase linter and confirm the frontend invocation is using the correct action name.
+<lov-tool-use id="toolu_vrtx_019jjgZfjQb5b2BHvyukJNYQ" name="supabase--linter" integration-id="supabase" data="">
+</lov-tool-use>
+
+<lov-tool-use id="toolu_vrtx_01Vx5zcCFjD634Hwhb8doQrF" name="code--view" integration-id="code" data="{\"file_path\": \"src/pages/Leads.tsx\", \"lines\": \"4250-4310\"}">
+</lov-tool-use>
+Frontend invocation is correct. The action name matches, and the action body is syntactically clean and always returns 200.
+
+`supabase.functions.invoke` throws an `error` object whenever the function returns a non-2xx OR when there's a network/CORS issue. The user is interpreting that as "400" but it could be a deploy failure or a CORS/network issue.
+
+I have enough to present a plan.
 
 <lov-plan>
 
-## Review Notes (critical findings)
+## Diagnosis: No syntax error exists
 
-**1. GTM is currently injected in `index.html` (lines 5-15) with hardcoded `GTM-KPKFPCXM`.** The `seo_gtm_id` key in `global_settings` does NOT drive the live site — it's a stale reference field. The user's instinct here is correct: making the Settings card actually do something requires removing the static snippet and injecting dynamically.
+I read lines 1558-1621 of `supabase/functions/leads-auth/index.ts`. The `check_google_integrations` action is **syntactically clean**:
+- `Record` type declaration is correct (line 1560)
+- The GSC regex is intact: `/<meta[^>]+name=["']google-site-verification["'][^>]+content=["']([^"']+)["']/i` (line 1598) — no characters stripped
+- Entire action wrapped in `try/catch` (lines 1561-1615)
+- Always returns `200` with `{success: true, results}` (lines 1617-1620)
+- Frontend invocation in `Leads.tsx` line 4275 uses the correct action name
 
-**2. Index.tsx already fetches `seo_*` settings** (`fetchSeo` effect, line ~80) — easy to hook GTM injection into existing `seo` state.
+The user's diagnosis ("syntax error stripping the regex") is incorrect — there's nothing to fix in the action body itself.
 
-**3. `seo_gtm_container_id` does not exist** in DB. Only `seo_gtm_id` exists. The user's spec asks for both, but adding a second key creates a sync problem. Recommend: keep `seo_gtm_id` as the single canonical key, drop the `seo_gtm_container_id` rename.
+## Real likely causes of the 400
 
-**4. `OrderMobile.tsx` is a separate top-level page** (mobile users land here, not Index.tsx) — it must also inject GTM, otherwise mobile traffic loses analytics.
+`supabase.functions.invoke` surfaces ANY non-2xx as a thrown `error`, which the toast labels generically. The actual cause is one of:
 
-**5. `save_settings` action already accepts arbitrary keys** — confirmed in leads-auth line 1559. New `seo_clarity_id` flows through `saveSeoSettings` automatically. No new save action needed.
+1. **Outbound `fetch` to `https://riversand.net/` is failing** — Deno edge runtime sometimes blocks/times-out on outbound calls to certain domains. The GSC block (line 1595) runs unconditionally on every call, even when `gsc_id` is empty. If that fetch hangs or throws synchronously before the inner try/catch (e.g. invalid URL parsing), it could cascade.
+2. **Function failed to deploy** — last edit may have hit a transient deploy failure; the frontend is hitting an older bundle that doesn't have the action, hitting the fall-through `"Invalid action"` 400 at line 4567.
+3. **Slow GMB/Clarity/GTM fetches** causing the function to exceed CPU/wall-time and return a platform-level 5xx (which `invoke` surfaces as a thrown error).
 
-**6. Existing scattered Google fields at lines 4961-4997** (GSC, GTM, GA4, GBP URL, Reviews toggle) — these get consolidated into the new card.
+## Plan: pinpoint and fix without guessing
 
----
+### Step 1 — Pull live evidence (no code changes)
+- Call the deployed function directly with `supabase--curl_edge_functions` using the same payload the frontend sends. This shows the **actual HTTP status code and body** — confirming whether it's truly 400 (action mismatch / deploy stale), 500 (runtime crash), or a CORS/timeout.
+- Pull edge logs via `supabase--edge_function_logs` filtered to `check_google_integrations`. The previous log query returned empty, suggesting either the function isn't being invoked at all OR is crashing before reaching the `console.log` calls.
 
-## Plan: Dynamic GTM + Google & Analytics Integrations Card
+### Step 2 — Apply targeted fix based on evidence
 
-### Files modified (4)
+**If logs show "Invalid action" 400** → function is stale / bundle didn't redeploy. Trigger a redeploy with a no-op edit.
 
-**1. `supabase/migrations/<new>.sql`** — Seed Clarity key only (drop the GTM key duplication)
-```sql
-INSERT INTO global_settings (key, value, description, is_public) VALUES
-  ('seo_clarity_id', '', 'Microsoft Clarity project ID', false)
-ON CONFLICT (key) DO NOTHING;
-```
-*Skipping `seo_gtm_container_id` — `seo_gtm_id` is the canonical key already in use.*
+**If logs show runtime crash / timeout** → harden the action:
+- Move the GSC `fetch("https://riversand.net/")` inside its own short-timeout `AbortController` (3s max)
+- Skip the GSC fetch entirely when no GSC checks are pending
+- Add `Promise.allSettled` parallelism so one slow check doesn't block the others
 
-**2. `index.html`** — Remove hardcoded GTM snippet (lines 5-15). Replace with comment placeholder noting injection is now handled in React.
+**If `curl` returns 200 but frontend sees error** → the issue is client-side (CORS, body shape, `data.results` undefined), not the edge function.
 
-**3. `src/pages/Index.tsx`** — Add `useEffect` after `seo` state populates: read `seo.seo_gtm_id`, skip if path starts with `/leads` or `/admin`, inject `<script id="gtm-script">` into `<head>` and `<noscript>` iframe into top of `<body>`. Idempotency guard via `getElementById("gtm-script")`.
-
-**4. `src/pages/OrderMobile.tsx`** — Same GTM injection effect (mobile users hit this route directly via `HomeMobile.tsx`).
-
-**5. `supabase/functions/leads-auth/index.ts`** — Add `check_google_integrations` action (purely additive). Validates GTM via `fetch(googletagmanager.com/gtm.js?id=...)`, GA4 via `/^G-[A-Z0-9]+$/` regex, Clarity via `fetch(clarity.ms/tag/...)`, GMB via `HEAD` request. Returns `{success, results: {gtm, ga4, clarity, gmb}}`.
-
-**6. `src/pages/Leads.tsx`** — Replace lines 4961-4997 (existing scattered Google + GBP sections) with one consolidated **GOOGLE & ANALYTICS INTEGRATIONS** card containing:
-- Inputs (all bound to existing `seoSettings` state, saved via existing `saveSeoSettings`):
-  - GTM Container ID → `seo_gtm_id` (keep canonical key)
-  - GA4 Measurement ID → `seo_ga4_id`
-  - GA4 Property ID → `seo_ga4_property_id` (reference, no status)
-  - GSC Verification ID → `seo_gsc_id` (reference, no status)
-  - GMB Review URL → `gmb_review_url`
-  - GBP URL → `seo_gbp_url`
-  - Microsoft Clarity ID → `seo_clarity_id` (NEW)
-  - Show Google Reviews toggle → `seo_gbp_reviews_enabled` (relocated)
-- Status dot per checkable field: 🟢 connected / 🔴 invalid / ⚪ not set / 🟡 checking
-- "Check All Connections" button (BRAND_GOLD) — invokes `check_google_integrations`, auto-runs on mount if any field populated
-- Per-field `RefreshCw` icon (BRAND_NAVY ghost) — re-checks single field
-- Per-field `ExternalLink` icon → opens GTM/GA4/GSC/Clarity dashboards or value-as-URL for GMB/GBP
+### Files modified (only after evidence is in)
+- `supabase/functions/leads-auth/index.ts` — minimal hardening to lines 1558-1621 only
 
 ### Files NOT touched
-- `analytics.ts`, `lib/analytics.ts` no-track guard
-- `stripe-webhook`, `send-email`, `generate-city-page`, `pits.ts`, `create_order` RPC
-- All other `leads-auth` actions
-- `generateProjectDocs.ts`
-- Hardcoded GTM reference in `generateProjectDocs.ts` line 74 (cosmetic only, used in docs)
+- All other actions in `leads-auth/index.ts`
+- Frontend `Leads.tsx` invocation
+- `stripe-webhook`, `send-email`, `generate-city-page`, `pits.ts`, `create_order`
 
-### Risk profile
-- **MEDIUM**: GTM injection move from static HTML to React. Risk: brief delay (~200-500ms) before GTM loads as React hydrates and `seo` settings fetch completes. Mitigation: dual-page parity (Index + OrderMobile), idempotency guard prevents double-injection.
-- **LOW**: All other changes additive (new edge function action, new Settings card UI).
+### What I will NOT do
+- Blindly "fix syntax" that isn't broken
+- Touch the regex (it's correct)
+- Modify the `Record` type declaration (it's correct)
+- Refactor logic the user explicitly said not to change
 
-### Deviations from user's spec (intentional)
-1. **No `seo_gtm_container_id`** — using existing `seo_gtm_id` to avoid dual-key drift. SQL `UPDATE` statements in user's spec become unnecessary.
-2. **Added `OrderMobile.tsx`** to GTM injection list — user's spec missed this and would break mobile analytics.
-3. **GMB `HEAD` fetch may fail** for some Google short URLs (CORS-less server-side fetch is fine, but Google sometimes 405s on HEAD). Falling back to `GET` if HEAD returns non-2xx.
-
-### Post-deploy verification
-1. Hard-refresh homepage on desktop → DevTools Network shows `gtm.js?id=GTM-KPKFPCXM` loaded
-2. Visit `/leads` → confirm GTM does NOT load (no-track guard)
-3. Mobile preview homepage → GTM loads
-4. Settings → enter `xxxxxxxxxx` Clarity ID, click Check All → 4 dots populate
-5. Save settings → reload → values persist
-6. Change GTM ID to invalid value → status dot turns 🔴
+### Risk
+- **LOW**: All proposed changes are scoped to one action block, additive defensive guards only.
 
