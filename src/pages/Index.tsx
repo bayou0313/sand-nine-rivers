@@ -21,6 +21,7 @@ import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
+import { injectGTM } from "@/lib/gtm";
 
 const FALLBACK_LOW = "195.00";
 const FALLBACK_HIGH = "231.00";
@@ -106,6 +107,24 @@ const Index = () => {
     };
     fetchPriceRange();
   }, []);
+
+  // Inject GTM dynamically once SEO settings load
+  useEffect(() => {
+    if (seo.seo_gtm_id) injectGTM(seo.seo_gtm_id);
+  }, [seo.seo_gtm_id]);
+
+  // Inject Microsoft Clarity dynamically
+  useEffect(() => {
+    const clarityId = seo.seo_clarity_id;
+    if (!clarityId || typeof window === "undefined") return;
+    const path = window.location.pathname;
+    if (path.startsWith("/leads") || path.startsWith("/admin")) return;
+    if (document.getElementById("clarity-script")) return;
+    const s = document.createElement("script");
+    s.id = "clarity-script";
+    s.innerHTML = `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${clarityId}");`;
+    document.head.appendChild(s);
+  }, [seo.seo_clarity_id]);
 
 
   const localBusinessJsonLd = useMemo(() => ({
