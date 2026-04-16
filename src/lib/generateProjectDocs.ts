@@ -1269,6 +1269,7 @@ async function buildSessionStatsSection(): Promise<string> {
         body: { password: pw, action: "get_session_stats" },
       });
       if (error) throw error;
+      if (data && data.ok === false) throw new Error(data.error || "get_session_stats failed");
       const s = data?.stats ?? {};
       let out = `## 19. Live Session Stats (via service role)\n\n`;
       out += `**Total sessions:** ${s.total ?? 0}\n`;
