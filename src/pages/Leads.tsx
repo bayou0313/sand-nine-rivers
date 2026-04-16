@@ -609,7 +609,7 @@ const Leads = () => {
   const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
   const [savingSeo, setSavingSeo] = useState(false);
   const [integrationStatus, setIntegrationStatus] = useState<Record<string, "connected" | "invalid" | "not_set" | "checking" | "dns_verified">>({});
-  const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
+  
   const [seoAuditResults, setSeoAuditResults] = useState<any>(null);
   const [seoAuditing, setSeoAuditing] = useState(false);
 
