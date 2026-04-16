@@ -1066,6 +1066,7 @@ async function buildSettingsSection(): Promise<string> {
         body: { password: pw, action: "list_settings" },
       });
       if (error) throw error;
+      if (data && data.ok === false) throw new Error(data.error || "list_settings failed");
       const rows = (data?.settings ?? []) as Array<{
         key: string;
         value: string;
@@ -1239,6 +1240,7 @@ async function buildOrderStatsSection(): Promise<string> {
         body: { password: pw, action: "get_order_stats" },
       });
       if (error) throw error;
+      if (data && data.ok === false) throw new Error(data.error || "get_order_stats failed");
       const s = data?.stats ?? {};
       let out = `## 18. Live Order Stats (via service role)\n\n`;
       out += `**Total orders:** ${s.total ?? 0}\n`;
@@ -1267,6 +1269,7 @@ async function buildSessionStatsSection(): Promise<string> {
         body: { password: pw, action: "get_session_stats" },
       });
       if (error) throw error;
+      if (data && data.ok === false) throw new Error(data.error || "get_session_stats failed");
       const s = data?.stats ?? {};
       let out = `## 19. Live Session Stats (via service role)\n\n`;
       out += `**Total sessions:** ${s.total ?? 0}\n`;
