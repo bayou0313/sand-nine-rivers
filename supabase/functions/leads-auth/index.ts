@@ -362,7 +362,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       const { error: uploadErr } = await sb.storage
         .from("assets")
         .upload(`snapshots/${fileName}`, fileBytes, {
-          contentType: "text/markdown",
+          contentType: "text/markdown; charset=utf-8",
           upsert: true,
         });
       if (uploadErr) {
