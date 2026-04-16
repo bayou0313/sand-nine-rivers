@@ -4326,7 +4326,7 @@ const Leads = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>📄 Project Documentation</h3>
-                  <p className="text-xs" style={{ color: T.textSecondary }}>
+                  <p className="text-xs" style={{ color: T.textSecond }}>
                     Generates a live snapshot of the full codebase — DB schema, pits, settings, ZIP codes, architecture.
                     Upload to AI project knowledge after download.
                   </p>
