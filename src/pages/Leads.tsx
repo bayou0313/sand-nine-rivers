@@ -462,6 +462,7 @@ const Leads = () => {
   const [exportingDocs, setExportingDocs] = useState(false);
   const [docsExportError, setDocsExportError] = useState("");
   const [docsCurrentVersion, setDocsCurrentVersion] = useState("v1.01");
+  const [exportingSnapshot, setExportingSnapshot] = useState(false);
   useEffect(() => {
     (async () => {
       try {
