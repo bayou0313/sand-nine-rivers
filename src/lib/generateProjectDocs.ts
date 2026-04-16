@@ -1066,6 +1066,7 @@ async function buildSettingsSection(): Promise<string> {
         body: { password: pw, action: "list_settings" },
       });
       if (error) throw error;
+      if (data && data.ok === false) throw new Error(data.error || "list_settings failed");
       const rows = (data?.settings ?? []) as Array<{
         key: string;
         value: string;
