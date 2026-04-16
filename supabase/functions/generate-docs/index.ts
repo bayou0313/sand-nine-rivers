@@ -624,9 +624,13 @@ ${SESSION_TRACKING}
 
 ${CITY_PAGES_SEO}
 
-### Active City Pages (${activeCount || 0} active, ${draftCount || 0} draft, ${waitlistCount || 0} waitlist)
+### City Pages by Status (${activeCount} active, ${draftCount} draft, ${waitlistCount} waitlist${otherCount ? `, ${otherCount} other` : ""})
 
-Active slugs: ${activeSlugs}
+**Active slugs:** ${slugsByStatus.active.join(", ") || "(none)"}
+
+**Draft slugs:** ${slugsByStatus.draft.join(", ") || "(none)"}
+
+**Waitlist slugs:** ${slugsByStatus.waitlist.join(", ") || "(none)"}${otherCount ? `\n\n**Other slugs:** ${slugsByStatus.other.join(", ")}` : ""}
 
 ---
 
