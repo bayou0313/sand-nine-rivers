@@ -4253,21 +4253,22 @@ const Leads = () => {
           } finally { setSavingSeo(false); }
         };
 
-        const checkIntegrations = async (only?: "gtm" | "ga4" | "clarity" | "gmb") => {
+        const checkIntegrations = async (only?: "gtm" | "ga4" | "clarity" | "gmb" | "gsc") => {
           const fields = {
             gtm_id: seoSettings.seo_gtm_id || "",
             ga4_id: seoSettings.seo_ga4_id || "",
             clarity_id: seoSettings.seo_clarity_id || "",
             gmb_url: seoSettings.gmb_review_url || "",
+            gsc_id: seoSettings.seo_gsc_id || "",
           };
           const payload: any = {};
           if (only) {
-            const map = { gtm: "gtm_id", ga4: "ga4_id", clarity: "clarity_id", gmb: "gmb_url" } as const;
+            const map = { gtm: "gtm_id", ga4: "ga4_id", clarity: "clarity_id", gmb: "gmb_url", gsc: "gsc_id" } as const;
             payload[map[only]] = (fields as any)[map[only]];
             setIntegrationStatus(s => ({ ...s, [only]: "checking" }));
           } else {
             Object.assign(payload, fields);
-            setIntegrationStatus({ gtm: "checking", ga4: "checking", clarity: "checking", gmb: "checking" });
+            setIntegrationStatus({ gtm: "checking", ga4: "checking", clarity: "checking", gmb: "checking", gsc: "checking" });
           }
           try {
             const { data, error } = await supabase.functions.invoke("leads-auth", {
