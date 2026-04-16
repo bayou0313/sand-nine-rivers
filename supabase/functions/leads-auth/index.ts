@@ -212,9 +212,11 @@ serve(async (req) => {
 
     // ── LIST SETTINGS (password required — for docs export) ──
     if (action === "list_settings") {
+      console.log("[list_settings] reached, pw_len:", (password || "").length);
       if (password !== Deno.env.get("LEADS_PASSWORD")) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.log("[list_settings] unauthorized");
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const { data, error } = await sb
@@ -222,18 +224,22 @@ serve(async (req) => {
         .select("key, value, description, is_public")
         .order("key", { ascending: true });
       if (error) {
-        return new Response(JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.log("[list_settings] db error:", error.message);
+        return new Response(JSON.stringify({ ok: false, error: error.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      return new Response(JSON.stringify({ settings: data ?? [] }),
+      console.log("[list_settings] returning", (data ?? []).length, "rows");
+      return new Response(JSON.stringify({ ok: true, settings: data ?? [] }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ── GET ORDER STATS (password required — for docs export) ──
     if (action === "get_order_stats") {
+      console.log("[get_order_stats] reached, pw_len:", (password || "").length);
       if (password !== Deno.env.get("LEADS_PASSWORD")) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.log("[get_order_stats] unauthorized");
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const { data, error } = await sb
@@ -242,8 +248,9 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(100000);
       if (error) {
-        return new Response(JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.log("[get_order_stats] db error:", error.message);
+        return new Response(JSON.stringify({ ok: false, error: error.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const rows = (data ?? []) as Array<{ status: string; payment_method: string; payment_status: string; price: number; created_at: string }>;
       const total = rows.length;
@@ -257,15 +264,18 @@ serve(async (req) => {
         byPayStatus[r.payment_status] = (byPayStatus[r.payment_status] || 0) + 1;
       }
       const latest = rows[0]?.created_at ?? null;
-      return new Response(JSON.stringify({ stats: { total, revenue, byStatus, byMethod, byPayStatus, latest } }),
+      console.log("[get_order_stats] returning", total, "orders");
+      return new Response(JSON.stringify({ ok: true, stats: { total, revenue, byStatus, byMethod, byPayStatus, latest } }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ── GET SESSION STATS (password required — for docs export) ──
     if (action === "get_session_stats") {
+      console.log("[get_session_stats] reached, pw_len:", (password || "").length);
       if (password !== Deno.env.get("LEADS_PASSWORD")) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.log("[get_session_stats] unauthorized");
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const { data, error } = await sb
@@ -273,8 +283,9 @@ serve(async (req) => {
         .select("stage, stripe_link_clicked, email_1hr_sent, email_24hr_sent, email_48hr_sent, email_72hr_sent")
         .limit(100000);
       if (error) {
-        return new Response(JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.log("[get_session_stats] db error:", error.message);
+        return new Response(JSON.stringify({ ok: false, error: error.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const rows = (data ?? []) as Array<{ stage: string | null; stripe_link_clicked: boolean | null; email_1hr_sent: boolean | null; email_24hr_sent: boolean | null; email_48hr_sent: boolean | null; email_72hr_sent: boolean | null }>;
       const total = rows.length;
@@ -289,7 +300,8 @@ serve(async (req) => {
         if (r.email_48hr_sent) e48++;
         if (r.email_72hr_sent) e72++;
       }
-      return new Response(JSON.stringify({
+      console.log("[get_session_stats] returning", total, "sessions");
+      return new Response(JSON.stringify({ ok: true,
         stats: { total, byStage, stripeLinkClicked, email_1hr_sent: e1, email_24hr_sent: e24, email_48hr_sent: e48, email_72hr_sent: e72 }
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
