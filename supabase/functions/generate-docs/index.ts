@@ -413,7 +413,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Query 3: city_pages by status ──
-    const { data: cityStatusRaw } = await sb.rpc("", {}).catch(() => ({ data: null }));
+    // city page counts queried individually below
     // Manual approach since rpc not available:
     const { data: activeCities } = await sb.from("city_pages").select("city_slug").eq("status", "active").order("city_slug");
     const { count: activeCount } = await sb.from("city_pages").select("id", { count: "exact", head: true }).eq("status", "active");
