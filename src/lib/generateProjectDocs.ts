@@ -1240,6 +1240,7 @@ async function buildOrderStatsSection(): Promise<string> {
         body: { password: pw, action: "get_order_stats" },
       });
       if (error) throw error;
+      if (data && data.ok === false) throw new Error(data.error || "get_order_stats failed");
       const s = data?.stats ?? {};
       let out = `## 18. Live Order Stats (via service role)\n\n`;
       out += `**Total orders:** ${s.total ?? 0}\n`;
