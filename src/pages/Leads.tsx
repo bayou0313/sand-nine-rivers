@@ -4235,15 +4235,7 @@ const Leads = () => {
           }
         };
 
-        const saveChecklist = async (updated: Record<string, { done: boolean; notes: string }>) => {
-          setSeoChecklist(updated);
-          const json = JSON.stringify(updated);
-          try {
-            await supabase.functions.invoke("leads-auth", {
-              body: { password: storedPassword(), action: "save_settings", settings: { seo_checklist: json } },
-            });
-          } catch { /* silent */ }
-        };
+
 
         const runSeoAudit = async () => {
           setSeoAuditing(true);
