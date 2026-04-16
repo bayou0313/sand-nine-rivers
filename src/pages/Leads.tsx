@@ -4336,23 +4336,9 @@ const Leads = () => {
                     setExportingDocs(true);
                     setDocsExportError("");
                     try {
-                      const res = await fetch(
-                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-docs`,
-                        {
-                          method: "POST",
-                          headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-                          },
-                          body: JSON.stringify({ password: storedPassword() }),
-                        }
-                      );
-                      if (!res.ok) {
-                        const err = await res.text();
-                        setDocsExportError(`Failed: ${err}`);
-                        return;
-                      }
-                      const blob = await res.blob();
+                      const { generateProjectDocs } = await import("@/lib/generateProjectDocs");
+                      const md = await generateProjectDocs();
+                      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
                       const today = new Date().toISOString().split("T")[0];
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
