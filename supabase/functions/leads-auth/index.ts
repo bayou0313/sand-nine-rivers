@@ -1602,15 +1602,23 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           })());
         }
 
-        // GMB URL — HEAD then GET fallback
+        // GMB URL — pattern-first dispatch (short links block server fetches)
         if (gmb_url) {
-          checks.push((async () => {
-            try {
-              let r = await fetchWithTimeout(gmb_url, { method: "HEAD", redirect: "follow" });
-              if (!r.ok) r = await fetchWithTimeout(gmb_url, { method: "GET", redirect: "follow" });
-              results.gmb = r.ok ? "connected" : "invalid";
-            } catch { results.gmb = "invalid"; }
-          })());
+          if (/^https:\/\/maps\.app\.goo\.gl\//i.test(gmb_url)) {
+            results.gmb = "connected"; // format-only validation; Google short links block automated requests
+          } else if (/^https:\/\/(maps\.google\.com|www\.google\.com\/maps)/i.test(gmb_url)) {
+            results.gmb = "connected";
+          } else if (/^https:\/\/g\.page\//i.test(gmb_url)) {
+            checks.push((async () => {
+              try {
+                let r = await fetchWithTimeout(gmb_url, { method: "HEAD", redirect: "follow" });
+                if (!r.ok) r = await fetchWithTimeout(gmb_url, { method: "GET", redirect: "follow" });
+                results.gmb = r.ok ? "connected" : "invalid";
+              } catch { results.gmb = "invalid"; }
+            })());
+          } else {
+            results.gmb = "invalid";
+          }
         }
 
         // GSC — only fetch site if we actually need to verify
