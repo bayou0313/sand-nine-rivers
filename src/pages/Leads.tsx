@@ -4986,43 +4986,69 @@ const Leads = () => {
                     </div>
                   </div>
 
-                  {/* Google Integrations */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>GOOGLE INTEGRATIONS</p>
-                  <div className="space-y-3 mb-6">
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Google Search Console ID</label>
-                      <Input className="h-9" value={seoSettings.seo_gsc_id || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_gsc_id: e.target.value })} placeholder="google-site-verification=XXXXX" />
-                      <p className="text-[10px] text-gray-400 mt-0.5">Paste verification meta content value only</p>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">GTM Container ID</label>
-                      <Input className="h-9 font-mono" value={seoSettings.seo_gtm_id || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_gtm_id: e.target.value })} placeholder="GTM-XXXXXXX" />
-                      <p className="text-[10px] text-gray-400 mt-0.5">Format: GTM-XXXXXXX — changes apply to live site on save</p>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">GA4 Property ID (for reference)</label>
-                      <Input className="h-9" value={seoSettings.seo_ga4_id || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_ga4_id: e.target.value })} placeholder="G-XXXXXXXXXX" />
-                      <p className="text-[10px] text-gray-400 mt-0.5">Connect this to GTM inside Google Tag Manager dashboard</p>
-                    </div>
-                  </div>
-
-                  {/* Google Business Profile */}
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3 pt-3" style={{ color: T.textSecond, borderTop: `1px solid ${T.cardBorder}` }}>GOOGLE BUSINESS PROFILE</p>
-                  <div className="space-y-3 mb-6">
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">GBP URL</label>
-                      <Input className="h-9" value={seoSettings.seo_gbp_url || ""} onChange={e => setSeoSettings({ ...seoSettings, seo_gbp_url: e.target.value })} placeholder="https://g.page/..." />
-                    </div>
-                    <div className="flex items-center justify-between py-1.5">
-                      <div>
-                        <span className="text-sm" style={{ color: T.textPrimary }}>Show Google Reviews on landing page</span>
-                        <p className="text-[10px] text-gray-400">Activate when you have 5+ reviews</p>
-                      </div>
-                      <button onClick={() => setSeoSettings({ ...seoSettings, seo_gbp_reviews_enabled: seoSettings.seo_gbp_reviews_enabled === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: seoSettings.seo_gbp_reviews_enabled === "true" ? BRAND_GOLD : "#ddd" }}>
-                        <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: seoSettings.seo_gbp_reviews_enabled === "true" ? "22px" : "2px" }} />
+                  {/* Google & Analytics Integrations */}
+                  {(() => {
+                    const StatusDot = ({ s }: { s?: string }) => {
+                      const color = s === "connected" ? "#10B981" : s === "invalid" ? "#EF4444" : s === "checking" ? "#F59E0B" : "#9CA3AF";
+                      return <span className={`inline-block w-2 h-2 rounded-full ${s === "checking" ? "animate-pulse" : ""}`} style={{ backgroundColor: color }} title={s || "not_set"} />;
+                    };
+                    const IconBtn = ({ onClick, title, children }: any) => (
+                      <button type="button" onClick={onClick} title={title} className="p-1 rounded hover:bg-gray-100 transition-colors" style={{ color: BRAND_NAVY }}>
+                        {children}
                       </button>
-                    </div>
-                  </div>
+                    );
+                    const Row = ({ label, keyName, placeholder, helper, statusKey, dashUrl, mono }: any) => (
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs text-gray-500">{label}</label>
+                          <div className="flex items-center gap-1">
+                            {statusKey && <StatusDot s={integrationStatus[statusKey]} />}
+                            {statusKey && (
+                              <IconBtn onClick={() => checkIntegrations(statusKey)} title="Re-check this field">
+                                <RefreshCw size={12} className={integrationStatus[statusKey] === "checking" ? "animate-spin" : ""} />
+                              </IconBtn>
+                            )}
+                            {dashUrl && (
+                              <IconBtn onClick={() => { const u = typeof dashUrl === "function" ? dashUrl() : dashUrl; if (u) window.open(u, "_blank", "noopener"); }} title="Open dashboard">
+                                <ExternalLink size={12} />
+                              </IconBtn>
+                            )}
+                          </div>
+                        </div>
+                        <Input className={`h-9 ${mono ? "font-mono" : ""}`} value={seoSettings[keyName] || ""} onChange={e => setSeoSettings({ ...seoSettings, [keyName]: e.target.value })} placeholder={placeholder} />
+                        {helper && <p className="text-[10px] text-gray-400 mt-0.5">{helper}</p>}
+                      </div>
+                    );
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-3 pt-3" style={{ borderTop: `1px solid ${T.cardBorder}` }}>
+                          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.textSecond }}>GOOGLE & ANALYTICS INTEGRATIONS</p>
+                          <Button size="sm" onClick={() => checkIntegrations()} className="h-7 text-xs px-2" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                            <RefreshCw size={11} className={`mr-1 ${Object.values(integrationStatus).some(v => v === "checking") ? "animate-spin" : ""}`} />
+                            Check All
+                          </Button>
+                        </div>
+                        <div className="space-y-3 mb-6">
+                          <Row label="GTM Container ID" keyName="seo_gtm_id" placeholder="GTM-XXXXXXX" helper="Drives GTM on live site dynamically — changes apply on save" statusKey="gtm" dashUrl="https://tagmanager.google.com" mono />
+                          <Row label="GA4 Measurement ID" keyName="seo_ga4_id" placeholder="G-XXXXXXXXXX" helper="Paste into GA4 Configuration tag inside GTM" statusKey="ga4" dashUrl="https://analytics.google.com" mono />
+                          <Row label="GA4 Property ID" keyName="seo_ga4_property_id" placeholder="numeric" helper="Reference only — GA4 Admin → Property Settings" dashUrl="https://analytics.google.com" mono />
+                          <Row label="GSC Verification ID" keyName="seo_gsc_id" placeholder="google-site-verification=..." helper="Meta tag content value from Search Console" dashUrl="https://search.google.com/search-console" mono />
+                          <Row label="GMB Review URL" keyName="gmb_review_url" placeholder="https://g.page/r/..." helper="Used in post-delivery review request emails" statusKey="gmb" dashUrl={() => seoSettings.gmb_review_url} />
+                          <Row label="GBP URL" keyName="seo_gbp_url" placeholder="https://g.page/..." helper="Google Business Profile public URL" dashUrl={() => seoSettings.seo_gbp_url} />
+                          <Row label="Microsoft Clarity ID" keyName="seo_clarity_id" placeholder="xxxxxxxxxx" helper="Clarity → Settings → Setup → Project ID" statusKey="clarity" dashUrl="https://clarity.microsoft.com" mono />
+                          <div className="flex items-center justify-between py-1.5">
+                            <div>
+                              <span className="text-sm" style={{ color: T.textPrimary }}>Show Google Reviews on landing page</span>
+                              <p className="text-[10px] text-gray-400">Activate when you have 5+ reviews</p>
+                            </div>
+                            <button onClick={() => setSeoSettings({ ...seoSettings, seo_gbp_reviews_enabled: seoSettings.seo_gbp_reviews_enabled === "true" ? "false" : "true" })} className="w-10 h-5 rounded-full transition-colors relative" style={{ backgroundColor: seoSettings.seo_gbp_reviews_enabled === "true" ? BRAND_GOLD : "#ddd" }}>
+                              <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ left: seoSettings.seo_gbp_reviews_enabled === "true" ? "22px" : "2px" }} />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* Save */}
                   <Button onClick={saveSeoSettings} disabled={savingSeo} className="w-full h-11" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
