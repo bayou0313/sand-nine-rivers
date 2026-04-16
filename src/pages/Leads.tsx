@@ -461,6 +461,16 @@ const Leads = () => {
   const [error, setError] = useState("");
   const [exportingDocs, setExportingDocs] = useState(false);
   const [docsExportError, setDocsExportError] = useState("");
+  const [docsCurrentVersion, setDocsCurrentVersion] = useState("v1.01");
+  useEffect(() => {
+    (async () => {
+      try {
+        const { getCurrentDocsVersion } = await import("@/lib/generateProjectDocs");
+        const v = await getCurrentDocsVersion();
+        if (v) setDocsCurrentVersion(v);
+      } catch { /* ignore */ }
+    })();
+  }, []);
   const [toggling, setToggling] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
@@ -4336,16 +4346,19 @@ const Leads = () => {
                     setExportingDocs(true);
                     setDocsExportError("");
                     try {
-                      const { generateProjectDocs, DOC_VERSION } = await import("@/lib/generateProjectDocs");
+                      const { generateProjectDocs, getCurrentDocsVersion } = await import("@/lib/generateProjectDocs");
                       const md = await generateProjectDocs();
+                      const headerMatch = md.match(/\*Version:\s*(v\d+\.\d+)/);
+                      const usedVersion = headerMatch?.[1] || (await getCurrentDocsVersion());
                       const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
                       const today = new Date().toISOString().split("T")[0];
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = `RIVERSAND_${DOC_VERSION}_${today}.md`;
+                      a.download = `RIVERSAND_${usedVersion}_${today}.md`;
                       a.click();
                       URL.revokeObjectURL(url);
+                      setDocsCurrentVersion(usedVersion);
                     } catch (e: any) {
                       setDocsExportError(e.message || "Export failed");
                     } finally {
@@ -4356,7 +4369,7 @@ const Leads = () => {
                   className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50"
                   style={{ backgroundColor: "#2563EB", minWidth: "200px" }}
                 >
-                  {exportingDocs ? "Generating..." : "Generate & Download — v1.01"}
+                  {exportingDocs ? "Generating..." : `Generate & Download — ${docsCurrentVersion}`}
                 </button>
               </div>
               {docsExportError && <p className="text-xs mt-2" style={{ color: "#EF4444" }}>{docsExportError}</p>}

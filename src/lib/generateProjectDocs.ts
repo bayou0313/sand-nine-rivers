@@ -11,9 +11,26 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VERSION — increment manually: v1.02, v1.03 ...
+// VERSION — auto-incremented by leads-auth `increment_doc_version` action.
+// DOC_VERSION is the *baseline* used for filename when no live version is
+// available (no leads password). The live version returned by the edge
+// function is injected into the header via the __DOC_VERSION__ placeholder.
 // ─────────────────────────────────────────────────────────────────────────────
 export const DOC_VERSION = "v1.01";
+
+/** Read the current docs version from global_settings (anon, is_public=true). */
+export async function getCurrentDocsVersion(): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("global_settings")
+      .select("value")
+      .eq("key", "docs_current_version")
+      .maybeSingle();
+    return (data?.value as string) || DOC_VERSION;
+  } catch {
+    return DOC_VERSION;
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER — read leads admin password from sessionStorage (set by /leads login)
@@ -1334,7 +1351,7 @@ export async function generateProjectDocs(): Promise<string> {
 
   const header = `# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
 
-*Version: ${DOC_VERSION} — Year 1, Build 01*
+*Version: __DOC_VERSION__ — Year 1, Build 01*
 *Generated: ${new Date().toISOString()} — Live database snapshot*
 *Supabase Project: lclbexhytmpfxzcztzva*
 *GitHub: bayou0313/sand-nine-rivers*
@@ -1343,7 +1360,7 @@ export async function generateProjectDocs(): Promise<string> {
 
 `;
 
-  return [
+  const fullDoc = [
     header,
     SECTION_1_ARCHITECTURE,
     SECTION_2_ROUTING,
@@ -1370,4 +1387,30 @@ export async function generateProjectDocs(): Promise<string> {
     SECTION_23_LEADS_DESIGN_A + "\n\n" + SECTION_23_LEADS_DESIGN_B,
     SECTION_24_DATA_FLOW,
   ].join("\n---\n\n");
+
+  // Auto-increment version based on character-count delta vs previous snapshot.
+  let docVersion = DOC_VERSION;
+  const pw = leadsPw();
+  if (pw) {
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: {
+          action: "increment_doc_version",
+          password: pw,
+          newDocLength: String(fullDoc.length),
+        },
+      });
+      if (error) throw error;
+      if (data?.ok === false) throw new Error(data.error || "version bump failed");
+      if (data?.version) docVersion = data.version;
+    } catch (err) {
+      console.warn("[docs] increment_doc_version failed:", err);
+      // Fall back to whatever the public version says
+      try { docVersion = await getCurrentDocsVersion(); } catch {}
+    }
+  } else {
+    docVersion = await getCurrentDocsVersion();
+  }
+
+  return fullDoc.replace("__DOC_VERSION__", docVersion);
 }

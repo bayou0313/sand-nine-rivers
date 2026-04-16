@@ -336,6 +336,80 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── INCREMENT DOC VERSION (password required — called by docs export) ──
+    if (action === "increment_doc_version") {
+      console.log("[increment_doc_version] reached, pw_len:", (password || "").length);
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        console.log("[increment_doc_version] unauthorized");
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: settings, error: readErr } = await sb
+        .from("global_settings")
+        .select("key, value")
+        .in("key", [
+          "docs_current_version",
+          "docs_previous_snapshot_length",
+          "docs_version_major_threshold",
+          "docs_version_history",
+        ]);
+      if (readErr) {
+        console.log("[increment_doc_version] read error:", readErr.message);
+        return new Response(JSON.stringify({ ok: false, error: readErr.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const get = (key: string, fallback: string) =>
+        settings?.find((r: any) => r.key === key)?.value ?? fallback;
+
+      const currentVersion = get("docs_current_version", "v1.01");
+      const prevLength = parseInt(get("docs_previous_snapshot_length", "0")) || 0;
+      const threshold = parseFloat(get("docs_version_major_threshold", "0.15")) || 0.15;
+      const newLength = parseInt(String(body.newDocLength ?? "0")) || 0;
+
+      const match = currentVersion.match(/v(\d+)\.(\d+)/);
+      const major = match ? parseInt(match[1]) : 1;
+      const minor = match ? parseInt(match[2]) : 1;
+
+      const changeRatio = prevLength > 0 ? Math.abs(newLength - prevLength) / prevLength : 0;
+      const isMajor = changeRatio > threshold;
+      const newVersion = isMajor
+        ? `v${major + 1}.01`
+        : `v${major}.${String(minor + 1).padStart(2, "0")}`;
+
+      let history: any[] = [];
+      try { history = JSON.parse(get("docs_version_history", "[]")); } catch { history = []; }
+      if (!Array.isArray(history)) history = [];
+      history.push({
+        version: newVersion,
+        previous: currentVersion,
+        timestamp: new Date().toISOString(),
+        change_ratio: Math.round(changeRatio * 1000) / 10 + "%",
+        major_bump: isMajor,
+      });
+      // Cap history at last 200 entries to avoid unbounded growth
+      if (history.length > 200) history = history.slice(-200);
+
+      const { error: upsertErr } = await sb.from("global_settings").upsert([
+        { key: "docs_current_version", value: newVersion, is_public: true },
+        { key: "docs_previous_snapshot_length", value: String(newLength), is_public: false },
+        { key: "docs_version_history", value: JSON.stringify(history), is_public: false },
+      ], { onConflict: "key" });
+      if (upsertErr) {
+        console.log("[increment_doc_version] upsert error:", upsertErr.message);
+        return new Response(JSON.stringify({ ok: false, error: upsertErr.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      console.log("[increment_doc_version] ok", currentVersion, "→", newVersion, "ratio:", changeRatio);
+      return new Response(JSON.stringify({
+        ok: true,
+        version: newVersion,
+        previous: currentVersion,
+        change_ratio: changeRatio,
+        major_bump: isMajor,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── Helper: check if IP is in notrack list ──
     async function isNotrackIp(ip: string): Promise<boolean> {
       if (!ip || ip === "unknown") return false;
