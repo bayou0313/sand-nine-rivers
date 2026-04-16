@@ -1,22 +1,39 @@
-import{s as l}from"./index-CNJ54dXQ.js";const m="v1.01";function u(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const p=`## 1. Architecture Overview
+import{s as l}from"./index-DNAb5oPh.js";const m="v1.01";function u(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const p=`## 1. Architecture Overview
 
-**Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind v3 + shadcn/ui
-**Backend:** Lovable Cloud (managed Supabase, project ref: lclbexhytmpfxzcztzva)
-**Hosting:** GitHub Pages (frontend SPA shell at riversand.net) + Lovable Cloud (edge functions + DB)
-**Payments:** Stripe (live + test modes via global_settings.stripe_mode)
-**Email:** Resend (haulogix.com domain authority for dispatch)
-**Maps:** Google Maps Distance Matrix + Places Autocomplete (proxied via edge functions)
-**AI:** Anthropic Claude 4.5 Haiku (claude-haiku-4-5-20251001) for city page generation
-**Analytics:** GTM-KPKFPCXM (with internal-traffic exclusion via No-Track system)
+**Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind CSS v3 + Supabase (Lovable Cloud)
 
-**Key principles:**
-- Strict no-hardcoded-values policy (secrets in Supabase Vault, public config in global_settings)
-- Address strings drive Maps Distance Matrix — never lat/lng for routing
-- Closest active PIT wins for all geographic decisions
-- Pricing formula: \`Math.max(base, base + (miles - free_miles) * extra_mile)\`
-- Northshore (St. Tammany ZIPs) gets +3 phantom miles for toll recovery
-- All phone links use E.164 format (tel:+18554689297)
-- No trailing slashes on any route (canonical-enforced)
+**Frontend:** Single-page application (SPA). No server-side rendering.
+
+**Backend:** Supabase (Lovable Cloud)
+- PostgreSQL database with Row Level Security (RLS) policies on all tables
+- 13+ Edge Functions (Deno runtime) — auto-deploy on GitHub push to main
+- Storage bucket: \`assets\` (public read, service role write)
+- Auth: email/password for admin only — no customer authentication
+
+**GitHub:** \`bayou0313/sand-nine-rivers\`
+**Hosting:** Lovable Cloud
+**Supabase Project ID:** \`lclbexhytmpfxzcztzva\`
+
+### External Services
+
+| Service | Purpose | Key Detail |
+|---------|---------|------------|
+| Stripe | Payments (dual live/test mode) | Account: \`acct_1TH4PcPuKuZka3yZ\`, Payout: JPMorgan Chase \`---5952\` |
+| Google Maps Platform | Places Autocomplete, Distance Matrix, Geocoding | Browser key: \`AIzaSyALI_GnekVryYGyUeXV8BvaGV74MIvk3SI\` (restricted to riversand.net) |
+| Resend | Transactional email | From: \`orders@riversand.net\` |
+| Anthropic Claude API | City page AI content generation | Used in \`generate-city-page\` edge function |
+| GTM / GA4 | Analytics via dataLayer pushes | Container: GTM-KPKFPCXM. Excluded from \`/leads\` and \`/admin\` |
+| IndexNow | Bing search index submission | Runs via pg_cron 6am/6pm UTC |
+
+### Key Architectural Decisions
+
+- **All business config in \`global_settings\` table** — no hardcoded values in source. PITs and pages read from DB, not env vars.
+- **PIT-level overrides cascade over global defaults** — a NULL value on any PIT pricing field means "inherit from global_settings". Applies to: base_price, free_miles, price_per_extra_mile, max_distance, saturday_surcharge.
+- **Distance calculations always use Google Distance Matrix API (driving mode)** — NEVER haversine for billing. \`avoid=ferries\`, \`language=en\` forced. Haversine only as fallback on API failure and pre-filter for top-5 PIT candidates.
+- **Visitor sessions tracked from first page view** — enables abandonment email sequences before any checkout is started.
+- **Baked pricing mode ACTIVE** — PIT base_price includes 3.5% card processing fee baked in. COD orders receive discount back to \`primary_price\` (pre-bake price). See Section 8.
+- **No customer authentication** — admin only via Supabase Auth + \`user_roles\` table. \`/leads\` uses separate LEADS_PASSWORD secret.
+- **Northshore deliveries: +3 phantom miles** — St. Tammany Parish orders have 3 miles added to billed distance for Causeway toll cost recovery.
 `,_="## 2. Routing & Pages\n\n| Route | Component | Purpose |\n|-------|-----------|---------|\n| `/` | Index.tsx / HomeMobile.tsx | Landing page (mobile/desktop split via useIsMobile) |\n| `/order` | Order.tsx / OrderMobile.tsx | Checkout wizard with day-aware PIT routing |\n| `/order?reschedule=true&token=` | Order.tsx | Reschedule mode for existing orders |\n| `/leads` | Leads.tsx | LMT admin dashboard (password: LEADS_PASSWORD) |\n| `/admin` | Admin.tsx | Authenticated admin (Supabase Auth, has_role('admin')) |\n| `/admin/login` | AdminLogin.tsx | Admin sign-in |\n| `/review/:token` | Review.tsx | Customer review collection (24hr post-delivery) |\n| `/:citySlug` | CityPage.tsx | Programmatic SEO city pages (37 active cities) |\n| `/*` | NotFound.tsx | 404 |\n\n**Mobile detection:** 3-signal approach (viewport <768px, touch <1024px, UA string) with `?force_desktop=1` override.\n",S=`## 3. Database Schema (18 tables)
 
 ### Table: \`blocked_ips\`
@@ -1000,13 +1017,13 @@ ${c("city_pages",s)}`}}async function L(){try{const{count:s,error:e}=await l.fro
 
 See \`mem://features/lead-and-fraud-management\` for full architecture.
 `}catch(s){return`## 13. Fraud System (Live)
-${c("fraud_blocklist",s)}`}}async function R(){try{const{count:s,error:e}=await l.from("reviews").select("*",{count:"exact",head:!0});if(e)throw e;return`## 14. Review Collection (Live)
+${c("fraud_blocklist",s)}`}}async function I(){try{const{count:s,error:e}=await l.from("reviews").select("*",{count:"exact",head:!0});if(e)throw e;return`## 14. Review Collection (Live)
 
 **Total reviews captured:** ${s??0}
 
 Automated 24hr post-delivery requests; 4+ stars redirect to Google My Business.
 `}catch(s){return`## 14. Review Collection (Live)
-${c("reviews",s)}`}}async function I(){const s=u();if(s)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_order_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_order_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 18. Live Order Stats (via service role)
+${c("reviews",s)}`}}async function R(){const s=u();if(s)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_order_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_order_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 18. Live Order Stats (via service role)
 
 `;t+=`**Total orders:** ${a.total??0}
 `,t+=`**Total revenue (gross):** $${Number(a.revenue??0).toFixed(2)}
@@ -1051,7 +1068,7 @@ Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populat
 > ⚠️ Service-role fetch failed: ${e instanceof Error?e.message:String(e)}
 
 Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
-`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function z(){const[s,e,i,a,t,o,r,n]=await Promise.all([D(),k(),P(),A(),L(),R(),I(),F()]);return[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
+`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function z(){const[s,e,i,a,t,o,r,n]=await Promise.all([D(),k(),P(),A(),L(),I(),R(),F()]);return[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
 
 *Version: ${m} — Year 1, Build 01*
 *Generated: ${new Date().toISOString()} — Live database snapshot*
