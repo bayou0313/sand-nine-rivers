@@ -32,23 +32,40 @@ function leadsPw(): string {
 
 const SECTION_1_ARCHITECTURE = `## 1. Architecture Overview
 
-**Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind v3 + shadcn/ui
-**Backend:** Lovable Cloud (managed Supabase, project ref: lclbexhytmpfxzcztzva)
-**Hosting:** GitHub Pages (frontend SPA shell at riversand.net) + Lovable Cloud (edge functions + DB)
-**Payments:** Stripe (live + test modes via global_settings.stripe_mode)
-**Email:** Resend (haulogix.com domain authority for dispatch)
-**Maps:** Google Maps Distance Matrix + Places Autocomplete (proxied via edge functions)
-**AI:** Anthropic Claude 4.5 Haiku (claude-haiku-4-5-20251001) for city page generation
-**Analytics:** GTM-KPKFPCXM (with internal-traffic exclusion via No-Track system)
+**Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind CSS v3 + Supabase (Lovable Cloud)
 
-**Key principles:**
-- Strict no-hardcoded-values policy (secrets in Supabase Vault, public config in global_settings)
-- Address strings drive Maps Distance Matrix — never lat/lng for routing
-- Closest active PIT wins for all geographic decisions
-- Pricing formula: \`Math.max(base, base + (miles - free_miles) * extra_mile)\`
-- Northshore (St. Tammany ZIPs) gets +3 phantom miles for toll recovery
-- All phone links use E.164 format (tel:+18554689297)
-- No trailing slashes on any route (canonical-enforced)
+**Frontend:** Single-page application (SPA). No server-side rendering.
+
+**Backend:** Supabase (Lovable Cloud)
+- PostgreSQL database with Row Level Security (RLS) policies on all tables
+- 13+ Edge Functions (Deno runtime) — auto-deploy on GitHub push to main
+- Storage bucket: \`assets\` (public read, service role write)
+- Auth: email/password for admin only — no customer authentication
+
+**GitHub:** \`bayou0313/sand-nine-rivers\`
+**Hosting:** Lovable Cloud
+**Supabase Project ID:** \`lclbexhytmpfxzcztzva\`
+
+### External Services
+
+| Service | Purpose | Key Detail |
+|---------|---------|------------|
+| Stripe | Payments (dual live/test mode) | Account: \`acct_1TH4PcPuKuZka3yZ\`, Payout: JPMorgan Chase \`---5952\` |
+| Google Maps Platform | Places Autocomplete, Distance Matrix, Geocoding | Browser key: \`AIzaSyALI_GnekVryYGyUeXV8BvaGV74MIvk3SI\` (restricted to riversand.net) |
+| Resend | Transactional email | From: \`orders@riversand.net\` |
+| Anthropic Claude API | City page AI content generation | Used in \`generate-city-page\` edge function |
+| GTM / GA4 | Analytics via dataLayer pushes | Container: GTM-KPKFPCXM. Excluded from \`/leads\` and \`/admin\` |
+| IndexNow | Bing search index submission | Runs via pg_cron 6am/6pm UTC |
+
+### Key Architectural Decisions
+
+- **All business config in \`global_settings\` table** — no hardcoded values in source. PITs and pages read from DB, not env vars.
+- **PIT-level overrides cascade over global defaults** — a NULL value on any PIT pricing field means "inherit from global_settings". Applies to: base_price, free_miles, price_per_extra_mile, max_distance, saturday_surcharge.
+- **Distance calculations always use Google Distance Matrix API (driving mode)** — NEVER haversine for billing. \`avoid=ferries\`, \`language=en\` forced. Haversine only as fallback on API failure and pre-filter for top-5 PIT candidates.
+- **Visitor sessions tracked from first page view** — enables abandonment email sequences before any checkout is started.
+- **Baked pricing mode ACTIVE** — PIT base_price includes 3.5% card processing fee baked in. COD orders receive discount back to \`primary_price\` (pre-bake price). See Section 8.
+- **No customer authentication** — admin only via Supabase Auth + \`user_roles\` table. \`/leads\` uses separate LEADS_PASSWORD secret.
+- **Northshore deliveries: +3 phantom miles** — St. Tammany Parish orders have 3 miles added to billed distance for Causeway toll cost recovery.
 `;
 
 const SECTION_2_ROUTING = `## 2. Routing & Pages
