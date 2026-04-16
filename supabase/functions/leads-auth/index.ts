@@ -210,6 +210,90 @@ serve(async (req) => {
     const body = await req.json();
     const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile, url } = body;
 
+    // ── LIST SETTINGS (password required — for docs export) ──
+    if (action === "list_settings") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data, error } = await sb
+        .from("global_settings")
+        .select("key, value, description, is_public")
+        .order("key", { ascending: true });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ settings: data ?? [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── GET ORDER STATS (password required — for docs export) ──
+    if (action === "get_order_stats") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data, error } = await sb
+        .from("orders")
+        .select("status, payment_method, payment_status, price, created_at")
+        .order("created_at", { ascending: false })
+        .limit(100000);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const rows = (data ?? []) as Array<{ status: string; payment_method: string; payment_status: string; price: number; created_at: string }>;
+      const total = rows.length;
+      const revenue = rows.reduce((s, r) => s + Number(r.price || 0), 0);
+      const byStatus: Record<string, number> = {};
+      const byMethod: Record<string, number> = {};
+      const byPayStatus: Record<string, number> = {};
+      for (const r of rows) {
+        byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+        byMethod[r.payment_method] = (byMethod[r.payment_method] || 0) + 1;
+        byPayStatus[r.payment_status] = (byPayStatus[r.payment_status] || 0) + 1;
+      }
+      const latest = rows[0]?.created_at ?? null;
+      return new Response(JSON.stringify({ stats: { total, revenue, byStatus, byMethod, byPayStatus, latest } }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── GET SESSION STATS (password required — for docs export) ──
+    if (action === "get_session_stats") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data, error } = await sb
+        .from("visitor_sessions")
+        .select("stage, stripe_link_clicked, email_1hr_sent, email_24hr_sent, email_48hr_sent, email_72hr_sent")
+        .limit(100000);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const rows = (data ?? []) as Array<{ stage: string | null; stripe_link_clicked: boolean | null; email_1hr_sent: boolean | null; email_24hr_sent: boolean | null; email_48hr_sent: boolean | null; email_72hr_sent: boolean | null }>;
+      const total = rows.length;
+      const byStage: Record<string, number> = {};
+      let stripeLinkClicked = 0, e1 = 0, e24 = 0, e48 = 0, e72 = 0;
+      for (const r of rows) {
+        const s = r.stage || "unknown";
+        byStage[s] = (byStage[s] || 0) + 1;
+        if (r.stripe_link_clicked) stripeLinkClicked++;
+        if (r.email_1hr_sent) e1++;
+        if (r.email_24hr_sent) e24++;
+        if (r.email_48hr_sent) e48++;
+        if (r.email_72hr_sent) e72++;
+      }
+      return new Response(JSON.stringify({
+        stats: { total, byStage, stripeLinkClicked, email_1hr_sent: e1, email_24hr_sent: e24, email_48hr_sent: e48, email_72hr_sent: e72 }
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── GET NOTRACK IPS (password required) ──
     if (action === "get_notrack_ips") {
       if (password !== Deno.env.get("LEADS_PASSWORD")) {

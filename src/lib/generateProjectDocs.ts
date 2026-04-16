@@ -1,21 +1,30 @@
 // =============================================================================
-// CLIENT-SIDE PROJECT DOCUMENTATION GENERATOR
+// CLIENT-SIDE PROJECT DOCUMENTATION GENERATOR — v1.01
 // =============================================================================
 // Reads everything live from Supabase via the browser client. All hardcoded
 // sections live as module-level constants so they cannot be silently dropped.
+// Schema is now a locked static const (was failing via RPC under anon key).
+// Settings + order/session stats route through leads-auth (service-role) when
+// a leads password is present in sessionStorage; otherwise fall back to anon.
 // =============================================================================
 
 import { supabase } from "@/integrations/supabase/client";
 
-// -----------------------------------------------------------------------------
-// TABLES TO INTROSPECT (order matters — appears in this order in the doc)
-// -----------------------------------------------------------------------------
-const SCHEMA_TABLES = [
-  "orders", "pits", "global_settings", "visitor_sessions", "delivery_leads",
-  "city_pages", "payment_events", "user_roles", "waitlist_leads", "zip_tax_rates",
-  "fraud_blocklist", "fraud_events", "payment_attempts", "reviews",
-  "customers", "notifications", "blocked_ips", "tax_rates",
-] as const;
+// ─────────────────────────────────────────────────────────────────────────────
+// VERSION — increment manually: v1.02, v1.03 ...
+// ─────────────────────────────────────────────────────────────────────────────
+export const DOC_VERSION = "v1.01";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER — read leads admin password from sessionStorage (set by /leads login)
+// ─────────────────────────────────────────────────────────────────────────────
+function leadsPw(): string {
+  try {
+    return sessionStorage.getItem("leads_pw") || "";
+  } catch {
+    return "";
+  }
+}
 
 // -----------------------------------------------------------------------------
 // STATIC SECTIONS — MODULE-LEVEL CONSTANTS (defined once, never recreated)
@@ -57,6 +66,406 @@ const SECTION_2_ROUTING = `## 2. Routing & Pages
 | \`/*\` | NotFound.tsx | 404 |
 
 **Mobile detection:** 3-signal approach (viewport <768px, touch <1024px, UA string) with \`?force_desktop=1\` override.
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 3 — DATABASE SCHEMA (LOCKED STATIC, ALL 18 TABLES)
+// Replaces the failed get_table_schema RPC path. Update manually after migrations.
+// ─────────────────────────────────────────────────────────────────────────────
+const SECTION_3_SCHEMA = `## 3. Database Schema (18 tables)
+
+### Table: \`blocked_ips\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| ip_address | text | NO | — |
+| reason | text | YES | — |
+| blocked_by | text | YES | — |
+| blocked_at | timestamptz | YES | now() |
+
+### Table: \`city_pages\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| city_name | text | NO | — |
+| city_slug | text | NO | — |
+| state | text | NO | 'LA' |
+| pit_id | uuid | YES | — |
+| zip_codes | text[] | YES | — |
+| lat | numeric | YES | — |
+| lng | numeric | YES | — |
+| distance_from_pit | numeric | YES | — |
+| status | text | YES | 'draft' |
+| status_reason | text | YES | — |
+| base_price | numeric | YES | — |
+| meta_title | text | YES | — |
+| meta_description | text | YES | — |
+| h1_text | text | YES | — |
+| content | text | YES | — |
+| hero_intro | text | YES | — |
+| local_expertise | text | YES | — |
+| local_uses | text | YES | — |
+| delivery_details | text | YES | — |
+| why_choose_intro | text | YES | — |
+| local_address | text | YES | — |
+| local_city | text | YES | — |
+| local_zip | text | YES | — |
+| faq_items | jsonb | YES | — |
+| competing_pit_ids | uuid[] | YES | — |
+| multi_pit_coverage | bool | YES | false |
+| needs_regen | bool | YES | false |
+| regen_reason | text | YES | — |
+| price_changed | bool | YES | false |
+| pit_reassigned | bool | YES | false |
+| prompt_version | text | YES | — |
+| region | text | YES | — |
+| page_views | int | YES | 0 |
+| last_viewed_at | timestamptz | YES | — |
+| content_generated_at | timestamptz | YES | — |
+| created_at | timestamptz | YES | now() |
+| updated_at | timestamptz | YES | now() |
+
+### Table: \`customers\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| email | text | NO | — |
+| name | text | YES | — |
+| phone | text | YES | — |
+| company | text | YES | — |
+| first_order_date | date | YES | — |
+| last_order_date | date | YES | — |
+| total_orders | int | YES | 0 |
+| total_spent | numeric | YES | 0 |
+| created_at | timestamptz | YES | now() |
+| updated_at | timestamptz | YES | now() |
+
+### Table: \`delivery_leads\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| created_at | timestamptz | NO | now() |
+| address | text | NO | — |
+| customer_name | text | NO | — |
+| customer_email | text | YES | — |
+| customer_phone | text | YES | — |
+| distance_miles | numeric | YES | — |
+| nearest_pit_id | uuid | YES | — |
+| nearest_pit_name | text | YES | — |
+| nearest_pit_distance | numeric | YES | — |
+| calculated_price | numeric | YES | — |
+| ip_address | text | YES | — |
+| user_agent | text | YES | — |
+| browser_geolat | numeric | YES | — |
+| browser_geolng | numeric | YES | — |
+| geo_matches_address | bool | YES | — |
+| fraud_score | int | YES | 0 |
+| fraud_signals | jsonb | YES | — |
+| submission_count | int | YES | 1 |
+| pre_order_id | uuid | YES | — |
+| offer_sent_at | timestamptz | YES | — |
+| declined_at | timestamptz | YES | — |
+| stage | text | YES | 'new' |
+| contacted | bool | NO | false |
+| lead_number | text | YES | — |
+| notes | text | YES | — |
+
+### Table: \`fraud_blocklist\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| type | text | NO | — |
+| value | text | NO | — |
+| reason | text | YES | — |
+| blocked_by | text | YES | 'admin' |
+| created_at | timestamptz | YES | now() |
+| expires_at | timestamptz | YES | — |
+
+### Table: \`fraud_events\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| event_type | text | NO | — |
+| ip_address | text | YES | — |
+| email | text | YES | — |
+| phone | text | YES | — |
+| order_id | uuid | YES | — |
+| session_id | uuid | YES | — |
+| details | jsonb | YES | — |
+| created_at | timestamptz | YES | now() |
+
+### Table: \`global_settings\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| key | text | NO | — |
+| value | text | NO | — |
+| description | text | YES | — |
+| is_public | bool | NO | false |
+| updated_at | timestamptz | YES | now() |
+
+### Table: \`notifications\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| type | text | NO | — |
+| title | text | NO | — |
+| message | text | NO | — |
+| entity_type | text | YES | — |
+| entity_id | text | YES | — |
+| read | bool | NO | false |
+| created_at | timestamptz | YES | now() |
+
+### Table: \`orders\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| order_number | text | YES | — |
+| customer_id | uuid | YES | — |
+| customer_name | text | NO | — |
+| customer_email | text | YES | — |
+| customer_phone | text | NO | — |
+| company_name | text | YES | — |
+| customer_tier | int | NO | 1 |
+| delivery_address | text | NO | — |
+| delivery_date | date | YES | — |
+| delivery_day_of_week | text | YES | — |
+| delivery_window | text | NO | '8:00 AM – 5:00 PM' |
+| same_day_requested | bool | NO | false |
+| pit_id | uuid | YES | — |
+| distance_miles | numeric | NO | — |
+| billed_distance_miles | numeric | YES | — |
+| is_northshore | bool | YES | false |
+| quantity | int | NO | 1 |
+| base_unit_price | numeric | YES | — |
+| distance_fee | numeric | YES | — |
+| processing_fee | numeric | YES | — |
+| price | numeric | NO | — |
+| discount_amount | numeric | YES | 0 |
+| tax_rate | numeric | NO | 0 |
+| tax_amount | numeric | NO | 0 |
+| state_tax_rate | numeric | YES | — |
+| state_tax_amount | numeric | YES | — |
+| parish_tax_rate | numeric | YES | — |
+| parish_tax_amount | numeric | YES | — |
+| saturday_surcharge | bool | NO | false |
+| saturday_surcharge_amount | int | NO | 0 |
+| sunday_surcharge | bool | NO | false |
+| sunday_surcharge_amount | int | NO | 0 |
+| payment_method | text | NO | 'COD' |
+| payment_status | text | NO | 'pending' |
+| payment_attempts | int | YES | 0 |
+| stripe_payment_id | text | YES | — |
+| stripe_customer_id | text | YES | — |
+| card_brand | text | YES | — |
+| card_last4 | text | YES | — |
+| card_authorization_accepted | bool | YES | false |
+| card_authorization_timestamp | timestamptz | YES | — |
+| capture_status | text | YES | — |
+| capture_attempted_at | timestamptz | YES | — |
+| cash_collected | bool | YES | false |
+| cash_collected_at | timestamptz | YES | — |
+| cash_collected_by | text | YES | — |
+| billing_name | text | YES | — |
+| billing_address | text | YES | — |
+| billing_zip | text | YES | — |
+| billing_country | text | YES | — |
+| billing_matches_delivery | bool | YES | — |
+| delivery_terms_accepted | bool | YES | false |
+| delivery_terms_timestamp | timestamptz | YES | — |
+| call_verified_at | timestamptz | YES | — |
+| call_verified_by | text | YES | — |
+| fraud_score | int | YES | 0 |
+| fraud_signals | jsonb | YES | — |
+| fraud_window_cleared_at | timestamptz | YES | — |
+| review_status | text | YES | — |
+| review_request_sent | bool | YES | false |
+| review_request_sent_at | timestamptz | YES | — |
+| confirmation_token | uuid | NO | gen_random_uuid() |
+| lookup_token | uuid | YES | gen_random_uuid() |
+| lookup_token_used | bool | NO | false |
+| reschedule_token | uuid | YES | — |
+| reschedule_token_used | bool | YES | false |
+| last_confirmation_sent_at | timestamptz | YES | — |
+| lead_reference | text | YES | — |
+| status | text | NO | 'pending' |
+| cancelled_at | timestamptz | YES | — |
+| notes | text | YES | — |
+| created_at | timestamptz | NO | now() |
+| updated_at | timestamptz | NO | now() |
+
+### Table: \`payment_attempts\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| ip_address | text | YES | — |
+| session_id | uuid | YES | — |
+| email | text | YES | — |
+| phone | text | YES | — |
+| amount | numeric | YES | — |
+| status | text | YES | — |
+| created_at | timestamptz | YES | now() |
+
+### Table: \`payment_events\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| order_id | uuid | YES | — |
+| event_id | text | NO | — |
+| event_type | text | NO | — |
+| stripe_payment_id | text | YES | — |
+| created_at | timestamptz | NO | now() |
+
+### Table: \`pits\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| name | text | NO | — |
+| address | text | NO | — |
+| lat | numeric | NO | — |
+| lon | numeric | NO | — |
+| status | text | NO | 'active' |
+| is_default | bool | NO | false |
+| is_pickup_only | bool | NO | false |
+| base_price | numeric | YES | — |
+| free_miles | numeric | YES | — |
+| price_per_extra_mile | numeric | YES | — |
+| max_distance | numeric | YES | — |
+| operating_days | int[] | YES | — |
+| same_day_cutoff | text | YES | — |
+| saturday_load_limit | int | YES | — |
+| saturday_surcharge_override | numeric | YES | — |
+| sunday_load_limit | int | YES | — |
+| sunday_surcharge | numeric | YES | — |
+| served_cities | jsonb | YES | — |
+| notes | text | YES | '' |
+| created_at | timestamptz | NO | now() |
+| updated_at | timestamptz | NO | now() |
+
+### Table: \`reviews\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| order_id | uuid | YES | — |
+| order_number | text | YES | — |
+| customer_name | text | YES | — |
+| customer_email | text | YES | — |
+| rating | int | YES | — |
+| feedback | text | YES | — |
+| sent_to_gmb | bool | YES | false |
+| review_request_sent_at | timestamptz | YES | — |
+| review_submitted_at | timestamptz | YES | — |
+| created_at | timestamptz | YES | now() |
+
+### Table: \`tax_rates\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| state_code | text | NO | — |
+| state_name | text | NO | — |
+| county_parish | text | NO | — |
+| jurisdiction_type | text | NO | 'parish' |
+| state_rate | numeric | NO | — |
+| local_rate | numeric | NO | — |
+| combined_rate | numeric | NO | — |
+| effective_date | date | NO | — |
+| updated_at | timestamptz | YES | now() |
+
+### Table: \`user_roles\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| user_id | uuid | NO | — |
+| role | app_role enum | NO | — |
+
+### Table: \`visitor_sessions\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| session_token | text | NO | — |
+| ip_address | text | YES | — |
+| ip_org | text | YES | — |
+| ip_city | text | YES | — |
+| ip_zip | text | YES | — |
+| ip_is_business | bool | YES | false |
+| geo_city | text | YES | — |
+| geo_region | text | YES | — |
+| geo_country | text | YES | — |
+| geo_zip | text | YES | — |
+| entry_page | text | YES | — |
+| entry_city_page | text | YES | — |
+| entry_city_name | text | YES | — |
+| referrer | text | YES | — |
+| delivery_address | text | YES | — |
+| address_lat | numeric | YES | — |
+| address_lng | numeric | YES | — |
+| nearest_pit_id | uuid | YES | — |
+| nearest_pit_name | text | YES | — |
+| calculated_price | numeric | YES | — |
+| serviceable | bool | YES | — |
+| customer_name | text | YES | — |
+| customer_email | text | YES | — |
+| customer_phone | text | YES | — |
+| stage | text | YES | 'visited' |
+| visit_count | int | YES | 1 |
+| order_id | uuid | YES | — |
+| order_number | text | YES | — |
+| stripe_link_clicked | bool | YES | false |
+| stripe_link_clicked_at | timestamptz | YES | — |
+| email_1hr_sent | bool | YES | false |
+| email_24hr_sent | bool | YES | false |
+| email_48hr_sent | bool | YES | false |
+| email_72hr_sent | bool | YES | false |
+| email_1hr_sent_at | timestamptz | YES | — |
+| email_24hr_sent_at | timestamptz | YES | — |
+| email_48hr_sent_at | timestamptz | YES | — |
+| email_72hr_sent_at | timestamptz | YES | — |
+| last_seen_at | timestamptz | YES | now() |
+| created_at | timestamptz | YES | now() |
+| updated_at | timestamptz | YES | now() |
+
+### Table: \`waitlist_leads\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| city_name | text | NO | — |
+| city_slug | text | NO | — |
+| customer_name | text | YES | — |
+| customer_email | text | NO | — |
+| customer_phone | text | YES | — |
+| converted | bool | YES | false |
+| notified_at | timestamptz | YES | — |
+| created_at | timestamptz | YES | now() |
+
+### Table: \`zip_tax_rates\`
+
+| Column | Type | Nullable | Default |
+|--------|------|----------|---------|
+| id | uuid | NO | gen_random_uuid() |
+| zip_code | text | NO | — |
+| tax_region_name | text | NO | — |
+| state_code | text | NO | 'LA' |
+| state_rate | numeric | NO | 0.05 |
+| local_rate | numeric | NO | 0 |
+| combined_rate | numeric | NO | — |
+| created_at | timestamptz | YES | now() |
 `;
 
 const SECTION_7_EDGE_FUNCTIONS = `## 7. Edge Functions Inventory
@@ -141,7 +550,7 @@ Discounts enforced server-side via Stripe Checkout Session metadata (never clien
 
 const SECTION_12_ADMIN = `## 12. Admin Dashboard (/leads)
 
-**Authentication:** sessionStorage-persisted password (LEADS_PASSWORD secret).
+**Authentication:** sessionStorage-persisted password (LEADS_PASSWORD secret, key: \`leads_pw\`).
 
 **Tabs:**
 1. **Overview** — Operations Center: 6-section real-time dashboard with Hot Prospects logic
@@ -279,81 +688,346 @@ const SECTION_22_DRIVEDIGITS = `## 22. DriveDigits Roadmap
 - Phase 5: cross-tenant analytics for ways.us master brand
 `;
 
-const SECTION_23_LEADS_DESIGN = `## 23. /leads UI Design System
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 23 — /leads UI design system (split A+B for readability)
+// ─────────────────────────────────────────────────────────────────────────────
+const SECTION_23_LEADS_DESIGN_A = `## 23. /leads UI Design System
 
-**MANDATORY PATTERNS for all new tabs:**
+**Mandatory brand constants** — every tab MUST import these:
 
 \`\`\`ts
 const BRAND_NAVY = "#0D2137";
 const BRAND_GOLD = "#C07A00";
-const CARD_BORDER = "#E5E7EB";
-const STATUS_COLORS = {
-  active: "#16A34A", inactive: "#DC2626",
-  pending: "#F59E0B", completed: "#16A34A",
+const POSITIVE   = "#059669";
+const ALERT_RED  = "#DC2626";
+const WARN_YELLOW= "#D97706";
+
+const T = {
+  cardBg:      "#FFFFFF",
+  cardBorder:  "#E5E7EB",
+  textPrimary: "#111827",
+  textSecond:  "#6B7280",
+  pageBg:      "#F9FAFB",
+};
+
+const STATUS_COLORS: Record<string,{bg:string;text:string}> = {
+  pending:   { bg: '#F3F4F6', text: '#6B7280' },
+  confirmed: { bg: '#EFF6FF', text: '#3B82F6' },
+  cancelled: { bg: '#FEF2F2', text: '#EF4444' },
+  paid:      { bg: '#ECFDF5', text: '#059669' },
+  captured:  { bg: '#ECFDF5', text: '#059669' },
+  en_route:  { bg: '#EFF6FF', text: '#3B82F6' },
+  delivered: { bg: '#ECFDF5', text: '#059669' },
+  cod:       { bg: '#FDF8F0', text: '#C07A00' },
+  active:    { bg: '#ECFDF5', text: '#059669' },
+  inactive:  { bg: '#F3F4F6', text: '#6B7280' },
+  draft:     { bg: '#F3F4F6', text: '#6B7280' },
+  new:       { bg: '#F3F4F6', text: '#0D2137' },
+  called:    { bg: '#EFF6FF', text: '#1A6BB8' },
+  quoted:    { bg: '#FDF8F0', text: '#F59E0B' },
+  won:       { bg: '#ECFDF5', text: '#22C55E' },
+  lost:      { bg: '#F3F4F6', text: '#999999' },
 };
 \`\`\`
 
-**Required components:**
-1. Page shell with bg-gray-50, branded header (BRAND_NAVY)
-2. Tab nav with active-state underline (BRAND_GOLD)
-3. Card containers (rounded-xl, shadow-sm, border CARD_BORDER)
-4. Section titles (font-display uppercase tracking-wide)
-5. Metric cards (4-up grid with terminal-num styling for figures)
-6. Search/filter bar (sticky top, white bg)
-7. Toast notifications (sonner, top-right)
-8. Status badges (pill shape, STATUS_COLORS)
-9. Action buttons (BRAND_GOLD primary, outline secondary)
-10. Tables (hover effects, proper spacing, sticky headers)
-11. Modals (Dialog primitive, max-w-2xl, padding-6)
-12. Mobile responsive breakpoints (md:, lg:)
-13. Dark mode CSS variable support
-14. Action menus (DropdownMenu with proper icons)
-15. Form validation (clear error states, red-border)
-16. Order numbers always rendered in BRAND_GOLD with terminal-num font
+### 23.1 Page shell
+
+\`\`\`tsx
+<div className="min-h-screen" style={{ backgroundColor: T.pageBg }}>
+  <header className="border-b" style={{ backgroundColor: BRAND_NAVY, borderColor: BRAND_NAVY }}>
+    <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <h1 className="text-white font-display text-2xl tracking-wide">RIVERSAND LMT</h1>
+      <button onClick={logout} className="text-white/80 hover:text-white text-sm">Sign out</button>
+    </div>
+  </header>
+  <main className="max-w-7xl mx-auto px-6 py-6">{children}</main>
+</div>
+\`\`\`
+
+### 23.2 Tab navigation
+
+\`\`\`tsx
+<nav className="flex gap-6 border-b mb-6" style={{ borderColor: T.cardBorder }}>
+  {tabs.map(t => (
+    <button
+      key={t.id}
+      onClick={() => setTab(t.id)}
+      className="pb-3 text-sm font-medium transition-colors"
+      style={{
+        color: tab === t.id ? BRAND_GOLD : T.textSecond,
+        borderBottom: tab === t.id ? \`2px solid \${BRAND_GOLD}\` : "2px solid transparent",
+      }}
+    >{t.label}</button>
+  ))}
+</nav>
+\`\`\`
+
+### 23.3 Card container
+
+\`\`\`tsx
+<div
+  className="rounded-xl border shadow-sm p-6 mb-6"
+  style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}
+>
+  <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
+    Section title
+  </h3>
+  {/* content */}
+</div>
+\`\`\`
+
+### 23.4 Metric cards (4-up)
+
+\`\`\`tsx
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  {metrics.map(m => (
+    <div key={m.label} className="rounded-xl border p-5"
+      style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+      <div style={LABEL_STYLE}>{m.label}</div>
+      <div style={{ ...NUM_STYLE, color: m.color || T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+        {loading ? '—' : m.value}
+      </div>
+      {m.sub && <div style={SUB_STYLE}>{m.sub}</div>}
+    </div>
+  ))}
+</div>
+\`\`\`
+
+### 23.5 Status pill
+
+\`\`\`tsx
+function StatusPill({ status }: { status: string }) {
+  const c = STATUS_COLORS[status] || STATUS_COLORS.new;
+  return (
+    <span
+      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+      style={{ backgroundColor: c.bg, color: c.text }}
+    >{status}</span>
+  );
+}
+\`\`\`
+
+### 23.6 Order number (always BRAND_GOLD + tabular)
+
+\`\`\`tsx
+<span style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+  #{order.order_number}
+</span>
+\`\`\`
+`;
+
+const SECTION_23_LEADS_DESIGN_B = `### 23.7 Loading states
+
+\`\`\`tsx
+import { Loader2 } from "lucide-react";
+
+// Full-tab loader
+if (loading) return (
+  <div className="flex items-center justify-center py-20">
+    <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={32} />
+    <span className="ml-3" style={{ color: T.textSecond }}>Loading...</span>
+  </div>
+);
+
+// Card skeleton (3 placeholder cards)
+{loading && Array.from({ length: 3 }).map((_, i) => (
+  <div key={i} className="rounded-xl border p-5 animate-pulse"
+    style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+    <div className="h-3 w-24 bg-gray-200 rounded mb-3" />
+    <div className="h-7 w-16 bg-gray-200 rounded" />
+  </div>
+))}
+\`\`\`
+
+**Rules:**
+- Always Loader2 from lucide-react with animate-spin (BRAND_GOLD).
+- Never show 0-count stats while loading — show \`—\`.
+- Disable all inputs + show spinner in submit button during save operations.
+
+### 23.8 Empty states
+
+\`\`\`tsx
+{!loading && rows.length === 0 && (
+  <div className="rounded-xl border p-12 text-center"
+    style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+    <div className="text-4xl mb-2">📭</div>
+    <p className="font-medium" style={{ color: T.textPrimary }}>No records yet</p>
+    <p className="text-xs mt-1" style={{ color: T.textSecond }}>
+      They'll appear here as soon as they come in.
+    </p>
+  </div>
+)}
+\`\`\`
+
+### 23.9 Search / filter bar (sticky)
+
+\`\`\`tsx
+<div className="sticky top-0 z-10 -mx-6 px-6 py-3 mb-4 border-b"
+  style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+  <div className="flex items-center gap-3">
+    <Search size={16} style={{ color: T.textSecond }} />
+    <input
+      value={query}
+      onChange={e => setQuery(e.target.value)}
+      placeholder="Search…"
+      className="flex-1 outline-none text-sm"
+      style={{ color: T.textPrimary }}
+    />
+    {query && (
+      <button onClick={() => setQuery("")}>
+        <X size={14} style={{ color: T.textSecond }} />
+      </button>
+    )}
+  </div>
+</div>
+\`\`\`
+
+### 23.10 Buttons
+
+\`\`\`tsx
+// Primary (BRAND_GOLD)
+<button
+  className="px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50"
+  style={{ backgroundColor: BRAND_GOLD }}
+>{loading ? <Loader2 className="animate-spin" size={14}/> : "Save"}</button>
+
+// Secondary (outline)
+<button
+  className="px-4 py-2 rounded-lg text-sm font-medium"
+  style={{ border: \`1px solid \${T.cardBorder}\`, color: T.textPrimary, backgroundColor: T.cardBg }}
+>Cancel</button>
+
+// Destructive
+<button
+  className="px-4 py-2 rounded-lg text-sm font-medium text-white"
+  style={{ backgroundColor: ALERT_RED }}
+>Delete</button>
+\`\`\`
+
+### 23.11 Tables
+
+\`\`\`tsx
+<div className="overflow-x-auto rounded-xl border"
+  style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+  <table className="min-w-full text-sm">
+    <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+      <tr>
+        {cols.map(c => (
+          <th key={c} className="px-4 py-3 text-left font-medium"
+            style={{ color: T.textSecond, ...LABEL_STYLE }}>{c}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map(r => (
+        <tr key={r.id} className="border-t hover:bg-gray-50 transition-colors"
+          style={{ borderColor: T.cardBorder }}>
+          {/* cells */}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+\`\`\`
+
+### 23.12 Modals
+
+\`\`\`tsx
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent className="max-w-2xl p-6">
+    <DialogHeader>
+      <DialogTitle className="font-display uppercase tracking-wide">
+        Modal Title
+      </DialogTitle>
+    </DialogHeader>
+    {/* content */}
+    <DialogFooter className="mt-6 flex justify-end gap-2">
+      <button>Cancel</button>
+      <button>Save</button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+\`\`\`
+
+### 23.13 Responsive breakpoints
+- Mobile-first; use \`md:\` (≥768px) for 2-up grids and \`lg:\` (≥1024px) for 4-up.
+- Sticky elements collapse on mobile; horizontal scroll for tables.
+
+### 23.14 Toasts
+\`\`\`ts
+import { useToast } from "@/hooks/use-toast";
+const { toast } = useToast();
+toast({ title: "Saved", description: "Settings updated." });
+toast({ title: "Error", description: err.message, variant: "destructive" });
+\`\`\`
+Position: top-right (sonner default). Never block UI.
+
+### 23.15 Form validation
+- Red border on invalid + helper text below.
+- Trigger validation only after first submit attempt (\`formAttempted\` pattern).
+- Disable submit while saving; show spinner inline.
+
+### 23.16 Action menus
+\`\`\`tsx
+<DropdownMenu>
+  <DropdownMenuTrigger><MoreVertical size={16}/></DropdownMenuTrigger>
+  <DropdownMenuContent align="end">
+    <DropdownMenuItem onClick={resend}>Resend confirmation</DropdownMenuItem>
+    <DropdownMenuItem onClick={cancel} className="text-red-600">Cancel order</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+\`\`\`
 `;
 
 const SECTION_24_DATA_FLOW = `## 24. Data Flow Diagrams
 
-**Order placement:**
+### Customer Order Flow
+
 \`\`\`
-User → Order.tsx → create_order RPC → orders + customers tables
-                                   ↓
-                          customer_id linked
-                                   ↓
-                  → create-payment-intent → Stripe API
-                                          ↓
-                                stripe_payment_id stored
-                                          ↓
-                          → stripe-webhook → orders.status = 'paid'
-                                           → notifications insert
-                                           → send-email (confirmation)
+Homepage → Enter Address → [Google Places API]
+     ↓
+DeliveryEstimator → [leads-auth: calculate_distances] → [Google Distance Matrix API]
+     ↓
+findBestPitDriving() → Best PIT + Price
+  ↓ (out of area)              ↓ (in area)
+OutOfAreaModal              /order page
+delivery_lead row           (URL params: address, distance, price, pit_id, etc.)
+                                    ↓
+              Step 1: Address confirm + customer info
+                                    ↓
+              Step 2: Delivery date + quantity + payment method
+                                    ↓
+              Step 3: Review & Submit
+                                    ↓
+┌─── Stripe ──────────────────────────────────┐  ┌─── COD ──────────────────────────────┐
+│ create_order RPC → DB                       │  │ create_order RPC → DB                │
+│ create-checkout-link → Stripe Checkout      │  │ send-email → customer + dispatch     │
+│ stripe-webhook → paid → confirmation email  │  │ → OrderConfirmation ($ animation)    │
+└─────────────────────────────────────────────┘  └──────────────────────────────────────┘
 \`\`\`
 
-**Lead capture (out-of-area):**
+### Session & Abandonment Flow
+
 \`\`\`
-User → OutOfAreaModal → leads-auth (insert lead + fraud check)
-                     → delivery_leads table
-                     → notifications insert (Realtime push)
-                     → admin sees in /leads instantly
+Page Load → initSession() → leads-auth: session_init → checkFraudInternal()
+     ↓ (progressive updateSession calls)
+visited → entered_address → got_price → started_checkout → reached_payment → completed_order
+                                      ↘ got_out_of_area → delivery_lead created
+
+     ↓ (if abandoned — pg_cron hourly)
+
+COLD: 1hr → 24hr → 48hr → 108hr ($10 off Stripe link)
+HOT:  (stripe_link_clicked) → 24hr ($10 off + countdown timer)
+STOP: once session.order_id is populated
 \`\`\`
 
-**City page generation:**
-\`\`\`
-Admin → /leads City Pages tab → generate-city-page edge function
-                              → Anthropic Claude 4.5 Haiku
-                              → city_pages.content updated
-                              → status = 'active'
-                              → sitemap regenerates on next request
-\`\`\`
+### Admin Access Flow
 
-**Abandonment recovery:**
 \`\`\`
-pg_cron (hourly) → abandonment-emails edge function
-                 → query visitor_sessions where stage != 'order_placed'
-                 → match age bucket (1h/24h/48h/72h)
-                 → send-email with discount code
-                 → Stripe Checkout Link with server-enforced discount
-                 → email_*hr_sent flag updated
+/leads  → leads-auth: authenticate → LEADS_PASSWORD validation
+       → All /leads operations → leads-auth [action] → service_role → DB
+
+/admin  → Supabase Auth (email/password) → user_roles table → RLS enforcement
 \`\`\`
 `;
 
@@ -361,8 +1035,7 @@ pg_cron (hourly) → abandonment-emails edge function
 // HELPERS
 // -----------------------------------------------------------------------------
 
-function md(s: string): string {
-  // Escape pipes inside markdown table cells
+function md(s: unknown): string {
   return String(s ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
 
@@ -375,47 +1048,45 @@ function errSection(label: string, err: unknown): string {
 // LIVE SECTION BUILDERS
 // -----------------------------------------------------------------------------
 
-async function buildSchemaSection(): Promise<string> {
-  const calls = SCHEMA_TABLES.map(async (table) => {
+async function buildSettingsSection(): Promise<string> {
+  const pw = leadsPw();
+  if (pw) {
     try {
-      const { data, error } = await supabase.rpc("get_table_schema", { p_table: table });
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "list_settings" },
+      });
       if (error) throw error;
-      const rows = (data ?? []) as Array<{
-        column_name: string;
-        data_type: string;
-        is_nullable: string;
-        column_default: string | null;
+      const rows = (data?.settings ?? []) as Array<{
+        key: string;
+        value: string;
+        description: string | null;
+        is_public: boolean;
       }>;
-      if (rows.length === 0) {
-        return `### Table: \`${table}\`\n\n*(empty or inaccessible)*\n`;
-      }
-      const header = `### Table: \`${table}\`\n\n| Column | Type | Nullable | Default |\n|--------|------|----------|---------|\n`;
+      if (rows.length === 0) return `## 4. Global Settings (Live)\n\n*(no settings found)*\n`;
+      const header = `## 4. Global Settings (Live — full, via service role)\n\n**Total keys:** ${rows.length}\n\n| Key | Value | Public | Description |\n|-----|-------|--------|-------------|\n`;
       const body = rows
-        .map(
-          (r) =>
-            `| ${md(r.column_name)} | ${md(r.data_type)} | ${md(r.is_nullable)} | ${md(r.column_default ?? "")} |`,
-        )
+        .map((r) => `| ${md(r.key)} | ${md(r.value)} | ${r.is_public ? "✓" : ""} | ${md(r.description ?? "")} |`)
         .join("\n");
       return header + body + "\n";
     } catch (err) {
-      return `### Table: \`${table}\`\n${errSection(table, err)}`;
+      // fall through to anon path
+      console.warn("[docs] list_settings via leads-auth failed, falling back to anon:", err);
     }
-  });
-  const blocks = await Promise.all(calls);
-  return `## 3. Database Schema (Live)\n\n${blocks.join("\n")}`;
-}
-
-async function buildSettingsSection(): Promise<string> {
+  }
+  // Anon fallback — only public rows visible due to RLS
   try {
     const { data, error } = await supabase
       .from("global_settings")
-      .select("key, value, description")
+      .select("key, value, description, is_public")
       .order("key", { ascending: true })
       .limit(10000);
     if (error) throw error;
     const rows = data ?? [];
-    if (rows.length === 0) return `## 4. Global Settings (Live)\n\n*(no settings found)*\n`;
-    const header = `## 4. Global Settings (Live)\n\n**Total keys:** ${rows.length}\n\n| Key | Value | Description |\n|-----|-------|-------------|\n`;
+    const note = pw
+      ? `> ⚠️ Service-role fetch failed; showing only public rows.\n\n`
+      : `> ℹ️ Showing only \`is_public = true\` rows. Sign in to /leads (sets \`sessionStorage.leads_pw\`) to see all keys.\n\n`;
+    if (rows.length === 0) return `## 4. Global Settings (Live)\n\n${note}*(no public settings)*\n`;
+    const header = `## 4. Global Settings (Live — public-only)\n\n${note}**Total keys:** ${rows.length}\n\n| Key | Value | Description |\n|-----|-------|-------------|\n`;
     const body = rows
       .map((r: any) => `| ${md(r.key)} | ${md(r.value)} | ${md(r.description ?? "")} |`)
       .join("\n");
@@ -473,7 +1144,6 @@ async function buildZipSection(): Promise<string> {
     }>;
     if (rows.length === 0) return `## 6. Service ZIP Codes (Live)\n\n*(no ZIPs found)*\n`;
 
-    // Group by tax_region_name (parish)
     const groups = new Map<string, { zips: string[]; rate: number }>();
     for (const r of rows) {
       const region = r.tax_region_name || "Unknown";
@@ -552,76 +1222,59 @@ async function buildReviewsSection(): Promise<string> {
 }
 
 async function buildOrderStatsSection(): Promise<string> {
-  try {
-    const { data, error } = await supabase
-      .from("orders")
-      .select("status, payment_method, payment_status, price, created_at")
-      .limit(100000);
-    if (error) throw error;
-    const rows = (data ?? []) as Array<{
-      status: string;
-      payment_method: string;
-      payment_status: string;
-      price: number;
-      created_at: string;
-    }>;
-    const total = rows.length;
-    const totalRevenue = rows.reduce((s, r) => s + Number(r.price || 0), 0);
-    const byStatus: Record<string, number> = {};
-    const byMethod: Record<string, number> = {};
-    const byPayStatus: Record<string, number> = {};
-    for (const r of rows) {
-      byStatus[r.status] = (byStatus[r.status] || 0) + 1;
-      byMethod[r.payment_method] = (byMethod[r.payment_method] || 0) + 1;
-      byPayStatus[r.payment_status] = (byPayStatus[r.payment_status] || 0) + 1;
+  const pw = leadsPw();
+  if (pw) {
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "get_order_stats" },
+      });
+      if (error) throw error;
+      const s = data?.stats ?? {};
+      let out = `## 18. Live Order Stats (via service role)\n\n`;
+      out += `**Total orders:** ${s.total ?? 0}\n`;
+      out += `**Total revenue (gross):** $${Number(s.revenue ?? 0).toFixed(2)}\n\n`;
+      out += `### By Status\n\n`;
+      for (const [k, v] of Object.entries(s.byStatus ?? {}).sort()) out += `- ${k}: ${v}\n`;
+      out += `\n### By Payment Method\n\n`;
+      for (const [k, v] of Object.entries(s.byMethod ?? {}).sort()) out += `- ${k}: ${v}\n`;
+      out += `\n### By Payment Status\n\n`;
+      for (const [k, v] of Object.entries(s.byPayStatus ?? {}).sort()) out += `- ${k}: ${v}\n`;
+      if (s.latest) out += `\n**Latest order:** ${s.latest}\n`;
+      return out + "\n";
+    } catch (err) {
+      console.warn("[docs] get_order_stats via leads-auth failed:", err);
+      return `## 18. Live Order Stats\n\n> ⚠️ Service-role fetch failed: ${err instanceof Error ? err.message : String(err)}\n\nAnon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populate.\n`;
     }
-    let out = `## 18. Live Order Stats\n\n`;
-    out += `**Total orders:** ${total}\n`;
-    out += `**Total revenue (gross):** $${totalRevenue.toFixed(2)}\n\n`;
-    out += `### By Status\n\n`;
-    for (const [k, v] of Object.entries(byStatus).sort()) out += `- ${k}: ${v}\n`;
-    out += `\n### By Payment Method\n\n`;
-    for (const [k, v] of Object.entries(byMethod).sort()) out += `- ${k}: ${v}\n`;
-    out += `\n### By Payment Status\n\n`;
-    for (const [k, v] of Object.entries(byPayStatus).sort()) out += `- ${k}: ${v}\n`;
-    return out + "\n";
-  } catch (err) {
-    return `## 18. Live Order Stats\n${errSection("orders", err)}`;
   }
+  return `## 18. Live Order Stats\n\n> ℹ️ Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads (sets \`sessionStorage.leads_pw\`) and re-export to populate this section.\n`;
 }
 
 async function buildSessionStatsSection(): Promise<string> {
-  try {
-    const { data, error } = await supabase
-      .from("visitor_sessions")
-      .select("stage, serviceable, ip_is_business")
-      .limit(100000);
-    if (error) throw error;
-    const rows = (data ?? []) as Array<{
-      stage: string | null;
-      serviceable: boolean | null;
-      ip_is_business: boolean | null;
-    }>;
-    const total = rows.length;
-    const byStage: Record<string, number> = {};
-    let serviceable = 0,
-      business = 0;
-    for (const r of rows) {
-      const s = r.stage || "unknown";
-      byStage[s] = (byStage[s] || 0) + 1;
-      if (r.serviceable) serviceable++;
-      if (r.ip_is_business) business++;
+  const pw = leadsPw();
+  if (pw) {
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { password: pw, action: "get_session_stats" },
+      });
+      if (error) throw error;
+      const s = data?.stats ?? {};
+      let out = `## 19. Live Session Stats (via service role)\n\n`;
+      out += `**Total sessions:** ${s.total ?? 0}\n`;
+      out += `**Stripe link clicked:** ${s.stripeLinkClicked ?? 0}\n\n`;
+      out += `### Email touch counts\n\n`;
+      out += `- 1hr sent: ${s.email_1hr_sent ?? 0}\n`;
+      out += `- 24hr sent: ${s.email_24hr_sent ?? 0}\n`;
+      out += `- 48hr sent: ${s.email_48hr_sent ?? 0}\n`;
+      out += `- 72hr sent: ${s.email_72hr_sent ?? 0}\n\n`;
+      out += `### By Stage\n\n`;
+      for (const [k, v] of Object.entries(s.byStage ?? {}).sort()) out += `- ${k}: ${v}\n`;
+      return out + "\n";
+    } catch (err) {
+      console.warn("[docs] get_session_stats via leads-auth failed:", err);
+      return `## 19. Live Session Stats\n\n> ⚠️ Service-role fetch failed: ${err instanceof Error ? err.message : String(err)}\n\nAnon role cannot read \`visitor_sessions\` (RLS: admin-only).\n`;
     }
-    let out = `## 19. Live Session Stats\n\n`;
-    out += `**Total sessions:** ${total}\n`;
-    out += `**Serviceable (in-area):** ${serviceable}\n`;
-    out += `**Business IPs:** ${business}\n\n`;
-    out += `### By Stage\n\n`;
-    for (const [k, v] of Object.entries(byStage).sort()) out += `- ${k}: ${v}\n`;
-    return out + "\n";
-  } catch (err) {
-    return `## 19. Live Session Stats\n${errSection("visitor_sessions", err)}`;
   }
+  return `## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read \`visitor_sessions\` (RLS: admin-only). Sign in to /leads (sets \`sessionStorage.leads_pw\`) and re-export to populate this section.\n`;
 }
 
 // -----------------------------------------------------------------------------
@@ -629,9 +1282,7 @@ async function buildSessionStatsSection(): Promise<string> {
 // -----------------------------------------------------------------------------
 
 export async function generateProjectDocs(): Promise<string> {
-  // Fire all live queries in parallel — typical total time < 2s
   const [
-    schema,
     settings,
     pits,
     zips,
@@ -641,7 +1292,6 @@ export async function generateProjectDocs(): Promise<string> {
     orderStats,
     sessionStats,
   ] = await Promise.all([
-    buildSchemaSection(),
     buildSettingsSection(),
     buildPitsSection(),
     buildZipSection(),
@@ -654,6 +1304,7 @@ export async function generateProjectDocs(): Promise<string> {
 
   const header = `# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
 
+*Version: ${DOC_VERSION} — Year 1, Build 01*
 *Generated: ${new Date().toISOString()} — Live database snapshot*
 *Supabase Project: lclbexhytmpfxzcztzva*
 *GitHub: bayou0313/sand-nine-rivers*
@@ -666,7 +1317,7 @@ export async function generateProjectDocs(): Promise<string> {
     header,
     SECTION_1_ARCHITECTURE,
     SECTION_2_ROUTING,
-    schema,
+    SECTION_3_SCHEMA,
     settings,
     pits,
     zips,
@@ -686,7 +1337,7 @@ export async function generateProjectDocs(): Promise<string> {
     SECTION_20_KNOWN_ISSUES,
     SECTION_21_SEO,
     SECTION_22_DRIVEDIGITS,
-    SECTION_23_LEADS_DESIGN,
+    SECTION_23_LEADS_DESIGN_A + "\n\n" + SECTION_23_LEADS_DESIGN_B,
     SECTION_24_DATA_FLOW,
   ].join("\n---\n\n");
 }
