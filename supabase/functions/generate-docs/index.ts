@@ -395,12 +395,14 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const today = now.split("T")[0];
 
-    // ── Query 1: global_settings ──
-    const { data: settings } = await sb.from("global_settings").select("key, value, description").order("key");
+    // ── Query 1: global_settings (FULL VALUES, no truncation) ──
+    const { data: settings } = await sb.from("global_settings").select("key, value, description").order("key").limit(10000);
     let settingsTable = "| Key | Value | Description |\n|-----|-------|-------------|\n";
     for (const s of settings || []) {
-      const val = (s.value || "").length > 80 ? s.value.substring(0, 77) + "..." : s.value;
-      settingsTable += `| \`${s.key}\` | ${val} | ${s.description || ""} |\n`;
+      // Escape pipe chars so they don't break the markdown table
+      const val = String(s.value ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+      const desc = String(s.description ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+      settingsTable += `| \`${s.key}\` | ${val} | ${desc} |\n`;
     }
 
     // ── Query 2: pits ──
@@ -412,18 +414,20 @@ Deno.serve(async (req) => {
       pitsTable += `| ${p.name} | ${p.address} | ${p.status} | $${p.base_price || "—"} | ${p.free_miles || "—"} | $${p.price_per_extra_mile || "—"} | ${p.max_distance || "—"}mi | ${days} | $${p.saturday_surcharge_override || "—"} | ${p.same_day_cutoff || "10:00"} |\n`;
     }
 
-    // ── Query 3: city_pages by status ──
-    // city page counts queried individually below
-    // Manual approach since rpc not available:
-    const { data: activeCities } = await sb.from("city_pages").select("city_slug").eq("status", "active").order("city_slug");
-    const { count: activeCount } = await sb.from("city_pages").select("id", { count: "exact", head: true }).eq("status", "active");
-    const { count: draftCount } = await sb.from("city_pages").select("id", { count: "exact", head: true }).eq("status", "draft");
-    const { count: waitlistCount } = await sb.from("city_pages").select("id", { count: "exact", head: true }).eq("status", "waitlist");
+    // ── Query 3: city_pages — ALL statuses ──
+    const { data: allCities } = await sb.from("city_pages").select("city_slug, status").order("city_slug").limit(10000);
+    const slugsByStatus: Record<string, string[]> = { active: [], draft: [], waitlist: [], other: [] };
+    for (const c of allCities || []) {
+      const bucket = (c.status === "active" || c.status === "draft" || c.status === "waitlist") ? c.status : "other";
+      slugsByStatus[bucket].push(c.city_slug);
+    }
+    const activeCount = slugsByStatus.active.length;
+    const draftCount = slugsByStatus.draft.length;
+    const waitlistCount = slugsByStatus.waitlist.length;
+    const otherCount = slugsByStatus.other.length;
 
-    const activeSlugs = (activeCities || []).map((c: any) => c.city_slug).join(", ");
-
-    // ── Query 4: zip_tax_rates ──
-    const { data: zipRates } = await sb.from("zip_tax_rates").select("*").order("zip_code");
+    // ── Query 4: zip_tax_rates (no row cap) ──
+    const { data: zipRates } = await sb.from("zip_tax_rates").select("*").order("zip_code").limit(10000);
     const zipsByParish: Record<string, { count: number; rate: number; zips: string[] }> = {};
     for (const z of zipRates || []) {
       const parish = z.tax_region_name || "Unknown";
@@ -433,15 +437,15 @@ Deno.serve(async (req) => {
     }
     let zipParishTable = "| Parish | ZIP Count | Combined Rate |\n|--------|----------|---------------|\n";
     for (const [parish, info] of Object.entries(zipsByParish).sort((a, b) => a[0].localeCompare(b[0]))) {
-      zipParishTable += `| ${parish} | ${info.count} | ${(info.rate * 100).toFixed(2)}% |\n`;
+      zipParishTable += `| ${parish} | ${info.count} | ${(Number(info.rate) * 100).toFixed(2)}% |\n`;
     }
     const allZips = (zipRates || []).map((z: any) => z.zip_code).join(", ");
 
-    // ── Query 5: orders stats ──
+    // ── Query 5: orders stats (no row cap) ──
     const { count: totalOrders } = await sb.from("orders").select("id", { count: "exact", head: true });
-    const { data: ordersByStatus } = await sb.from("orders").select("status");
-    const { data: ordersByPayMethod } = await sb.from("orders").select("payment_method");
-    const { data: ordersByPayStatus } = await sb.from("orders").select("payment_status");
+    const { data: ordersByStatus } = await sb.from("orders").select("status").limit(100000);
+    const { data: ordersByPayMethod } = await sb.from("orders").select("payment_method").limit(100000);
+    const { data: ordersByPayStatus } = await sb.from("orders").select("payment_status").limit(100000);
     const { data: latestOrder } = await sb.from("orders").select("created_at").order("created_at", { ascending: false }).limit(1);
 
     const countBy = (arr: any[], field: string) => {
@@ -485,27 +489,24 @@ Deno.serve(async (req) => {
 
     let schemaSection = "";
     for (const tableName of schemaTables) {
+      schemaSection += `\n### Table: \`${tableName}\`\n\n`;
       try {
-        // Use a simple select to get column info — we'll query the table with limit 0 to see structure
-        const { data: cols, error: colErr } = await sb.rpc("", {}).catch(() => ({ data: null, error: null }));
-        // Since we can't query information_schema via JS client, we'll document based on what we can fetch
-        const { data: sample } = await sb.from(tableName).select("*").limit(1);
-        if (sample && sample.length > 0) {
-          const columns = Object.keys(sample[0]);
-          schemaSection += `\n### Table: \`${tableName}\`\n`;
-          schemaSection += `| Column | Sample Type |\n|--------|------------|\n`;
-          for (const col of columns.sort()) {
-            const val = sample[0][col];
-            const type = val === null ? "nullable" : typeof val;
-            schemaSection += `| \`${col}\` | ${type} |\n`;
-          }
-        } else {
-          // Empty table — just list it
-          const { data: emptySample, error: emptyErr } = await sb.from(tableName).select("*").limit(0);
-          schemaSection += `\n### Table: \`${tableName}\`\n*(Empty table — no columns inferred)*\n`;
+        const { data: cols, error: colErr } = await sb.rpc("get_table_schema", { p_table: tableName });
+        if (colErr) {
+          schemaSection += `*(Error: ${colErr.message})*\n`;
+          continue;
         }
-      } catch {
-        schemaSection += `\n### Table: \`${tableName}\`\n*(Could not query)*\n`;
+        if (!cols || cols.length === 0) {
+          schemaSection += `*(empty or inaccessible)*\n`;
+          continue;
+        }
+        schemaSection += `| Column | Type | Nullable | Default |\n|--------|------|----------|---------|\n`;
+        for (const c of cols as any[]) {
+          const def = c.column_default == null ? "" : String(c.column_default).replace(/\|/g, "\\|").replace(/\n/g, " ");
+          schemaSection += `| \`${c.column_name}\` | ${c.data_type} | ${c.is_nullable} | ${def} |\n`;
+        }
+      } catch (e: any) {
+        schemaSection += `*(Could not query: ${e?.message || "unknown error"})*\n`;
       }
     }
 
@@ -623,9 +624,13 @@ ${SESSION_TRACKING}
 
 ${CITY_PAGES_SEO}
 
-### Active City Pages (${activeCount || 0} active, ${draftCount || 0} draft, ${waitlistCount || 0} waitlist)
+### City Pages by Status (${activeCount} active, ${draftCount} draft, ${waitlistCount} waitlist${otherCount ? `, ${otherCount} other` : ""})
 
-Active slugs: ${activeSlugs}
+**Active slugs:** ${slugsByStatus.active.join(", ") || "(none)"}
+
+**Draft slugs:** ${slugsByStatus.draft.join(", ") || "(none)"}
+
+**Waitlist slugs:** ${slugsByStatus.waitlist.join(", ") || "(none)"}${otherCount ? `\n\n**Other slugs:** ${slugsByStatus.other.join(", ")}` : ""}
 
 ---
 
