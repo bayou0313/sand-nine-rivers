@@ -1,4 +1,4 @@
-import{s as l}from"./index-JUo0SY5r.js";const m="v1.01";function u(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const p=`## 1. Architecture Overview
+import{s as l}from"./index-DoE0MNKS.js";const m="v1.01";function u(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const p=`## 1. Architecture Overview
 
 **Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind v3 + shadcn/ui
 **Backend:** Lovable Cloud (managed Supabase, project ref: lclbexhytmpfxzcztzva)
@@ -564,15 +564,25 @@ City pages get deterministic palette assignment via slug hash.
 - alt text on all hero images
 - Lazy loading on below-fold imagery
 - Mobile-friendly viewport on all pages
-`,w=`## 22. DriveDigits Roadmap
+`,w=`## 22. DriveDigits Roadmap & WAYS Architecture
 
-(Future multi-tenant analytics platform — placeholder section)
+### Phase Plan
 
-- Phase 1: tenant_id schema migration (all tables)
-- Phase 2: per-tenant subdomain routing
-- Phase 3: tenant-scoped admin dashboard
-- Phase 4: shared service catalog with tenant overrides
-- Phase 5: cross-tenant analytics for ways.us master brand
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 | **CURRENT** | riversand.net polish + Merchant Center setup + UI cleanup |
+| Phase 2 | Planned | DriveDigits MVP — driver PWA, job acceptance, Stripe hold-to-capture |
+| Phase 3 | Blocked by Phase 2 | Integrate DriveDigits with riversand.net — driver acceptance triggers Stripe capture |
+
+### DriveDigits Feature Scope (Phase 2)
+
+Sequential and parallel dispatch · Cancel/swap/resequence controls · Twilio SMS + WhatsApp + Email · Driver pay $30 flat <20mi then per-mile · Stripe hold → capture on acceptance · 5+ driver drag-drop board · PWA · Settlement · Onboarding
+
+### WAYS Product Catalog
+
+River sand · mason sand · concrete sand · fill sand · fill dirt · batture dirt · spillway dirt · topsoil · garden soil · landscaping mulch · crushed concrete · pea gravel · limestone (all sizes) · asphalt millings · road gravel · driveway gravel · washed gravel
+
+**Minimum order:** 2 yards or 3 tons.
 `,O=`## 23. /leads UI Design System
 
 **Mandatory brand constants** — every tab MUST import these:
@@ -907,9 +917,9 @@ STOP: once session.order_id is populated
 
 /admin  → Supabase Auth (email/password) → user_roles table → RLS enforcement
 \`\`\`
-`;function d(s){return String(s??"").replace(/\|/g,"\\|").replace(/\n/g," ")}function c(s,a){const o=a instanceof Error?a.message:String(a);return`
-> ⚠️ **${s} fetch failed:** ${o}
-`}async function D(){const s=u();if(s)try{const{data:a,error:o}=await l.functions.invoke("leads-auth",{body:{password:s,action:"list_settings"}});if(o)throw o;const t=(a==null?void 0:a.settings)??[];if(t.length===0)return`## 4. Global Settings (Live)
+`;function d(s){return String(s??"").replace(/\|/g,"\\|").replace(/\n/g," ")}function c(s,a){const r=a instanceof Error?a.message:String(a);return`
+> ⚠️ **${s} fetch failed:** ${r}
+`}async function D(){const s=u();if(s)try{const{data:a,error:r}=await l.functions.invoke("leads-auth",{body:{password:s,action:"list_settings"}});if(r)throw r;const t=(a==null?void 0:a.settings)??[];if(t.length===0)return`## 4. Global Settings (Live)
 
 *(no settings found)*
 `;const e=`## 4. Global Settings (Live — full, via service role)
@@ -918,30 +928,30 @@ STOP: once session.order_id is populated
 
 | Key | Value | Public | Description |
 |-----|-------|--------|-------------|
-`,r=t.map(i=>`| ${d(i.key)} | ${d(i.value)} | ${i.is_public?"✓":""} | ${d(i.description??"")} |`).join(`
-`);return e+r+`
-`}catch(a){console.warn("[docs] list_settings via leads-auth failed, falling back to anon:",a)}try{const{data:a,error:o}=await l.from("global_settings").select("key, value, description, is_public").order("key",{ascending:!0}).limit(1e4);if(o)throw o;const t=a??[],e=s?`> ⚠️ Service-role fetch failed; showing only public rows.
+`,o=t.map(i=>`| ${d(i.key)} | ${d(i.value)} | ${i.is_public?"✓":""} | ${d(i.description??"")} |`).join(`
+`);return e+o+`
+`}catch(a){console.warn("[docs] list_settings via leads-auth failed, falling back to anon:",a)}try{const{data:a,error:r}=await l.from("global_settings").select("key, value, description, is_public").order("key",{ascending:!0}).limit(1e4);if(r)throw r;const t=a??[],e=s?`> ⚠️ Service-role fetch failed; showing only public rows.
 
 `:"> ℹ️ Showing only `is_public = true` rows. Sign in to /leads (sets `sessionStorage.leads_pw`) to see all keys.\n\n";if(t.length===0)return`## 4. Global Settings (Live)
 
 ${e}*(no public settings)*
-`;const r=`## 4. Global Settings (Live — public-only)
+`;const o=`## 4. Global Settings (Live — public-only)
 
 ${e}**Total keys:** ${t.length}
 
 | Key | Value | Description |
 |-----|-------|-------------|
 `,i=t.map(n=>`| ${d(n.key)} | ${d(n.value)} | ${d(n.description??"")} |`).join(`
-`);return r+i+`
+`);return o+i+`
 `}catch(a){return`## 4. Global Settings (Live)
-${c("global_settings",a)}`}}async function k(){try{const{data:s,error:a}=await l.from("pits").select("*").order("name",{ascending:!0}).limit(1e4);if(a)throw a;const o=s??[];if(o.length===0)return`## 5. Active PITs (Live)
+${c("global_settings",a)}`}}async function k(){try{const{data:s,error:a}=await l.from("pits").select("*").order("name",{ascending:!0}).limit(1e4);if(a)throw a;const r=s??[];if(r.length===0)return`## 5. Active PITs (Live)
 
 *(no pits found)*
 `;let t=`## 5. Active PITs (Live)
 
-**Total PITs:** ${o.length}
+**Total PITs:** ${r.length}
 
-`;for(const e of o)t+=`### ${e.name} ${e.status!=="active"?`(${e.status})`:""}
+`;for(const e of r)t+=`### ${e.name} ${e.status!=="active"?`(${e.status})`:""}
 
 `,t+=`- **Address:** ${e.address}
 `,t+=`- **Coordinates:** ${e.lat}, ${e.lon}
@@ -955,33 +965,33 @@ ${c("global_settings",a)}`}}async function k(){try{const{data:s,error:a}=await l
 `,e.notes&&(t+=`- **Notes:** ${e.notes}
 `),t+=`
 `;return t}catch(s){return`## 5. Active PITs (Live)
-${c("pits",s)}`}}async function P(){try{const{data:s,error:a}=await l.from("zip_tax_rates").select("zip_code, tax_region_name, combined_rate, state_rate, local_rate").order("zip_code",{ascending:!0}).limit(1e4);if(a)throw a;const o=s??[];if(o.length===0)return`## 6. Service ZIP Codes (Live)
+${c("pits",s)}`}}async function P(){try{const{data:s,error:a}=await l.from("zip_tax_rates").select("zip_code, tax_region_name, combined_rate, state_rate, local_rate").order("zip_code",{ascending:!0}).limit(1e4);if(a)throw a;const r=s??[];if(r.length===0)return`## 6. Service ZIP Codes (Live)
 
 *(no ZIPs found)*
-`;const t=new Map;for(const i of o){const n=i.tax_region_name||"Unknown";t.has(n)||t.set(n,{zips:[],rate:i.combined_rate}),t.get(n).zips.push(i.zip_code)}const e=[...t.entries()].sort(([i],[n])=>i.localeCompare(n));let r=`## 6. Service ZIP Codes (Live)
+`;const t=new Map;for(const i of r){const n=i.tax_region_name||"Unknown";t.has(n)||t.set(n,{zips:[],rate:i.combined_rate}),t.get(n).zips.push(i.zip_code)}const e=[...t.entries()].sort(([i],[n])=>i.localeCompare(n));let o=`## 6. Service ZIP Codes (Live)
 
-**Total ZIPs:** ${o.length}
+**Total ZIPs:** ${r.length}
 
 ### By Parish/Region
 
 | Parish/Region | ZIP Count | Combined Rate |
 |---------------|-----------|---------------|
-`;for(const[i,n]of e)r+=`| ${d(i)} | ${n.zips.length} | ${(n.rate*100).toFixed(3)}% |
-`;return r+=`
+`;for(const[i,n]of e)o+=`| ${d(i)} | ${n.zips.length} | ${(n.rate*100).toFixed(3)}% |
+`;return o+=`
 **Full ZIP list (comma-separated):**
 
-${o.map(i=>i.zip_code).join(", ")}
-`,r}catch(s){return`## 6. Service ZIP Codes (Live)
-${c("zip_tax_rates",s)}`}}async function A(){try{const{data:s,error:a}=await l.from("city_pages").select("city_slug, status, region, page_views").limit(1e4);if(a)throw a;const o=s??[];if(o.length===0)return`## 11. City Pages & SEO (Live)
+${r.map(i=>i.zip_code).join(", ")}
+`,o}catch(s){return`## 6. Service ZIP Codes (Live)
+${c("zip_tax_rates",s)}`}}async function A(){try{const{data:s,error:a}=await l.from("city_pages").select("city_slug, status, region, page_views").limit(1e4);if(a)throw a;const r=s??[];if(r.length===0)return`## 11. City Pages & SEO (Live)
 
 *(no city pages found)*
-`;const t={};for(const r of o){const i=r.status||"unknown";t[i]||(t[i]=[]),t[i].push(r.city_slug)}Object.values(t).forEach(r=>r.sort());let e=`## 11. City Pages & SEO (Live)
+`;const t={};for(const o of r){const i=o.status||"unknown";t[i]||(t[i]=[]),t[i].push(o.city_slug)}Object.values(t).forEach(o=>o.sort());let e=`## 11. City Pages & SEO (Live)
 
-**Total pages:** ${o.length}
+**Total pages:** ${r.length}
 
-`;for(const r of Object.keys(t).sort())e+=`### ${r.charAt(0).toUpperCase()+r.slice(1)} (${t[r].length})
+`;for(const o of Object.keys(t).sort())e+=`### ${o.charAt(0).toUpperCase()+o.slice(1)} (${t[o].length})
 
-`,e+=t[r].map(i=>`\`${i}\``).join(", ")+`
+`,e+=t[o].map(i=>`\`${i}\``).join(", ")+`
 
 `;return e}catch(s){return`## 11. City Pages & SEO (Live)
 ${c("city_pages",s)}`}}async function L(){try{const{count:s,error:a}=await l.from("fraud_blocklist").select("*",{count:"exact",head:!0});if(a)throw a;return`## 13. Fraud System (Live)
@@ -990,28 +1000,28 @@ ${c("city_pages",s)}`}}async function L(){try{const{count:s,error:a}=await l.fro
 
 See \`mem://features/lead-and-fraud-management\` for full architecture.
 `}catch(s){return`## 13. Fraud System (Live)
-${c("fraud_blocklist",s)}`}}async function I(){try{const{count:s,error:a}=await l.from("reviews").select("*",{count:"exact",head:!0});if(a)throw a;return`## 14. Review Collection (Live)
+${c("fraud_blocklist",s)}`}}async function R(){try{const{count:s,error:a}=await l.from("reviews").select("*",{count:"exact",head:!0});if(a)throw a;return`## 14. Review Collection (Live)
 
 **Total reviews captured:** ${s??0}
 
 Automated 24hr post-delivery requests; 4+ stars redirect to Google My Business.
 `}catch(s){return`## 14. Review Collection (Live)
-${c("reviews",s)}`}}async function R(){const s=u();if(s)try{const{data:a,error:o}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_order_stats"}});if(o)throw o;const t=(a==null?void 0:a.stats)??{};let e=`## 18. Live Order Stats (via service role)
+${c("reviews",s)}`}}async function I(){const s=u();if(s)try{const{data:a,error:r}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_order_stats"}});if(r)throw r;const t=(a==null?void 0:a.stats)??{};let e=`## 18. Live Order Stats (via service role)
 
 `;e+=`**Total orders:** ${t.total??0}
 `,e+=`**Total revenue (gross):** $${Number(t.revenue??0).toFixed(2)}
 
 `,e+=`### By Status
 
-`;for(const[r,i]of Object.entries(t.byStatus??{}).sort())e+=`- ${r}: ${i}
+`;for(const[o,i]of Object.entries(t.byStatus??{}).sort())e+=`- ${o}: ${i}
 `;e+=`
 ### By Payment Method
 
-`;for(const[r,i]of Object.entries(t.byMethod??{}).sort())e+=`- ${r}: ${i}
+`;for(const[o,i]of Object.entries(t.byMethod??{}).sort())e+=`- ${o}: ${i}
 `;e+=`
 ### By Payment Status
 
-`;for(const[r,i]of Object.entries(t.byPayStatus??{}).sort())e+=`- ${r}: ${i}
+`;for(const[o,i]of Object.entries(t.byPayStatus??{}).sort())e+=`- ${o}: ${i}
 `;return t.latest&&(e+=`
 **Latest order:** ${t.latest}
 `),e+`
@@ -1020,7 +1030,7 @@ ${c("reviews",s)}`}}async function R(){const s=u();if(s)try{const{data:a,error:o
 > ⚠️ Service-role fetch failed: ${a instanceof Error?a.message:String(a)}
 
 Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populate.
-`}return"## 18. Live Order Stats\n\n> ℹ️ Anon role cannot read `orders` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function F(){const s=u();if(s)try{const{data:a,error:o}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_session_stats"}});if(o)throw o;const t=(a==null?void 0:a.stats)??{};let e=`## 19. Live Session Stats (via service role)
+`}return"## 18. Live Order Stats\n\n> ℹ️ Anon role cannot read `orders` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function F(){const s=u();if(s)try{const{data:a,error:r}=await l.functions.invoke("leads-auth",{body:{password:s,action:"get_session_stats"}});if(r)throw r;const t=(a==null?void 0:a.stats)??{};let e=`## 19. Live Session Stats (via service role)
 
 `;e+=`**Total sessions:** ${t.total??0}
 `,e+=`**Stripe link clicked:** ${t.stripeLinkClicked??0}
@@ -1034,14 +1044,14 @@ Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populat
 
 `,e+=`### By Stage
 
-`;for(const[r,i]of Object.entries(t.byStage??{}).sort())e+=`- ${r}: ${i}
+`;for(const[o,i]of Object.entries(t.byStage??{}).sort())e+=`- ${o}: ${i}
 `;return e+`
 `}catch(a){return console.warn("[docs] get_session_stats via leads-auth failed:",a),`## 19. Live Session Stats
 
 > ⚠️ Service-role fetch failed: ${a instanceof Error?a.message:String(a)}
 
 Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
-`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function z(){const[s,a,o,t,e,r,i,n]=await Promise.all([D(),k(),P(),A(),L(),I(),R(),F()]);return[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
+`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function z(){const[s,a,r,t,e,o,i,n]=await Promise.all([D(),k(),P(),A(),L(),R(),I(),F()]);return[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
 
 *Version: ${m} — Year 1, Build 01*
 *Generated: ${new Date().toISOString()} — Live database snapshot*
@@ -1050,7 +1060,7 @@ Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
 
 ---
 
-`,p,_,S,s,a,o,g,b,y,E,t,f,e,r,h,x,v,i,n,Y,N,w,O+`
+`,p,_,S,s,a,r,g,b,y,E,t,f,e,o,h,x,v,i,n,Y,N,w,O+`
 
 `+T,C].join(`
 ---
