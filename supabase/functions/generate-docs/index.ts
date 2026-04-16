@@ -489,27 +489,24 @@ Deno.serve(async (req) => {
 
     let schemaSection = "";
     for (const tableName of schemaTables) {
+      schemaSection += `\n### Table: \`${tableName}\`\n\n`;
       try {
-        // Use a simple select to get column info — we'll query the table with limit 0 to see structure
-        const { data: cols, error: colErr } = await sb.rpc("", {}).catch(() => ({ data: null, error: null }));
-        // Since we can't query information_schema via JS client, we'll document based on what we can fetch
-        const { data: sample } = await sb.from(tableName).select("*").limit(1);
-        if (sample && sample.length > 0) {
-          const columns = Object.keys(sample[0]);
-          schemaSection += `\n### Table: \`${tableName}\`\n`;
-          schemaSection += `| Column | Sample Type |\n|--------|------------|\n`;
-          for (const col of columns.sort()) {
-            const val = sample[0][col];
-            const type = val === null ? "nullable" : typeof val;
-            schemaSection += `| \`${col}\` | ${type} |\n`;
-          }
-        } else {
-          // Empty table — just list it
-          const { data: emptySample, error: emptyErr } = await sb.from(tableName).select("*").limit(0);
-          schemaSection += `\n### Table: \`${tableName}\`\n*(Empty table — no columns inferred)*\n`;
+        const { data: cols, error: colErr } = await sb.rpc("get_table_schema", { p_table: tableName });
+        if (colErr) {
+          schemaSection += `*(Error: ${colErr.message})*\n`;
+          continue;
         }
-      } catch {
-        schemaSection += `\n### Table: \`${tableName}\`\n*(Could not query)*\n`;
+        if (!cols || cols.length === 0) {
+          schemaSection += `*(empty or inaccessible)*\n`;
+          continue;
+        }
+        schemaSection += `| Column | Type | Nullable | Default |\n|--------|------|----------|---------|\n`;
+        for (const c of cols as any[]) {
+          const def = c.column_default == null ? "" : String(c.column_default).replace(/\|/g, "\\|").replace(/\n/g, " ");
+          schemaSection += `| \`${c.column_name}\` | ${c.data_type} | ${c.is_nullable} | ${def} |\n`;
+        }
+      } catch (e: any) {
+        schemaSection += `*(Could not query: ${e?.message || "unknown error"})*\n`;
       }
     }
 
