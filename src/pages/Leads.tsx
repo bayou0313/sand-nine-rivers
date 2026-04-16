@@ -462,6 +462,15 @@ const Leads = () => {
   const [exportingDocs, setExportingDocs] = useState(false);
   const [docsExportError, setDocsExportError] = useState("");
   const [docsCurrentVersion, setDocsCurrentVersion] = useState("v1.01");
+  useEffect(() => {
+    (async () => {
+      try {
+        const { getCurrentDocsVersion } = await import("@/lib/generateProjectDocs");
+        const v = await getCurrentDocsVersion();
+        if (v) setDocsCurrentVersion(v);
+      } catch { /* ignore */ }
+    })();
+  }, []);
   const [toggling, setToggling] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
