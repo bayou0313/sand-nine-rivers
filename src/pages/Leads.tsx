@@ -459,6 +459,8 @@ const Leads = () => {
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [error, setError] = useState("");
+  const [exportingDocs, setExportingDocs] = useState(false);
+  const [docsExportError, setDocsExportError] = useState("");
   const [toggling, setToggling] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
@@ -4319,6 +4321,61 @@ const Leads = () => {
 
         return (
           <>
+            {/* ── Documentation Export ── */}
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>📄 Project Documentation</h3>
+                  <p className="text-xs" style={{ color: T.textSecond }}>
+                    Generates a live snapshot of the full codebase — DB schema, pits, settings, ZIP codes, architecture.
+                    Upload to AI project knowledge after download.
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    setExportingDocs(true);
+                    setDocsExportError("");
+                    try {
+                      const res = await fetch(
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-docs`,
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                          },
+                          body: JSON.stringify({ password: storedPassword() }),
+                        }
+                      );
+                      if (!res.ok) {
+                        const err = await res.text();
+                        setDocsExportError(`Failed: ${err}`);
+                        return;
+                      }
+                      const blob = await res.blob();
+                      const today = new Date().toISOString().split("T")[0];
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `RIVERSAND_DOCS_${today}.md`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    } catch (e: any) {
+                      setDocsExportError(e.message || "Export failed");
+                    } finally {
+                      setExportingDocs(false);
+                    }
+                  }}
+                  disabled={exportingDocs}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: "#2563EB", minWidth: "160px" }}
+                >
+                  {exportingDocs ? "Generating..." : "Export Live Docs"}
+                </button>
+              </div>
+              {docsExportError && <p className="text-xs mt-2" style={{ color: "#EF4444" }}>{docsExportError}</p>}
+            </div>
+
             {/* SITE MODE TOGGLE */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Site Mode</h3>
