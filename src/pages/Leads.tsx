@@ -4185,48 +4185,7 @@ const Leads = () => {
       }
 
       case "settings": {
-        const SEO_CHECKLIST_ITEMS = [
-          { section: "E-E-A-T SIGNALS", items: [
-            { id: "eeat_credentials", label: "Business credentials visible on site" },
-            { id: "eeat_sourcing", label: "Real sand sourcing story present" },
-            { id: "eeat_sameday_proof", label: "Same-day delivery claim supported with proof" },
-            { id: "eeat_trust", label: "Local trust signals present" },
-            { id: "eeat_contact", label: "Contact info prominently displayed" },
-            { id: "eeat_owner", label: "Owner name and photo present" },
-          ]},
-          { section: "LOCAL SEO", items: [
-            { id: "local_gbp_created", label: "Google Business Profile created" },
-            { id: "local_gbp_verified", label: "GBP verified" },
-            { id: "local_nap", label: "NAP consistent sitewide (Name, Address, Phone)" },
-            { id: "local_area", label: "Service area clearly stated" },
-            { id: "local_parishes", label: "Louisiana parishes mentioned" },
-            { id: "local_schema", label: "Local schema markup added" },
-          ]},
-          { section: "CONTENT QUALITY", items: [
-            { id: "content_faq", label: "FAQ section present" },
-            { id: "content_faq_detailed", label: "FAQ answers are detailed" },
-            { id: "content_use_cases", label: "River sand use cases explained" },
-            { id: "content_comparison", label: "Comparison vs other materials present" },
-            { id: "content_delivery", label: "Delivery process explained" },
-          ]},
-          { section: "INTERNAL LINKS", items: [
-            { id: "links_order", label: "Homepage links to order page" },
-            { id: "links_faq", label: "FAQ links to relevant sections" },
-            { id: "links_footer", label: "Footer links complete" },
-            { id: "links_city", label: "City pages link back to homepage" },
-          ]},
-          { section: "TECHNICAL", items: [
-            { id: "tech_sitemap", label: "Sitemap submitted to GSC" },
-            { id: "tech_broken", label: "No broken links" },
-            { id: "tech_alt", label: "Images have alt text" },
-            { id: "tech_speed", label: "Page loads under 3 seconds" },
-            { id: "tech_mobile", label: "Mobile friendly confirmed" },
-          ]},
-        ];
 
-        const allChecklistItems = SEO_CHECKLIST_ITEMS.flatMap(s => s.items);
-        const checklistDone = allChecklistItems.filter(i => seoChecklist[i.id]?.done).length;
-        const checklistTotal = allChecklistItems.length;
 
         const saveSeoSettings = async () => {
           setSavingSeo(true);
