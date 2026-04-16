@@ -4280,7 +4280,7 @@ const Leads = () => {
           }
         };
 
-
+        const saveChecklist = async (updated: Record<string, { done: boolean; notes: string }>) => {
           setSeoChecklist(updated);
           const json = JSON.stringify(updated);
           try {
