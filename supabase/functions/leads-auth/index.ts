@@ -1557,38 +1557,62 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
 
     // ── CHECK GOOGLE INTEGRATIONS ──
     if (action === "check_google_integrations") {
-      const { gtm_id, ga4_id, clarity_id, gmb_url } = body;
-      const results: Record<string, "connected" | "invalid" | "not_set"> = {};
+      const results: Record<string, "connected" | "invalid" | "not_set" | "dns_verified"> = {};
+      try {
+        const { gtm_id, ga4_id, clarity_id, gmb_url, gsc_id } = body;
 
-      // GTM
-      if (gtm_id) {
+        // GTM
+        if (gtm_id) {
+          try {
+            const r = await fetch(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtm_id)}`);
+            results.gtm = r.ok ? "connected" : "invalid";
+          } catch { results.gtm = "invalid"; }
+        } else { results.gtm = "not_set"; }
+
+        // GA4 — format validation only
+        if (ga4_id) {
+          results.ga4 = /^G-[A-Z0-9]+$/.test(ga4_id) ? "connected" : "invalid";
+        } else { results.ga4 = "not_set"; }
+
+        // Clarity
+        if (clarity_id) {
+          try {
+            const r = await fetch(`https://www.clarity.ms/tag/${encodeURIComponent(clarity_id)}`);
+            results.clarity = r.ok ? "connected" : "invalid";
+          } catch { results.clarity = "invalid"; }
+        } else { results.clarity = "not_set"; }
+
+        // GMB URL — HEAD then GET fallback
+        if (gmb_url) {
+          try {
+            let r = await fetch(gmb_url, { method: "HEAD", redirect: "follow" });
+            if (!r.ok) r = await fetch(gmb_url, { method: "GET", redirect: "follow" });
+            results.gmb = r.ok ? "connected" : "invalid";
+          } catch { results.gmb = "invalid"; }
+        } else { results.gmb = "not_set"; }
+
+        // GSC — supports DNS verification (no meta tag required)
         try {
-          const r = await fetch(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtm_id)}`);
-          results.gtm = r.ok ? "connected" : "invalid";
-        } catch { results.gtm = "invalid"; }
-      } else { results.gtm = "not_set"; }
-
-      // GA4 — format validation only (no public endpoint)
-      if (ga4_id) {
-        results.ga4 = /^G-[A-Z0-9]+$/.test(ga4_id) ? "connected" : "invalid";
-      } else { results.ga4 = "not_set"; }
-
-      // Clarity
-      if (clarity_id) {
-        try {
-          const r = await fetch(`https://www.clarity.ms/tag/${encodeURIComponent(clarity_id)}`);
-          results.clarity = r.ok ? "connected" : "invalid";
-        } catch { results.clarity = "invalid"; }
-      } else { results.clarity = "not_set"; }
-
-      // GMB URL — try HEAD, fallback to GET
-      if (gmb_url) {
-        try {
-          let r = await fetch(gmb_url, { method: "HEAD", redirect: "follow" });
-          if (!r.ok) r = await fetch(gmb_url, { method: "GET", redirect: "follow" });
-          results.gmb = r.ok ? "connected" : "invalid";
-        } catch { results.gmb = "invalid"; }
-      } else { results.gmb = "not_set"; }
+          const pageRes = await fetch("https://riversand.net/", { redirect: "follow" });
+          const html = pageRes.ok ? await pageRes.text() : "";
+          const metaMatch = html.match(/<meta[^>]+name=["']google-site-verification["'][^>]+content=["']([^"']+)["']/i);
+          if (gsc_id) {
+            if (metaMatch && metaMatch[1] && metaMatch[1].includes(gsc_id.replace(/^google-site-verification=?/i, ""))) {
+              results.gsc = "connected";
+            } else if (metaMatch) {
+              results.gsc = "invalid";
+            } else {
+              results.gsc = "dns_verified";
+            }
+          } else {
+            results.gsc = metaMatch ? "connected" : "dns_verified";
+          }
+        } catch {
+          results.gsc = gsc_id ? "invalid" : "dns_verified";
+        }
+      } catch (err) {
+        console.error("check_google_integrations error:", err);
+      }
 
       return new Response(
         JSON.stringify({ success: true, results }),

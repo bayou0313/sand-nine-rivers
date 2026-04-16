@@ -608,7 +608,7 @@ const Leads = () => {
   const [notrackLoading, setNotrackLoading] = useState(false);
   const [seoSettings, setSeoSettings] = useState<Record<string, string>>({});
   const [savingSeo, setSavingSeo] = useState(false);
-  const [integrationStatus, setIntegrationStatus] = useState<Record<string, "connected" | "invalid" | "not_set" | "checking">>({});
+  const [integrationStatus, setIntegrationStatus] = useState<Record<string, "connected" | "invalid" | "not_set" | "checking" | "dns_verified">>({});
   const [seoChecklist, setSeoChecklist] = useState<Record<string, { done: boolean; notes: string }>>({});
   const [seoAuditResults, setSeoAuditResults] = useState<any>(null);
   const [seoAuditing, setSeoAuditing] = useState(false);
@@ -4253,21 +4253,22 @@ const Leads = () => {
           } finally { setSavingSeo(false); }
         };
 
-        const checkIntegrations = async (only?: "gtm" | "ga4" | "clarity" | "gmb") => {
+        const checkIntegrations = async (only?: "gtm" | "ga4" | "clarity" | "gmb" | "gsc") => {
           const fields = {
             gtm_id: seoSettings.seo_gtm_id || "",
             ga4_id: seoSettings.seo_ga4_id || "",
             clarity_id: seoSettings.seo_clarity_id || "",
             gmb_url: seoSettings.gmb_review_url || "",
+            gsc_id: seoSettings.seo_gsc_id || "",
           };
           const payload: any = {};
           if (only) {
-            const map = { gtm: "gtm_id", ga4: "ga4_id", clarity: "clarity_id", gmb: "gmb_url" } as const;
+            const map = { gtm: "gtm_id", ga4: "ga4_id", clarity: "clarity_id", gmb: "gmb_url", gsc: "gsc_id" } as const;
             payload[map[only]] = (fields as any)[map[only]];
             setIntegrationStatus(s => ({ ...s, [only]: "checking" }));
           } else {
             Object.assign(payload, fields);
-            setIntegrationStatus({ gtm: "checking", ga4: "checking", clarity: "checking", gmb: "checking" });
+            setIntegrationStatus({ gtm: "checking", ga4: "checking", clarity: "checking", gmb: "checking", gsc: "checking" });
           }
           try {
             const { data, error } = await supabase.functions.invoke("leads-auth", {
@@ -4989,8 +4990,9 @@ const Leads = () => {
                   {/* Google & Analytics Integrations */}
                   {(() => {
                     const StatusDot = ({ s }: { s?: string }) => {
-                      const color = s === "connected" ? "#10B981" : s === "invalid" ? "#EF4444" : s === "checking" ? "#F59E0B" : "#9CA3AF";
-                      return <span className={`inline-block w-2 h-2 rounded-full ${s === "checking" ? "animate-pulse" : ""}`} style={{ backgroundColor: color }} title={s || "not_set"} />;
+                      const color = s === "connected" ? "#10B981" : s === "invalid" ? "#EF4444" : s === "checking" ? "#F59E0B" : s === "dns_verified" ? "#3B82F6" : "#9CA3AF";
+                      const label = s === "dns_verified" ? "DNS Verified" : (s || "not_set");
+                      return <span className={`inline-block w-2 h-2 rounded-full ${s === "checking" ? "animate-pulse" : ""}`} style={{ backgroundColor: color }} title={label} />;
                     };
                     const IconBtn = ({ onClick, title, children }: any) => (
                       <button type="button" onClick={onClick} title={title} className="p-1 rounded hover:bg-gray-100 transition-colors" style={{ color: BRAND_NAVY }}>
@@ -5003,6 +5005,9 @@ const Leads = () => {
                           <label className="text-xs text-gray-500">{label}</label>
                           <div className="flex items-center gap-1">
                             {statusKey && <StatusDot s={integrationStatus[statusKey]} />}
+                            {statusKey && integrationStatus[statusKey] === "dns_verified" && (
+                              <span className="text-[10px] font-medium" style={{ color: "#3B82F6" }}>DNS Verified</span>
+                            )}
                             {statusKey && (
                               <IconBtn onClick={() => checkIntegrations(statusKey)} title="Re-check this field">
                                 <RefreshCw size={12} className={integrationStatus[statusKey] === "checking" ? "animate-spin" : ""} />
@@ -5032,7 +5037,7 @@ const Leads = () => {
                           <Row label="GTM Container ID" keyName="seo_gtm_id" placeholder="GTM-XXXXXXX" helper="Drives GTM on live site dynamically — changes apply on save" statusKey="gtm" dashUrl="https://tagmanager.google.com" mono />
                           <Row label="GA4 Measurement ID" keyName="seo_ga4_id" placeholder="G-XXXXXXXXXX" helper="Paste into GA4 Configuration tag inside GTM" statusKey="ga4" dashUrl="https://analytics.google.com" mono />
                           <Row label="GA4 Property ID" keyName="seo_ga4_property_id" placeholder="numeric" helper="Reference only — GA4 Admin → Property Settings" dashUrl="https://analytics.google.com" mono />
-                          <Row label="GSC Verification ID" keyName="seo_gsc_id" placeholder="google-site-verification=..." helper="Meta tag content value from Search Console" dashUrl="https://search.google.com/search-console" mono />
+                          <Row label="GSC Verification ID" keyName="seo_gsc_id" placeholder="(blank if DNS-verified)" helper="Verified via DNS — no meta tag required" statusKey="gsc" dashUrl="https://search.google.com/search-console" mono />
                           <Row label="GMB Review URL" keyName="gmb_review_url" placeholder="https://g.page/r/..." helper="Used in post-delivery review request emails" statusKey="gmb" dashUrl={() => seoSettings.gmb_review_url} />
                           <Row label="GBP URL" keyName="seo_gbp_url" placeholder="https://g.page/..." helper="Google Business Profile public URL" dashUrl={() => seoSettings.seo_gbp_url} />
                           <Row label="Microsoft Clarity ID" keyName="seo_clarity_id" placeholder="xxxxxxxxxx" helper="Clarity → Settings → Setup → Project ID" statusKey="clarity" dashUrl="https://clarity.microsoft.com" mono />
