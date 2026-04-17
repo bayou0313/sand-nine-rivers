@@ -4864,8 +4864,8 @@ const Leads = () => {
                   </div>
 
                   {/* Processing Fee Settings */}
-                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: T.textPrimary }}>Processing Fees</h4>
-                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Applied to card payments and COD late payment conversions</p>
+                  <h4 className="font-display uppercase tracking-wide text-sm mt-6 mb-1" style={{ color: T.textPrimary }}>Processing Fees</h4>
+                  <p className="text-xs mb-3 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Applied to card payments and COD late payment conversions</p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Card processing fee (%)</label>
@@ -4898,8 +4898,8 @@ const Leads = () => {
                   </div>
 
                   {/* Pricing Mode */}
-                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: T.textPrimary }}>Pricing Display Mode</h4>
-                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                  <h4 className="font-display uppercase tracking-wide text-sm mt-6 mb-1" style={{ color: T.textPrimary }}>Pricing Display Mode</h4>
+                  <p className="text-xs mb-3 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                     <strong>Transparent:</strong> Processing fee shown as separate line item.{" "}
                     <strong>Baked In:</strong> Fee included in base price; COD customers get a discount.
                   </p>
@@ -4925,8 +4925,8 @@ const Leads = () => {
                     </div>
                   </div>
                   {editSettings.pricing_mode === "baked" && (
-                    <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: "#FEF3C7", border: "1px solid #F59E0B" }}>
-                      <p className="text-xs" style={{ color: "#92400E" }}>
+                    <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: "#FEF3C7", border: `1px solid ${WARN_YELLOW}` }}>
+                      <p className="text-xs" style={{ color: WARN_YELLOW }}>
                         ⚠️ Baked mode is active. Pit base prices include the processing fee. Switching to Transparent will require manually adjusting pit prices.
                       </p>
                     </div>
@@ -4942,8 +4942,8 @@ const Leads = () => {
 
                 {/* Delivery Schedule */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Delivery Schedule</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Configure delivery days and cutoff times</p>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Delivery Schedule</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Configure delivery days and cutoff times</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Same-day cutoff</label>
@@ -4985,8 +4985,8 @@ const Leads = () => {
 
                 {/* Notifications */}
                 <div className="rounded-xl border shadow-sm p-6" style={{ borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Notifications</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Email alerts and notifications</p>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Notifications</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Email alerts and notifications</p>
                   <div className="space-y-3">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Owner dispatch email</label>
@@ -5019,7 +5019,7 @@ const Leads = () => {
               <>
                 {/* Redirect to profile page */}
                 <div className="rounded-xl border shadow-sm p-6" style={{ borderColor: T.cardBorder }}>
-                  <p className="text-sm text-gray-500">Business profile settings are available in the <button onClick={() => setActivePage("profile")} className="font-medium underline" style={{ color: BRAND_GOLD }}>Business Profile</button> page.</p>
+                  <p className="text-sm" style={{ color: T.textSecond }}>Business profile settings are available in the <button onClick={() => setActivePage("profile")} className="font-medium underline" style={{ color: BRAND_GOLD }}>Business Profile</button> page.</p>
                 </div>
               </>
             )}
@@ -5029,13 +5029,13 @@ const Leads = () => {
                 {/* ─── SECTION 1: SITE AUDIT ─── */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium" style={{ color: T.textPrimary }}>Site Audit</h3>
+                    <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>Site Audit</h3>
                     <Button onClick={runSeoAudit} disabled={seoAuditing} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {seoAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Search className="w-4 h-4 mr-1" />}
                       Scan riversand.net
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Automated scan based on Art of SEO framework</p>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Automated scan based on Art of SEO framework</p>
 
                   {seoAuditResults && (
                     <>
@@ -5068,8 +5068,8 @@ const Leads = () => {
 
                 {/* ─── SECTION 3: SEO SETTINGS ─── */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>SEO Settings</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Editable fields — changes apply to live site</p>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>SEO Settings</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Editable fields — changes apply to live site</p>
 
                   {/* Homepage Meta */}
                   <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: T.textSecond }}>HOMEPAGE META</p>
@@ -5253,8 +5253,8 @@ const Leads = () => {
             {settingsTab === "tracking" && (
               <>
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>No-Track IP Addresses</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>No-Track IP Addresses</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                     IP addresses listed here will be silently excluded from visitor session tracking, lead capture, and analytics.
                     Use this to prevent your own browsing from polluting data.
                   </p>
