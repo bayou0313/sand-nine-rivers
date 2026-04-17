@@ -6760,22 +6760,28 @@ const Leads = () => {
 
         return (
           <div className="space-y-6">
-            {/* Refresh */}
-            <div className="flex justify-end">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {fraudLoading ? "—" : `${fraudEvents.length} events · ${fraudBlocklist.length} blocks · ${failedAttempts.length} failed payments (24h)`}
+              </p>
               <Button size="sm" onClick={fetchFraudData} disabled={fraudLoading} variant="outline">
-                {fraudLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                <span className="ml-1">Refresh</span>
+                {fraudLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
               </Button>
             </div>
 
             {/* ─── SECTION 1: LIVE THREAT FEED ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <Shield className="w-4 h-4 inline mr-2" style={{ color: ALERT_RED }} />
                 Live Threat Feed
               </h3>
               {fraudEvents.length === 0 ? (
-                <p className="text-sm" style={{ color: T.textSecond }}>No fraud events recorded yet.</p>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p className="text-sm" style={{ color: T.textSecond }}>No fraud events recorded yet.</p>
+                </div>
               ) : (
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {fraudEvents.slice(0, 50).map((evt: any) => {
