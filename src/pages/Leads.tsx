@@ -2878,29 +2878,39 @@ const Leads = () => {
       case "pipeline":
         return (
           <>
-            <div className="mb-4 text-center">
-              <p className="text-lg font-bold" style={{ color: T.textPrimary }}>
-                Active pipeline: <span style={{ color: BRAND_GOLD }}>${metrics.pipelineValue.toLocaleString()}</span>
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {parsedLeads.length} leads · Active pipeline:{" "}
+                <span className="font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>
+                  ${metrics.pipelineValue.toLocaleString()}
+                </span>
               </p>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {STAGES.map(stage => {
                 const stageLeads = parsedLeads.filter(l => l.stage === stage);
                 return (
-                  <div key={stage} className="rounded-xl border overflow-hidden" style={{ borderColor: STAGE_COLORS[stage] + "40" }}>
+                  <div key={stage} className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: STAGE_COLORS[stage] + "40", backgroundColor: T.cardBg }}>
                     <div className="px-3 py-2 flex items-center justify-between" style={{ backgroundColor: STAGE_COLORS[stage] }}>
-                      <span className="text-white text-xs font-bold uppercase tracking-wider">{stage}</span>
-                      <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">{stageLeads.length}</span>
+                      <span className="font-display text-sm uppercase tracking-wide text-white">{stage}</span>
+                      <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>{stageLeads.length}</span>
                     </div>
-                    <div className="bg-gray-50 p-2 space-y-2 min-h-[200px] max-h-[500px] overflow-y-auto">
-                      {stageLeads.map(l => (
-                        <div key={l.id} onClick={() => openDetail(l)} className="rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                          <p className="font-mono text-xs mb-1" style={{ color: BRAND_GOLD }}>{l.lead_number || "—"}</p>
+                    <div className="p-2 space-y-2 min-h-[200px] max-h-[500px] overflow-y-auto" style={{ backgroundColor: '#FAFAFA' }}>
+                      {stageLeads.length > 0 ? stageLeads.map(l => (
+                        <div key={l.id} onClick={() => openDetail(l)} className="rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                          <p className="text-xs font-semibold mb-1" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{l.lead_number || "—"}</p>
                           <p className="font-bold text-sm" style={{ color: T.textPrimary }}>{l.customer_name}</p>
-                          <p className="text-xs text-gray-500">{l.zip} • {l.distance_miles?.toFixed(1) || "?"} mi</p>
-                          {l.customer_email && <p className="text-xs text-gray-400 truncate">{l.customer_email}</p>}
+                          <p className="text-xs" style={{ color: T.textSecond }}>{l.zip} • {l.distance_miles?.toFixed(1) || "?"} mi</p>
+                          {l.customer_email && <p className="text-xs truncate" style={{ color: T.textSecond }}>{l.customer_email}</p>}
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center py-6">
+                          <div className="text-2xl mb-1">📭</div>
+                          <p className="text-xs" style={{ color: T.textSecond }}>No leads</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
