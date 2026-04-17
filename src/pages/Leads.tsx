@@ -2919,66 +2919,96 @@ const Leads = () => {
           </>
         );
 
-      case "revenue":
+      case "revenue": {
+        const hotZips = zipData.filter(z => z.priority === "hot");
+        const maxRev = Math.max(...hotZips.map(z => z.count * 5 * basePrice * 4), 1);
         return (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
-                <p className="text-white/60 text-sm">Immediate Opportunity</p>
-                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.notContacted * basePrice).toLocaleString()}</p>
-                <p className="text-white/40 text-xs mt-1">{metrics.notContacted} uncontacted leads × ${basePrice}</p>
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {hotZips.length} hot ZIPs · revenue projections
+              </p>
+            </div>
+
+            {/* §5 Metric Cards (2-up) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Immediate Opportunity</div>
+                <div className="text-2xl font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${(metrics.notContacted * basePrice).toLocaleString()}</div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>{metrics.notContacted} uncontacted leads × ${basePrice}</div>
               </div>
-              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
-                <p className="text-white/60 text-sm">Total Pipeline</p>
-                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.total * basePrice).toLocaleString()}</p>
-                <p className="text-white/40 text-xs mt-1">{metrics.total} total leads × ${basePrice}</p>
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Total Pipeline</div>
+                <div className="text-2xl font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${(metrics.total * basePrice).toLocaleString()}</div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>{metrics.total} total leads × ${basePrice}</div>
               </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                    {["ZIP / Market", "Leads", "Monthly Revenue", "Break-even (months)"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-bold text-white uppercase">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {zipData.filter(z => z.priority === "hot").map((z, i) => {
-                    const monthlyRev = z.count * 5 * basePrice * 4;
-                    const breakEven = monthlyRev > 0 ? (3000 / monthlyRev).toFixed(1) : "—";
+
+            {/* §11 Table */}
+            {hotZips.length > 0 ? (
+              <div className="overflow-x-auto rounded-xl border mb-4" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      {["ZIP / Market", "Leads", "Monthly Revenue", "Break-even (months)"].map(h => (
+                        <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hotZips.map((z, i) => {
+                      const monthlyRev = z.count * 5 * basePrice * 4;
+                      const breakEven = monthlyRev > 0 ? (3000 / monthlyRev).toFixed(1) : "—";
+                      return (
+                        <tr key={z.zip} className="border-t hover:bg-gray-50 transition-colors"
+                          style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                          <td className="px-4 py-3 font-medium" style={{ color: T.textPrimary }}>{z.zip} — {z.city}, {z.state}</td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{z.count}</td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${monthlyRev.toLocaleString()}</td>
+                          <td className="px-4 py-3" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{breakEven} mo</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-xl border p-12 text-center mb-4" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No hot markets yet</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Top demand ZIPs will appear here.</p>
+              </div>
+            )}
+
+            {/* Bar chart card */}
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>Projected Monthly Revenue by Market</h3>
+              {hotZips.length > 0 ? (
+                <div className="space-y-3">
+                  {hotZips.map(z => {
+                    const rev = z.count * 5 * basePrice * 4;
                     return (
-                      <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
-                        <td className="px-4 py-3 font-bold" style={{ color: T.textPrimary }}>{z.zip} — {z.city}, {z.state}</td>
-                        <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>{z.count}</td>
-                        <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>${monthlyRev.toLocaleString()}</td>
-                        <td className="px-4 py-3">{breakEven} mo</td>
-                      </tr>
+                      <div key={z.zip} className="flex items-center gap-3">
+                        <span className="text-xs font-semibold w-16" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{z.zip}</span>
+                        <div className="flex-1 h-6 rounded overflow-hidden" style={{ backgroundColor: T.cardBorder }}>
+                          <div className="h-full rounded" style={{ width: `${(rev / maxRev) * 100}%`, backgroundColor: rev === maxRev ? BRAND_GOLD : T.textPrimary }} />
+                        </div>
+                        <span className="text-xs font-semibold w-24 text-right" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${rev.toLocaleString()}</span>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-            <div className="rounded-xl border shadow-sm mt-4 p-6" style={{ borderColor: T.cardBorder }}>
-              <h3 className="text-sm font-bold mb-4" style={{ color: T.textPrimary }}>Projected Monthly Revenue by Market</h3>
-              <div className="space-y-3">
-                {zipData.filter(z => z.priority === "hot").map(z => {
-                  const rev = z.count * 5 * basePrice * 4;
-                  const maxRev = Math.max(...zipData.filter(zz => zz.priority === "hot").map(zz => zz.count * 5 * basePrice * 4), 1);
-                  return (
-                    <div key={z.zip} className="flex items-center gap-3">
-                      <span className="text-xs font-mono w-16" style={{ color: T.textPrimary }}>{z.zip}</span>
-                      <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
-                        <div className="h-full rounded" style={{ width: `${(rev / maxRev) * 100}%`, backgroundColor: rev === maxRev ? BRAND_GOLD : T.textPrimary }} />
-                      </div>
-                      <span className="text-xs font-bold w-24 text-right" style={{ color: BRAND_GOLD }}>${rev.toLocaleString()}</span>
-                    </div>
-                  );
-                })}
-              </div>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="text-3xl mb-2">📭</div>
+                  <p className="text-sm" style={{ color: T.textSecond }}>No revenue projections yet</p>
+                </div>
+              )}
             </div>
           </>
         );
+      }
 
       case "pit":
         return (
