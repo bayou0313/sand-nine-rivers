@@ -21,7 +21,6 @@ import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
-import { injectGTM } from "@/lib/gtm";
 
 const FALLBACK_LOW = "195.00";
 const FALLBACK_HIGH = "231.00";
