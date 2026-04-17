@@ -2825,18 +2825,68 @@ const Leads = () => {
         );
       }
 
-      case "zip":
+      case "zip": {
+        const hotZipsCount = zipData.filter(z => z.priority === "hot").length;
+        const totalZipLeads = zipData.reduce((s, z) => s + z.count, 0);
+        const estTotalMonthly = zipData.reduce((s, z) => s + z.count * basePrice * 20, 0);
+        const fmtMoneyShort = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
+        // §7 Priority pill — tokenized via STATUS_COLORS where possible
+        const priorityColors: Record<string, { bg: string; text: string }> = {
+          hot:  STATUS_COLORS.cod      || { bg: '#FDF8F0', text: BRAND_GOLD },
+          warm: STATUS_COLORS.called   || { bg: '#EFF6FF', text: '#1A6BB8' },
+          cold: STATUS_COLORS.inactive || { bg: '#F3F4F6', text: '#6B7280' },
+        };
+
         return (
           <>
-            {/* §4 Tab Header */}
+            {/* §4 Tab Header — count + Refresh */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm" style={{ color: T.textSecond }}>
                 {zipData.length} ZIPs · 2+ leads = confirmed unserved demand
               </p>
+              <Button onClick={refreshLeads} disabled={leadsLoading} size="sm" variant="outline">
+                {leadsLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
             </div>
 
-            {/* Insight banner */}
-            <div className="rounded-xl border p-4 mb-4" style={{ backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }}>
+            {/* §5 Metric Cards — 4-up summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Total ZIPs</div>
+                <div className="text-2xl font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+                  {leadsLoading && zipData.length === 0 ? '—' : zipData.length}
+                </div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>with lead activity</div>
+              </div>
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Hot ZIPs</div>
+                <div className="text-2xl font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>
+                  {leadsLoading && zipData.length === 0 ? '—' : hotZipsCount}
+                </div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>expansion priority</div>
+              </div>
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Total leads</div>
+                <div className="text-2xl font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+                  {leadsLoading && zipData.length === 0 ? '—' : totalZipLeads}
+                </div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>across all ZIPs</div>
+              </div>
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Est. monthly rev</div>
+                <div className="text-2xl font-semibold" style={{ color: POSITIVE, fontVariantNumeric: 'tabular-nums' }}>
+                  {leadsLoading && zipData.length === 0 ? '—' : fmtMoneyShort(estTotalMonthly)}
+                </div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>if fully captured</div>
+              </div>
+            </div>
+
+            {/* Insight banner — tokenized */}
+            <div className="rounded-xl border p-4 mb-4" style={{ backgroundColor: '#FDF8F0', borderColor: BRAND_GOLD + '40' }}>
               <p className="text-sm" style={{ color: T.textPrimary }}>
                 <strong>💡 ZIPs with 2+ leads = confirmed unserved demand.</strong> These are your next expansion markets.
               </p>
@@ -2854,11 +2904,6 @@ const Leads = () => {
                   </thead>
                   <tbody>
                     {zipData.map((z, i) => {
-                      const priorityColors: Record<string, { bg: string; text: string }> = {
-                        hot: { bg: '#FDF8F0', text: BRAND_GOLD },
-                        warm: { bg: '#EFF6FF', text: '#1A6BB8' },
-                        cold: { bg: '#F3F4F6', text: '#6B7280' },
-                      };
                       const pc = priorityColors[z.priority] || priorityColors.cold;
                       return (
                         <tr key={z.zip} className="border-t hover:bg-gray-50 transition-colors"
@@ -2895,6 +2940,7 @@ const Leads = () => {
             )}
           </>
         );
+      }
 
       case "pipeline":
         return (
