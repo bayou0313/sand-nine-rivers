@@ -5757,24 +5757,48 @@ const Leads = () => {
         ];
 
         const cardStyle: React.CSSProperties = {
-          background: "white", border: "0.5px solid #F3F4F6", borderRadius: 12, overflow: "hidden"
+          backgroundColor: T.cardBg, border: `1px solid ${T.cardBorder}`, borderRadius: 12, overflow: "hidden"
         };
+
+        // GUIDELINES.md §5 — Metric cards (Orders runs 5-up; documented deviation from 4-up spec)
+        const metrics = [
+          { label: "Total orders",       value: ordersMetrics?.total ?? allOrders.length, color: T.textPrimary },
+          { label: "Pending",            value: ordersMetrics?.pending ?? 0,              color: WARN_YELLOW },
+          { label: "Confirmed",          value: ordersMetrics?.confirmed ?? 0,            color: "#3B82F6" },
+          { label: "Today's deliveries", value: ordersMetrics?.today_deliveries ?? 0,     color: POSITIVE },
+          { label: "Revenue (30d)",      value: ordersMetrics ? fmtMoney(ordersMetrics.revenue_30d) : "—", color: POSITIVE,
+            sub: ordersMetrics ? `${ordersMetrics.paid_count_30d} paid orders` : undefined },
+        ];
 
         return (
           <div>
-            {/* Metric cards */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(5,minmax(0,1fr))", gap:10, marginBottom:16 }}>
-              {[
-                { label:"Total orders",      val: ordersMetrics?.total ?? allOrders.length, color:undefined },
-                { label:"Pending",           val: ordersMetrics?.pending ?? 0,              color:"#D97706" },
-                { label:"Confirmed",         val: ordersMetrics?.confirmed ?? 0,            color:"#2563EB" },
-                { label:"Today's deliveries",val: ordersMetrics?.today_deliveries ?? 0,     color:"#16A34A" },
-                { label:"Revenue (30d)",     val: ordersMetrics ? fmtMoney(ordersMetrics.revenue_30d) : "—", color:"#16A34A" },
-              ].map((m, i) => (
-                <div key={i} style={{ background:"#F9FAFB", borderRadius:8, padding:"12px 14px" }}>
-                  <div style={{ fontSize:10, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:".05em", marginBottom:5 }}>{m.label}</div>
-                  <div style={{ fontSize:22, fontWeight:500, lineHeight:1, color: m.color || "inherit" }}>{m.val}</div>
-                  {i===4 && ordersMetrics && <div style={{ fontSize:10, color:"#9CA3AF", marginTop:4 }}>{ordersMetrics.paid_count_30d} paid orders</div>}
+            {/* §4 Tab header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {ordersLoading && !allOrders.length ? "Loading…" : `${filteredOrders.length} order${filteredOrders.length === 1 ? "" : "s"}`}
+              </p>
+              <Button onClick={fetchAllOrders} disabled={ordersLoading} size="sm" variant="outline">
+                {ordersLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+
+            {/* §5 Metric cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              {metrics.map(m => (
+                <div key={m.label} className="rounded-xl border p-5"
+                  style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1"
+                    style={{ color: T.textSecond }}>{m.label}</div>
+                  <div className="text-2xl font-semibold"
+                    style={{ color: m.color, fontVariantNumeric: "tabular-nums" }}>
+                    {ordersLoading && !allOrders.length ? "—" : m.value}
+                  </div>
+                  {m.sub && (
+                    <div className="text-xs mt-1" style={{ color: T.textSecond }}>{m.sub}</div>
+                  )}
                 </div>
               ))}
             </div>
