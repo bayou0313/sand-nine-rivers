@@ -4789,7 +4789,7 @@ const Leads = () => {
 
             {/* DASHBOARD THEME TOGGLE */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Dashboard Theme</h3>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Dashboard Theme</h3>
               <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                 Switch the LMT dashboard between light and dark appearance. Applies to all tabs.
               </p>
