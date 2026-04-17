@@ -658,6 +658,10 @@ const Leads = () => {
   const [pendingReviewLoading, setPendingReviewLoading] = useState(false);
   const [verifyingCall, setVerifyingCall] = useState<string | null>(null);
 
+  // Reviews state
+  const [reviewsData, setReviewsData] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
   // Lead detail actions state
   const [sendingOffer, setSendingOffer] = useState(false);
   const [decliningLead, setDecliningLead] = useState(false);
