@@ -4736,19 +4736,19 @@ const Leads = () => {
 
             {/* STRIPE MODE TOGGLE */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Stripe Payment Mode</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Stripe Payment Mode</h3>
+              <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                 Switch between test and live Stripe keys. Test mode shows a modal and banner to visitors. No code changes or key swapping required.
               </p>
               <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
-                backgroundColor: globalSettings.stripe_mode === 'test' ? '#FEF3C7' : '#DCFCE7',
-                border: `1px solid ${globalSettings.stripe_mode === 'test' ? '#F59E0B' : '#16A34A'}`,
+                backgroundColor: globalSettings.stripe_mode === 'test' ? '#FEF3C7' : '#ECFDF5',
+                border: `1px solid ${globalSettings.stripe_mode === 'test' ? WARN_YELLOW : POSITIVE}`,
               }}>
                 <div>
-                  <p className="font-medium text-sm" style={{ color: globalSettings.stripe_mode === 'test' ? '#92400E' : '#166534' }}>
+                  <p className="font-medium text-sm" style={{ color: globalSettings.stripe_mode === 'test' ? WARN_YELLOW : POSITIVE }}>
                     {globalSettings.stripe_mode === 'test' ? '🔧 TEST MODE — Using Stripe test keys' : '✅ LIVE MODE — Processing real payments'}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: globalSettings.stripe_mode === 'test' ? '#B45309' : '#15803D' }}>
+                  <p className="text-xs mt-0.5" style={{ color: T.textSecond }}>
                     {globalSettings.stripe_mode === 'test' ? 'Test card: 4242 4242 4242 4242 · Exp: 12/29 · CVC: 123' : 'Real cards charged. Payouts to Chase ---5952.'}
                   </p>
                 </div>
@@ -4769,16 +4769,16 @@ const Leads = () => {
                     }
                   }}
                   className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors"
-                  style={{ backgroundColor: globalSettings.stripe_mode === 'test' ? '#16A34A' : '#DC2626', minWidth: '120px' }}
+                  style={{ backgroundColor: globalSettings.stripe_mode === 'test' ? POSITIVE : ALERT_RED, minWidth: '120px' }}
                 >
                   {globalSettings.stripe_mode === 'test' ? '→ Go Live' : '→ Test Mode'}
                 </button>
               </div>
               {globalSettings.stripe_mode === 'test' && (
                 <div className="mt-3 p-3 rounded-lg text-xs font-mono" style={{
-                  backgroundColor: '#F8F7F2',
+                  backgroundColor: '#F9FAFB',
                   border: `1px solid ${T.cardBorder}`,
-                  color: '#0D2137',
+                  color: T.textPrimary,
                 }}>
                   <p className="font-bold mb-1">Test card details:</p>
                   <p>Card: 4242 4242 4242 4242</p>
