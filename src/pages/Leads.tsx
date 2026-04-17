@@ -5622,18 +5622,19 @@ const Leads = () => {
         );
 
       case "cash_orders": {
+        // GUIDELINES.md §7 — Status pill palette (preserves hue family for dispatcher recognition)
         const STATUS_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
-          pending:   { label: "Pending",   badgeBg: "#FEF3C7", badgeColor: "#92400E" },
-          confirmed: { label: "Confirmed", badgeBg: "#EFF6FF", badgeColor: "#1E40AF" },
-          en_route:  { label: "En route",  badgeBg: "#F5F3FF", badgeColor: "#5B21B6" },
-          delivered: { label: "Delivered", badgeBg: "#ECFDF5", badgeColor: "#065F46" },
-          cancelled: { label: "Cancelled", badgeBg: "#FEF2F2", badgeColor: "#991B1B" },
+          pending:   { label: "Pending",   badgeBg: "#FEF3C7", badgeColor: WARN_YELLOW },
+          confirmed: { label: "Confirmed", badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          en_route:  { label: "En route",  badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          delivered: { label: "Delivered", badgeBg: "#ECFDF5", badgeColor: POSITIVE },
+          cancelled: { label: "Cancelled", badgeBg: "#FEF2F2", badgeColor: ALERT_RED },
         };
         const PAY_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
-          "stripe-link": { label: "Card",  badgeBg: "#EFF6FF", badgeColor: "#1E40AF" },
-          cash:          { label: "COD",   badgeBg: "#FFFBEB", badgeColor: "#92400E" },
-          check:         { label: "Check", badgeBg: "#FFFBEB", badgeColor: "#92400E" },
-          COD:           { label: "COD",   badgeBg: "#FFFBEB", badgeColor: "#92400E" },
+          "stripe-link": { label: "Card",  badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          cash:          { label: "COD",   badgeBg: "#FDF8F0", badgeColor: BRAND_GOLD },
+          check:         { label: "Check", badgeBg: "#FDF8F0", badgeColor: BRAND_GOLD },
+          COD:           { label: "COD",   badgeBg: "#FDF8F0", badgeColor: BRAND_GOLD },
         };
 
         const fmtMoney = (n: number) =>
