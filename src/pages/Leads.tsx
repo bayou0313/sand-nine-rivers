@@ -856,6 +856,17 @@ const Leads = () => {
     finally { setPendingReviewLoading(false); }
   }, []);
 
+  const fetchReviews = useCallback(async () => {
+    setReviewsLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("leads-auth", {
+        body: { password: storedPassword(), action: "list_reviews" },
+      });
+      if (!fnError && data?.reviews) setReviewsData(data.reviews);
+    } catch (err) { console.warn("Failed to fetch reviews:", err); }
+    finally { setReviewsLoading(false); }
+  }, []);
+
   const handleSendOffer = useCallback(async () => {
     if (!selectedLead || !offerPitId || !offerPrice) return;
     setSendingOffer(true);
