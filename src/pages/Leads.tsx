@@ -6293,7 +6293,9 @@ const Leads = () => {
         return (
           <>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500">{abandonedSessions.length} abandoned sessions</p>
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {abandonedLoading ? "—" : `${abandonedSessions.length} abandoned sessions`}
+              </p>
               <div className="flex gap-2">
                 <Button onClick={fetchAbandonedSessions} disabled={abandonedLoading} size="sm" variant="outline">
                   {abandonedLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
@@ -6306,26 +6308,33 @@ const Leads = () => {
               </div>
             </div>
             {abandonedLoading && abandonedSessions.length === 0 ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={32} />
+                <span className="ml-3" style={{ color: T.textSecond }}>Loading...</span>
+              </div>
+            ) : abandonedSessions.length === 0 ? (
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No abandoned sessions</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Recovery candidates will appear here as visitors drop off.</p>
+              </div>
             ) : (
-              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
+              <div className="overflow-x-auto rounded-xl border" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
                       {["Date", "Address", "Location", "Stage", "Price", "Name", "Email", "Emails Sent", "Visits"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
+                        <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider whitespace-nowrap" style={{ color: T.textSecond }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {abandonedSessions.map(s => (
-                      <tr key={s.id} className="border-t" style={{ borderColor: T.cardBorder }}
-onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
-onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs">{formatLeadDate(s.updated_at || s.created_at)}</td>
-                        <td className="px-3 py-2 text-xs max-w-[200px] truncate">{s.delivery_address || "—"}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap">{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : s.delivery_address ? s.delivery_address.split(",")[1]?.trim() || "—" : "—"}{s.ip_address ? <span className="text-gray-400 ml-1">· {s.ip_address}</span> : ""}</td>
-                        <td className="px-3 py-2">
+                    {abandonedSessions.map((s, i) => (
+                      <tr key={s.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                        <td className="px-4 py-2 whitespace-nowrap text-xs" style={{ fontVariantNumeric: 'tabular-nums', color: T.textPrimary }}>{formatLeadDate(s.updated_at || s.created_at)}</td>
+                        <td className="px-4 py-2 text-xs max-w-[200px] truncate" style={{ color: T.textPrimary }}>{s.delivery_address || "—"}</td>
+                        <td className="px-4 py-2 text-xs whitespace-nowrap" style={{ color: T.textPrimary }}>{s.geo_city ? `${s.geo_city}, ${s.geo_region || ""}` : s.delivery_address ? s.delivery_address.split(",")[1]?.trim() || "—" : "—"}{s.ip_address ? <span className="ml-1" style={{ color: T.textSecond }}>· {s.ip_address}</span> : ""}</td>
+                        <td className="px-4 py-2">
                           {(() => {
                             const stageMap: Record<string, { label: string; bg: string; bold?: boolean }> = {
                               got_price: { label: "Got Price", bg: "#F59E0B" },
@@ -6345,7 +6354,7 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                                   {cfg.label}
                                 </span>
                                 {s.stage === "got_out_of_area" && s.nearest_pit_name && (
-                                  <span className="text-[9px] text-gray-500" title={`Nearest pit: ${s.nearest_pit_name}`}>
+                                  <span className="text-[9px]" style={{ color: T.textSecond }} title={`Nearest pit: ${s.nearest_pit_name}`}>
                                     📍 {s.nearest_pit_name}
                                   </span>
                                 )}
@@ -6353,28 +6362,25 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
                             );
                           })()}
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs">{s.calculated_price ? `$${Number(s.calculated_price).toFixed(0)}` : "—"}</td>
-                        <td className="px-3 py-2 text-xs">{s.customer_name || "—"}</td>
-                        <td className="px-3 py-2 text-xs">{s.customer_email || <span className="text-gray-400">No email</span>}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap">
+                        <td className="px-4 py-2 text-xs" style={{ fontVariantNumeric: 'tabular-nums', color: T.textPrimary }}>{s.calculated_price ? `$${Number(s.calculated_price).toFixed(0)}` : "—"}</td>
+                        <td className="px-4 py-2 text-xs" style={{ color: T.textPrimary }}>{s.customer_name || "—"}</td>
+                        <td className="px-4 py-2 text-xs" style={{ color: T.textPrimary }}>{s.customer_email || <span style={{ color: T.textSecond }}>No email</span>}</td>
+                        <td className="px-4 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond }}>
                           <span>{s.email_1hr_sent ? "1hr ✓" : "1hr ○"}</span>
                           <span className="mx-1">|</span>
                           <span>{s.email_24hr_sent ? "24hr ✓" : "24hr ○"}</span>
                           <span className="mx-1">|</span>
                           <span>{s.email_72hr_sent ? "72hr ✓" : "72hr ○"}</span>
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-4 py-2">
                           {s.visit_count > 1 && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: BRAND_GOLD, color: "white", fontVariantNumeric: 'tabular-nums' }}>
                               {s.visit_count}×
                             </span>
                           )}
                         </td>
                       </tr>
                     ))}
-                    {abandonedSessions.length === 0 && (
-                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No abandoned sessions found</td></tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -6754,22 +6760,28 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
 
         return (
           <div className="space-y-6">
-            {/* Refresh */}
-            <div className="flex justify-end">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {fraudLoading ? "—" : `${fraudEvents.length} events · ${fraudBlocklist.length} blocks · ${failedAttempts.length} failed payments (24h)`}
+              </p>
               <Button size="sm" onClick={fetchFraudData} disabled={fraudLoading} variant="outline">
-                {fraudLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                <span className="ml-1">Refresh</span>
+                {fraudLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
               </Button>
             </div>
 
             {/* ─── SECTION 1: LIVE THREAT FEED ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <Shield className="w-4 h-4 inline mr-2" style={{ color: ALERT_RED }} />
                 Live Threat Feed
               </h3>
               {fraudEvents.length === 0 ? (
-                <p className="text-sm" style={{ color: T.textSecond }}>No fraud events recorded yet.</p>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p className="text-sm" style={{ color: T.textSecond }}>No fraud events recorded yet.</p>
+                </div>
               ) : (
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {fraudEvents.slice(0, 50).map((evt: any) => {
@@ -6801,8 +6813,8 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
             </div>
 
             {/* ─── SECTION 2: BLOCKLIST ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <Lock className="w-4 h-4 inline mr-2" style={{ color: BRAND_GOLD }} />
                 Active Blocklist
               </h3>
@@ -6875,13 +6887,16 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
             </div>
 
             {/* ─── SECTION 3: FAILED PAYMENT ATTEMPTS ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <AlertTriangle className="w-4 h-4 inline mr-2" style={{ color: WARN_YELLOW }} />
                 Failed Payment Attempts (24hr)
               </h3>
               {failedAttempts.length === 0 ? (
-                <p className="text-sm" style={{ color: T.textSecond }}>No failed payment attempts in the last 24 hours.</p>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p className="text-sm" style={{ color: T.textSecond }}>No failed payment attempts in the last 24 hours.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {Object.entries(ipGroups).map(([ip, attempts]) => (
@@ -6914,14 +6929,19 @@ onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
             </div>
 
             {/* ─── SECTION 4: VELOCITY ALERTS ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <Zap className="w-4 h-4 inline mr-2" style={{ color: BRAND_GOLD }} />
                 Velocity Alerts
               </h3>
               {(() => {
                 const velocityEvents = fraudEvents.filter(e => e.event_type === "velocity_flag");
-                if (velocityEvents.length === 0) return <p className="text-sm" style={{ color: T.textSecond }}>No velocity alerts.</p>;
+                if (velocityEvents.length === 0) return (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-2">📭</div>
+                    <p className="text-sm" style={{ color: T.textSecond }}>No velocity alerts.</p>
+                  </div>
+                );
                 return (
                   <div className="space-y-2">
                     {velocityEvents.slice(0, 20).map((evt: any) => (
