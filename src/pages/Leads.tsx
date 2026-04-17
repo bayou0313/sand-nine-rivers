@@ -4684,10 +4684,10 @@ const Leads = () => {
                     }
                   }}
                   disabled={exportingSnapshot}
-                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: "transparent", border: `2px solid #C9A961`, color: "#C9A961", minWidth: "220px" }}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                  style={{ backgroundColor: "transparent", border: `2px solid ${BRAND_GOLD}`, color: BRAND_GOLD, minWidth: "220px" }}
                 >
-                  {exportingSnapshot ? "Exporting..." : `Export AI Snapshot (${globalSettings.snapshot_version || "v1.00"})`}
+                  {exportingSnapshot ? <><Loader2 className="w-4 h-4 animate-spin" /> Exporting...</> : `Export AI Snapshot (${globalSettings.snapshot_version || "v1.00"})`}
                 </button>
               </div>
             </div>
