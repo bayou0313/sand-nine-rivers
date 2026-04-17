@@ -4202,6 +4202,7 @@ const Leads = () => {
               Object.keys(data.settings).filter(k => k.startsWith("seo_")).forEach(k => { seo[k] = data.settings[k]; });
               if (data.settings.product_image_url) seo.product_image_url = data.settings.product_image_url;
               seo.gmb_review_url = data.settings.gmb_review_url || "";
+              seo.seo_gbp_url = data.settings.seo_gbp_url || "";
               setSeoSettings(seo);
             }
             toast({ title: "SEO settings saved — live site updated" });
