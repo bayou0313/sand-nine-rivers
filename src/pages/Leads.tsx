@@ -3025,9 +3025,12 @@ const Leads = () => {
             </div>
 
             {/* PIT Manager */}
-            <div className="rounded-xl border shadow-sm p-6 mb-4" style={{ borderColor: T.cardBorder }}>
+            <div className="rounded-xl border shadow-sm p-6 mb-4" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold" style={{ color: T.textPrimary }}>PIT Manager</h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>PIT Manager</h3>
+                  <p className="text-sm" style={{ color: T.textSecond }}>{pits.length} PITs</p>
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={geocodeAllLeads} disabled={geocoding} variant="outline" size="sm">
                     {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
@@ -3134,9 +3137,9 @@ const Leads = () => {
                   })()}
                 </div>
 
-                <div className="rounded-xl border shadow-sm" style={{ borderColor: T.cardBorder }}>
+                <div className="rounded-xl border shadow-sm overflow-hidden" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                   <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: T.cardBorder }}>
-                    <h3 className="font-bold text-sm" style={{ color: T.textPrimary }}>
+                    <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>
                       Simulation: {selectedPit.name} — {simData.filter(d => d.status === "serviceable").length} newly serviceable
                     </h3>
                     <div className="flex gap-2">
@@ -3154,12 +3157,14 @@ const Leads = () => {
                     </div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                          <th className="px-3 py-2 text-white text-xs w-8"><input type="checkbox" checked={simSelected.size === simData.length && simData.length > 0} onChange={e => setSimSelected(e.target.checked ? new Set(simData.map(d => d.lead.id)) : new Set())} /></th>
+                    <table className="min-w-full text-sm">
+                      <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                        <tr>
+                          <th className="px-3 py-3 text-xs w-8" style={{ color: T.textSecond }}>
+                            <input type="checkbox" checked={simSelected.size === simData.length && simData.length > 0} onChange={e => setSimSelected(e.target.checked ? new Set(simData.map(d => d.lead.id)) : new Set())} />
+                          </th>
                           {["Lead #", "Name", "Address / ZIP", "HQ Dist", "PIT Dist", "Delta", "New Price", "Savings", "Status"].map(h => (
-                            <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase">{h}</th>
+                            <th key={h} className="px-3 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -3170,19 +3175,20 @@ const Leads = () => {
                           const oldPrice = eff.base_price + oldExtra;
                           const savings = oldPrice - d.newPrice;
                           return (
-                            <tr key={d.lead.id} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
+                            <tr key={d.lead.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
                               <td className="px-3 py-2"><input type="checkbox" checked={simSelected.has(d.lead.id)} onChange={e => { const s = new Set(simSelected); e.target.checked ? s.add(d.lead.id) : s.delete(d.lead.id); setSimSelected(s); }} /></td>
-                              <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary }}>{d.lead.lead_number || "—"}</td>
-                              <td className="px-3 py-2 text-xs font-medium">{d.lead.customer_name}</td>
-                              <td className="px-3 py-2 text-xs max-w-[150px] truncate">{parseAddress(d.lead.address).zip}</td>
-                              <td className="px-3 py-2 text-xs">{d.hqDist.toFixed(1)} mi</td>
-                              <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>{d.pitDist?.toFixed(1)} mi</td>
-                              <td className="px-3 py-2 text-xs" style={{ color: d.delta > 0 ? "#22C55E" : "#999" }}>{d.delta > 0 ? `-${d.delta.toFixed(1)}` : "+0"} mi</td>
-                              <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${d.newPrice.toFixed(2)}</td>
-                              <td className="px-3 py-2 text-xs">{savings > 0 ? <span style={{ color: "#22C55E" }}>saves ${savings.toFixed(0)}</span> : "—"}</td>
+                              <td className="px-3 py-2 font-mono text-xs" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{d.lead.lead_number || "—"}</td>
+                              <td className="px-3 py-2 text-xs font-medium" style={{ color: T.textPrimary }}>{d.lead.customer_name}</td>
+                              <td className="px-3 py-2 text-xs max-w-[150px] truncate" style={{ color: T.textSecond }}>{parseAddress(d.lead.address).zip}</td>
+                              <td className="px-3 py-2 text-xs" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{d.hqDist.toFixed(1)} mi</td>
+                              <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{d.pitDist?.toFixed(1)} mi</td>
+                              <td className="px-3 py-2 text-xs" style={{ color: d.delta > 0 ? POSITIVE : T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{d.delta > 0 ? `-${d.delta.toFixed(1)}` : "+0"} mi</td>
+                              <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${d.newPrice.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>{savings > 0 ? <span style={{ color: POSITIVE }}>saves ${savings.toFixed(0)}</span> : <span style={{ color: T.textSecond }}>—</span>}</td>
                               <td className="px-3 py-2">
-                                <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{
-                                  backgroundColor: d.status === "serviceable" ? "#22C55E" : d.status === "closer" ? "#1A6BB8" : "#999"
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{
+                                  backgroundColor: d.status === "serviceable" ? "#ECFDF5" : d.status === "closer" ? "#EFF6FF" : "#F3F4F6",
+                                  color: d.status === "serviceable" ? POSITIVE : d.status === "closer" ? "#1A6BB8" : T.textSecond,
                                 }}>
                                   {d.status === "serviceable" ? "Serviceable" : d.status === "closer" ? "Closer" : "Same"}
                                 </span>
@@ -4185,17 +4191,29 @@ const Leads = () => {
         return (
           <>
             <div className="flex justify-between items-center mb-4">
-              <p className="text-sm" style={{ color: T.textPrimary }}>Orders flagged for review due to billing/delivery address mismatch or fraud signals.</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm" style={{ color: T.textSecond }}>{pendingReviewOrders.length} orders flagged — billing mismatch or fraud signals</p>
+              </div>
               <Button size="sm" onClick={fetchPendingReview} disabled={pendingReviewLoading} variant="outline">
-                {pendingReviewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {pendingReviewLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
               </Button>
             </div>
-            {pendingReviewOrders.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">{pendingReviewLoading ? "Loading..." : "No orders pending review."}</div>
+            {pendingReviewLoading && pendingReviewOrders.length === 0 ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={32} />
+                <span className="ml-3" style={{ color: T.textSecond }}>Loading...</span>
+              </div>
+            ) : pendingReviewOrders.length === 0 ? (
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No orders pending review</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Flagged orders will appear here as soon as they come in.</p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {pendingReviewOrders.map((order: any) => (
-                  <div key={order.id} className="rounded-xl border shadow-sm p-4" style={{ borderColor: T.cardBorder }}>
+                  <div key={order.id} className="rounded-xl border shadow-sm p-4" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                     <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 mb-3 flex items-center gap-2">
                       <AlertTriangle className="w-5 h-5 text-amber-600" />
                       <span className="text-sm font-bold text-amber-800">⚠️ Call customer before dispatch — no exceptions</span>
@@ -4247,19 +4265,49 @@ const Leads = () => {
           return acc;
         }, {} as Record<string, any[]>);
 
+        const totalSignups = waitlistData.length;
+        const cityCount = Object.keys(cityGroups).length;
         return (
           <>
-            {waitlistLoading ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <p className="text-sm" style={{ color: T.textSecond }}>
+                  {totalSignups} signups across {cityCount} cit{cityCount === 1 ? "y" : "ies"}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={waitlistLoading}
+                onClick={() => {
+                  setWaitlistLoading(true);
+                  supabase.functions.invoke("leads-auth", { body: { password: storedPassword(), action: "list_waitlist" } })
+                    .then(({ data }) => { if (data?.waitlist) setWaitlistData(data.waitlist); })
+                    .finally(() => setWaitlistLoading(false));
+                }}
+              >
+                {waitlistLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+            {waitlistLoading && waitlistData.length === 0 ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={32} />
+                <span className="ml-3" style={{ color: T.textSecond }}>Loading...</span>
+              </div>
             ) : waitlistData.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">No waitlist signups yet.</div>
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No waitlist signups yet</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Signups for unserved cities will appear here.</p>
+              </div>
             ) : (
-              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
+              <div className="overflow-x-auto rounded-xl border" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
                       {["City", "Signups", "Latest Signup", "Action"].map(h => (
-                        <th key={h} className="px-4 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
+                        <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -4267,10 +4315,10 @@ const Leads = () => {
                     {Object.entries(cityGroups).sort((a, b) => (b[1] as any[]).length - (a[1] as any[]).length).map(([city, leads], i) => {
                       const leadsArr = leads as any[];
                       return (
-                        <tr key={city} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
+                        <tr key={city} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
                           <td className="px-4 py-3 font-medium" style={{ color: T.textPrimary }}>{city}</td>
-                          <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>{leadsArr.length}</td>
-                          <td className="px-4 py-3 text-gray-500 text-xs">{new Date(leadsArr[0].created_at).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{leadsArr.length}</td>
+                          <td className="px-4 py-3 text-xs" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{new Date(leadsArr[0].created_at).toLocaleDateString()}</td>
                           <td className="px-4 py-3">
                             <Button
                               size="sm" variant="outline" className="text-xs"
@@ -6176,42 +6224,49 @@ const Leads = () => {
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-500">{customersData.length} customers</p>
-                <Button size="sm" variant="outline" onClick={fetchCustomers} disabled={customersLoading} className="h-7 text-xs px-2">
-                  {customersLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                  <span className="ml-1">Refresh</span>
+                <p className="text-sm" style={{ color: T.textSecond }}>{customersData.length} customers</p>
+                <Button size="sm" variant="outline" onClick={fetchCustomers} disabled={customersLoading}>
+                  {customersLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                  Refresh
                 </Button>
               </div>
               <div className="relative w-64">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: T.textSecond }} />
                 <Input value={customersSearch} onChange={e => setCustomersSearch(e.target.value)} placeholder="Search customers..." className="pl-8 h-8 text-xs" />
               </div>
             </div>
             {customersLoading && customersData.length === 0 ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: BRAND_GOLD }} /></div>
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={32} />
+                <span className="ml-3" style={{ color: T.textSecond }}>Loading...</span>
+              </div>
+            ) : !customersLoading && customersData.length === 0 ? (
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No customers yet</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Customer records will appear here after the first order.</p>
+              </div>
             ) : (
-              <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
+              <div className="overflow-x-auto rounded-xl border" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
                       {["Name", "Email", "Phone", "Company", "Total Orders", "Total Spent", "First Order", "Last Order", "Actions"].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: T.tableHeaderText }}>{h}</th>
+                        <th key={h} className="px-3 py-3 text-left font-medium text-xs uppercase tracking-wider whitespace-nowrap" style={{ color: T.textSecond }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredCustomers.map((c, i) => (
-                      <tr key={c.id} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg, borderBottom: `1px solid ${T.cardBorder}` }}
-                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.tableHoverBg)}
-                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? T.cardBg : T.tableStripeBg)}>
+                      <tr key={c.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
                         <td className="px-3 py-2 text-xs font-medium" style={{ color: T.textPrimary }}>{c.name || "—"}</td>
                         <td className="px-3 py-2 text-xs" style={{ color: T.textPrimary }}>{c.email}</td>
                         <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.phone || "—"}</td>
                         <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.company || "—"}</td>
-                        <td className="px-3 py-2 text-xs font-bold text-center" style={{ color: T.textPrimary }}>{c.total_orders || 0}</td>
-                        <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>${Number(c.total_spent || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond }}>{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond }}>{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2 text-xs font-bold text-center" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{c.total_orders || 0}</td>
+                        <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${Number(c.total_spent || 0).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
                         <td className="px-3 py-2 flex gap-1">
                           <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
                             View Orders
@@ -6224,7 +6279,7 @@ const Leads = () => {
                       </tr>
                     ))}
                     {filteredCustomers.length === 0 && (
-                      <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No customers found</td></tr>
+                      <tr><td colSpan={9} className="px-3 py-8 text-center" style={{ color: T.textSecond }}>No customers match your search</td></tr>
                     )}
                   </tbody>
                 </table>
