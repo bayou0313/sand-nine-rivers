@@ -4694,19 +4694,19 @@ const Leads = () => {
 
             {/* SITE MODE TOGGLE */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Site Mode</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Site Mode</h3>
+              <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                 Control whether the public site is live or showing maintenance page. Admin dashboard always accessible.
               </p>
               <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
-                backgroundColor: globalSettings.site_mode === 'maintenance' ? '#FEF3C7' : '#DCFCE7',
-                border: `1px solid ${globalSettings.site_mode === 'maintenance' ? '#F59E0B' : '#16A34A'}`,
+                backgroundColor: globalSettings.site_mode === 'maintenance' ? '#FEF3C7' : '#ECFDF5',
+                border: `1px solid ${globalSettings.site_mode === 'maintenance' ? WARN_YELLOW : POSITIVE}`,
               }}>
                 <div>
-                  <p className="font-medium text-sm" style={{ color: globalSettings.site_mode === 'maintenance' ? '#92400E' : '#166534' }}>
+                  <p className="font-medium text-sm" style={{ color: globalSettings.site_mode === 'maintenance' ? WARN_YELLOW : POSITIVE }}>
                     {globalSettings.site_mode === 'maintenance' ? '🔴 MAINTENANCE MODE — Site is offline to public' : '🟢 LIVE MODE — Site is fully operational'}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: globalSettings.site_mode === 'maintenance' ? '#B45309' : '#15803D' }}>
+                  <p className="text-xs mt-0.5" style={{ color: T.textSecond }}>
                     {globalSettings.site_mode === 'maintenance' ? 'Customers see maintenance page. Admin dashboard unaffected.' : 'Customers can browse and place orders normally.'}
                   </p>
                 </div>
@@ -4727,7 +4727,7 @@ const Leads = () => {
                     }
                   }}
                   className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors"
-                  style={{ backgroundColor: globalSettings.site_mode === 'maintenance' ? '#16A34A' : '#DC2626', minWidth: '120px' }}
+                  style={{ backgroundColor: globalSettings.site_mode === 'maintenance' ? POSITIVE : ALERT_RED, minWidth: '120px' }}
                 >
                   {globalSettings.site_mode === 'maintenance' ? '→ Go Live' : '→ Maintenance'}
                 </button>
