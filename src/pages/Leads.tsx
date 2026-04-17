@@ -6552,9 +6552,9 @@ const Leads = () => {
               </div>
 
               {/* Map */}
-              <div className={cardStyle}>
+              <div className={cardStyle} style={cardStyleObj}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Activity map — Gulf South</p>
+                  <p className={sectionLabel} style={{ ...sectionLabelStyle, marginBottom: 0 }}>Activity map — Gulf South</p>
                   <div className="flex items-center gap-3">
                     {["Browsing","Estimating","Checkout","Converted"].map((l, i) => (
                       <span key={l} className="flex items-center gap-1 text-[10px] text-gray-400">
@@ -6588,10 +6588,10 @@ const Leads = () => {
             <div className="grid gap-4" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
 
               {/* Funnel */}
-              <div className={cardStyle}>
+              <div className={cardStyle} style={cardStyleObj}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Conversion funnel — last 30 days</p>
-                  <span className="text-xs font-medium text-green-600">{convRate}% overall</span>
+                  <p className={sectionLabel} style={{ ...sectionLabelStyle, marginBottom: 0 }}>Conversion funnel — last 30 days</p>
+                  <span className="text-xs font-medium" style={{ color: POSITIVE, fontVariantNumeric: 'tabular-nums' }}>{convRate}% overall</span>
                 </div>
                 <div className="space-y-2">
                   {FUNNEL_STAGES.map((fs, i) => {
@@ -6605,16 +6605,16 @@ const Leads = () => {
                     return (
                       <div key={fs.key} style={{ opacity: fs.dim ? 0.4 : 1 }}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-500">{fs.label}</span>
+                          <span className="text-xs" style={{ color: T.textSecond }}>{fs.label}</span>
                           <div className="flex items-center gap-2">
-                            {drop && <span className="text-[10px] text-red-500">{drop}</span>}
-                            <span className="text-xs font-medium text-gray-800">{count}</span>
+                            {drop && <span className="text-[10px]" style={{ color: ALERT_RED, fontVariantNumeric: 'tabular-nums' }}>{drop}</span>}
+                            <span className="text-xs font-medium" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{count}</span>
                           </div>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${pct}%`, background: fs.dim ? "#D1D5DB" : "#B87333" }}
+                            style={{ width: `${pct}%`, background: fs.dim ? "#D1D5DB" : BRAND_GOLD }}
                           />
                         </div>
                       </div>
@@ -6624,28 +6624,28 @@ const Leads = () => {
               </div>
 
               {/* Page performance */}
-              <div className={cardStyle}>
-                <p className={sectionLabel}>Page performance</p>
+              <div className={cardStyle} style={cardStyleObj}>
+                <p className={sectionLabel} style={sectionLabelStyle}>Page performance</p>
                 <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Page</th>
-                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Visits</th>
-                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Avg $</th>
-                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Top stage</th>
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      <th className="text-left px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Page</th>
+                      <th className="text-right px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Visits</th>
+                      <th className="text-right px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Avg $</th>
+                      <th className="text-right px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Top stage</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pagePerf.length === 0 ? (
-                      <tr><td colSpan={4} className="text-center text-gray-400 py-6 text-xs">No data yet</td></tr>
+                      <tr><td colSpan={4} className="text-center py-8 text-xs" style={{ color: T.textSecond }}>📭 No data yet</td></tr>
                     ) : pagePerf.map((p, i) => (
-                      <tr key={i} className="border-b border-gray-50 last:border-0">
-                        <td className="py-2 pr-2">
+                      <tr key={i} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                        <td className="py-2 px-2">
                           <span className="font-mono text-[10px] text-blue-500 truncate block max-w-[120px]">{p.page}</span>
                         </td>
-                        <td className="py-2 text-right text-gray-700">{p.visits}</td>
-                        <td className="py-2 text-right text-gray-700">{p.avgPrice ? `$${p.avgPrice}` : "—"}</td>
-                        <td className="py-2 text-right">
+                        <td className="py-2 px-2 text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{p.visits}</td>
+                        <td className="py-2 px-2 text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{p.avgPrice ? `$${p.avgPrice}` : "—"}</td>
+                        <td className="py-2 px-2 text-right">
                           <span style={{ color: STAGE_SHORT_COLOR[p.topStage] || "#9CA3AF" }} className="text-[10px]">
                             {STAGE_SHORT[p.topStage] || p.topStage}
                           </span>
@@ -6662,39 +6662,39 @@ const Leads = () => {
             <div className="grid grid-cols-2 gap-4">
 
               {/* Entry pages + time */}
-              <div className={cardStyle}>
-                <p className={sectionLabel}>Entry pages & time on page</p>
-                <div className="grid text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 mb-1" style={{ gridTemplateColumns: "1fr 40px 52px 44px" }}>
+              <div className={cardStyle} style={cardStyleObj}>
+                <p className={sectionLabel} style={sectionLabelStyle}>Entry pages & time on page</p>
+                <div className="grid text-xs uppercase tracking-wider border-b pb-2 mb-1 font-medium" style={{ gridTemplateColumns: "1fr 50px 60px 50px", color: T.textSecond, borderColor: T.cardBorder }}>
                   <span>Page</span><span className="text-right">Sessions</span><span className="text-right">Avg time</span><span className="text-right">Bounce</span>
                 </div>
                 {pagePerf.length === 0
-                  ? <p className="text-center text-xs text-gray-400 py-6">No data yet</p>
+                  ? <p className="text-center text-xs py-6" style={{ color: T.textSecond }}>📭 No data yet</p>
                   : pagePerf.map((p, i) => (
-                    <div key={i} className="grid items-center border-b border-gray-50 last:border-0 py-1.5 gap-1" style={{ gridTemplateColumns: "1fr 40px 52px 44px" }}>
+                    <div key={i} className="grid items-center border-b last:border-0 py-1.5 gap-1 hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "1fr 50px 60px 50px", borderColor: T.cardBorder }}>
                       <span className="font-mono text-[10px] text-blue-500 truncate">{p.page}</span>
-                      <span className="text-[11px] text-gray-600 text-right">{p.visits}</span>
-                      <span className="text-[11px] text-gray-600 text-right">{fmtDuration(p.avgDuration)}</span>
-                      <span className="text-[11px] text-right text-gray-400">—</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{p.visits}</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{fmtDuration(p.avgDuration)}</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textSecond }}>—</span>
                     </div>
                   ))
                 }
               </div>
 
               {/* City intelligence */}
-              <div className={cardStyle}>
-                <p className={sectionLabel}>City intelligence — last 30 days</p>
-                <div className="grid text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 mb-1" style={{ gridTemplateColumns: "1fr 50px" }}>
+              <div className={cardStyle} style={cardStyleObj}>
+                <p className={sectionLabel} style={sectionLabelStyle}>City intelligence — last 30 days</p>
+                <div className="grid text-xs uppercase tracking-wider border-b pb-2 mb-1 font-medium" style={{ gridTemplateColumns: "1fr 60px", color: T.textSecond, borderColor: T.cardBorder }}>
                   <span>City</span><span className="text-right">Sessions</span>
                 </div>
                 {cityIntel.length === 0
-                  ? <p className="text-center text-xs text-gray-400 py-6">No data yet</p>
+                  ? <p className="text-center text-xs py-6" style={{ color: T.textSecond }}>📭 No data yet</p>
                   : cityIntel.map((c, i) => (
-                    <div key={i} className="grid items-center border-b border-gray-50 last:border-0 py-1.5 gap-1" style={{ gridTemplateColumns: "1fr 50px" }}>
+                    <div key={i} className="grid items-center border-b last:border-0 py-1.5 gap-1 hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "1fr 60px", borderColor: T.cardBorder }}>
                       <div className="flex items-center gap-2">
-                        <div className="h-1 rounded-full bg-amber-400" style={{ width: `${Math.round((c.visits / (cityIntel[0]?.visits || 1)) * 60)}px`, minWidth: 4 }} />
-                        <span className="text-xs text-gray-700">{c.city}</span>
+                        <div className="h-1 rounded-full" style={{ width: `${Math.round((c.visits / (cityIntel[0]?.visits || 1)) * 60)}px`, minWidth: 4, background: BRAND_GOLD }} />
+                        <span className="text-xs" style={{ color: T.textPrimary }}>{c.city}</span>
                       </div>
-                      <span className="text-[11px] text-gray-500 text-right">{c.visits}</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.visits}</span>
                     </div>
                   ))
                 }
