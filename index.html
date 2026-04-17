@@ -1,7 +1,23 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google Tag Manager — injected dynamically from global_settings.seo_gtm_id (see src/lib/gtm.ts) -->
+    <!-- Admin route flag for GTM blocking — must run BEFORE GTM snippet -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      (function () {
+        var path = window.location.pathname;
+        if (path.indexOf('/leads') === 0 || path.indexOf('/admin') === 0) {
+          window.dataLayer.push({ 'admin_route': true });
+        }
+      })();
+    </script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-KPKFPCXM');</script>
+    <!-- End Google Tag Manager -->
     <link rel="preconnect" href="https://lclbexhytmpfxzcztzva.supabase.co" />
     <link rel="preconnect" href="https://maps.googleapis.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,10 +49,14 @@
    <meta property="og:image" content="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png">
    <meta name="twitter:image" content="https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png">
    <meta name="twitter:card" content="summary_large_image">
-  <script type="module" crossorigin src="/assets/index-BXC1u2NH.js"></script>
+  <script type="module" crossorigin src="/assets/index-JTo60fKJ.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-DriLSoTQ.css">
 </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KPKFPCXM"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
   </body>
 </html>
