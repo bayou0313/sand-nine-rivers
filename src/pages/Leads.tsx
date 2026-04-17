@@ -6813,8 +6813,8 @@ const Leads = () => {
             </div>
 
             {/* ─── SECTION 2: BLOCKLIST ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <Lock className="w-4 h-4 inline mr-2" style={{ color: BRAND_GOLD }} />
                 Active Blocklist
               </h3>
