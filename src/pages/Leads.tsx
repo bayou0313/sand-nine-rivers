@@ -6929,14 +6929,19 @@ const Leads = () => {
             </div>
 
             {/* ─── SECTION 4: VELOCITY ALERTS ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <Zap className="w-4 h-4 inline mr-2" style={{ color: BRAND_GOLD }} />
                 Velocity Alerts
               </h3>
               {(() => {
                 const velocityEvents = fraudEvents.filter(e => e.event_type === "velocity_flag");
-                if (velocityEvents.length === 0) return <p className="text-sm" style={{ color: T.textSecond }}>No velocity alerts.</p>;
+                if (velocityEvents.length === 0) return (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-2">📭</div>
+                    <p className="text-sm" style={{ color: T.textSecond }}>No velocity alerts.</p>
+                  </div>
+                );
                 return (
                   <div className="space-y-2">
                     {velocityEvents.slice(0, 20).map((evt: any) => (
