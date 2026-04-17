@@ -5722,25 +5722,25 @@ const Leads = () => {
         };
 
         const StatusBadge = ({ status }: { status: string }) => {
-          const m = STATUS_META[status] || { label: status, badgeBg: "#F3F4F6", badgeColor: "#374151" };
+          const m = STATUS_META[status] || { label: status, badgeBg: "#F3F4F6", badgeColor: T.textSecond };
           return (
-            <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10,
-              fontWeight:500, background:m.badgeBg, color:m.badgeColor, whiteSpace:"nowrap" }}>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+              style={{ backgroundColor: m.badgeBg, color: m.badgeColor }}>
               {m.label}
             </span>
           );
         };
 
         const PayBadge = ({ method, payStatus }: { method: string; payStatus: string }) => {
-          const m = PAY_META[method] || { label: method, badgeBg: "#F3F4F6", badgeColor: "#374151" };
+          const m = PAY_META[method] || { label: method, badgeBg: "#F3F4F6", badgeColor: T.textSecond };
+          const payColor = payStatus === "paid" ? POSITIVE : payStatus === "refunded" ? ALERT_RED : WARN_YELLOW;
           return (
             <div>
-              <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10,
-                fontWeight:500, background:m.badgeBg, color:m.badgeColor }}>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                style={{ backgroundColor: m.badgeBg, color: m.badgeColor }}>
                 {m.label}
               </span>
-              <div style={{ fontSize:10, marginTop:2,
-                color: payStatus==="paid" ? "#16A34A" : payStatus==="refunded" ? "#DC2626" : "#D97706" }}>
+              <div className="text-xs mt-0.5" style={{ color: payColor }}>
                 {payStatus}
               </div>
             </div>
