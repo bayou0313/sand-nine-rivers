@@ -6452,50 +6452,51 @@ const Leads = () => {
           started_checkout: "#EA580C", reached_payment: "#DC2626", completed_order: "#16A34A",
         };
 
-        const cardStyle = "bg-white border border-gray-100 rounded-xl p-4";
-        const sectionLabel = "text-[10px] font-medium tracking-widest text-gray-400 uppercase mb-3";
+        const cardStyle = "rounded-xl border shadow-sm p-4";
+        const cardStyleObj = { backgroundColor: T.cardBg, borderColor: T.cardBorder };
+        const sectionLabel = "font-display uppercase tracking-wide text-sm mb-3";
+        const sectionLabelStyle = { color: T.textPrimary };
 
         return (
           <div className="space-y-4">
 
-            {/* ── HEADER ── */}
+            {/* ── HEADER (§4) ── */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-2.5 w-2.5">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
                 </span>
-                <h2 className="text-base font-medium text-gray-900">Live visitors</h2>
-                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full" style={{ background: "#FEF3C7", color: "#92400E" }}>
-                  {liveVisitors.length} active
-                </span>
+                <p className="text-sm" style={{ color: T.textSecond }}>
+                  {liveVisitors.length} active sessions (last 30 min)
+                </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-400">{fmtRefreshed()}</span>
-                <button
-                  onClick={fetchLiveVisitors}
-                  disabled={liveLoading}
-                  className="flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw size={11} className={liveLoading ? "animate-spin" : ""} />
+                <span className="text-xs" style={{ color: T.textSecond }}>{fmtRefreshed()}</span>
+                <Button onClick={fetchLiveVisitors} disabled={liveLoading} size="sm" variant="outline">
+                  {liveLoading
+                    ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    : <RefreshCw className="w-4 h-4 mr-1" />}
                   Refresh
-                </button>
+                </Button>
               </div>
             </div>
 
-            {/* ── METRIC CARDS ── */}
-            <div className="grid grid-cols-5 gap-3">
+            {/* ── METRIC CARDS (§5) ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {[
-                { label: "Active now",      val: liveVisitors.length,                        sub: "last 30 min",       valColor: "#16A34A" },
+                { label: "Active now",      val: liveVisitors.length,                        sub: "last 30 min",       valColor: POSITIVE },
                 { label: "Sessions today",  val: totalVisited,                               sub: "vs yesterday",      valColor: undefined },
-                { label: "Conversion rate", val: `${convRate}%`,                             sub: "last 30 days",      valColor: "#B87333" },
-                { label: "Completed",       val: totalCompleted,                             sub: "last 30 days",      valColor: totalCompleted > 0 ? "#16A34A" : undefined },
-                { label: "Out of area",     val: funnelMap["got_out_of_area"] || 0,          sub: "last 30 days",      valColor: "#9CA3AF" },
+                { label: "Conversion rate", val: `${convRate}%`,                             sub: "last 30 days",      valColor: BRAND_GOLD },
+                { label: "Completed",       val: totalCompleted,                             sub: "last 30 days",      valColor: totalCompleted > 0 ? POSITIVE : undefined },
+                { label: "Out of area",     val: funnelMap["got_out_of_area"] || 0,          sub: "last 30 days",      valColor: T.textSecond },
               ].map((m, i) => (
-                <div key={i} className="bg-gray-50 rounded-xl p-3.5">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">{m.label}</p>
-                  <p className="text-2xl font-medium leading-none" style={{ color: m.valColor || "#111827" }}>{m.val}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">{m.sub}</p>
+                <div key={i} className="rounded-xl border p-5" style={cardStyleObj}>
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>{m.label}</div>
+                  <div className="text-2xl font-semibold" style={{ color: m.valColor || T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+                    {liveLoading && !funnelData ? '—' : m.val}
+                  </div>
+                  <div className="text-xs mt-1" style={{ color: T.textSecond }}>{m.sub}</div>
                 </div>
               ))}
             </div>
@@ -6504,14 +6505,18 @@ const Leads = () => {
             <div className="grid gap-4" style={{ gridTemplateColumns: "300px 1fr" }}>
 
               {/* Session list */}
-              <div className={cardStyle}>
+              <div className={cardStyle} style={cardStyleObj}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Current sessions</p>
-                  <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">{liveVisitors.length} active</span>
+                  <p className={sectionLabel} style={{ ...sectionLabelStyle, marginBottom: 0 }}>Current sessions</p>
+                  <span className="text-xs px-2 py-0.5 rounded-md" style={{ color: T.textSecond, backgroundColor: '#F9FAFB', fontVariantNumeric: 'tabular-nums' }}>{liveVisitors.length} active</span>
                 </div>
                 <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 420 }}>
                   {liveVisitors.length === 0 ? (
-                    <p className="text-center text-sm text-gray-400 py-10">No active sessions</p>
+                    <div className="rounded-xl border p-12 text-center" style={cardStyleObj}>
+                      <div className="text-4xl mb-2">📭</div>
+                      <p className="font-medium" style={{ color: T.textPrimary }}>No active sessions</p>
+                      <p className="text-xs mt-1" style={{ color: T.textSecond }}>They'll appear here as soon as visitors arrive.</p>
+                    </div>
                   ) : (
                     liveVisitors.map((v: any) => {
                       const cfg = STAGE_CONFIG[v.stage] || STAGE_CONFIG.visited;
@@ -6520,14 +6525,14 @@ const Leads = () => {
                         <div
                           key={v.id}
                           className="p-2.5 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors"
-                          style={{ borderColor: isHot ? (v.stage === "reached_payment" ? "#FCA5A5" : "#FCD34D") : "#F3F4F6" }}
+                          style={{ borderColor: isHot ? (v.stage === "reached_payment" ? "#FCA5A5" : "#FCD34D") : T.cardBorder }}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-mono text-gray-400">{(v.ip_address || "—").replace(/\.\d+$/, ".xxx")}</span>
-                            <span className="text-[10px] text-gray-400">{timeAgo(v.last_seen_at || v.created_at)}</span>
+                            <span className="text-[10px] font-mono" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{(v.ip_address || "—").replace(/\.\d+$/, ".xxx")}</span>
+                            <span className="text-[10px]" style={{ color: T.textSecond }}>{timeAgo(v.last_seen_at || v.created_at)}</span>
                           </div>
                           <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-sm font-medium text-gray-900">{v.geo_city || "Unknown"}</span>
+                            <span className="text-sm font-medium" style={{ color: T.textPrimary }}>{v.geo_city || "Unknown"}</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: cfg.bg, color: cfg.color }}>
                               {cfg.label}
                             </span>
@@ -6535,8 +6540,8 @@ const Leads = () => {
                               <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-50 text-blue-600">Biz</span>
                             )}
                           </div>
-                          <p className="text-[10px] text-gray-400">
-                            {v.calculated_price ? <><span className="text-gray-700 font-medium">${Math.round(v.calculated_price)}</span> est · </> : ""}
+                          <p className="text-[10px]" style={{ color: T.textSecond }}>
+                            {v.calculated_price ? <><span className="font-medium" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>${Math.round(v.calculated_price)}</span> est · </> : ""}
                             {v.entry_page || "/"}
                           </p>
                         </div>
@@ -6547,9 +6552,9 @@ const Leads = () => {
               </div>
 
               {/* Map */}
-              <div className={cardStyle}>
+              <div className={cardStyle} style={cardStyleObj}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Activity map — Gulf South</p>
+                  <p className={sectionLabel} style={{ ...sectionLabelStyle, marginBottom: 0 }}>Activity map — Gulf South</p>
                   <div className="flex items-center gap-3">
                     {["Browsing","Estimating","Checkout","Converted"].map((l, i) => (
                       <span key={l} className="flex items-center gap-1 text-[10px] text-gray-400">
@@ -6583,10 +6588,10 @@ const Leads = () => {
             <div className="grid gap-4" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
 
               {/* Funnel */}
-              <div className={cardStyle}>
+              <div className={cardStyle} style={cardStyleObj}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Conversion funnel — last 30 days</p>
-                  <span className="text-xs font-medium text-green-600">{convRate}% overall</span>
+                  <p className={sectionLabel} style={{ ...sectionLabelStyle, marginBottom: 0 }}>Conversion funnel — last 30 days</p>
+                  <span className="text-xs font-medium" style={{ color: POSITIVE, fontVariantNumeric: 'tabular-nums' }}>{convRate}% overall</span>
                 </div>
                 <div className="space-y-2">
                   {FUNNEL_STAGES.map((fs, i) => {
@@ -6600,16 +6605,16 @@ const Leads = () => {
                     return (
                       <div key={fs.key} style={{ opacity: fs.dim ? 0.4 : 1 }}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-500">{fs.label}</span>
+                          <span className="text-xs" style={{ color: T.textSecond }}>{fs.label}</span>
                           <div className="flex items-center gap-2">
-                            {drop && <span className="text-[10px] text-red-500">{drop}</span>}
-                            <span className="text-xs font-medium text-gray-800">{count}</span>
+                            {drop && <span className="text-[10px]" style={{ color: ALERT_RED, fontVariantNumeric: 'tabular-nums' }}>{drop}</span>}
+                            <span className="text-xs font-medium" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{count}</span>
                           </div>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${pct}%`, background: fs.dim ? "#D1D5DB" : "#B87333" }}
+                            style={{ width: `${pct}%`, background: fs.dim ? "#D1D5DB" : BRAND_GOLD }}
                           />
                         </div>
                       </div>
@@ -6619,28 +6624,28 @@ const Leads = () => {
               </div>
 
               {/* Page performance */}
-              <div className={cardStyle}>
-                <p className={sectionLabel}>Page performance</p>
+              <div className={cardStyle} style={cardStyleObj}>
+                <p className={sectionLabel} style={sectionLabelStyle}>Page performance</p>
                 <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Page</th>
-                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Visits</th>
-                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Avg $</th>
-                      <th className="text-right text-[10px] text-gray-400 uppercase tracking-wider pb-2 font-medium">Top stage</th>
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      <th className="text-left px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Page</th>
+                      <th className="text-right px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Visits</th>
+                      <th className="text-right px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Avg $</th>
+                      <th className="text-right px-2 py-2 font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Top stage</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pagePerf.length === 0 ? (
-                      <tr><td colSpan={4} className="text-center text-gray-400 py-6 text-xs">No data yet</td></tr>
+                      <tr><td colSpan={4} className="text-center py-8 text-xs" style={{ color: T.textSecond }}>📭 No data yet</td></tr>
                     ) : pagePerf.map((p, i) => (
-                      <tr key={i} className="border-b border-gray-50 last:border-0">
-                        <td className="py-2 pr-2">
+                      <tr key={i} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                        <td className="py-2 px-2">
                           <span className="font-mono text-[10px] text-blue-500 truncate block max-w-[120px]">{p.page}</span>
                         </td>
-                        <td className="py-2 text-right text-gray-700">{p.visits}</td>
-                        <td className="py-2 text-right text-gray-700">{p.avgPrice ? `$${p.avgPrice}` : "—"}</td>
-                        <td className="py-2 text-right">
+                        <td className="py-2 px-2 text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{p.visits}</td>
+                        <td className="py-2 px-2 text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{p.avgPrice ? `$${p.avgPrice}` : "—"}</td>
+                        <td className="py-2 px-2 text-right">
                           <span style={{ color: STAGE_SHORT_COLOR[p.topStage] || "#9CA3AF" }} className="text-[10px]">
                             {STAGE_SHORT[p.topStage] || p.topStage}
                           </span>
@@ -6657,39 +6662,39 @@ const Leads = () => {
             <div className="grid grid-cols-2 gap-4">
 
               {/* Entry pages + time */}
-              <div className={cardStyle}>
-                <p className={sectionLabel}>Entry pages & time on page</p>
-                <div className="grid text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 mb-1" style={{ gridTemplateColumns: "1fr 40px 52px 44px" }}>
+              <div className={cardStyle} style={cardStyleObj}>
+                <p className={sectionLabel} style={sectionLabelStyle}>Entry pages & time on page</p>
+                <div className="grid text-xs uppercase tracking-wider border-b pb-2 mb-1 font-medium" style={{ gridTemplateColumns: "1fr 50px 60px 50px", color: T.textSecond, borderColor: T.cardBorder }}>
                   <span>Page</span><span className="text-right">Sessions</span><span className="text-right">Avg time</span><span className="text-right">Bounce</span>
                 </div>
                 {pagePerf.length === 0
-                  ? <p className="text-center text-xs text-gray-400 py-6">No data yet</p>
+                  ? <p className="text-center text-xs py-6" style={{ color: T.textSecond }}>📭 No data yet</p>
                   : pagePerf.map((p, i) => (
-                    <div key={i} className="grid items-center border-b border-gray-50 last:border-0 py-1.5 gap-1" style={{ gridTemplateColumns: "1fr 40px 52px 44px" }}>
+                    <div key={i} className="grid items-center border-b last:border-0 py-1.5 gap-1 hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "1fr 50px 60px 50px", borderColor: T.cardBorder }}>
                       <span className="font-mono text-[10px] text-blue-500 truncate">{p.page}</span>
-                      <span className="text-[11px] text-gray-600 text-right">{p.visits}</span>
-                      <span className="text-[11px] text-gray-600 text-right">{fmtDuration(p.avgDuration)}</span>
-                      <span className="text-[11px] text-right text-gray-400">—</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{p.visits}</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{fmtDuration(p.avgDuration)}</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textSecond }}>—</span>
                     </div>
                   ))
                 }
               </div>
 
               {/* City intelligence */}
-              <div className={cardStyle}>
-                <p className={sectionLabel}>City intelligence — last 30 days</p>
-                <div className="grid text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2 mb-1" style={{ gridTemplateColumns: "1fr 50px" }}>
+              <div className={cardStyle} style={cardStyleObj}>
+                <p className={sectionLabel} style={sectionLabelStyle}>City intelligence — last 30 days</p>
+                <div className="grid text-xs uppercase tracking-wider border-b pb-2 mb-1 font-medium" style={{ gridTemplateColumns: "1fr 60px", color: T.textSecond, borderColor: T.cardBorder }}>
                   <span>City</span><span className="text-right">Sessions</span>
                 </div>
                 {cityIntel.length === 0
-                  ? <p className="text-center text-xs text-gray-400 py-6">No data yet</p>
+                  ? <p className="text-center text-xs py-6" style={{ color: T.textSecond }}>📭 No data yet</p>
                   : cityIntel.map((c, i) => (
-                    <div key={i} className="grid items-center border-b border-gray-50 last:border-0 py-1.5 gap-1" style={{ gridTemplateColumns: "1fr 50px" }}>
+                    <div key={i} className="grid items-center border-b last:border-0 py-1.5 gap-1 hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: "1fr 60px", borderColor: T.cardBorder }}>
                       <div className="flex items-center gap-2">
-                        <div className="h-1 rounded-full bg-amber-400" style={{ width: `${Math.round((c.visits / (cityIntel[0]?.visits || 1)) * 60)}px`, minWidth: 4 }} />
-                        <span className="text-xs text-gray-700">{c.city}</span>
+                        <div className="h-1 rounded-full" style={{ width: `${Math.round((c.visits / (cityIntel[0]?.visits || 1)) * 60)}px`, minWidth: 4, background: BRAND_GOLD }} />
+                        <span className="text-xs" style={{ color: T.textPrimary }}>{c.city}</span>
                       </div>
-                      <span className="text-[11px] text-gray-500 text-right">{c.visits}</span>
+                      <span className="text-[11px] text-right" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.visits}</span>
                     </div>
                   ))
                 }
