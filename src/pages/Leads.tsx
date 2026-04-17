@@ -6505,14 +6505,18 @@ const Leads = () => {
             <div className="grid gap-4" style={{ gridTemplateColumns: "300px 1fr" }}>
 
               {/* Session list */}
-              <div className={cardStyle}>
+              <div className={cardStyle} style={cardStyleObj}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={sectionLabel} style={{ marginBottom: 0 }}>Current sessions</p>
-                  <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">{liveVisitors.length} active</span>
+                  <p className={sectionLabel} style={{ ...sectionLabelStyle, marginBottom: 0 }}>Current sessions</p>
+                  <span className="text-xs px-2 py-0.5 rounded-md" style={{ color: T.textSecond, backgroundColor: '#F9FAFB', fontVariantNumeric: 'tabular-nums' }}>{liveVisitors.length} active</span>
                 </div>
                 <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 420 }}>
                   {liveVisitors.length === 0 ? (
-                    <p className="text-center text-sm text-gray-400 py-10">No active sessions</p>
+                    <div className="rounded-xl border p-12 text-center" style={cardStyleObj}>
+                      <div className="text-4xl mb-2">📭</div>
+                      <p className="font-medium" style={{ color: T.textPrimary }}>No active sessions</p>
+                      <p className="text-xs mt-1" style={{ color: T.textSecond }}>They'll appear here as soon as visitors arrive.</p>
+                    </div>
                   ) : (
                     liveVisitors.map((v: any) => {
                       const cfg = STAGE_CONFIG[v.stage] || STAGE_CONFIG.visited;
@@ -6521,14 +6525,14 @@ const Leads = () => {
                         <div
                           key={v.id}
                           className="p-2.5 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors"
-                          style={{ borderColor: isHot ? (v.stage === "reached_payment" ? "#FCA5A5" : "#FCD34D") : "#F3F4F6" }}
+                          style={{ borderColor: isHot ? (v.stage === "reached_payment" ? "#FCA5A5" : "#FCD34D") : T.cardBorder }}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-mono text-gray-400">{(v.ip_address || "—").replace(/\.\d+$/, ".xxx")}</span>
-                            <span className="text-[10px] text-gray-400">{timeAgo(v.last_seen_at || v.created_at)}</span>
+                            <span className="text-[10px] font-mono" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{(v.ip_address || "—").replace(/\.\d+$/, ".xxx")}</span>
+                            <span className="text-[10px]" style={{ color: T.textSecond }}>{timeAgo(v.last_seen_at || v.created_at)}</span>
                           </div>
                           <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-sm font-medium text-gray-900">{v.geo_city || "Unknown"}</span>
+                            <span className="text-sm font-medium" style={{ color: T.textPrimary }}>{v.geo_city || "Unknown"}</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: cfg.bg, color: cfg.color }}>
                               {cfg.label}
                             </span>
@@ -6536,8 +6540,8 @@ const Leads = () => {
                               <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-50 text-blue-600">Biz</span>
                             )}
                           </div>
-                          <p className="text-[10px] text-gray-400">
-                            {v.calculated_price ? <><span className="text-gray-700 font-medium">${Math.round(v.calculated_price)}</span> est · </> : ""}
+                          <p className="text-[10px]" style={{ color: T.textSecond }}>
+                            {v.calculated_price ? <><span className="font-medium" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>${Math.round(v.calculated_price)}</span> est · </> : ""}
                             {v.entry_page || "/"}
                           </p>
                         </div>
