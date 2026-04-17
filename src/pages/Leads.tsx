@@ -6452,50 +6452,51 @@ const Leads = () => {
           started_checkout: "#EA580C", reached_payment: "#DC2626", completed_order: "#16A34A",
         };
 
-        const cardStyle = "bg-white border border-gray-100 rounded-xl p-4";
-        const sectionLabel = "text-[10px] font-medium tracking-widest text-gray-400 uppercase mb-3";
+        const cardStyle = "rounded-xl border shadow-sm p-4";
+        const cardStyleObj = { backgroundColor: T.cardBg, borderColor: T.cardBorder };
+        const sectionLabel = "font-display uppercase tracking-wide text-sm mb-3";
+        const sectionLabelStyle = { color: T.textPrimary };
 
         return (
           <div className="space-y-4">
 
-            {/* ── HEADER ── */}
+            {/* ── HEADER (§4) ── */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-2.5 w-2.5">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
                 </span>
-                <h2 className="text-base font-medium text-gray-900">Live visitors</h2>
-                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full" style={{ background: "#FEF3C7", color: "#92400E" }}>
-                  {liveVisitors.length} active
-                </span>
+                <p className="text-sm" style={{ color: T.textSecond }}>
+                  {liveVisitors.length} active sessions (last 30 min)
+                </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-400">{fmtRefreshed()}</span>
-                <button
-                  onClick={fetchLiveVisitors}
-                  disabled={liveLoading}
-                  className="flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw size={11} className={liveLoading ? "animate-spin" : ""} />
+                <span className="text-xs" style={{ color: T.textSecond }}>{fmtRefreshed()}</span>
+                <Button onClick={fetchLiveVisitors} disabled={liveLoading} size="sm" variant="outline">
+                  {liveLoading
+                    ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    : <RefreshCw className="w-4 h-4 mr-1" />}
                   Refresh
-                </button>
+                </Button>
               </div>
             </div>
 
-            {/* ── METRIC CARDS ── */}
-            <div className="grid grid-cols-5 gap-3">
+            {/* ── METRIC CARDS (§5) ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {[
-                { label: "Active now",      val: liveVisitors.length,                        sub: "last 30 min",       valColor: "#16A34A" },
+                { label: "Active now",      val: liveVisitors.length,                        sub: "last 30 min",       valColor: POSITIVE },
                 { label: "Sessions today",  val: totalVisited,                               sub: "vs yesterday",      valColor: undefined },
-                { label: "Conversion rate", val: `${convRate}%`,                             sub: "last 30 days",      valColor: "#B87333" },
-                { label: "Completed",       val: totalCompleted,                             sub: "last 30 days",      valColor: totalCompleted > 0 ? "#16A34A" : undefined },
-                { label: "Out of area",     val: funnelMap["got_out_of_area"] || 0,          sub: "last 30 days",      valColor: "#9CA3AF" },
+                { label: "Conversion rate", val: `${convRate}%`,                             sub: "last 30 days",      valColor: BRAND_GOLD },
+                { label: "Completed",       val: totalCompleted,                             sub: "last 30 days",      valColor: totalCompleted > 0 ? POSITIVE : undefined },
+                { label: "Out of area",     val: funnelMap["got_out_of_area"] || 0,          sub: "last 30 days",      valColor: T.textSecond },
               ].map((m, i) => (
-                <div key={i} className="bg-gray-50 rounded-xl p-3.5">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">{m.label}</p>
-                  <p className="text-2xl font-medium leading-none" style={{ color: m.valColor || "#111827" }}>{m.val}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">{m.sub}</p>
+                <div key={i} className="rounded-xl border p-5" style={cardStyleObj}>
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>{m.label}</div>
+                  <div className="text-2xl font-semibold" style={{ color: m.valColor || T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+                    {liveLoading && !funnelData ? '—' : m.val}
+                  </div>
+                  <div className="text-xs mt-1" style={{ color: T.textSecond }}>{m.sub}</div>
                 </div>
               ))}
             </div>
