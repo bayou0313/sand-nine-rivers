@@ -4297,6 +4297,121 @@ const Leads = () => {
           </>
         );
 
+      case "reviews": {
+        const totalReviews = reviewsData.length;
+        const ratedReviews = reviewsData.filter((r: any) => typeof r.rating === "number");
+        const avgRating = ratedReviews.length > 0
+          ? (ratedReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / ratedReviews.length)
+          : 0;
+        const fourPlusCount = ratedReviews.filter((r: any) => r.rating >= 4).length;
+        const sentToGmbCount = reviewsData.filter((r: any) => r.sent_to_gmb).length;
+
+        const timeAgoR = (iso: string): string => {
+          if (!iso) return "—";
+          const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+          if (diff < 60) return `${diff}s ago`;
+          if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+          if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+          return `${Math.floor(diff / 86400)}d ago`;
+        };
+
+        const renderStars = (rating: number | null) => {
+          if (!rating) return <span className="text-xs" style={{ color: T.textSecond }}>—</span>;
+          return (
+            <span style={{ color: BRAND_GOLD, letterSpacing: "1px" }} title={`${rating} / 5`}>
+              {"★".repeat(rating)}<span style={{ color: "#E5E7EB" }}>{"★".repeat(5 - rating)}</span>
+            </span>
+          );
+        };
+
+        const reviewMetrics = [
+          { label: "Total Reviews", value: totalReviews, color: T.textPrimary },
+          { label: "Avg Rating", value: ratedReviews.length > 0 ? `${avgRating.toFixed(1)} ★` : "—", color: BRAND_GOLD },
+          { label: "4★ or Higher", value: fourPlusCount, color: POSITIVE },
+          { label: "Sent to GMB", value: sentToGmbCount, color: T.textPrimary },
+        ];
+
+        return (
+          <>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <p className="text-sm" style={{ color: T.textSecond }}>{totalReviews} reviews</p>
+              </div>
+              <Button size="sm" onClick={fetchReviews} disabled={reviewsLoading} variant="outline">
+                {reviewsLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {reviewMetrics.map((m) => (
+                <div key={m.label} className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>{m.label}</div>
+                  <div className="text-2xl font-semibold" style={{ color: m.color, fontVariantNumeric: "tabular-nums" }}>
+                    {reviewsLoading && reviewsData.length === 0 ? "—" : m.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {reviewsLoading && reviewsData.length === 0 ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={32} />
+                <span className="ml-3" style={{ color: T.textSecond }}>Loading...</span>
+              </div>
+            ) : reviewsData.length === 0 ? (
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No reviews yet</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Customer feedback will appear here as soon as it comes in.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 z-10" style={{ backgroundColor: "#F9FAFB" }}>
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Submitted</th>
+                      <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Rating</th>
+                      <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Customer</th>
+                      <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Order #</th>
+                      <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Feedback</th>
+                      <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>GMB</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reviewsData.map((r: any, i: number) => (
+                      <tr key={r.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : "#FAFAFA" }}>
+                        <td className="px-4 py-3" style={{ color: T.textSecond, fontVariantNumeric: "tabular-nums" }}>
+                          {timeAgoR(r.review_submitted_at || r.created_at)}
+                        </td>
+                        <td className="px-4 py-3">{renderStars(r.rating)}</td>
+                        <td className="px-4 py-3" style={{ color: T.textPrimary }}>
+                          <div className="font-medium">{r.customer_name || "—"}</div>
+                          {r.customer_email && <div className="text-xs" style={{ color: T.textSecond }}>{r.customer_email}</div>}
+                        </td>
+                        <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: "tabular-nums" }}>
+                          {r.order_number || "—"}
+                        </td>
+                        <td className="px-4 py-3 max-w-md" style={{ color: T.textPrimary }}>
+                          <div className="truncate" title={r.feedback || ""}>{r.feedback || <span style={{ color: T.textSecond }}>—</span>}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {r.sent_to_gmb ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: "#ECFDF5", color: POSITIVE }}>Sent</span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: "#F3F4F6", color: T.textSecond }}>Not sent</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        );
+      }
+
       case "waitlist": {
         const cityGroups = waitlistData.reduce((acc: Record<string, any[]>, lead: any) => {
           const key = lead.city_name || lead.city_slug;
