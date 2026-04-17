@@ -6887,13 +6887,16 @@ const Leads = () => {
             </div>
 
             {/* ─── SECTION 3: FAILED PAYMENT ATTEMPTS ─── */}
-            <div className="rounded-xl border shadow-sm p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-bold text-sm mb-4" style={{ color: T.textPrimary }}>
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>
                 <AlertTriangle className="w-4 h-4 inline mr-2" style={{ color: WARN_YELLOW }} />
                 Failed Payment Attempts (24hr)
               </h3>
               {failedAttempts.length === 0 ? (
-                <p className="text-sm" style={{ color: T.textSecond }}>No failed payment attempts in the last 24 hours.</p>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p className="text-sm" style={{ color: T.textSecond }}>No failed payment attempts in the last 24 hours.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {Object.entries(ipGroups).map(([ip, attempts]) => (
