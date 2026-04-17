@@ -4167,8 +4167,14 @@ const Leads = () => {
       case "all":
         return (
           <>
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {parsedLeads.length} total leads
+              </p>
+            </div>
             <SearchAndFilters />
-            <div className="rounded-xl border shadow-sm" style={{ borderColor: T.cardBorder }}>
+            <div className="rounded-xl border shadow-sm overflow-hidden" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <LeadsTable data={paginatedLeads} />
               <Pagination />
             </div>
