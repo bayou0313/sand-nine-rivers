@@ -4585,7 +4585,7 @@ const Leads = () => {
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>📄 Project Documentation</h3>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>📄 Project Documentation</h3>
                   <p className="text-xs" style={{ color: T.textSecond }}>
                     Generates a live snapshot of the full codebase — DB schema, pits, settings, ZIP codes, architecture.
                     Upload to AI project knowledge after download.
@@ -4616,13 +4616,13 @@ const Leads = () => {
                     }
                   }}
                   disabled={exportingDocs}
-                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: "#2563EB", minWidth: "200px" }}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                  style={{ backgroundColor: BRAND_GOLD, minWidth: "200px" }}
                 >
-                  {exportingDocs ? "Generating..." : `Generate & Download — ${docsCurrentVersion}`}
+                  {exportingDocs ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : `Generate & Download — ${docsCurrentVersion}`}
                 </button>
               </div>
-              {docsExportError && <p className="text-xs mt-2" style={{ color: "#EF4444" }}>{docsExportError}</p>}
+              {docsExportError && <p className="text-xs mt-2" style={{ color: ALERT_RED }}>{docsExportError}</p>}
             </div>
 
             {/* ── AI Knowledge Snapshot ── */}
