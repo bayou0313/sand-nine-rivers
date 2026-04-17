@@ -1859,13 +1859,23 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchCityPages]);
 
-  // Fetch overview data when overview tab loads
+  // Fetch overview data when overview tab loads + auto-refresh every 60s (per GUIDELINES §16)
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const refreshOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      await Promise.all([fetchCashOrders(), fetchCityPages(), fetchAbandonedSessions()]);
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, [fetchCashOrders, fetchCityPages, fetchAbandonedSessions]);
   useEffect(() => {
     if (activePage === "overview" && authenticated) {
-      fetchCashOrders();
-      fetchCityPages();
+      refreshOverview();
+      const interval = setInterval(refreshOverview, 60000);
+      return () => clearInterval(interval);
     }
-  }, [activePage, authenticated, fetchCashOrders, fetchCityPages]);
+  }, [activePage, authenticated, refreshOverview]);
 
   // Schedule fetch functions
   const fetchScheduleOrders = useCallback(async (date: Date) => {
@@ -2469,7 +2479,6 @@ const Leads = () => {
         const toCapture = cashOrders.filter((o: any) => o.payment_status === "authorized" && !o.cash_collected && o.delivery_date === today);
         const toCaptureRev = toCapture.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
         const todayCOD = todayOrders.filter((o: any) => o.payment_method === "COD" && !o.cash_collected);
-        const furthest = todayOrders.reduce((m: number, o: any) => Math.max(m, Number(o.distance_miles || 0)), 0);
         const mtdOrders = cashOrders.filter((o: any) => (o.created_at || "").slice(0, 7) === monthStart);
         const mtdRev = mtdOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0);
         const avgOrder = cashOrders.length > 0 ? cashOrders.reduce((s: number, o: any) => s + Number(o.price || 0), 0) / cashOrders.length : 0;
@@ -2483,8 +2492,6 @@ const Leads = () => {
         const dayName = todayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
         const timeStr = todayDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
 
-        const CARD_STYLE = CARD_STYLE_T;
-
         const fmt = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         const fmtFull = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -2493,6 +2500,8 @@ const Leads = () => {
           const val = sl.reduce((s: number, l: any) => s + Number(l.calculated_price || 0), 0);
           return { stage, count: sl.length, value: val };
         });
+
+        const isInitialLoad = overviewLoading && cashOrders.length === 0;
 
         const AnimatedNum = ({ target, prefix = "", suffix = "", decimals = 0, color }: { target: number; prefix?: string; suffix?: string; decimals?: number; color: string }) => {
           const ref = useRef<HTMLSpanElement>(null);
@@ -2510,92 +2519,113 @@ const Leads = () => {
             const unsub = rounded.on("change", (v: string) => { if (ref.current) ref.current.textContent = v; });
             return unsub;
           }, [rounded]);
-          return <span ref={ref} style={{ color }}>{`${prefix}0${suffix}`}</span>;
+          return <span ref={ref} style={{ color, fontVariantNumeric: 'tabular-nums' }}>{`${prefix}0${suffix}`}</span>;
         };
 
-        const MetricBox = ({ label, numValue, sub, onClick, accentColor = BRAND_GOLD, prefix = "", suffix = "", decimals = 0, borderAccent = false }: { label: string; numValue: number; sub: string; onClick: () => void; accentColor?: string; prefix?: string; suffix?: string; decimals?: number; borderAccent?: boolean }) => (
+        // §5 Metric Card
+        const MetricCard = ({ label, numValue, sub, onClick, accentColor, prefix = "", suffix = "", decimals = 0 }: { label: string; numValue: number; sub?: string; onClick?: () => void; accentColor?: string; prefix?: string; suffix?: string; decimals?: number }) => (
           <div
             onClick={onClick}
-            className="rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md group"
-            style={{ ...CARD_STYLE, borderLeft: borderAccent ? `3px solid ${BRAND_GOLD}` : undefined }}
+            className={`rounded-xl border p-5 transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
+            style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}
           >
-            <p className="text-[10px] uppercase tracking-widest mb-2 font-medium" style={{ color: T.textSecond }}>{label}</p>
-            <p className="text-[28px] md:text-[32px] font-bold leading-none">
-              <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accentColor === BRAND_GOLD ? T.textPrimary : accentColor} />
-            </p>
-            <p className="text-[11px] mt-1.5" style={{ color: T.textSecond }}>{sub}</p>
+            <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>{label}</div>
+            <div className="text-2xl font-semibold" style={{ color: accentColor || T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+              {isInitialLoad
+                ? '—'
+                : <AnimatedNum target={numValue} prefix={prefix} suffix={suffix} decimals={decimals} color={accentColor || T.textPrimary} />}
+            </div>
+            {sub && <div className="text-xs mt-1" style={{ color: T.textSecond }}>{sub}</div>}
           </div>
         );
 
+        // §7 Status pill (mirrors STATUS_COLORS)
+        const OrderStatusPill = ({ status }: { status: string }) => {
+          const c = STATUS_COLORS[status] || STATUS_COLORS.new || { bg: '#F3F4F6', text: '#6B7280' };
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              style={{ backgroundColor: c.bg, color: c.text }}>
+              {status}
+            </span>
+          );
+        };
+
         return (
           <>
-            {/* Header row */}
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <p className="text-xs font-mono" style={{ color: T.textSecond }}>{dayName} · {timeStr}</p>
-              </div>
+            {/* §4 Tab Header — pulsing dot + count + Refresh */}
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: POSITIVE }} />
-                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: POSITIVE }} />
+                  <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: POSITIVE }} />
                 </span>
-                <span className="text-[10px] font-mono font-medium" style={{ color: POSITIVE }}>LIVE</span>
+                <p className="text-sm" style={{ color: T.textSecond }}>
+                  {isInitialLoad ? 'Loading…' : `${todayOrders.length} orders today · ${dayName} · ${timeStr}`}
+                </p>
               </div>
+              <Button onClick={refreshOverview} disabled={overviewLoading} size="sm" variant="outline">
+                {overviewLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
             </div>
 
-            {/* Top Metrics Row */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-              <MetricBox label="CAPTURE TONIGHT" numValue={toCaptureRev} prefix="$" sub="pending auth" onClick={() => setActivePage("cash_orders")} borderAccent />
-              <MetricBox label="ORDERS TODAY" numValue={todayOrders.length} sub="confirmed" onClick={() => setActivePage("schedule")} />
-              <MetricBox label="COD DUE" numValue={todayCOD.length} sub="collect today" onClick={() => setActivePage("cash_orders")} accentColor={todayCOD.length > 0 ? ALERT_RED : BRAND_GOLD} />
-              <MetricBox label="AVG ORDER" numValue={avgOrder} prefix="$" decimals={2} sub="per load" onClick={() => setActivePage("cash_orders")} />
-              <MetricBox label="MTD REVENUE" numValue={mtdRev} prefix="$" sub="this month" onClick={() => setActivePage("cash_orders")} accentColor={POSITIVE} borderAccent />
+            {/* §5 Metric Cards — 5-up exception per CMO approval */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <MetricCard label="CAPTURE TONIGHT" numValue={toCaptureRev} prefix="$" sub="pending auth" onClick={() => setActivePage("cash_orders")} accentColor={BRAND_GOLD} />
+              <MetricCard label="ORDERS TODAY" numValue={todayOrders.length} sub="confirmed" onClick={() => setActivePage("schedule")} />
+              <MetricCard label="COD DUE" numValue={todayCOD.length} sub="collect today" onClick={() => setActivePage("cash_orders")} accentColor={todayCOD.length > 0 ? ALERT_RED : T.textPrimary} />
+              <MetricCard label="AVG ORDER" numValue={avgOrder} prefix="$" decimals={2} sub="per load" onClick={() => setActivePage("cash_orders")} />
+              <MetricCard label="MTD REVENUE" numValue={mtdRev} prefix="$" sub="this month" onClick={() => setActivePage("cash_orders")} accentColor={POSITIVE} />
             </div>
 
-            {/* Operations Alerts */}
-            {(uncollectedCOD.length > 0 || captureIssues.length > 0 || outOfAreaLeads.length > 0 || toCaptureRev > 0) && (
-              <div className="mb-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap size={12} style={{ color: BRAND_GOLD }} />
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>OPERATIONS ALERTS</h2>
-                </div>
+            {/* Operations Alerts — §6 card container */}
+            <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>Operations Alerts</h3>
+              {(uncollectedCOD.length > 0 || captureIssues.length > 0 || outOfAreaLeads.length > 0 || toCaptureRev > 0) ? (
                 <div className="space-y-2">
                   {uncollectedCOD.length > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${ALERT_RED}` }}>
-                      <span className="text-xs" style={{ color: T.textPrimary }}><span className="font-bold">{uncollectedCOD.length} COD</span> order{uncollectedCOD.length > 1 ? "s" : ""} need collection — {fmtFull(uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0))}</span>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:bg-gray-50 border" style={{ borderColor: T.cardBorder, borderLeft: `3px solid ${ALERT_RED}` }}>
+                      <span className="text-sm" style={{ color: T.textPrimary }}><span className="font-bold">{uncollectedCOD.length} COD</span> order{uncollectedCOD.length > 1 ? "s" : ""} need collection — {fmtFull(uncollectedCOD.reduce((s: number, o: any) => s + Number(o.price || 0), 0))}</span>
                       <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                   {outOfAreaLeads.length > 0 && (
-                    <div onClick={() => setActivePage("all")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${WARN_YELLOW}` }}>
-                      <span className="text-xs" style={{ color: T.textPrimary }}><span className="font-bold">{outOfAreaLeads.length}</span> out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""} — no pit assigned</span>
+                    <div onClick={() => setActivePage("all")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:bg-gray-50 border" style={{ borderColor: T.cardBorder, borderLeft: `3px solid ${WARN_YELLOW}` }}>
+                      <span className="text-sm" style={{ color: T.textPrimary }}><span className="font-bold">{outOfAreaLeads.length}</span> out-of-area lead{outOfAreaLeads.length > 1 ? "s" : ""} — no pit assigned</span>
                       <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                   {captureIssues.length > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${ALERT_RED}` }}>
-                      <span className="text-xs" style={{ color: T.textPrimary }}><span className="font-bold">{captureIssues.length}</span> payment capture{captureIssues.length > 1 ? "s" : ""} failed</span>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:bg-gray-50 border" style={{ borderColor: T.cardBorder, borderLeft: `3px solid ${ALERT_RED}` }}>
+                      <span className="text-sm" style={{ color: T.textPrimary }}><span className="font-bold">{captureIssues.length}</span> payment capture{captureIssues.length > 1 ? "s" : ""} failed</span>
                       <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                   {toCaptureRev > 0 && (
-                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${POSITIVE}` }}>
-                      <span className="text-xs" style={{ color: T.textPrimary }}>{fmtFull(toCaptureRev)} capture scheduled for tonight</span>
+                    <div onClick={() => setActivePage("cash_orders")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:bg-gray-50 border" style={{ borderColor: T.cardBorder, borderLeft: `3px solid ${POSITIVE}` }}>
+                      <span className="text-sm" style={{ color: T.textPrimary }}>{fmtFull(toCaptureRev)} capture scheduled for tonight</span>
                       <span className="ml-auto text-xs" style={{ color: T.textSecond }}>→</span>
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-3xl mb-2">✅</div>
+                  <p className="text-sm font-medium" style={{ color: T.textPrimary }}>All clear</p>
+                  <p className="text-xs mt-1" style={{ color: T.textSecond }}>No operational issues right now.</p>
+                </div>
+              )}
+            </div>
 
-            {/* Hot Prospects — abandoned sessions with high intent */}
+            {/* Hot Prospects — §6 card */}
             {(() => {
               const HOT_STAGES = ["clicked_order_now", "started_checkout", "reached_payment"];
               const hotProspects = abandonedSessions
                 .filter((s: any) => HOT_STAGES.includes(s.stage))
                 .sort((a: any, b: any) => new Date(b.last_seen_at || b.updated_at || b.created_at).getTime() - new Date(a.last_seen_at || a.updated_at || a.created_at).getTime())
                 .slice(0, 5);
-              if (hotProspects.length === 0) return null;
 
               const stageLabel: Record<string, string> = {
                 clicked_order_now: "Clicked Order",
@@ -2617,104 +2647,113 @@ const Leads = () => {
               };
 
               return (
-                <div className="mb-5">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Zap size={12} style={{ color: ALERT_RED }} />
-                      <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>HOT PROSPECTS</h2>
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ backgroundColor: ALERT_RED }}>{hotProspects.length}</span>
+                      <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>Hot Prospects</h3>
+                      {hotProspects.length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white" style={{ backgroundColor: ALERT_RED }}>{hotProspects.length}</span>
+                      )}
                     </div>
-                    <button onClick={() => setActivePage("abandoned")} className="text-[10px] font-mono uppercase tracking-wider hover:underline" style={{ color: BRAND_GOLD }}>View All →</button>
+                    <button onClick={() => setActivePage("abandoned")} className="text-xs font-medium hover:underline" style={{ color: BRAND_GOLD }}>View All →</button>
                   </div>
-                  <div className="space-y-2">
-                    {hotProspects.map((s: any) => (
-                      <div key={s.id} onClick={() => setActivePage("abandoned")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:shadow-md" style={{ ...CARD_STYLE, borderLeft: `3px solid ${stageColor[s.stage] || WARN_YELLOW}` }}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-xs font-bold truncate" style={{ color: T.textPrimary }}>
-                              {s.customer_name || s.delivery_address?.split(",")[0] || "Unknown"}
-                            </span>
-                            {s.ip_is_business && (
-                              <span className="px-1 py-0.5 rounded text-[8px] font-bold uppercase" style={{ backgroundColor: "rgba(59,130,246,0.1)", color: "#3B82F6" }}>
-                                <Building2 size={8} className="inline mr-0.5" />BIZ
+                  {hotProspects.length > 0 ? (
+                    <div className="space-y-2">
+                      {hotProspects.map((s: any) => (
+                        <div key={s.id} onClick={() => setActivePage("abandoned")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:bg-gray-50 border" style={{ borderColor: T.cardBorder, borderLeft: `3px solid ${stageColor[s.stage] || WARN_YELLOW}` }}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-sm font-bold truncate" style={{ color: T.textPrimary }}>
+                                {s.customer_name || s.delivery_address?.split(",")[0] || "Unknown"}
                               </span>
-                            )}
-                            {s.customer_email && (
-                              <span className="px-1 py-0.5 rounded text-[8px] font-bold uppercase" style={{ backgroundColor: "rgba(5,150,105,0.1)", color: POSITIVE }}>
-                                HAS EMAIL
+                              {s.ip_is_business && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase" style={{ backgroundColor: '#EFF6FF', color: '#3B82F6' }}>
+                                  <Building2 size={10} className="inline mr-0.5" />BIZ
+                                </span>
+                              )}
+                              {s.customer_email && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase" style={{ backgroundColor: '#ECFDF5', color: POSITIVE }}>
+                                  HAS EMAIL
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs truncate" style={{ color: T.textSecond }}>
+                                {s.delivery_address ? s.delivery_address.split(",").slice(0, 2).join(",") : s.geo_city || "—"}
                               </span>
-                            )}
+                              {s.calculated_price && (
+                                <span className="text-xs font-bold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${Number(s.calculated_price).toFixed(0)}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] truncate" style={{ color: T.textSecond }}>
-                              {s.delivery_address ? s.delivery_address.split(",").slice(0, 2).join(",") : s.geo_city || "—"}
+                          <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase" style={{ backgroundColor: `${stageColor[s.stage]}15`, color: stageColor[s.stage] }}>
+                              {stageLabel[s.stage] || s.stage}
                             </span>
-                            {s.calculated_price && (
-                              <span className="text-[10px] font-mono font-bold" style={{ color: BRAND_GOLD }}>${Number(s.calculated_price).toFixed(0)}</span>
-                            )}
+                            <span className="text-[10px]" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>
+                              {timeAgo(s.last_seen_at || s.updated_at || s.created_at)}
+                            </span>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase" style={{ backgroundColor: `${stageColor[s.stage]}15`, color: stageColor[s.stage] }}>
-                            {stageLabel[s.stage] || s.stage}
-                          </span>
-                          <span className="text-[9px] font-mono" style={{ color: T.textSecond }}>
-                            {timeAgo(s.last_seen_at || s.updated_at || s.created_at)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="text-3xl mb-2">📭</div>
+                      <p className="text-sm font-medium" style={{ color: T.textPrimary }}>No hot prospects right now</p>
+                      <p className="text-xs mt-1" style={{ color: T.textSecond }}>High-intent abandoned sessions will appear here.</p>
+                    </div>
+                  )}
                 </div>
               );
             })()}
 
-            {/* Pipeline + SEO side by side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            {/* Pipeline + SEO side by side — §6 cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* Pipeline */}
-              <div className="rounded-lg p-4" style={CARD_STYLE}>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>PIPELINE</h2>
-                  <span className="text-xs font-mono font-bold" style={{ color: BRAND_GOLD }}>{fmt(metrics.pipelineValue)}</span>
+              <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>Pipeline</h3>
+                  <span className="text-sm font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{fmt(metrics.pipelineValue)}</span>
                 </div>
                 <div className="space-y-2.5">
                   {pipelineStages.map(({ stage, count, value }) => (
                     <div key={stage} onClick={() => setActivePage("pipeline")} className="flex items-center gap-3 cursor-pointer group">
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: STAGE_COLORS[stage] }} />
                       <span className="text-xs uppercase font-bold flex-shrink-0 w-14" style={{ color: STAGE_COLORS[stage] }}>{stage}</span>
-                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#F0EFEB" }}>
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: T.cardBorder }}>
                         <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(4, (count / Math.max(parsedLeads.length, 1)) * 100)}%`, backgroundColor: STAGE_COLORS[stage] }} />
                       </div>
-                      <span className="text-xs font-mono font-bold w-6 text-right" style={{ color: T.textPrimary }}>{count}</span>
-                      <span className="text-[10px] font-mono w-12 text-right" style={{ color: T.textSecond }}>{fmt(value)}</span>
+                      <span className="text-xs font-semibold w-6 text-right" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+                      <span className="text-[10px] w-12 text-right" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{fmt(value)}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* SEO Performance */}
-              <div className="rounded-lg p-4" style={CARD_STYLE}>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>SEO PERFORMANCE</h2>
-                  <span className="text-xs font-mono" style={{ color: T.textSecond }}>{activeCityPages.length} pages</span>
+              <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>SEO Performance</h3>
+                  <span className="text-xs" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{activeCityPages.length} pages</span>
                 </div>
                 <div className="flex gap-6 mb-3">
                   <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
-                    <p className="text-2xl font-bold" style={{ color: T.textPrimary }}>{activeCityPages.length}</p>
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: T.textSecond }}>Active Pages</p>
+                    <p className="text-2xl font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{activeCityPages.length}</p>
+                    <p className="text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Active Pages</p>
                   </div>
                   <div onClick={() => setActivePage("city_pages")} className="cursor-pointer">
-                    <p className="text-2xl font-bold" style={{ color: T.textPrimary }}>{totalViews.toLocaleString()}</p>
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: T.textSecond }}>Total Views</p>
+                    <p className="text-2xl font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{totalViews.toLocaleString()}</p>
+                    <p className="text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>Total Views</p>
                   </div>
                 </div>
                 {topCities.length > 0 && (
                   <div className="space-y-1.5">
                     {topCities.slice(0, 3).map((cp: any, i: number) => (
                       <div key={cp.id} onClick={() => setActivePage("city_pages")} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors">
-                        <span className="text-[10px] font-mono font-bold w-4" style={{ color: BRAND_GOLD }}>{i + 1}</span>
-                        <span className="text-xs flex-1" style={{ color: T.textPrimary }}>{cp.city_name}</span>
-                        <span className="text-xs font-mono" style={{ color: T.textSecond }}>{(cp.page_views || 0).toLocaleString()} views</span>
+                        <span className="text-xs font-bold w-4" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
+                        <span className="text-sm flex-1" style={{ color: T.textPrimary }}>{cp.city_name}</span>
+                        <span className="text-xs" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{(cp.page_views || 0).toLocaleString()} views</span>
                       </div>
                     ))}
                   </div>
@@ -2722,45 +2761,45 @@ const Leads = () => {
               </div>
             </div>
 
-            {/* Recent Orders */}
-            {recentOrders.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: T.textSecond }}>RECENT ORDERS</h2>
-                  <button onClick={() => setActivePage("cash_orders")} className="text-[10px] font-mono uppercase tracking-wider hover:underline" style={{ color: BRAND_GOLD }}>View All →</button>
-                </div>
-                <div className="rounded-lg overflow-hidden" style={CARD_STYLE}>
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+            {/* Recent Orders — §11 table standard */}
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>Recent Orders</h3>
+                <button onClick={() => setActivePage("cash_orders")} className="text-xs font-medium hover:underline" style={{ color: BRAND_GOLD }}>View All →</button>
+              </div>
+              {recentOrders.length > 0 ? (
+                <div className="overflow-x-auto rounded-lg border" style={{ borderColor: T.cardBorder }}>
+                  <table className="min-w-full text-sm">
+                    <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                      <tr>
                         {["Order", "Customer", "Address", "Amount", "Status"].map(h => (
-                          <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
+                          <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {recentOrders.map((o: any, i: number) => (
-                        <tr key={o.id} onClick={() => setActivePage("cash_orders")} className="cursor-pointer transition-colors" style={{ borderBottom: i < recentOrders.length - 1 ? `1px solid ${T.cardBorder}` : "none" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "#FDF8F0"; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
-                        >
-                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: BRAND_GOLD }}>{o.order_number || "—"}</td>
-                          <td className="px-3 py-2.5 font-medium" style={{ color: T.textPrimary }}>{o.customer_name}</td>
-                          <td className="px-3 py-2.5 max-w-[180px] truncate" style={{ color: T.textSecond }}>{o.delivery_address}</td>
-                          <td className="px-3 py-2.5 font-mono font-bold" style={{ color: T.textPrimary }}>{fmtFull(Number(o.price || 0))}</td>
-                          <td className="px-3 py-2.5">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono" style={{
-                              backgroundColor: o.status === "delivered" ? "rgba(5,150,105,0.1)" : o.status === "confirmed" ? "rgba(59,130,246,0.1)" : o.status === "cancelled" ? "rgba(220,38,38,0.1)" : "rgba(0,0,0,0.04)",
-                              color: o.status === "delivered" ? POSITIVE : o.status === "confirmed" ? "#3B82F6" : o.status === "cancelled" ? ALERT_RED : T.textSecond
-                            }}>{o.status}</span>
-                          </td>
+                        <tr key={o.id} onClick={() => setActivePage("cash_orders")}
+                          className="border-t hover:bg-gray-50 transition-colors cursor-pointer"
+                          style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{o.order_number || "—"}</td>
+                          <td className="px-4 py-3 font-medium" style={{ color: T.textPrimary }}>{o.customer_name}</td>
+                          <td className="px-4 py-3 max-w-[220px] truncate" style={{ color: T.textSecond }}>{o.delivery_address}</td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{fmtFull(Number(o.price || 0))}</td>
+                          <td className="px-4 py-3"><OrderStatusPill status={o.status} /></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p className="font-medium" style={{ color: T.textPrimary }}>No orders yet</p>
+                  <p className="text-xs mt-1" style={{ color: T.textSecond }}>Recent orders will appear here as they come in.</p>
+                </div>
+              )}
+            </div>
           </>
         );
       }
