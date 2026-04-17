@@ -5626,7 +5626,7 @@ const Leads = () => {
         const STATUS_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
           pending:   { label: "Pending",   badgeBg: "#FEF3C7", badgeColor: WARN_YELLOW },
           confirmed: { label: "Confirmed", badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
-          en_route:  { label: "En route",  badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          en_route:  { label: "En route",  badgeBg: "#F0FDFA", badgeColor: "#0D9488" },
           delivered: { label: "Delivered", badgeBg: "#ECFDF5", badgeColor: POSITIVE },
           cancelled: { label: "Cancelled", badgeBg: "#FEF2F2", badgeColor: ALERT_RED },
         };
