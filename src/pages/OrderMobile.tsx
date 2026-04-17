@@ -250,30 +250,10 @@ const OrderMobile = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [step]);
 
-  // Fetch GMB review URL + inject GTM/Clarity from global_settings
+  // Fetch GMB review URL (GTM + Clarity injection lives in App.tsx top-level effect)
   useEffect(() => {
     supabase.from("global_settings").select("value").eq("key", "gmb_review_url").maybeSingle()
       .then(({ data }) => { if (data?.value) setGmbReviewUrl(data.value); });
-
-    // Dynamic GTM + Clarity injection (mirrors Index.tsx)
-    supabase.from("global_settings").select("key, value").in("key", ["seo_gtm_id", "seo_clarity_id"])
-      .then(async ({ data }) => {
-        if (!data) return;
-        const map: Record<string, string> = {};
-        for (const row of data) map[row.key] = row.value;
-        if (map.seo_gtm_id) {
-          const { injectGTM } = await import("@/lib/gtm");
-          injectGTM(map.seo_gtm_id);
-        }
-        const clarityId = map.seo_clarity_id;
-        const path = window.location.pathname;
-        if (clarityId && !path.startsWith("/leads") && !path.startsWith("/admin") && !document.getElementById("clarity-script")) {
-          const s = document.createElement("script");
-          s.id = "clarity-script";
-          s.innerHTML = `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${clarityId}");`;
-          document.head.appendChild(s);
-        }
-      });
   }, []);
 
   // Fetch settings + pits

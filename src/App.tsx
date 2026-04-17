@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/analytics";
+import { injectGTM } from "@/lib/gtm";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index.tsx";
@@ -231,6 +232,34 @@ function AppContent() {
       cancelled = true;
       clearTimeout(timeout);
     };
+  }, []);
+
+  // Inject GTM + Microsoft Clarity once globally (excluding /leads and /admin).
+  // injectGTM is idempotent; Clarity is guarded by the #clarity-script element.
+  useEffect(() => {
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    if (path.startsWith("/leads") || path.startsWith("/admin")) return;
+
+    supabase
+      .from("global_settings")
+      .select("key, value")
+      .in("key", ["seo_gtm_id", "seo_clarity_id"])
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string> = {};
+        for (const row of data as Array<{ key: string; value: string }>) {
+          map[row.key] = row.value;
+        }
+        if (map.seo_gtm_id) injectGTM(map.seo_gtm_id);
+
+        const clarityId = map.seo_clarity_id;
+        if (clarityId && typeof document !== "undefined" && !document.getElementById("clarity-script")) {
+          const s = document.createElement("script");
+          s.id = "clarity-script";
+          s.innerHTML = `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${clarityId}");`;
+          document.head.appendChild(s);
+        }
+      });
   }, []);
 
   // Set CSS variable for banner offset so Navbar shifts down
