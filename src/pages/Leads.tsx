@@ -1820,6 +1820,12 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchPendingReview]);
 
+  useEffect(() => {
+    if (activePage === "reviews" && authenticated) {
+      fetchReviews();
+    }
+  }, [activePage, authenticated, fetchReviews]);
+
 
 
 
