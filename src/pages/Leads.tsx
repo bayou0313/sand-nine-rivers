@@ -2807,44 +2807,71 @@ const Leads = () => {
       case "zip":
         return (
           <>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {zipData.length} ZIPs · 2+ leads = confirmed unserved demand
+              </p>
+            </div>
+
+            {/* Insight banner */}
+            <div className="rounded-xl border p-4 mb-4" style={{ backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }}>
               <p className="text-sm" style={{ color: T.textPrimary }}>
                 <strong>💡 ZIPs with 2+ leads = confirmed unserved demand.</strong> These are your next expansion markets.
               </p>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                    {["ZIP", "City", "State", "Leads", "Demand", "Est. Monthly Rev", "Avg Distance", "Priority"].map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {zipData.map((z, i) => (
-                    <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
-                      <td className="px-3 py-2 font-mono font-bold" style={{ color: T.textPrimary }}>{z.zip}</td>
-                      <td className="px-3 py-2">{z.city}</td>
-                      <td className="px-3 py-2">{z.state}</td>
-                      <td className="px-3 py-2 font-bold" style={{ color: BRAND_GOLD }}>{z.count}</td>
-                      <td className="px-3 py-2">
-                        <div className="w-24 h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${(z.count / maxZipCount) * 100}%`, backgroundColor: BRAND_GOLD }} />
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 font-bold" style={{ color: BRAND_GOLD }}>${(z.count * basePrice * 20).toLocaleString()}</td>
-                      <td className="px-3 py-2">{z.avgDist.toFixed(1)} mi</td>
-                      <td className="px-3 py-2">
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: z.priority === "hot" ? BRAND_GOLD : z.priority === "warm" ? "#1A6BB8" : "#999" }}>
-                          {z.priority.toUpperCase()}
-                        </span>
-                      </td>
+
+            {zipData.length > 0 ? (
+              <div className="overflow-x-auto rounded-xl border" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      {["ZIP", "City", "State", "Leads", "Demand", "Est. Monthly Rev", "Avg Distance", "Priority"].map(h => (
+                        <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {zipData.map((z, i) => {
+                      const priorityColors: Record<string, { bg: string; text: string }> = {
+                        hot: { bg: '#FDF8F0', text: BRAND_GOLD },
+                        warm: { bg: '#EFF6FF', text: '#1A6BB8' },
+                        cold: { bg: '#F3F4F6', text: '#6B7280' },
+                      };
+                      const pc = priorityColors[z.priority] || priorityColors.cold;
+                      return (
+                        <tr key={z.zip} className="border-t hover:bg-gray-50 transition-colors"
+                          style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                          <td className="px-4 py-3 font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{z.zip}</td>
+                          <td className="px-4 py-3" style={{ color: T.textPrimary }}>{z.city}</td>
+                          <td className="px-4 py-3" style={{ color: T.textSecond }}>{z.state}</td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{z.count}</td>
+                          <td className="px-4 py-3">
+                            <div className="w-24 h-2 rounded-full overflow-hidden" style={{ backgroundColor: T.cardBorder }}>
+                              <div className="h-full rounded-full" style={{ width: `${(z.count / maxZipCount) * 100}%`, backgroundColor: BRAND_GOLD }} />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${(z.count * basePrice * 20).toLocaleString()}</td>
+                          <td className="px-4 py-3" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{z.avgDist.toFixed(1)} mi</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase"
+                              style={{ backgroundColor: pc.bg, color: pc.text }}>
+                              {z.priority}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No ZIP data yet</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>ZIPs with leads will appear here.</p>
+              </div>
+            )}
           </>
         );
 
