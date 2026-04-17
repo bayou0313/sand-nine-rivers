@@ -5803,42 +5803,40 @@ const Leads = () => {
               ))}
             </div>
 
-            {/* Toolbar */}
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-              <div style={{ display:"flex", gap:2, background:"#F3F4F6", padding:3, borderRadius:8, flexShrink:0 }}>
-                {TABS.map(t => (
-                  <button key={t.key} onClick={() => setOrdersTab(t.key)}
-                    style={{ padding:"5px 12px", borderRadius:6, fontSize:12, cursor:"pointer", border:"none",
-                      fontFamily:"inherit", whiteSpace:"nowrap", transition:"all .15s",
-                      background: ordersTab===t.key ? "white" : "transparent",
-                      color: ordersTab===t.key ? "#111827" : "#6B7280",
-                      fontWeight: ordersTab===t.key ? 500 : 400,
-                      boxShadow: ordersTab===t.key ? "0 0 0 0.5px #E5E7EB" : "none",
-                    }}>
-                    {t.label}
-                  </button>
-                ))}
+            {/* §13 Toolbar */}
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="flex gap-0.5 p-0.5 rounded-lg flex-shrink-0" style={{ backgroundColor: "#F3F4F6" }}>
+                {TABS.map(t => {
+                  const active = ordersTab === t.key;
+                  return (
+                    <button key={t.key} onClick={() => setOrdersTab(t.key)}
+                      className="px-3 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors"
+                      style={{
+                        backgroundColor: active ? T.cardBg : "transparent",
+                        color: active ? T.textPrimary : T.textSecond,
+                        fontWeight: active ? 600 : 400,
+                        boxShadow: active ? `0 0 0 1px ${T.cardBorder}` : "none",
+                      }}>
+                      {t.label}
+                    </button>
+                  );
+                })}
               </div>
               <input
                 value={ordersSearch}
                 onChange={e => setOrdersSearch(e.target.value)}
                 placeholder="Search order #, name, address, phone..."
-                style={{ flex:1, minWidth:180, padding:"7px 10px", border:"0.5px solid #E5E7EB",
-                  borderRadius:8, fontSize:12, fontFamily:"inherit", background:"white",
-                  color:"inherit" }}
+                className="flex-1 min-w-[180px] px-3 py-1.5 rounded-lg text-sm outline-none"
+                style={{ border: `1px solid ${T.cardBorder}`, backgroundColor: T.cardBg, color: T.textPrimary }}
               />
               <select value={ordersPayFilter} onChange={e => setOrdersPayFilter(e.target.value)}
-                style={{ padding:"7px 10px", border:"0.5px solid #E5E7EB", borderRadius:8,
-                  fontSize:12, fontFamily:"inherit", background:"white", color:"#6B7280", cursor:"pointer" }}>
+                className="px-3 py-1.5 rounded-lg text-sm cursor-pointer"
+                style={{ border: `1px solid ${T.cardBorder}`, backgroundColor: T.cardBg, color: T.textSecond }}>
                 <option value="">All payment types</option>
                 <option value="stripe-link">Card (Stripe)</option>
                 <option value="cash">Cash / COD</option>
                 <option value="check">Check</option>
               </select>
-              <Button onClick={fetchAllOrders} disabled={ordersLoading} size="sm" variant="outline">
-                {ordersLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                <span style={{ marginLeft:4 }}>Refresh</span>
-              </Button>
             </div>
 
             {/* Main grid — table + detail panel */}
