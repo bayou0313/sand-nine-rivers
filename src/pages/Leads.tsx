@@ -4628,7 +4628,7 @@ const Leads = () => {
             {/* ── AI Knowledge Snapshot ── */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <div className="mb-4">
-                <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>🧠 AI Knowledge Snapshot</h3>
+                <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>🧠 AI Knowledge Snapshot</h3>
                 <p className="text-xs" style={{ color: T.textSecond }}>
                   Compact session-start brief for AI: pricing, active PITs, city counts, pending issues, stack. Auto-versioned, uploaded to Storage.
                 </p>
