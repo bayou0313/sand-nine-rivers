@@ -3390,6 +3390,19 @@ const Leads = () => {
 
         return (
           <>
+            {/* Tab header (§4) */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {cityPages.length} pages · {activeCount} active · {needsRegenCount} need regen
+              </p>
+              <Button onClick={fetchCityPages} disabled={cityPagesLoading} size="sm" variant="outline">
+                {cityPagesLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+
             {/* Header buttons */}
             <div className="flex flex-wrap gap-2 mb-4">
               <select
@@ -3863,10 +3876,10 @@ const Leads = () => {
               {cityPagesLoading ? (
                 <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: BRAND_GOLD }} /></div>
               ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                      <th className="px-3 py-2 text-left">
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 z-10" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      <th className="px-3 py-3 text-left">
                         <input
                           type="checkbox"
                           checked={filteredCityPages.length > 0 && filteredCityPages.every((cp: any) => selectedCityPages.has(cp.id))}
@@ -3896,7 +3909,8 @@ const Leads = () => {
                       ].map(h => (
                         <th
                           key={h.label}
-                          className={`px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider ${h.key ? "cursor-pointer select-none hover:text-yellow-200" : ""}`}
+                          className={`px-3 py-3 text-left text-xs font-medium uppercase tracking-wider ${h.key ? "cursor-pointer select-none hover:opacity-70" : ""}`}
+                          style={{ color: T.textSecond }}
                           onClick={() => {
                             if (!h.key) return;
                             const k = h.key as typeof cityPageSortKey;
@@ -3918,7 +3932,7 @@ const Leads = () => {
                   </thead>
                   <tbody>
                     {filteredCityPages.map((cp: any, i: number) => (
-                      <tr key={cp.id} style={{ backgroundColor: selectedCityPages.has(cp.id) ? BRAND_GOLD + "10" : i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
+                      <tr key={cp.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: selectedCityPages.has(cp.id) ? BRAND_GOLD + "10" : i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
                         <td className="px-3 py-2">
                           <input
                             type="checkbox"
@@ -3948,12 +3962,12 @@ const Leads = () => {
                           </a>
                         </td>
                         <td className="px-3 py-2 text-xs">{cp.pits?.name || "—"}</td>
-                        <td className="px-3 py-2 text-xs">{cp.distance_from_pit ? `${Number(cp.distance_from_pit).toFixed(1)} mi` : "—"}</td>
-                        <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD }}>{cp.base_price ? `$${Number(cp.base_price).toFixed(2)}` : "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>{cp.distance_from_pit ? `${Number(cp.distance_from_pit).toFixed(1)} mi` : "—"}</td>
+                        <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{cp.base_price ? `$${Number(cp.base_price).toFixed(2)}` : "—"}</td>
                         <td className="px-3 py-2">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{
-                            backgroundColor: cp.status === "active" ? "#22C55E20" : cp.status === "draft" ? "#F59E0B20" : "#99999920",
-                            color: cp.status === "active" ? "#22C55E" : cp.status === "draft" ? "#F59E0B" : "#999",
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{
+                            backgroundColor: cp.status === "active" ? "#ECFDF5" : cp.status === "draft" ? "#F3F4F6" : "#F3F4F6",
+                            color: cp.status === "active" ? "#059669" : cp.status === "draft" ? "#6B7280" : "#6B7280",
                           }}>
                             {cp.status?.charAt(0).toUpperCase() + cp.status?.slice(1)}
                           </span>
@@ -3964,22 +3978,21 @@ const Leads = () => {
                             const isPitChanged = cp.pit_reassigned;
                             const isPriceChanged = cp.price_changed && !cp.pit_reassigned;
                             const isMissing = !cp.content_generated_at;
-                            const isOutdated = !!cp.needs_regen && !isPitChanged && !isPriceChanged && !isMissing;
                             const dotColor = isCurrent ? "#22C55E" : isPitChanged ? "#EF4444" : isPriceChanged ? "#EF4444" : isMissing ? "#6B7280" : "#F59E0B";
                             const label = isCurrent ? "Current" : isPitChanged ? "PIT Changed" : isPriceChanged ? "Price Changed" : isMissing ? "Missing" : "Outdated";
                             return (
                               <span className="inline-flex items-center gap-1.5" title={cp.regen_reason || undefined}>
                                 <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
-                                <span className="text-xs" style={{ color: dotColor }}>{label}</span>
+                                <span className="text-xs font-medium" style={{ color: dotColor }}>{label}</span>
                               </span>
                             );
                           })()}
                         </td>
-                        <td className="px-3 py-2 text-xs">{cp.page_views || 0}</td>
-                        <td className="px-3 py-2 text-xs text-gray-400">{cp.prompt_version || "—"}</td>
+                        <td className="px-3 py-2 text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>{cp.page_views || 0}</td>
+                        <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{cp.prompt_version || "—"}</td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
-                            <button onClick={() => window.open(`https://riversand.net/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: T.textPrimary + "30", color: T.textPrimary }}>View</button>
+                            <button onClick={() => window.open(`https://riversand.net/${cp.city_slug}/river-sand-delivery`, "_blank")} className="text-xs px-2 py-1 rounded border hover:bg-gray-50" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>View</button>
                             <button onClick={() => {
                               const parsed = parseCityPageContent(cp);
                               setEditingCityPage({ ...cp, ...parsed });
@@ -3992,7 +4005,13 @@ const Leads = () => {
                       </tr>
                     ))}
                     {filteredCityPages.length === 0 && (
-                      <tr><td colSpan={13} className="px-3 py-8 text-center text-gray-400">No city pages yet. Use Discover Cities to find nearby cities.</td></tr>
+                      <tr>
+                        <td colSpan={13} className="px-3 py-12 text-center">
+                          <div className="text-4xl mb-2">📭</div>
+                          <p className="font-medium" style={{ color: T.textPrimary }}>No city pages yet</p>
+                          <p className="text-xs mt-1" style={{ color: T.textSecond }}>Use Discover Cities to find nearby cities.</p>
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
