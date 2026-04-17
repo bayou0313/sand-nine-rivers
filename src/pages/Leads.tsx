@@ -1859,13 +1859,23 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchCityPages]);
 
-  // Fetch overview data when overview tab loads
+  // Fetch overview data when overview tab loads + auto-refresh every 60s (per GUIDELINES §16)
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const refreshOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      await Promise.all([fetchCashOrders(), fetchCityPages(), fetchAbandonedSessions()]);
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, [fetchCashOrders, fetchCityPages, fetchAbandonedSessions]);
   useEffect(() => {
     if (activePage === "overview" && authenticated) {
-      fetchCashOrders();
-      fetchCityPages();
+      refreshOverview();
+      const interval = setInterval(refreshOverview, 60000);
+      return () => clearInterval(interval);
     }
-  }, [activePage, authenticated, fetchCashOrders, fetchCityPages]);
+  }, [activePage, authenticated, refreshOverview]);
 
   // Schedule fetch functions
   const fetchScheduleOrders = useCallback(async (date: Date) => {
