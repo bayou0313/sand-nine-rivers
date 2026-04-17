@@ -5626,7 +5626,7 @@ const Leads = () => {
         const STATUS_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
           pending:   { label: "Pending",   badgeBg: "#FEF3C7", badgeColor: WARN_YELLOW },
           confirmed: { label: "Confirmed", badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
-          en_route:  { label: "En route",  badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          en_route:  { label: "En route",  badgeBg: "#F0FDFA", badgeColor: "#0D9488" },
           delivered: { label: "Delivered", badgeBg: "#ECFDF5", badgeColor: POSITIVE },
           cancelled: { label: "Cancelled", badgeBg: "#FEF2F2", badgeColor: ALERT_RED },
         };
@@ -5843,35 +5843,36 @@ const Leads = () => {
             <div style={{ display:"grid", gap:14,
               gridTemplateColumns: selectedOrderId ? "1fr 340px" : "1fr" }}>
 
-              {/* Orders table */}
-              <div style={cardStyle}>
+              {/* §11 Orders table */}
+              <div className="rounded-xl border overflow-hidden"
+                style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                 {ordersLoading && !allOrders.length ? (
-                  <div style={{ textAlign:"center", padding:"48px 0", color:"#9CA3AF", fontSize:13 }}>
-                    <Loader2 size={20} style={{ animation:"spin 1s linear infinite", margin:"0 auto 8px" }} />
-                    Loading orders...
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={28} />
+                    <span className="ml-3 text-sm" style={{ color: T.textSecond }}>Loading orders…</span>
+                  </div>
+                ) : filteredOrders.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <div className="text-4xl mb-2">📭</div>
+                    <p className="font-medium" style={{ color: T.textPrimary }}>No orders match filters</p>
+                    <p className="text-xs mt-1" style={{ color: T.textSecond }}>Try clearing search or payment filter.</p>
                   </div>
                 ) : (
-                  <div style={{ overflowX:"auto" }}>
-                    <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-                      <thead>
-                        <tr style={{ background:"#F9FAFB" }}>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="sticky top-0" style={{ backgroundColor: "#F9FAFB" }}>
+                        <tr>
                           {["Order #","Customer","Address","Delivery","Amount","Payment","Status","Actions"].map(h => (
-                            <th key={h} style={{ textAlign:"left", padding:"9px 12px", fontSize:10,
-                              fontWeight:500, color:"#9CA3AF", textTransform:"uppercase",
-                              letterSpacing:".05em", borderBottom:"0.5px solid #F3F4F6", whiteSpace:"nowrap" }}>
+                            <th key={h}
+                              className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider whitespace-nowrap"
+                              style={{ color: T.textSecond }}>
                               {h}
                             </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredOrders.length === 0 ? (
-                          <tr>
-                            <td colSpan={8} style={{ textAlign:"center", padding:"48px 0", color:"#9CA3AF", fontSize:13 }}>
-                              No orders match filters
-                            </td>
-                          </tr>
-                        ) : filteredOrders.map((o: any) => {
+                        {filteredOrders.map((o: any, idx: number) => {
                           const isSel = o.id === selectedOrderId;
                           return (
                             <tr key={o.id}
@@ -5879,82 +5880,83 @@ const Leads = () => {
                                 if (selectedOrderId === o.id) { setSelectedOrderId(null); }
                                 else { setSelectedOrderId(o.id); setOrderNotesDraft(o.notes || ""); setShowGenLinkForm(false); setGeneratedStripeUrl(null); setGenLinkEmail(""); }
                               }}
-                              style={{ background: isSel ? "#F9FAFB" : "white", cursor:"pointer",
-                                borderBottom:"0.5px solid #F9FAFB", transition:"background .1s" }}
-                              onMouseEnter={e => { if(!isSel)(e.currentTarget as HTMLTableRowElement).style.background="#F9FAFB"; }}
-                              onMouseLeave={e => { if(!isSel)(e.currentTarget as HTMLTableRowElement).style.background="white"; }}
-                            >
-                              <td style={{ padding:"10px 12px" }}>
-                                <span style={{ fontFamily:"monospace", fontSize:11, color:"#2563EB", fontWeight:500 }}>
+                              className="border-t hover:bg-gray-50 transition-colors cursor-pointer"
+                              style={{
+                                borderColor: T.cardBorder,
+                                backgroundColor: isSel ? "#F3F4F6" : (idx % 2 === 0 ? T.cardBg : "#FAFAFA"),
+                              }}>
+                              <td className="px-4 py-3">
+                                <span className="text-sm font-semibold"
+                                  style={{ color: BRAND_GOLD, fontVariantNumeric: "tabular-nums" }}>
                                   {o.order_number}
                                 </span>
                               </td>
-                              <td style={{ padding:"10px 12px" }}>
-                                <div style={{ fontSize:12, fontWeight:500 }}>{o.customer_name}</div>
-                                <div style={{ fontSize:10, color:"#9CA3AF" }}>{o.customer_phone}</div>
+                              <td className="px-4 py-3">
+                                <div className="text-sm font-medium" style={{ color: T.textPrimary }}>{o.customer_name}</div>
+                                <div className="text-xs" style={{ color: T.textSecond }}>{o.customer_phone}</div>
                               </td>
-                              <td style={{ padding:"10px 12px", maxWidth:160 }}>
-                                <span style={{ fontSize:11, color:"#6B7280", display:"block",
-                                  overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                              <td className="px-4 py-3 max-w-[180px]">
+                                <span className="text-xs block overflow-hidden text-ellipsis whitespace-nowrap"
+                                  style={{ color: T.textSecond }}>
                                   {o.delivery_address}
                                 </span>
                               </td>
-                              <td style={{ padding:"10px 12px" }}>
-                                <div style={{ fontSize:12, fontWeight:500 }}>{fmtDate(o.delivery_date)}</div>
-                                <div style={{ fontSize:10, color:"#9CA3AF" }}>{o.delivery_day_of_week}</div>
+                              <td className="px-4 py-3">
+                                <div className="text-sm font-medium" style={{ color: T.textPrimary, fontVariantNumeric: "tabular-nums" }}>
+                                  {fmtDate(o.delivery_date)}
+                                </div>
+                                <div className="text-xs" style={{ color: T.textSecond }}>{o.delivery_day_of_week}</div>
                               </td>
-                              <td style={{ padding:"10px 12px", fontSize:12, fontWeight:500 }}>
+                              <td className="px-4 py-3 text-sm font-semibold"
+                                style={{ color: T.textPrimary, fontVariantNumeric: "tabular-nums" }}>
                                 {fmtMoney(Number(o.price) * (o.quantity || 1))}
-                                {o.quantity > 1 && <div style={{ fontSize:10, color:"#9CA3AF" }}>{o.quantity} loads</div>}
-                              </td>
-                              <td style={{ padding:"10px 12px" }}>
-                                <PayBadge method={o.payment_method} payStatus={o.payment_status} />
-                              </td>
-                              <td style={{ padding:"10px 12px" }}>
-                                <StatusBadge status={o.status} />
-                                {o.saturday_surcharge && (
-                                  <div style={{ fontSize:10, color:"#D97706", marginTop:2 }}>Sat +$35</div>
+                                {o.quantity > 1 && (
+                                  <div className="text-xs font-normal" style={{ color: T.textSecond }}>{o.quantity} loads</div>
                                 )}
                               </td>
-                              <td style={{ padding:"10px 12px" }} onClick={e => e.stopPropagation()}>
-                                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                              <td className="px-4 py-3">
+                                <PayBadge method={o.payment_method} payStatus={o.payment_status} />
+                              </td>
+                              <td className="px-4 py-3">
+                                <StatusBadge status={o.status} />
+                                {o.saturday_surcharge && (
+                                  <div className="text-xs mt-1" style={{ color: WARN_YELLOW }}>Sat +$35</div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-1 flex-wrap">
                                   {o.status === "pending" && o.payment_status === "paid" && (
-                                    <button onClick={() => doOrderAction("update_status", o.id, { status:"confirmed" })}
-                                      style={{ padding:"3px 8px", border:"0.5px solid #E5E7EB", borderRadius:6,
-                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
-                                        color:"#374151", transition:"background .15s" }}>
+                                    <button onClick={() => doOrderAction("update_status", o.id, { status: "confirmed" })}
+                                      className="px-2 py-1 rounded-md text-xs font-medium hover:bg-gray-100 transition-colors"
+                                      style={{ border: `1px solid ${T.cardBorder}`, color: T.textPrimary, backgroundColor: T.cardBg }}>
                                       Confirm
                                     </button>
                                   )}
                                   {o.status === "confirmed" && (
-                                    <button onClick={() => doOrderAction("update_status", o.id, { status:"en_route" })}
-                                      style={{ padding:"3px 8px", border:"0.5px solid #E5E7EB", borderRadius:6,
-                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
-                                        color:"#374151" }}>
+                                    <button onClick={() => doOrderAction("update_status", o.id, { status: "en_route" })}
+                                      className="px-2 py-1 rounded-md text-xs font-medium hover:bg-gray-100 transition-colors"
+                                      style={{ border: `1px solid ${T.cardBorder}`, color: T.textPrimary, backgroundColor: T.cardBg }}>
                                       En route
                                     </button>
                                   )}
                                   {o.status === "en_route" && (
-                                    <button onClick={() => doOrderAction("update_status", o.id, { status:"delivered" })}
-                                      style={{ padding:"3px 8px", border:"0.5px solid #E5E7EB", borderRadius:6,
-                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
-                                        color:"#374151" }}>
+                                    <button onClick={() => doOrderAction("update_status", o.id, { status: "delivered" })}
+                                      className="px-2 py-1 rounded-md text-xs font-medium hover:bg-gray-100 transition-colors"
+                                      style={{ border: `1px solid ${T.cardBorder}`, color: T.textPrimary, backgroundColor: T.cardBg }}>
                                       Delivered
                                     </button>
                                   )}
                                   {o.payment_status === "pending" && o.payment_method === "stripe-link" && (
                                     <button onClick={() => doOrderAction("send_payment_link", o.id)}
-                                      style={{ padding:"3px 8px", border:"0.5px solid #D97706", borderRadius:6,
-                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
-                                        color:"#D97706" }}>
+                                      className="px-2 py-1 rounded-md text-xs font-medium hover:opacity-80 transition-opacity"
+                                      style={{ border: `1px solid ${BRAND_GOLD}`, color: BRAND_GOLD, backgroundColor: T.cardBg }}>
                                       Send link
                                     </button>
                                   )}
                                   {!["cancelled","delivered"].includes(o.status) && (
                                     <button onClick={() => doOrderAction("cancel_order", o.id)}
-                                      style={{ padding:"3px 8px", border:"0.5px solid #DC2626", borderRadius:6,
-                                        fontSize:10, cursor:"pointer", background:"transparent", fontFamily:"inherit",
-                                        color:"#DC2626" }}>
+                                      className="px-2 py-1 rounded-md text-xs font-medium hover:opacity-80 transition-opacity"
+                                      style={{ border: `1px solid ${ALERT_RED}`, color: ALERT_RED, backgroundColor: T.cardBg }}>
                                       Cancel
                                     </button>
                                   )}
