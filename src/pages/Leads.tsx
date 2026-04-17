@@ -6400,21 +6400,71 @@ const Leads = () => {
           const s = customersSearch.toLowerCase();
           return (c.name || "").toLowerCase().includes(s) || (c.email || "").toLowerCase().includes(s) || (c.phone || "").includes(s) || (c.company || "").toLowerCase().includes(s);
         });
+
+        // §5 Metrics
+        const totalCustomers = customersData.length;
+        const repeatCustomers = customersData.filter(c => (c.total_orders || 0) > 1).length;
+        const totalRevenue = customersData.reduce((sum, c) => sum + Number(c.total_spent || 0), 0);
+        const avgLtv = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
+        const fmtMoney = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+        const metrics = [
+          { label: "Total customers", value: totalCustomers, color: T.textPrimary },
+          { label: "Repeat buyers",   value: repeatCustomers, color: POSITIVE,
+            sub: totalCustomers > 0 ? `${((repeatCustomers / totalCustomers) * 100).toFixed(0)}% of base` : undefined },
+          { label: "Avg LTV",         value: fmtMoney(avgLtv), color: BRAND_GOLD },
+          { label: "Total revenue",   value: fmtMoney(totalRevenue), color: POSITIVE },
+        ];
+
         return (
           <>
+            {/* §4 Tab header */}
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <p className="text-sm" style={{ color: T.textSecond }}>{customersData.length} customers</p>
-                <Button size="sm" variant="outline" onClick={fetchCustomers} disabled={customersLoading}>
-                  {customersLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
-                  Refresh
-                </Button>
-              </div>
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: T.textSecond }} />
-                <Input value={customersSearch} onChange={e => setCustomersSearch(e.target.value)} placeholder="Search customers..." className="pl-8 h-8 text-xs" />
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {customersLoading && customersData.length === 0
+                  ? "Loading…"
+                  : `${filteredCustomers.length} customer${filteredCustomers.length === 1 ? "" : "s"}`}
+              </p>
+              <Button size="sm" variant="outline" onClick={fetchCustomers} disabled={customersLoading}>
+                {customersLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+
+            {/* §5 Metric cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {metrics.map(m => (
+                <div key={m.label} className="rounded-xl border p-5"
+                  style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1"
+                    style={{ color: T.textSecond }}>{m.label}</div>
+                  <div className="text-2xl font-semibold"
+                    style={{ color: m.color, fontVariantNumeric: "tabular-nums" }}>
+                    {customersLoading && customersData.length === 0 ? "—" : m.value}
+                  </div>
+                  {m.sub && (
+                    <div className="text-xs mt-1" style={{ color: T.textSecond }}>{m.sub}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* §13 Toolbar */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: T.textSecond }} />
+                <input
+                  value={customersSearch}
+                  onChange={e => setCustomersSearch(e.target.value)}
+                  placeholder="Search name, email, phone, or company…"
+                  className="w-full pl-9 pr-3 py-1.5 rounded-lg text-sm outline-none"
+                  style={{ border: `1px solid ${T.cardBorder}`, backgroundColor: T.cardBg, color: T.textPrimary }}
+                />
               </div>
             </div>
+
             {customersLoading && customersData.length === 0 ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="animate-spin" style={{ color: BRAND_GOLD }} size={32} />
@@ -6426,41 +6476,58 @@ const Leads = () => {
                 <p className="font-medium" style={{ color: T.textPrimary }}>No customers yet</p>
                 <p className="text-xs mt-1" style={{ color: T.textSecond }}>Customer records will appear here after the first order.</p>
               </div>
+            ) : filteredCustomers.length === 0 ? (
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">🔍</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No customers match your search</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Try clearing the search field above.</p>
+              </div>
             ) : (
               <div className="overflow-x-auto rounded-xl border" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                 <table className="min-w-full text-sm">
                   <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
                     <tr>
-                      {["Name", "Email", "Phone", "Company", "Total Orders", "Total Spent", "First Order", "Last Order", "Actions"].map(h => (
-                        <th key={h} className="px-3 py-3 text-left font-medium text-xs uppercase tracking-wider whitespace-nowrap" style={{ color: T.textSecond }}>{h}</th>
+                      {["Name", "Email", "Phone", "Company", "Orders", "Total Spent", "First Order", "Last Order", "Actions"].map(h => (
+                        <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider whitespace-nowrap" style={{ color: T.textSecond }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredCustomers.map((c, i) => (
                       <tr key={c.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
-                        <td className="px-3 py-2 text-xs font-medium" style={{ color: T.textPrimary }}>{c.name || "—"}</td>
-                        <td className="px-3 py-2 text-xs" style={{ color: T.textPrimary }}>{c.email}</td>
-                        <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.phone || "—"}</td>
-                        <td className="px-3 py-2 text-xs" style={{ color: T.textSecond }}>{c.company || "—"}</td>
-                        <td className="px-3 py-2 text-xs font-bold text-center" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{c.total_orders || 0}</td>
-                        <td className="px-3 py-2 text-xs font-bold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${Number(c.total_spent || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-                        <td className="px-3 py-2 text-xs whitespace-nowrap" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-                        <td className="px-3 py-2 flex gap-1">
-                          <Button size="sm" variant="outline" onClick={() => { setActivePage("cash_orders"); }} className="h-7 text-[10px] px-2" style={{ borderColor: T.cardBorder, color: T.textPrimary }}>
-                            View Orders
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => { setEditCustomerEmail(c); setEditCustomerEmailValue(c.email || ""); }} className="h-7 text-[10px] px-2" style={{ borderColor: BRAND_GOLD, color: BRAND_GOLD }}>
-                            <Edit2 className="w-3 h-3 mr-1" />
-                            Edit Email
-                          </Button>
+                        <td className="px-4 py-3 text-sm font-medium" style={{ color: T.textPrimary }}>{c.name || "—"}</td>
+                        <td className="px-4 py-3 text-sm" style={{ color: T.textPrimary }}>
+                          {c.email ? (
+                            <a href={`mailto:${c.email}`} className="hover:underline" style={{ color: T.textPrimary }}>{c.email}</a>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>
+                          {c.phone ? (
+                            <a href={`tel:+1${String(c.phone).replace(/\D/g, "").slice(-10)}`} className="hover:underline" style={{ color: T.textSecond }}>{c.phone}</a>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs" style={{ color: T.textSecond }}>{c.company || "—"}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-center" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{c.total_orders || 0}</td>
+                        <td className="px-4 py-3 text-sm font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${Number(c.total_spent || 0).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.first_order_date ? new Date(c.first_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.textSecond, fontVariantNumeric: 'tabular-nums' }}>{c.last_order_date ? new Date(c.last_order_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1">
+                            <button onClick={() => { setActivePage("cash_orders"); }}
+                              className="px-2 py-1 rounded-md text-xs font-medium hover:bg-gray-100 transition-colors whitespace-nowrap"
+                              style={{ border: `1px solid ${T.cardBorder}`, color: T.textPrimary, backgroundColor: T.cardBg }}>
+                              View Orders
+                            </button>
+                            <button onClick={() => { setEditCustomerEmail(c); setEditCustomerEmailValue(c.email || ""); }}
+                              className="px-2 py-1 rounded-md text-xs font-medium hover:opacity-80 transition-opacity inline-flex items-center gap-1 whitespace-nowrap"
+                              style={{ border: `1px solid ${BRAND_GOLD}`, color: BRAND_GOLD, backgroundColor: T.cardBg }}>
+                              <Edit2 className="w-3 h-3" />
+                              Edit Email
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
-                    {filteredCustomers.length === 0 && (
-                      <tr><td colSpan={9} className="px-3 py-8 text-center" style={{ color: T.textSecond }}>No customers match your search</td></tr>
-                    )}
                   </tbody>
                 </table>
               </div>
