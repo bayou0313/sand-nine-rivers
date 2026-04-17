@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/analytics";
-import { injectGTM } from "@/lib/gtm";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index.tsx";
@@ -234,8 +233,8 @@ function AppContent() {
     };
   }, []);
 
-  // Inject GTM + Microsoft Clarity once globally (excluding /leads and /admin).
-  // injectGTM is idempotent; Clarity is guarded by the #clarity-script element.
+  // GTM is hardcoded in index.html. This effect injects Microsoft Clarity only
+  // (excluding /leads and /admin) from global_settings.seo_clarity_id.
   useEffect(() => {
     const path = typeof window !== "undefined" ? window.location.pathname : "";
     if (path.startsWith("/leads") || path.startsWith("/admin")) return;
@@ -243,16 +242,10 @@ function AppContent() {
     supabase
       .from("global_settings")
       .select("key, value")
-      .in("key", ["seo_gtm_id", "seo_clarity_id"])
+      .eq("key", "seo_clarity_id")
+      .maybeSingle()
       .then(({ data }) => {
-        if (!data) return;
-        const map: Record<string, string> = {};
-        for (const row of data as Array<{ key: string; value: string }>) {
-          map[row.key] = row.value;
-        }
-        if (map.seo_gtm_id) injectGTM(map.seo_gtm_id);
-
-        const clarityId = map.seo_clarity_id;
+        const clarityId = (data as { value?: string } | null)?.value;
         if (clarityId && typeof document !== "undefined" && !document.getElementById("clarity-script")) {
           const s = document.createElement("script");
           s.id = "clarity-script";

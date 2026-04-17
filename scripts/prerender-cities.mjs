@@ -231,6 +231,8 @@ function buildPage(city, cssLinks, scriptTags) {
 <meta property="og:url" content="${canonical}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="${ogImage}">
+<!-- Admin route flag for GTM blocking — must run BEFORE GTM snippet -->
+<script>window.dataLayer=window.dataLayer||[];(function(){var p=window.location.pathname;if(p.indexOf('/leads')===0||p.indexOf('/admin')===0){window.dataLayer.push({'admin_route':true});}})();</script>
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],

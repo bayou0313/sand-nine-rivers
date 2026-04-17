@@ -5266,7 +5266,7 @@ const Leads = () => {
                           </Button>
                         </div>
                         <div className="space-y-3 mb-6">
-                          <Row label="GTM Container ID" keyName="seo_gtm_id" placeholder="GTM-XXXXXXX" helper="Drives GTM on live site dynamically — changes apply on save" statusKey="gtm" dashUrl="https://tagmanager.google.com" mono />
+                          <Row label="GTM Container ID" keyName="seo_gtm_id" placeholder="GTM-XXXXXXX" helper="Reference only — GTM is hardcoded in index.html. To change the container, update the HTML directly." statusKey="gtm" dashUrl="https://tagmanager.google.com" mono />
                           <Row label="GA4 Measurement ID" keyName="seo_ga4_id" placeholder="G-XXXXXXXXXX" helper="Paste into GA4 Configuration tag inside GTM" statusKey="ga4" dashUrl="https://analytics.google.com" mono />
                           <Row label="GA4 Property ID" keyName="seo_ga4_property_id" placeholder="numeric" helper="Reference only — GA4 Admin → Property Settings" dashUrl="https://analytics.google.com" mono />
                           <Row label="GSC Verification ID" keyName="seo_gsc_id" placeholder="(blank if DNS-verified)" helper="Verified via DNS — no meta tag required" statusKey="gsc" dashUrl="https://search.google.com/search-console" mono />
