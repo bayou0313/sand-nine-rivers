@@ -5622,18 +5622,19 @@ const Leads = () => {
         );
 
       case "cash_orders": {
+        // GUIDELINES.md §7 — Status pill palette (preserves hue family for dispatcher recognition)
         const STATUS_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
-          pending:   { label: "Pending",   badgeBg: "#FEF3C7", badgeColor: "#92400E" },
-          confirmed: { label: "Confirmed", badgeBg: "#EFF6FF", badgeColor: "#1E40AF" },
-          en_route:  { label: "En route",  badgeBg: "#F5F3FF", badgeColor: "#5B21B6" },
-          delivered: { label: "Delivered", badgeBg: "#ECFDF5", badgeColor: "#065F46" },
-          cancelled: { label: "Cancelled", badgeBg: "#FEF2F2", badgeColor: "#991B1B" },
+          pending:   { label: "Pending",   badgeBg: "#FEF3C7", badgeColor: WARN_YELLOW },
+          confirmed: { label: "Confirmed", badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          en_route:  { label: "En route",  badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          delivered: { label: "Delivered", badgeBg: "#ECFDF5", badgeColor: POSITIVE },
+          cancelled: { label: "Cancelled", badgeBg: "#FEF2F2", badgeColor: ALERT_RED },
         };
         const PAY_META: Record<string, { label: string; badgeBg: string; badgeColor: string }> = {
-          "stripe-link": { label: "Card",  badgeBg: "#EFF6FF", badgeColor: "#1E40AF" },
-          cash:          { label: "COD",   badgeBg: "#FFFBEB", badgeColor: "#92400E" },
-          check:         { label: "Check", badgeBg: "#FFFBEB", badgeColor: "#92400E" },
-          COD:           { label: "COD",   badgeBg: "#FFFBEB", badgeColor: "#92400E" },
+          "stripe-link": { label: "Card",  badgeBg: "#EFF6FF", badgeColor: "#3B82F6" },
+          cash:          { label: "COD",   badgeBg: "#FDF8F0", badgeColor: BRAND_GOLD },
+          check:         { label: "Check", badgeBg: "#FDF8F0", badgeColor: BRAND_GOLD },
+          COD:           { label: "COD",   badgeBg: "#FDF8F0", badgeColor: BRAND_GOLD },
         };
 
         const fmtMoney = (n: number) =>
@@ -5721,25 +5722,25 @@ const Leads = () => {
         };
 
         const StatusBadge = ({ status }: { status: string }) => {
-          const m = STATUS_META[status] || { label: status, badgeBg: "#F3F4F6", badgeColor: "#374151" };
+          const m = STATUS_META[status] || { label: status, badgeBg: "#F3F4F6", badgeColor: T.textSecond };
           return (
-            <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10,
-              fontWeight:500, background:m.badgeBg, color:m.badgeColor, whiteSpace:"nowrap" }}>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+              style={{ backgroundColor: m.badgeBg, color: m.badgeColor }}>
               {m.label}
             </span>
           );
         };
 
         const PayBadge = ({ method, payStatus }: { method: string; payStatus: string }) => {
-          const m = PAY_META[method] || { label: method, badgeBg: "#F3F4F6", badgeColor: "#374151" };
+          const m = PAY_META[method] || { label: method, badgeBg: "#F3F4F6", badgeColor: T.textSecond };
+          const payColor = payStatus === "paid" ? POSITIVE : payStatus === "refunded" ? ALERT_RED : WARN_YELLOW;
           return (
             <div>
-              <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10,
-                fontWeight:500, background:m.badgeBg, color:m.badgeColor }}>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                style={{ backgroundColor: m.badgeBg, color: m.badgeColor }}>
                 {m.label}
               </span>
-              <div style={{ fontSize:10, marginTop:2,
-                color: payStatus==="paid" ? "#16A34A" : payStatus==="refunded" ? "#DC2626" : "#D97706" }}>
+              <div className="text-xs mt-0.5" style={{ color: payColor }}>
                 {payStatus}
               </div>
             </div>
@@ -5756,64 +5757,86 @@ const Leads = () => {
         ];
 
         const cardStyle: React.CSSProperties = {
-          background: "white", border: "0.5px solid #F3F4F6", borderRadius: 12, overflow: "hidden"
+          backgroundColor: T.cardBg, border: `1px solid ${T.cardBorder}`, borderRadius: 12, overflow: "hidden"
         };
+
+        // GUIDELINES.md §5 — Metric cards (Orders runs 5-up; documented deviation from 4-up spec)
+        const metrics = [
+          { label: "Total orders",       value: ordersMetrics?.total ?? allOrders.length, color: T.textPrimary },
+          { label: "Pending",            value: ordersMetrics?.pending ?? 0,              color: WARN_YELLOW },
+          { label: "Confirmed",          value: ordersMetrics?.confirmed ?? 0,            color: "#3B82F6" },
+          { label: "Today's deliveries", value: ordersMetrics?.today_deliveries ?? 0,     color: POSITIVE },
+          { label: "Revenue (30d)",      value: ordersMetrics ? fmtMoney(ordersMetrics.revenue_30d) : "—", color: POSITIVE,
+            sub: ordersMetrics ? `${ordersMetrics.paid_count_30d} paid orders` : undefined },
+        ];
 
         return (
           <div>
-            {/* Metric cards */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(5,minmax(0,1fr))", gap:10, marginBottom:16 }}>
-              {[
-                { label:"Total orders",      val: ordersMetrics?.total ?? allOrders.length, color:undefined },
-                { label:"Pending",           val: ordersMetrics?.pending ?? 0,              color:"#D97706" },
-                { label:"Confirmed",         val: ordersMetrics?.confirmed ?? 0,            color:"#2563EB" },
-                { label:"Today's deliveries",val: ordersMetrics?.today_deliveries ?? 0,     color:"#16A34A" },
-                { label:"Revenue (30d)",     val: ordersMetrics ? fmtMoney(ordersMetrics.revenue_30d) : "—", color:"#16A34A" },
-              ].map((m, i) => (
-                <div key={i} style={{ background:"#F9FAFB", borderRadius:8, padding:"12px 14px" }}>
-                  <div style={{ fontSize:10, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:".05em", marginBottom:5 }}>{m.label}</div>
-                  <div style={{ fontSize:22, fontWeight:500, lineHeight:1, color: m.color || "inherit" }}>{m.val}</div>
-                  {i===4 && ordersMetrics && <div style={{ fontSize:10, color:"#9CA3AF", marginTop:4 }}>{ordersMetrics.paid_count_30d} paid orders</div>}
+            {/* §4 Tab header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {ordersLoading && !allOrders.length ? "Loading…" : `${filteredOrders.length} order${filteredOrders.length === 1 ? "" : "s"}`}
+              </p>
+              <Button onClick={fetchAllOrders} disabled={ordersLoading} size="sm" variant="outline">
+                {ordersLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  : <RefreshCw className="w-4 h-4 mr-1" />}
+                Refresh
+              </Button>
+            </div>
+
+            {/* §5 Metric cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              {metrics.map(m => (
+                <div key={m.label} className="rounded-xl border p-5"
+                  style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1"
+                    style={{ color: T.textSecond }}>{m.label}</div>
+                  <div className="text-2xl font-semibold"
+                    style={{ color: m.color, fontVariantNumeric: "tabular-nums" }}>
+                    {ordersLoading && !allOrders.length ? "—" : m.value}
+                  </div>
+                  {m.sub && (
+                    <div className="text-xs mt-1" style={{ color: T.textSecond }}>{m.sub}</div>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Toolbar */}
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-              <div style={{ display:"flex", gap:2, background:"#F3F4F6", padding:3, borderRadius:8, flexShrink:0 }}>
-                {TABS.map(t => (
-                  <button key={t.key} onClick={() => setOrdersTab(t.key)}
-                    style={{ padding:"5px 12px", borderRadius:6, fontSize:12, cursor:"pointer", border:"none",
-                      fontFamily:"inherit", whiteSpace:"nowrap", transition:"all .15s",
-                      background: ordersTab===t.key ? "white" : "transparent",
-                      color: ordersTab===t.key ? "#111827" : "#6B7280",
-                      fontWeight: ordersTab===t.key ? 500 : 400,
-                      boxShadow: ordersTab===t.key ? "0 0 0 0.5px #E5E7EB" : "none",
-                    }}>
-                    {t.label}
-                  </button>
-                ))}
+            {/* §13 Toolbar */}
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="flex gap-0.5 p-0.5 rounded-lg flex-shrink-0" style={{ backgroundColor: "#F3F4F6" }}>
+                {TABS.map(t => {
+                  const active = ordersTab === t.key;
+                  return (
+                    <button key={t.key} onClick={() => setOrdersTab(t.key)}
+                      className="px-3 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors"
+                      style={{
+                        backgroundColor: active ? T.cardBg : "transparent",
+                        color: active ? T.textPrimary : T.textSecond,
+                        fontWeight: active ? 600 : 400,
+                        boxShadow: active ? `0 0 0 1px ${T.cardBorder}` : "none",
+                      }}>
+                      {t.label}
+                    </button>
+                  );
+                })}
               </div>
               <input
                 value={ordersSearch}
                 onChange={e => setOrdersSearch(e.target.value)}
                 placeholder="Search order #, name, address, phone..."
-                style={{ flex:1, minWidth:180, padding:"7px 10px", border:"0.5px solid #E5E7EB",
-                  borderRadius:8, fontSize:12, fontFamily:"inherit", background:"white",
-                  color:"inherit" }}
+                className="flex-1 min-w-[180px] px-3 py-1.5 rounded-lg text-sm outline-none"
+                style={{ border: `1px solid ${T.cardBorder}`, backgroundColor: T.cardBg, color: T.textPrimary }}
               />
               <select value={ordersPayFilter} onChange={e => setOrdersPayFilter(e.target.value)}
-                style={{ padding:"7px 10px", border:"0.5px solid #E5E7EB", borderRadius:8,
-                  fontSize:12, fontFamily:"inherit", background:"white", color:"#6B7280", cursor:"pointer" }}>
+                className="px-3 py-1.5 rounded-lg text-sm cursor-pointer"
+                style={{ border: `1px solid ${T.cardBorder}`, backgroundColor: T.cardBg, color: T.textSecond }}>
                 <option value="">All payment types</option>
                 <option value="stripe-link">Card (Stripe)</option>
                 <option value="cash">Cash / COD</option>
                 <option value="check">Check</option>
               </select>
-              <Button onClick={fetchAllOrders} disabled={ordersLoading} size="sm" variant="outline">
-                {ordersLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                <span style={{ marginLeft:4 }}>Refresh</span>
-              </Button>
             </div>
 
             {/* Main grid — table + detail panel */}
