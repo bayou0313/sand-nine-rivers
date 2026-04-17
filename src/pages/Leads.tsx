@@ -2807,73 +2807,110 @@ const Leads = () => {
       case "zip":
         return (
           <>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {zipData.length} ZIPs · 2+ leads = confirmed unserved demand
+              </p>
+            </div>
+
+            {/* Insight banner */}
+            <div className="rounded-xl border p-4 mb-4" style={{ backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }}>
               <p className="text-sm" style={{ color: T.textPrimary }}>
                 <strong>💡 ZIPs with 2+ leads = confirmed unserved demand.</strong> These are your next expansion markets.
               </p>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                    {["ZIP", "City", "State", "Leads", "Demand", "Est. Monthly Rev", "Avg Distance", "Priority"].map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-xs font-bold text-white uppercase tracking-wider">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {zipData.map((z, i) => (
-                    <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
-                      <td className="px-3 py-2 font-mono font-bold" style={{ color: T.textPrimary }}>{z.zip}</td>
-                      <td className="px-3 py-2">{z.city}</td>
-                      <td className="px-3 py-2">{z.state}</td>
-                      <td className="px-3 py-2 font-bold" style={{ color: BRAND_GOLD }}>{z.count}</td>
-                      <td className="px-3 py-2">
-                        <div className="w-24 h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${(z.count / maxZipCount) * 100}%`, backgroundColor: BRAND_GOLD }} />
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 font-bold" style={{ color: BRAND_GOLD }}>${(z.count * basePrice * 20).toLocaleString()}</td>
-                      <td className="px-3 py-2">{z.avgDist.toFixed(1)} mi</td>
-                      <td className="px-3 py-2">
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: z.priority === "hot" ? BRAND_GOLD : z.priority === "warm" ? "#1A6BB8" : "#999" }}>
-                          {z.priority.toUpperCase()}
-                        </span>
-                      </td>
+
+            {zipData.length > 0 ? (
+              <div className="overflow-x-auto rounded-xl border" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      {["ZIP", "City", "State", "Leads", "Demand", "Est. Monthly Rev", "Avg Distance", "Priority"].map(h => (
+                        <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {zipData.map((z, i) => {
+                      const priorityColors: Record<string, { bg: string; text: string }> = {
+                        hot: { bg: '#FDF8F0', text: BRAND_GOLD },
+                        warm: { bg: '#EFF6FF', text: '#1A6BB8' },
+                        cold: { bg: '#F3F4F6', text: '#6B7280' },
+                      };
+                      const pc = priorityColors[z.priority] || priorityColors.cold;
+                      return (
+                        <tr key={z.zip} className="border-t hover:bg-gray-50 transition-colors"
+                          style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                          <td className="px-4 py-3 font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{z.zip}</td>
+                          <td className="px-4 py-3" style={{ color: T.textPrimary }}>{z.city}</td>
+                          <td className="px-4 py-3" style={{ color: T.textSecond }}>{z.state}</td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{z.count}</td>
+                          <td className="px-4 py-3">
+                            <div className="w-24 h-2 rounded-full overflow-hidden" style={{ backgroundColor: T.cardBorder }}>
+                              <div className="h-full rounded-full" style={{ width: `${(z.count / maxZipCount) * 100}%`, backgroundColor: BRAND_GOLD }} />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${(z.count * basePrice * 20).toLocaleString()}</td>
+                          <td className="px-4 py-3" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{z.avgDist.toFixed(1)} mi</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase"
+                              style={{ backgroundColor: pc.bg, color: pc.text }}>
+                              {z.priority}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-xl border p-12 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No ZIP data yet</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>ZIPs with leads will appear here.</p>
+              </div>
+            )}
           </>
         );
 
       case "pipeline":
         return (
           <>
-            <div className="mb-4 text-center">
-              <p className="text-lg font-bold" style={{ color: T.textPrimary }}>
-                Active pipeline: <span style={{ color: BRAND_GOLD }}>${metrics.pipelineValue.toLocaleString()}</span>
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {parsedLeads.length} leads · Active pipeline:{" "}
+                <span className="font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>
+                  ${metrics.pipelineValue.toLocaleString()}
+                </span>
               </p>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {STAGES.map(stage => {
                 const stageLeads = parsedLeads.filter(l => l.stage === stage);
                 return (
-                  <div key={stage} className="rounded-xl border overflow-hidden" style={{ borderColor: STAGE_COLORS[stage] + "40" }}>
+                  <div key={stage} className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: STAGE_COLORS[stage] + "40", backgroundColor: T.cardBg }}>
                     <div className="px-3 py-2 flex items-center justify-between" style={{ backgroundColor: STAGE_COLORS[stage] }}>
-                      <span className="text-white text-xs font-bold uppercase tracking-wider">{stage}</span>
-                      <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">{stageLeads.length}</span>
+                      <span className="font-display text-sm uppercase tracking-wide text-white">{stage}</span>
+                      <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>{stageLeads.length}</span>
                     </div>
-                    <div className="bg-gray-50 p-2 space-y-2 min-h-[200px] max-h-[500px] overflow-y-auto">
-                      {stageLeads.map(l => (
-                        <div key={l.id} onClick={() => openDetail(l)} className="rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                          <p className="font-mono text-xs mb-1" style={{ color: BRAND_GOLD }}>{l.lead_number || "—"}</p>
+                    <div className="p-2 space-y-2 min-h-[200px] max-h-[500px] overflow-y-auto" style={{ backgroundColor: '#FAFAFA' }}>
+                      {stageLeads.length > 0 ? stageLeads.map(l => (
+                        <div key={l.id} onClick={() => openDetail(l)} className="rounded-lg p-3 border shadow-sm cursor-pointer hover:shadow-md transition-shadow" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                          <p className="text-xs font-semibold mb-1" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{l.lead_number || "—"}</p>
                           <p className="font-bold text-sm" style={{ color: T.textPrimary }}>{l.customer_name}</p>
-                          <p className="text-xs text-gray-500">{l.zip} • {l.distance_miles?.toFixed(1) || "?"} mi</p>
-                          {l.customer_email && <p className="text-xs text-gray-400 truncate">{l.customer_email}</p>}
+                          <p className="text-xs" style={{ color: T.textSecond }}>{l.zip} • {l.distance_miles?.toFixed(1) || "?"} mi</p>
+                          {l.customer_email && <p className="text-xs truncate" style={{ color: T.textSecond }}>{l.customer_email}</p>}
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center py-6">
+                          <div className="text-2xl mb-1">📭</div>
+                          <p className="text-xs" style={{ color: T.textSecond }}>No leads</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -2882,66 +2919,96 @@ const Leads = () => {
           </>
         );
 
-      case "revenue":
+      case "revenue": {
+        const hotZips = zipData.filter(z => z.priority === "hot");
+        const maxRev = Math.max(...hotZips.map(z => z.count * 5 * basePrice * 4), 1);
         return (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
-                <p className="text-white/60 text-sm">Immediate Opportunity</p>
-                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.notContacted * basePrice).toLocaleString()}</p>
-                <p className="text-white/40 text-xs mt-1">{metrics.notContacted} uncontacted leads × ${basePrice}</p>
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {hotZips.length} hot ZIPs · revenue projections
+              </p>
+            </div>
+
+            {/* §5 Metric Cards (2-up) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Immediate Opportunity</div>
+                <div className="text-2xl font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${(metrics.notContacted * basePrice).toLocaleString()}</div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>{metrics.notContacted} uncontacted leads × ${basePrice}</div>
               </div>
-              <div className="rounded-xl p-6 text-center" style={{ backgroundColor: T.metricBg, border: `1px solid ${T.cardBorder}` }}>
-                <p className="text-white/60 text-sm">Total Pipeline</p>
-                <p className="text-3xl font-bold mt-2" style={{ color: BRAND_GOLD }}>${(metrics.total * basePrice).toLocaleString()}</p>
-                <p className="text-white/40 text-xs mt-1">{metrics.total} total leads × ${basePrice}</p>
+              <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Total Pipeline</div>
+                <div className="text-2xl font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${(metrics.total * basePrice).toLocaleString()}</div>
+                <div className="text-xs mt-1" style={{ color: T.textSecond }}>{metrics.total} total leads × ${basePrice}</div>
               </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-x-auto" style={{ borderColor: T.cardBorder }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: T.tableHeaderBg }}>
-                    {["ZIP / Market", "Leads", "Monthly Revenue", "Break-even (months)"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-bold text-white uppercase">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {zipData.filter(z => z.priority === "hot").map((z, i) => {
-                    const monthlyRev = z.count * 5 * basePrice * 4;
-                    const breakEven = monthlyRev > 0 ? (3000 / monthlyRev).toFixed(1) : "—";
+
+            {/* §11 Table */}
+            {hotZips.length > 0 ? (
+              <div className="overflow-x-auto rounded-xl border mb-4" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0" style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      {["ZIP / Market", "Leads", "Monthly Revenue", "Break-even (months)"].map(h => (
+                        <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: T.textSecond }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hotZips.map((z, i) => {
+                      const monthlyRev = z.count * 5 * basePrice * 4;
+                      const breakEven = monthlyRev > 0 ? (3000 / monthlyRev).toFixed(1) : "—";
+                      return (
+                        <tr key={z.zip} className="border-t hover:bg-gray-50 transition-colors"
+                          style={{ borderColor: T.cardBorder, backgroundColor: i % 2 === 0 ? T.cardBg : '#FAFAFA' }}>
+                          <td className="px-4 py-3 font-medium" style={{ color: T.textPrimary }}>{z.zip} — {z.city}, {z.state}</td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>{z.count}</td>
+                          <td className="px-4 py-3 font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${monthlyRev.toLocaleString()}</td>
+                          <td className="px-4 py-3" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{breakEven} mo</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-xl border p-12 text-center mb-4" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+                <div className="text-4xl mb-2">📭</div>
+                <p className="font-medium" style={{ color: T.textPrimary }}>No hot markets yet</p>
+                <p className="text-xs mt-1" style={{ color: T.textSecond }}>Top demand ZIPs will appear here.</p>
+              </div>
+            )}
+
+            {/* Bar chart card */}
+            <div className="rounded-xl border shadow-sm p-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-4" style={{ color: T.textPrimary }}>Projected Monthly Revenue by Market</h3>
+              {hotZips.length > 0 ? (
+                <div className="space-y-3">
+                  {hotZips.map(z => {
+                    const rev = z.count * 5 * basePrice * 4;
                     return (
-                      <tr key={z.zip} style={{ backgroundColor: i % 2 === 0 ? T.cardBg : T.tableStripeBg }}>
-                        <td className="px-4 py-3 font-bold" style={{ color: T.textPrimary }}>{z.zip} — {z.city}, {z.state}</td>
-                        <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>{z.count}</td>
-                        <td className="px-4 py-3 font-bold" style={{ color: BRAND_GOLD }}>${monthlyRev.toLocaleString()}</td>
-                        <td className="px-4 py-3">{breakEven} mo</td>
-                      </tr>
+                      <div key={z.zip} className="flex items-center gap-3">
+                        <span className="text-xs font-semibold w-16" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>{z.zip}</span>
+                        <div className="flex-1 h-6 rounded overflow-hidden" style={{ backgroundColor: T.cardBorder }}>
+                          <div className="h-full rounded" style={{ width: `${(rev / maxRev) * 100}%`, backgroundColor: rev === maxRev ? BRAND_GOLD : T.textPrimary }} />
+                        </div>
+                        <span className="text-xs font-semibold w-24 text-right" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>${rev.toLocaleString()}</span>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-            <div className="rounded-xl border shadow-sm mt-4 p-6" style={{ borderColor: T.cardBorder }}>
-              <h3 className="text-sm font-bold mb-4" style={{ color: T.textPrimary }}>Projected Monthly Revenue by Market</h3>
-              <div className="space-y-3">
-                {zipData.filter(z => z.priority === "hot").map(z => {
-                  const rev = z.count * 5 * basePrice * 4;
-                  const maxRev = Math.max(...zipData.filter(zz => zz.priority === "hot").map(zz => zz.count * 5 * basePrice * 4), 1);
-                  return (
-                    <div key={z.zip} className="flex items-center gap-3">
-                      <span className="text-xs font-mono w-16" style={{ color: T.textPrimary }}>{z.zip}</span>
-                      <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
-                        <div className="h-full rounded" style={{ width: `${(rev / maxRev) * 100}%`, backgroundColor: rev === maxRev ? BRAND_GOLD : T.textPrimary }} />
-                      </div>
-                      <span className="text-xs font-bold w-24 text-right" style={{ color: BRAND_GOLD }}>${rev.toLocaleString()}</span>
-                    </div>
-                  );
-                })}
-              </div>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="text-3xl mb-2">📭</div>
+                  <p className="text-sm" style={{ color: T.textSecond }}>No revenue projections yet</p>
+                </div>
+              )}
             </div>
           </>
         );
+      }
 
       case "pit":
         return (
@@ -4100,8 +4167,14 @@ const Leads = () => {
       case "all":
         return (
           <>
+            {/* §4 Tab Header */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: T.textSecond }}>
+                {parsedLeads.length} total leads
+              </p>
+            </div>
             <SearchAndFilters />
-            <div className="rounded-xl border shadow-sm" style={{ borderColor: T.cardBorder }}>
+            <div className="rounded-xl border shadow-sm overflow-hidden" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <LeadsTable data={paginatedLeads} />
               <Pagination />
             </div>
