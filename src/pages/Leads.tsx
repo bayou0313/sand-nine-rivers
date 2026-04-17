@@ -2845,8 +2845,8 @@ const Leads = () => {
               <p className="text-sm" style={{ color: T.textSecond }}>
                 {zipData.length} ZIPs · 2+ leads = confirmed unserved demand
               </p>
-              <Button onClick={refreshLeads} disabled={leadsLoading} size="sm" variant="outline">
-                {leadsLoading
+              <Button onClick={() => fetchLeads(storedPassword())} disabled={loading} size="sm" variant="outline">
+                {loading
                   ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
                   : <RefreshCw className="w-4 h-4 mr-1" />}
                 Refresh
@@ -2858,28 +2858,28 @@ const Leads = () => {
               <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                 <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Total ZIPs</div>
                 <div className="text-2xl font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
-                  {leadsLoading && zipData.length === 0 ? '—' : zipData.length}
+                  {loading && zipData.length === 0 ? '—' : zipData.length}
                 </div>
                 <div className="text-xs mt-1" style={{ color: T.textSecond }}>with lead activity</div>
               </div>
               <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                 <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Hot ZIPs</div>
                 <div className="text-2xl font-semibold" style={{ color: BRAND_GOLD, fontVariantNumeric: 'tabular-nums' }}>
-                  {leadsLoading && zipData.length === 0 ? '—' : hotZipsCount}
+                  {loading && zipData.length === 0 ? '—' : hotZipsCount}
                 </div>
                 <div className="text-xs mt-1" style={{ color: T.textSecond }}>expansion priority</div>
               </div>
               <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                 <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Total leads</div>
                 <div className="text-2xl font-semibold" style={{ color: T.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
-                  {leadsLoading && zipData.length === 0 ? '—' : totalZipLeads}
+                  {loading && zipData.length === 0 ? '—' : totalZipLeads}
                 </div>
                 <div className="text-xs mt-1" style={{ color: T.textSecond }}>across all ZIPs</div>
               </div>
               <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                 <div className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: T.textSecond }}>Est. monthly rev</div>
                 <div className="text-2xl font-semibold" style={{ color: POSITIVE, fontVariantNumeric: 'tabular-nums' }}>
-                  {leadsLoading && zipData.length === 0 ? '—' : fmtMoneyShort(estTotalMonthly)}
+                  {loading && zipData.length === 0 ? '—' : fmtMoneyShort(estTotalMonthly)}
                 </div>
                 <div className="text-xs mt-1" style={{ color: T.textSecond }}>if fully captured</div>
               </div>
