@@ -4585,7 +4585,7 @@ const Leads = () => {
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>📄 Project Documentation</h3>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>📄 Project Documentation</h3>
                   <p className="text-xs" style={{ color: T.textSecond }}>
                     Generates a live snapshot of the full codebase — DB schema, pits, settings, ZIP codes, architecture.
                     Upload to AI project knowledge after download.
@@ -4616,19 +4616,19 @@ const Leads = () => {
                     }
                   }}
                   disabled={exportingDocs}
-                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: "#2563EB", minWidth: "200px" }}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                  style={{ backgroundColor: BRAND_GOLD, minWidth: "200px" }}
                 >
-                  {exportingDocs ? "Generating..." : `Generate & Download — ${docsCurrentVersion}`}
+                  {exportingDocs ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : `Generate & Download — ${docsCurrentVersion}`}
                 </button>
               </div>
-              {docsExportError && <p className="text-xs mt-2" style={{ color: "#EF4444" }}>{docsExportError}</p>}
+              {docsExportError && <p className="text-xs mt-2" style={{ color: ALERT_RED }}>{docsExportError}</p>}
             </div>
 
             {/* ── AI Knowledge Snapshot ── */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
               <div className="mb-4">
-                <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>🧠 AI Knowledge Snapshot</h3>
+                <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>🧠 AI Knowledge Snapshot</h3>
                 <p className="text-xs" style={{ color: T.textSecond }}>
                   Compact session-start brief for AI: pricing, active PITs, city counts, pending issues, stack. Auto-versioned, uploaded to Storage.
                 </p>
@@ -4684,29 +4684,29 @@ const Leads = () => {
                     }
                   }}
                   disabled={exportingSnapshot}
-                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: "transparent", border: `2px solid #C9A961`, color: "#C9A961", minWidth: "220px" }}
+                  className="ml-4 px-5 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                  style={{ backgroundColor: "transparent", border: `2px solid ${BRAND_GOLD}`, color: BRAND_GOLD, minWidth: "220px" }}
                 >
-                  {exportingSnapshot ? "Exporting..." : `Export AI Snapshot (${globalSettings.snapshot_version || "v1.00"})`}
+                  {exportingSnapshot ? <><Loader2 className="w-4 h-4 animate-spin" /> Exporting...</> : `Export AI Snapshot (${globalSettings.snapshot_version || "v1.00"})`}
                 </button>
               </div>
             </div>
 
             {/* SITE MODE TOGGLE */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Site Mode</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Site Mode</h3>
+              <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                 Control whether the public site is live or showing maintenance page. Admin dashboard always accessible.
               </p>
               <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
-                backgroundColor: globalSettings.site_mode === 'maintenance' ? '#FEF3C7' : '#DCFCE7',
-                border: `1px solid ${globalSettings.site_mode === 'maintenance' ? '#F59E0B' : '#16A34A'}`,
+                backgroundColor: globalSettings.site_mode === 'maintenance' ? '#FEF3C7' : '#ECFDF5',
+                border: `1px solid ${globalSettings.site_mode === 'maintenance' ? WARN_YELLOW : POSITIVE}`,
               }}>
                 <div>
-                  <p className="font-medium text-sm" style={{ color: globalSettings.site_mode === 'maintenance' ? '#92400E' : '#166534' }}>
+                  <p className="font-medium text-sm" style={{ color: globalSettings.site_mode === 'maintenance' ? WARN_YELLOW : POSITIVE }}>
                     {globalSettings.site_mode === 'maintenance' ? '🔴 MAINTENANCE MODE — Site is offline to public' : '🟢 LIVE MODE — Site is fully operational'}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: globalSettings.site_mode === 'maintenance' ? '#B45309' : '#15803D' }}>
+                  <p className="text-xs mt-0.5" style={{ color: T.textSecond }}>
                     {globalSettings.site_mode === 'maintenance' ? 'Customers see maintenance page. Admin dashboard unaffected.' : 'Customers can browse and place orders normally.'}
                   </p>
                 </div>
@@ -4727,7 +4727,7 @@ const Leads = () => {
                     }
                   }}
                   className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors"
-                  style={{ backgroundColor: globalSettings.site_mode === 'maintenance' ? '#16A34A' : '#DC2626', minWidth: '120px' }}
+                  style={{ backgroundColor: globalSettings.site_mode === 'maintenance' ? POSITIVE : ALERT_RED, minWidth: '120px' }}
                 >
                   {globalSettings.site_mode === 'maintenance' ? '→ Go Live' : '→ Maintenance'}
                 </button>
@@ -4736,19 +4736,19 @@ const Leads = () => {
 
             {/* STRIPE MODE TOGGLE */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Stripe Payment Mode</h3>
-              <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Stripe Payment Mode</h3>
+              <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                 Switch between test and live Stripe keys. Test mode shows a modal and banner to visitors. No code changes or key swapping required.
               </p>
               <div className="flex items-center justify-between py-3 px-4 rounded-xl" style={{
-                backgroundColor: globalSettings.stripe_mode === 'test' ? '#FEF3C7' : '#DCFCE7',
-                border: `1px solid ${globalSettings.stripe_mode === 'test' ? '#F59E0B' : '#16A34A'}`,
+                backgroundColor: globalSettings.stripe_mode === 'test' ? '#FEF3C7' : '#ECFDF5',
+                border: `1px solid ${globalSettings.stripe_mode === 'test' ? WARN_YELLOW : POSITIVE}`,
               }}>
                 <div>
-                  <p className="font-medium text-sm" style={{ color: globalSettings.stripe_mode === 'test' ? '#92400E' : '#166534' }}>
+                  <p className="font-medium text-sm" style={{ color: globalSettings.stripe_mode === 'test' ? WARN_YELLOW : POSITIVE }}>
                     {globalSettings.stripe_mode === 'test' ? '🔧 TEST MODE — Using Stripe test keys' : '✅ LIVE MODE — Processing real payments'}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: globalSettings.stripe_mode === 'test' ? '#B45309' : '#15803D' }}>
+                  <p className="text-xs mt-0.5" style={{ color: T.textSecond }}>
                     {globalSettings.stripe_mode === 'test' ? 'Test card: 4242 4242 4242 4242 · Exp: 12/29 · CVC: 123' : 'Real cards charged. Payouts to Chase ---5952.'}
                   </p>
                 </div>
@@ -4769,16 +4769,16 @@ const Leads = () => {
                     }
                   }}
                   className="ml-4 px-5 py-2 rounded-lg text-sm font-bold text-white transition-colors"
-                  style={{ backgroundColor: globalSettings.stripe_mode === 'test' ? '#16A34A' : '#DC2626', minWidth: '120px' }}
+                  style={{ backgroundColor: globalSettings.stripe_mode === 'test' ? POSITIVE : ALERT_RED, minWidth: '120px' }}
                 >
                   {globalSettings.stripe_mode === 'test' ? '→ Go Live' : '→ Test Mode'}
                 </button>
               </div>
               {globalSettings.stripe_mode === 'test' && (
                 <div className="mt-3 p-3 rounded-lg text-xs font-mono" style={{
-                  backgroundColor: '#F8F7F2',
+                  backgroundColor: '#F9FAFB',
                   border: `1px solid ${T.cardBorder}`,
-                  color: '#0D2137',
+                  color: T.textPrimary,
                 }}>
                   <p className="font-bold mb-1">Test card details:</p>
                   <p>Card: 4242 4242 4242 4242</p>
@@ -4789,7 +4789,7 @@ const Leads = () => {
 
             {/* DASHBOARD THEME TOGGLE */}
             <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-              <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Dashboard Theme</h3>
+              <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Dashboard Theme</h3>
               <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                 Switch the LMT dashboard between light and dark appearance. Applies to all tabs.
               </p>
@@ -4846,8 +4846,8 @@ const Leads = () => {
               <>
                 {/* Pricing Notice */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Pricing</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Pricing is configured per PIT. Edit each PIT to set its base price, free miles, extra per mile, and max distance.</p>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Pricing</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Pricing is configured per PIT. Edit each PIT to set its base price, free miles, extra per mile, and max distance.</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Saturday surcharge</label>
@@ -4864,8 +4864,8 @@ const Leads = () => {
                   </div>
 
                   {/* Processing Fee Settings */}
-                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: T.textPrimary }}>Processing Fees</h4>
-                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Applied to card payments and COD late payment conversions</p>
+                  <h4 className="font-display uppercase tracking-wide text-sm mt-6 mb-1" style={{ color: T.textPrimary }}>Processing Fees</h4>
+                  <p className="text-xs mb-3 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Applied to card payments and COD late payment conversions</p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Card processing fee (%)</label>
@@ -4898,8 +4898,8 @@ const Leads = () => {
                   </div>
 
                   {/* Pricing Mode */}
-                  <h4 className="font-medium mt-6 mb-1 text-sm" style={{ color: T.textPrimary }}>Pricing Display Mode</h4>
-                  <p className="text-xs text-gray-500 mb-3 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                  <h4 className="font-display uppercase tracking-wide text-sm mt-6 mb-1" style={{ color: T.textPrimary }}>Pricing Display Mode</h4>
+                  <p className="text-xs mb-3 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                     <strong>Transparent:</strong> Processing fee shown as separate line item.{" "}
                     <strong>Baked In:</strong> Fee included in base price; COD customers get a discount.
                   </p>
@@ -4925,8 +4925,8 @@ const Leads = () => {
                     </div>
                   </div>
                   {editSettings.pricing_mode === "baked" && (
-                    <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: "#FEF3C7", border: "1px solid #F59E0B" }}>
-                      <p className="text-xs" style={{ color: "#92400E" }}>
+                    <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: "#FEF3C7", border: `1px solid ${WARN_YELLOW}` }}>
+                      <p className="text-xs" style={{ color: WARN_YELLOW }}>
                         ⚠️ Baked mode is active. Pit base prices include the processing fee. Switching to Transparent will require manually adjusting pit prices.
                       </p>
                     </div>
@@ -4942,8 +4942,8 @@ const Leads = () => {
 
                 {/* Delivery Schedule */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Delivery Schedule</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Configure delivery days and cutoff times</p>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Delivery Schedule</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Configure delivery days and cutoff times</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Same-day cutoff</label>
@@ -4985,8 +4985,8 @@ const Leads = () => {
 
                 {/* Notifications */}
                 <div className="rounded-xl border shadow-sm p-6" style={{ borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>Notifications</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Email alerts and notifications</p>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>Notifications</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Email alerts and notifications</p>
                   <div className="space-y-3">
                     <div>
                       <label className="text-xs text-gray-500 block mb-1">Owner dispatch email</label>
@@ -5019,7 +5019,7 @@ const Leads = () => {
               <>
                 {/* Redirect to profile page */}
                 <div className="rounded-xl border shadow-sm p-6" style={{ borderColor: T.cardBorder }}>
-                  <p className="text-sm text-gray-500">Business profile settings are available in the <button onClick={() => setActivePage("profile")} className="font-medium underline" style={{ color: BRAND_GOLD }}>Business Profile</button> page.</p>
+                  <p className="text-sm" style={{ color: T.textSecond }}>Business profile settings are available in the <button onClick={() => setActivePage("profile")} className="font-medium underline" style={{ color: BRAND_GOLD }}>Business Profile</button> page.</p>
                 </div>
               </>
             )}
@@ -5029,13 +5029,13 @@ const Leads = () => {
                 {/* ─── SECTION 1: SITE AUDIT ─── */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium" style={{ color: T.textPrimary }}>Site Audit</h3>
+                    <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>Site Audit</h3>
                     <Button onClick={runSeoAudit} disabled={seoAuditing} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                       {seoAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Search className="w-4 h-4 mr-1" />}
                       Scan riversand.net
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Automated scan based on Art of SEO framework</p>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Automated scan based on Art of SEO framework</p>
 
                   {seoAuditResults && (
                     <>
@@ -5068,8 +5068,8 @@ const Leads = () => {
 
                 {/* ─── SECTION 3: SEO SETTINGS ─── */}
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>SEO Settings</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>Editable fields — changes apply to live site</p>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>SEO Settings</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>Editable fields — changes apply to live site</p>
 
                   {/* Homepage Meta */}
                   <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: T.textSecond }}>HOMEPAGE META</p>
@@ -5253,8 +5253,8 @@ const Leads = () => {
             {settingsTab === "tracking" && (
               <>
                 <div className="rounded-xl border shadow-sm p-6 mb-6" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-                  <h3 className="font-medium mb-1" style={{ color: T.textPrimary }}>No-Track IP Addresses</h3>
-                  <p className="text-xs text-gray-500 mb-4 pb-3" style={{ borderBottom: `1px solid ${T.cardBorder}` }}>
+                  <h3 className="font-display uppercase tracking-wide text-sm mb-1" style={{ color: T.textPrimary }}>No-Track IP Addresses</h3>
+                  <p className="text-xs mb-4 pb-3" style={{ color: T.textSecond, borderBottom: `1px solid ${T.cardBorder}` }}>
                     IP addresses listed here will be silently excluded from visitor session tracking, lead capture, and analytics.
                     Use this to prevent your own browsing from polluting data.
                   </p>
