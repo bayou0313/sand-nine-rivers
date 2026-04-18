@@ -342,6 +342,11 @@ const OrderMobile = () => {
   const sendOrderEmailRef = useRef(sendOrderEmail);
   useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
 
+  // Forward-declared ref for purchase tracking helper. Real impl assigned below
+  // (after `detectedZip` state is declared). Stripe success handlers in the
+  // useEffect blocks above call it via this ref.
+  const firePurchaseTrackingRef = useRef<(orderNum: string | null | undefined, paymentMethod: string, orderData?: any) => void>(() => {});
+
   // Read URL params
   useEffect(() => {
     const paramAddress = searchParams.get("address") || sessionStorage.getItem("mobile_prefill_address");
@@ -497,6 +502,8 @@ const OrderMobile = () => {
               email: orderData.customer_email || prev.email,
             }));
           }
+          // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+          firePurchaseTrackingRef.current(orderData?.order_number || returnedOrderNumber, "stripe-link", orderData);
           toast({ title: "Payment successful", description: `Order ${returnedOrderNumber || orderNumber || ""} confirmed.` });
         });
       } else {
@@ -552,6 +559,8 @@ const OrderMobile = () => {
                 setConfirmedOrderId(orderData.id || verifyOrderId);
                 setOrderNumber(orderData.order_number || signal.order_number);
               }
+              // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+              firePurchaseTrackingRef.current(orderData?.order_number || signal.order_number, "stripe-link", orderData);
               toast({ title: "Payment successful", description: `Order ${signal.order_number || ""} confirmed.` });
             });
           } else {
@@ -586,6 +595,41 @@ const OrderMobile = () => {
   }, [toast, verifyStripePayment, pendingOrderId, lookupToken, step]);
   const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
   const [detectedZip, setDetectedZip] = useState('');
+
+  // Real impl of purchase tracking helper. Wired into the forward-declared ref
+  // so Stripe success handlers (above, in useEffect) can call it via the ref.
+  // Idempotency: sessionStorage guard ensures one purchase event per order_number.
+  const firePurchaseTracking = useCallback((
+    orderNum: string | null | undefined,
+    paymentMethod: string,
+    orderData?: any,
+  ) => {
+    if (!orderNum) return;
+    const guardKey = `purchase_fired_${orderNum}`;
+    try {
+      if (sessionStorage.getItem(guardKey)) return;
+    } catch {}
+    const purchaseValue = orderData?.price ?? totalPrice;
+    const purchaseTax = orderData?.tax_amount ?? taxAmount;
+    const itemPrice = orderData?.base_unit_price ?? result?.price ?? 0;
+    const itemQty = orderData?.quantity ?? quantity;
+    trackEvent("purchase", {
+      transaction_id: orderNum,
+      value: purchaseValue,
+      currency: "USD",
+      tax: purchaseTax,
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: itemPrice, quantity: itemQty }],
+      rs_session_id: getSessionToken(),
+      rs_payment_method: paymentMethod,
+      rs_pit: matchedPit?.name,
+      rs_distance: orderData?.distance_miles ?? result?.distance,
+      rs_zip: detectedZip,
+      rs_parish: orderData?.tax_parish ?? taxInfo.parish,
+    });
+    try { sessionStorage.setItem(guardKey, "1"); } catch {}
+  }, [totalPrice, taxAmount, result, quantity, matchedPit, detectedZip, taxInfo]);
+  useEffect(() => { firePurchaseTrackingRef.current = firePurchaseTracking; }, [firePurchaseTracking]);
+
 
   // Address selection
   const handlePlaceSelect = useCallback((res: PlaceSelectResult) => {
@@ -691,7 +735,7 @@ const OrderMobile = () => {
       findAllPitDistances(allPits, currentAddress, globalPricing, supabase, detectedZip).then(d => setAllPitDistances(d)).catch(() => {});
 
       setStep("price");
-      trackEvent("begin_checkout", { value: bestResult.price, currency: "USD", rs_session_id: getSessionToken(), rs_price: bestResult.price, rs_distance: bestResult.distance, rs_pit: bestResult.pit.name, rs_zip: detectedZip, rs_parish: taxInfo.parish });
+      trackEvent("begin_checkout", { value: bestResult.price, currency: "USD", items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }], rs_session_id: getSessionToken(), rs_price: bestResult.price, rs_distance: bestResult.distance, rs_pit: bestResult.pit.name, rs_zip: detectedZip, rs_parish: taxInfo.parish });
       updateSession({ stage: "started_checkout", delivery_address: currentAddress, calculated_price: bestResult.price, nearest_pit_id: bestResult.pit.id, nearest_pit_name: bestResult.pit.name, serviceable: true });
     } catch { setError("Something went wrong. Please try again."); }
     finally { setLoading(false); }
@@ -780,7 +824,7 @@ const OrderMobile = () => {
       // Only transition to success AFTER totals are populated
       setStep("success");
       clearCart();
-      trackEvent("purchase", { transaction_id: inserted?.order_number || "", value: totalPrice, currency: "USD", rs_session_id: getSessionToken(), rs_payment_method: codSubOption, rs_pit: matchedPit?.name, rs_distance: result?.distance, rs_zip: detectedZip, rs_parish: taxInfo.parish });
+      firePurchaseTracking(inserted?.order_number, codSubOption);
       updateSession({ stage: "completed_order", order_id: inserted?.id || null, order_number: inserted?.order_number || null });
       supabase.functions.invoke("leads-auth", { body: { action: "notify_new_order", customer_name: form.name, payment_method: codSubOption, delivery_address: address, order_id: inserted?.id } }).catch(() => {});
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null);

@@ -489,6 +489,9 @@ const Order = () => {
             ? `Order ${returnedOrderNumber} is confirmed.`
             : "Your payment was completed successfully.",
         });
+        // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+        const purchaseOrderNum = orderData?.order_number || returnedOrderNumber;
+        firePurchaseTrackingRef.current(purchaseOrderNum, "stripe-link", orderData);
       };
 
       // Verify payment with backend
@@ -633,6 +636,9 @@ const Order = () => {
                 order_id: signal.order_number || null,
                 order_number: signal.order_number || null,
               });
+              // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+              const purchaseOrderNum = verified?.order_number || signal.order_number;
+              firePurchaseTrackingRef.current(purchaseOrderNum, "stripe-link", verified);
               if (verified) {
                 toast({
                   title: "Payment successful",
@@ -657,6 +663,8 @@ const Order = () => {
               order_number: signal.order_number || null,
             });
             sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
+            // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+            firePurchaseTrackingRef.current(signal.order_number, "stripe-link");
             toast({
               title: "Payment successful",
               description: signal.order_number
@@ -747,6 +755,11 @@ const Order = () => {
   // Keep refs to avoid stale closures in Stripe signal listener
   const sendOrderEmailRef = useRef(sendOrderEmail);
   useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
+
+  // Forward-declared ref for purchase tracking helper. Real implementation is
+  // assigned below (after `detectedZip` state is declared). Stripe success
+  // handlers in the useEffect blocks above can call this via the ref.
+  const firePurchaseTrackingRef = useRef<(orderNum: string | null | undefined, paymentMethod: string, orderData?: any) => void>(() => {});
 
   // Snapshot of current pricing state for cross-tab handler
   const pricingSnapshotRef = useRef({
@@ -857,6 +870,41 @@ const Order = () => {
 
   const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
   const [detectedZip, setDetectedZip] = useState('');
+
+  // Real impl of purchase tracking helper. Wired into the forward-declared ref
+  // so Stripe success handlers (above, in useEffect) can call it via the ref.
+  // Idempotency: sessionStorage guard ensures one purchase event per order_number.
+  const firePurchaseTracking = useCallback((
+    orderNum: string | null | undefined,
+    paymentMethod: string,
+    orderData?: any,
+  ) => {
+    if (!orderNum) return;
+    const guardKey = `purchase_fired_${orderNum}`;
+    try {
+      if (sessionStorage.getItem(guardKey)) return;
+    } catch {}
+    const purchaseValue = orderData?.price ?? totalPrice;
+    const purchaseTax = orderData?.tax_amount ?? taxAmount;
+    const itemPrice = orderData?.base_unit_price ?? result?.price ?? 0;
+    const itemQty = orderData?.quantity ?? quantity;
+    trackEvent("purchase", {
+      transaction_id: orderNum,
+      value: purchaseValue,
+      currency: "USD",
+      tax: purchaseTax,
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: itemPrice, quantity: itemQty }],
+      rs_session_id: getSessionToken(),
+      rs_payment_method: paymentMethod,
+      rs_pit: matchedPit?.name,
+      rs_distance: orderData?.distance_miles ?? result?.distance,
+      rs_zip: detectedZip,
+      rs_parish: orderData?.tax_parish ?? taxInfo.parish,
+    });
+    try { sessionStorage.setItem(guardKey, "1"); } catch {}
+  }, [totalPrice, taxAmount, result, quantity, matchedPit, detectedZip, taxInfo]);
+  useEffect(() => { firePurchaseTrackingRef.current = firePurchaseTracking; }, [firePurchaseTracking]);
+
 
   const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
     setAddress(result.formattedAddress);
@@ -1137,19 +1185,7 @@ const Order = () => {
       setConfirmedTotals(snapshotTotals);
       setStep("success");
       clearCart();
-      trackEvent("purchase", {
-        transaction_id: inserted?.order_number || "",
-        value: totalPrice,
-        currency: "USD",
-        tax: taxAmount,
-        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result?.price || 0, quantity }],
-        rs_session_id: getSessionToken(),
-        rs_payment_method: codSubOption,
-        rs_pit: matchedPit?.name,
-        rs_distance: result?.distance,
-        rs_zip: detectedZip,
-        rs_parish: taxInfo.parish,
-      });
+      firePurchaseTracking(inserted?.order_number, codSubOption);
       updateSession({
         stage: "completed_order",
         order_id: inserted?.id || null,
