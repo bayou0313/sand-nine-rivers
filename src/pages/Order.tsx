@@ -748,43 +748,10 @@ const Order = () => {
   const sendOrderEmailRef = useRef(sendOrderEmail);
   useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
 
-  // Helper: fire GA4 `purchase` event exactly once per order_number.
-  // Stripe redirects can re-render the success screen multiple times — this
-  // sessionStorage guard prevents duplicate purchase events.
-  // For Stripe paths, pass `orderData` (DB record) so value/tax come from the
-  // authoritative source. For COD, omit it and live state is used.
-  const firePurchaseTracking = useCallback((
-    orderNum: string | null | undefined,
-    paymentMethod: string,
-    orderData?: any,
-  ) => {
-    if (!orderNum) return;
-    const guardKey = `purchase_fired_${orderNum}`;
-    try {
-      if (sessionStorage.getItem(guardKey)) return;
-    } catch {}
-    const purchaseValue = orderData?.price ?? totalPrice;
-    const purchaseTax = orderData?.tax_amount ?? taxAmount;
-    const itemPrice = orderData?.base_unit_price ?? result?.price ?? 0;
-    const itemQty = orderData?.quantity ?? quantity;
-    trackEvent("purchase", {
-      transaction_id: orderNum,
-      value: purchaseValue,
-      currency: "USD",
-      tax: purchaseTax,
-      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: itemPrice, quantity: itemQty }],
-      rs_session_id: getSessionToken(),
-      rs_payment_method: paymentMethod,
-      rs_pit: matchedPit?.name,
-      rs_distance: orderData?.distance_miles ?? result?.distance,
-      rs_zip: detectedZip,
-      rs_parish: orderData?.tax_parish ?? taxInfo.parish,
-    });
-    try { sessionStorage.setItem(guardKey, "1"); } catch {}
-  }, [totalPrice, taxAmount, result, quantity, matchedPit, detectedZip, taxInfo]);
-
-  const firePurchaseTrackingRef = useRef(firePurchaseTracking);
-  useEffect(() => { firePurchaseTrackingRef.current = firePurchaseTracking; }, [firePurchaseTracking]);
+  // Forward-declared ref for purchase tracking helper. Real implementation is
+  // assigned below (after `detectedZip` state is declared). Stripe success
+  // handlers in the useEffect blocks above can call this via the ref.
+  const firePurchaseTrackingRef = useRef<(orderNum: string | null | undefined, paymentMethod: string, orderData?: any) => void>(() => {});
 
   // Snapshot of current pricing state for cross-tab handler
   const pricingSnapshotRef = useRef({
