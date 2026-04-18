@@ -905,6 +905,71 @@ const Order = () => {
   }, [totalPrice, taxAmount, result, quantity, matchedPit, detectedZip, taxInfo]);
   useEffect(() => { firePurchaseTrackingRef.current = firePurchaseTracking; }, [firePurchaseTracking]);
 
+  /* ── Funnel events: begin_checkout / add_shipping_info / add_payment_info ──
+   * Idempotency: each event is guarded by sessionStorage keyed by the visitor's
+   * session token so refresh, back/forward, or remount won't double-fire.
+   * `add_payment_info` re-fires when the user switches payment method (key
+   * includes the method) — this matches GA4's expectation of one event per
+   * distinct selection.
+   */
+  useEffect(() => {
+    if (step !== "details" || !result || !matchedPit) return;
+    const sid = getSessionToken();
+    const key = `begin_checkout_fired_${sid}`;
+    try { if (sessionStorage.getItem(key)) return; } catch {}
+    trackEvent("begin_checkout", {
+      value: result.price,
+      currency: "USD",
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
+      rs_session_id: sid,
+      rs_price: result.price,
+      rs_distance: result.distance,
+      rs_pit: matchedPit.name,
+      rs_zip: detectedZip,
+      rs_parish: taxInfo.parish,
+    });
+    try { sessionStorage.setItem(key, "1"); } catch {}
+  }, [step, result, matchedPit, quantity, detectedZip, taxInfo.parish]);
+
+  useEffect(() => {
+    if (!selectedDeliveryDate || !result || !matchedPit) return;
+    const sid = getSessionToken();
+    const key = `add_shipping_info_fired_${sid}`;
+    try { if (sessionStorage.getItem(key)) return; } catch {}
+    trackEvent("add_shipping_info", {
+      value: totalPrice,
+      currency: "USD",
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
+      rs_session_id: sid,
+      rs_delivery_date: selectedDeliveryDate.iso,
+      rs_delivery_window: "8:00 AM – 5:00 PM",
+      rs_distance: result.distance,
+      rs_pit: matchedPit.name,
+      rs_zip: detectedZip,
+      rs_parish: taxInfo.parish,
+    });
+    try { sessionStorage.setItem(key, "1"); } catch {}
+  }, [selectedDeliveryDate, result, matchedPit, quantity, totalPrice, detectedZip, taxInfo.parish]);
+
+  useEffect(() => {
+    if (!paymentMethod || !result || !matchedPit) return;
+    const paymentType = paymentMethod === "stripe-link" ? "card" : "cod";
+    const sid = getSessionToken();
+    const key = `add_payment_info_fired_${sid}_${paymentType}`;
+    try { if (sessionStorage.getItem(key)) return; } catch {}
+    trackEvent("add_payment_info", {
+      value: totalPrice,
+      currency: "USD",
+      payment_type: paymentType,
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
+      rs_session_id: sid,
+      rs_pit: matchedPit.name,
+      rs_zip: detectedZip,
+      rs_parish: taxInfo.parish,
+    });
+    try { sessionStorage.setItem(key, "1"); } catch {}
+  }, [paymentMethod, result, matchedPit, quantity, totalPrice, detectedZip, taxInfo.parish]);
+
 
   const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
     setAddress(result.formattedAddress);
@@ -1082,17 +1147,9 @@ const Order = () => {
         isNorthshore: bestResult.isNorthshore,
       });
       setStep("details");
-      trackEvent("begin_checkout", {
-        value: bestResult.price,
-        currency: "USD",
-        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }],
-        rs_session_id: getSessionToken(),
-        rs_price: bestResult.price,
-        rs_distance: bestResult.distance,
-        rs_pit: bestResult.pit.name,
-        rs_zip: detectedZip,
-        rs_parish: taxInfo.parish,
-      });
+      // begin_checkout now fires from a useEffect when the user enters the
+      // details step with valid context (see effect below). This catches both
+      // the address-completion path and cart-restored mounts.
       updateSession({
         stage: "started_checkout",
         delivery_address: address,
