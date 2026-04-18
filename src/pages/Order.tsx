@@ -1185,19 +1185,7 @@ const Order = () => {
       setConfirmedTotals(snapshotTotals);
       setStep("success");
       clearCart();
-      trackEvent("purchase", {
-        transaction_id: inserted?.order_number || "",
-        value: totalPrice,
-        currency: "USD",
-        tax: taxAmount,
-        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result?.price || 0, quantity }],
-        rs_session_id: getSessionToken(),
-        rs_payment_method: codSubOption,
-        rs_pit: matchedPit?.name,
-        rs_distance: result?.distance,
-        rs_zip: detectedZip,
-        rs_parish: taxInfo.parish,
-      });
+      firePurchaseTracking(inserted?.order_number, codSubOption);
       updateSession({
         stage: "completed_order",
         order_id: inserted?.id || null,
