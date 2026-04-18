@@ -489,6 +489,9 @@ const Order = () => {
             ? `Order ${returnedOrderNumber} is confirmed.`
             : "Your payment was completed successfully.",
         });
+        // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+        const purchaseOrderNum = orderData?.order_number || returnedOrderNumber;
+        firePurchaseTrackingRef.current(purchaseOrderNum, "stripe-link", orderData);
       };
 
       // Verify payment with backend
