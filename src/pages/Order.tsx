@@ -863,6 +863,41 @@ const Order = () => {
   const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
   const [detectedZip, setDetectedZip] = useState('');
 
+  // Real impl of purchase tracking helper. Wired into the forward-declared ref
+  // so Stripe success handlers (above, in useEffect) can call it via the ref.
+  // Idempotency: sessionStorage guard ensures one purchase event per order_number.
+  const firePurchaseTracking = useCallback((
+    orderNum: string | null | undefined,
+    paymentMethod: string,
+    orderData?: any,
+  ) => {
+    if (!orderNum) return;
+    const guardKey = `purchase_fired_${orderNum}`;
+    try {
+      if (sessionStorage.getItem(guardKey)) return;
+    } catch {}
+    const purchaseValue = orderData?.price ?? totalPrice;
+    const purchaseTax = orderData?.tax_amount ?? taxAmount;
+    const itemPrice = orderData?.base_unit_price ?? result?.price ?? 0;
+    const itemQty = orderData?.quantity ?? quantity;
+    trackEvent("purchase", {
+      transaction_id: orderNum,
+      value: purchaseValue,
+      currency: "USD",
+      tax: purchaseTax,
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: itemPrice, quantity: itemQty }],
+      rs_session_id: getSessionToken(),
+      rs_payment_method: paymentMethod,
+      rs_pit: matchedPit?.name,
+      rs_distance: orderData?.distance_miles ?? result?.distance,
+      rs_zip: detectedZip,
+      rs_parish: orderData?.tax_parish ?? taxInfo.parish,
+    });
+    try { sessionStorage.setItem(guardKey, "1"); } catch {}
+  }, [totalPrice, taxAmount, result, quantity, matchedPit, detectedZip, taxInfo]);
+  useEffect(() => { firePurchaseTrackingRef.current = firePurchaseTracking; }, [firePurchaseTracking]);
+
+
   const handleOrderPlaceSelect = useCallback((result: PlaceSelectResult) => {
     setAddress(result.formattedAddress);
     setCustomerCoords({ lat: result.lat, lng: result.lng });
