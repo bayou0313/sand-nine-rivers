@@ -630,6 +630,68 @@ const OrderMobile = () => {
   }, [totalPrice, taxAmount, result, quantity, matchedPit, detectedZip, taxInfo]);
   useEffect(() => { firePurchaseTrackingRef.current = firePurchaseTracking; }, [firePurchaseTracking]);
 
+  /* ── Funnel events: begin_checkout / add_shipping_info / add_payment_info ──
+   * Same idempotency model as desktop: sessionStorage guards keyed by session
+   * token; add_payment_info re-fires when method switches.
+   */
+  useEffect(() => {
+    if (step !== "price" || !result || !matchedPit) return;
+    const sid = getSessionToken();
+    const key = `begin_checkout_fired_${sid}`;
+    try { if (sessionStorage.getItem(key)) return; } catch {}
+    trackEvent("begin_checkout", {
+      value: result.price,
+      currency: "USD",
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
+      rs_session_id: sid,
+      rs_price: result.price,
+      rs_distance: result.distance,
+      rs_pit: matchedPit.name,
+      rs_zip: detectedZip,
+      rs_parish: taxInfo.parish,
+    });
+    try { sessionStorage.setItem(key, "1"); } catch {}
+  }, [step, result, matchedPit, quantity, detectedZip, taxInfo.parish]);
+
+  useEffect(() => {
+    if (!selectedDeliveryDate || !result || !matchedPit) return;
+    const sid = getSessionToken();
+    const key = `add_shipping_info_fired_${sid}`;
+    try { if (sessionStorage.getItem(key)) return; } catch {}
+    trackEvent("add_shipping_info", {
+      value: totalPrice,
+      currency: "USD",
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
+      rs_session_id: sid,
+      rs_delivery_date: selectedDeliveryDate.iso,
+      rs_delivery_window: "8:00 AM – 5:00 PM",
+      rs_distance: result.distance,
+      rs_pit: matchedPit.name,
+      rs_zip: detectedZip,
+      rs_parish: taxInfo.parish,
+    });
+    try { sessionStorage.setItem(key, "1"); } catch {}
+  }, [selectedDeliveryDate, result, matchedPit, quantity, totalPrice, detectedZip, taxInfo.parish]);
+
+  useEffect(() => {
+    if (!paymentMethod || !result || !matchedPit) return;
+    const paymentType = paymentMethod === "stripe-link" ? "card" : "cod";
+    const sid = getSessionToken();
+    const key = `add_payment_info_fired_${sid}_${paymentType}`;
+    try { if (sessionStorage.getItem(key)) return; } catch {}
+    trackEvent("add_payment_info", {
+      value: totalPrice,
+      currency: "USD",
+      payment_type: paymentType,
+      items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
+      rs_session_id: sid,
+      rs_pit: matchedPit.name,
+      rs_zip: detectedZip,
+      rs_parish: taxInfo.parish,
+    });
+    try { sessionStorage.setItem(key, "1"); } catch {}
+  }, [paymentMethod, result, matchedPit, quantity, totalPrice, detectedZip, taxInfo.parish]);
+
 
   // Address selection
   const handlePlaceSelect = useCallback((res: PlaceSelectResult) => {
@@ -735,7 +797,7 @@ const OrderMobile = () => {
       findAllPitDistances(allPits, currentAddress, globalPricing, supabase, detectedZip).then(d => setAllPitDistances(d)).catch(() => {});
 
       setStep("price");
-      trackEvent("begin_checkout", { value: bestResult.price, currency: "USD", items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }], rs_session_id: getSessionToken(), rs_price: bestResult.price, rs_distance: bestResult.distance, rs_pit: bestResult.pit.name, rs_zip: detectedZip, rs_parish: taxInfo.parish });
+      // begin_checkout now fires from a useEffect when step="price" with valid context.
       updateSession({ stage: "started_checkout", delivery_address: currentAddress, calculated_price: bestResult.price, nearest_pit_id: bestResult.pit.id, nearest_pit_name: bestResult.pit.name, serviceable: true });
     } catch { setError("Something went wrong. Please try again."); }
     finally { setLoading(false); }
