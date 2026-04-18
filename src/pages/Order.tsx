@@ -1082,17 +1082,9 @@ const Order = () => {
         isNorthshore: bestResult.isNorthshore,
       });
       setStep("details");
-      trackEvent("begin_checkout", {
-        value: bestResult.price,
-        currency: "USD",
-        items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }],
-        rs_session_id: getSessionToken(),
-        rs_price: bestResult.price,
-        rs_distance: bestResult.distance,
-        rs_pit: bestResult.pit.name,
-        rs_zip: detectedZip,
-        rs_parish: taxInfo.parish,
-      });
+      // begin_checkout now fires from a useEffect when the user enters the
+      // details step with valid context (see effect below). This catches both
+      // the address-completion path and cart-restored mounts.
       updateSession({
         stage: "started_checkout",
         delivery_address: address,
