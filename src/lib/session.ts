@@ -34,11 +34,12 @@ export async function isNoTrackIP(): Promise<boolean> {
   try {
     const ipRes = await fetch('https://api.ipify.org?format=json');
     const { ip } = await ipRes.json();
+    // Use maybeSingle() — row may not exist; .single() returns 406 in that case.
     const { data } = await supabase
       .from('global_settings')
       .select('value')
       .eq('key', 'notrack_ips')
-      .single();
+      .maybeSingle();
     const noTrackList: string[] = JSON.parse(data?.value || '[]');
     if (noTrackList.includes(ip)) {
       localStorage.setItem(NOTRACK_KEY, '1');
