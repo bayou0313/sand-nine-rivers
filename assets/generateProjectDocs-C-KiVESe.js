@@ -1,4 +1,4 @@
-import{s as l}from"./index-JTo60fKJ.js";const _="v1.01";async function y(){try{const{data:r}=await l.from("global_settings").select("value").eq("key","docs_current_version").maybeSingle();return(r==null?void 0:r.value)||_}catch{return _}}function p(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const E=`## 1. Architecture Overview
+import{s as l}from"./index-kzRBcTdZ.js";const _="v1.01";async function y(){try{const{data:r}=await l.from("global_settings").select("value").eq("key","docs_current_version").maybeSingle();return(r==null?void 0:r.value)||_}catch{return _}}function p(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const E=`## 1. Architecture Overview
 
 **Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind CSS v3 + Supabase (Lovable Cloud)
 
