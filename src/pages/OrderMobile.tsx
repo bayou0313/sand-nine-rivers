@@ -735,7 +735,7 @@ const OrderMobile = () => {
       findAllPitDistances(allPits, currentAddress, globalPricing, supabase, detectedZip).then(d => setAllPitDistances(d)).catch(() => {});
 
       setStep("price");
-      trackEvent("begin_checkout", { value: bestResult.price, currency: "USD", rs_session_id: getSessionToken(), rs_price: bestResult.price, rs_distance: bestResult.distance, rs_pit: bestResult.pit.name, rs_zip: detectedZip, rs_parish: taxInfo.parish });
+      trackEvent("begin_checkout", { value: bestResult.price, currency: "USD", items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: bestResult.price, quantity }], rs_session_id: getSessionToken(), rs_price: bestResult.price, rs_distance: bestResult.distance, rs_pit: bestResult.pit.name, rs_zip: detectedZip, rs_parish: taxInfo.parish });
       updateSession({ stage: "started_checkout", delivery_address: currentAddress, calculated_price: bestResult.price, nearest_pit_id: bestResult.pit.id, nearest_pit_name: bestResult.pit.name, serviceable: true });
     } catch { setError("Something went wrong. Please try again."); }
     finally { setLoading(false); }
@@ -824,7 +824,7 @@ const OrderMobile = () => {
       // Only transition to success AFTER totals are populated
       setStep("success");
       clearCart();
-      trackEvent("purchase", { transaction_id: inserted?.order_number || "", value: totalPrice, currency: "USD", rs_session_id: getSessionToken(), rs_payment_method: codSubOption, rs_pit: matchedPit?.name, rs_distance: result?.distance, rs_zip: detectedZip, rs_parish: taxInfo.parish });
+      firePurchaseTracking(inserted?.order_number, codSubOption);
       updateSession({ stage: "completed_order", order_id: inserted?.id || null, order_number: inserted?.order_number || null });
       supabase.functions.invoke("leads-auth", { body: { action: "notify_new_order", customer_name: form.name, payment_method: codSubOption, delivery_address: address, order_id: inserted?.id } }).catch(() => {});
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null);
