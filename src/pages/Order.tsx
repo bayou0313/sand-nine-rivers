@@ -636,6 +636,9 @@ const Order = () => {
                 order_id: signal.order_number || null,
                 order_number: signal.order_number || null,
               });
+              // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+              const purchaseOrderNum = verified?.order_number || signal.order_number;
+              firePurchaseTrackingRef.current(purchaseOrderNum, "stripe-link", verified);
               if (verified) {
                 toast({
                   title: "Payment successful",
@@ -660,6 +663,8 @@ const Order = () => {
               order_number: signal.order_number || null,
             });
             sendOrderEmailRef.current(signal.order_number || null, "stripe-link", "paid", signal.session_id || null);
+            // Fire GA4 purchase event for Stripe card orders (idempotent per order_number).
+            firePurchaseTrackingRef.current(signal.order_number, "stripe-link");
             toast({
               title: "Payment successful",
               description: signal.order_number
