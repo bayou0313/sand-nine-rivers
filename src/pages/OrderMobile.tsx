@@ -877,6 +877,15 @@ const OrderMobile = () => {
       toast({ title: "Missing info", description: "Name and phone are required.", variant: "destructive" });
       return;
     }
+    // Email validation — required for confirmation emails to work
+    const emailInputElCod = document.querySelector<HTMLInputElement>('input[type="email"][autocomplete="email"]');
+    const currentEmailCod = (emailInputElCod?.value || form.email).trim();
+    if (currentEmailCod !== form.email) setForm(f => ({ ...f, email: currentEmailCod }));
+    const emailRegexCod = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!currentEmailCod || !emailRegexCod.test(currentEmailCod)) {
+      toast({ title: "Invalid email address", description: "Please enter a valid email (e.g. name@domain.com).", variant: "destructive" });
+      return;
+    }
     if (!result || !selectedDeliveryDate) return;
     setSubmitting(true);
     try {
@@ -898,7 +907,7 @@ const OrderMobile = () => {
       clearCart();
       firePurchaseTracking(inserted?.order_number, codSubOption);
       updateSession({ stage: "completed_order", order_id: inserted?.id || null, order_number: inserted?.order_number || null });
-      supabase.functions.invoke("leads-auth", { body: { action: "notify_new_order", customer_name: form.name, payment_method: codSubOption, delivery_address: address, order_id: inserted?.id } }).catch(() => {});
+      // Admin notification is created automatically by DB trigger trg_notify_new_order
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null);
     } catch (err: any) {
       toast({ title: "Order failed", description: err.message || "Please try again.", variant: "destructive" });
@@ -918,8 +927,9 @@ const OrderMobile = () => {
       setForm(f => ({ ...f, email: currentEmail }));
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (currentEmail.trim() && !emailRegex.test(currentEmail.trim())) {
-      toast({ title: "Invalid email address", description: "Please enter a complete email address (e.g. name@domain.com)", variant: "destructive" });
+    const trimmedEmail = currentEmail.trim();
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      toast({ title: "Invalid email address", description: "Please enter a valid email address (e.g. name@domain.com).", variant: "destructive" });
       return;
     }
     if (!result || !selectedDeliveryDate) return;
@@ -948,7 +958,7 @@ const OrderMobile = () => {
       });
       if (error || !data?.url) throw new Error(data?.error || error?.message || "Failed to create payment link");
 
-      supabase.functions.invoke("leads-auth", { body: { action: "notify_new_order", customer_name: form.name, payment_method: "stripe-link", delivery_address: address, order_id: insertedOrder?.id } }).catch(() => {});
+      // Admin notification is created automatically by DB trigger trg_notify_new_order
       setPendingOrderId(insertedOrder?.id || null);
       setLookupToken(insertedOrder?.lookup_token || null);
       await updateSession({ stripe_link_clicked: true, stripe_link_clicked_at: new Date().toISOString() });
