@@ -342,6 +342,11 @@ const OrderMobile = () => {
   const sendOrderEmailRef = useRef(sendOrderEmail);
   useEffect(() => { sendOrderEmailRef.current = sendOrderEmail; }, [sendOrderEmail]);
 
+  // Forward-declared ref for purchase tracking helper. Real impl assigned below
+  // (after `detectedZip` state is declared). Stripe success handlers in the
+  // useEffect blocks above call it via this ref.
+  const firePurchaseTrackingRef = useRef<(orderNum: string | null | undefined, paymentMethod: string, orderData?: any) => void>(() => {});
+
   // Read URL params
   useEffect(() => {
     const paramAddress = searchParams.get("address") || sessionStorage.getItem("mobile_prefill_address");
