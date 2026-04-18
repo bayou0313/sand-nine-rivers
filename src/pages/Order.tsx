@@ -1223,6 +1223,14 @@ const Order = () => {
       toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
       return;
     }
+    // Email validation — required for confirmation emails to work
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailVal = form.email.trim();
+    if (!emailVal || !emailRegex.test(emailVal)) {
+      setFormAttempted(true);
+      toast({ title: "Invalid email address", description: "Please enter a valid email so we can send your confirmation.", variant: "destructive" });
+      return;
+    }
     if (!result || !selectedDeliveryDate) return;
 
     setSubmitting(true);
@@ -1261,16 +1269,7 @@ const Order = () => {
         order_number: inserted?.order_number || null,
       });
 
-      // Fire-and-forget new order notification
-      supabase.functions.invoke("leads-auth", {
-        body: {
-          action: "notify_new_order",
-          customer_name: form.name,
-          payment_method: codSubOption,
-          delivery_address: address,
-          order_id: inserted?.id,
-        },
-      }).catch(() => {});
+      // Admin notification is created automatically by DB trigger trg_notify_new_order
 
       // Send order confirmation email with totals passed directly (state not yet updated)
       sendOrderEmail(inserted?.order_number || null, codSubOption, "pending", null, snapshotTotals);
@@ -1296,6 +1295,13 @@ const Order = () => {
   const handleStripeLink = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
       toast({ title: "Missing info", description: "Please enter your name and phone number.", variant: "destructive" });
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailVal = form.email.trim();
+    if (!emailVal || !emailRegex.test(emailVal)) {
+      setFormAttempted(true);
+      toast({ title: "Invalid email address", description: "Please enter a valid email so we can send your receipt.", variant: "destructive" });
       return;
     }
     if (!result || !selectedDeliveryDate) return;
@@ -1340,16 +1346,7 @@ const Order = () => {
         throw new Error(data?.error || error?.message || "Failed to create payment link");
       }
 
-      // Fire-and-forget new order notification
-      supabase.functions.invoke("leads-auth", {
-        body: {
-          action: "notify_new_order",
-          customer_name: form.name,
-          payment_method: "stripe-link",
-          delivery_address: address,
-          order_id: insertedOrder?.id,
-        },
-      }).catch(() => {});
+      // Admin notification is created automatically by DB trigger trg_notify_new_order
 
       // Store order ID and token for DB polling
       setPendingOrderId(insertedOrder?.id || null);

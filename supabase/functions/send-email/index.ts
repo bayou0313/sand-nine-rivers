@@ -951,6 +951,31 @@ serve(async (req) => {
     const { type, data } = await req.json();
     console.log("[send-email] Email type:", type);
 
+    // ── Payload validation ──
+    // Reject obviously bad payloads with 400 instead of letting them bubble to 500
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const recipientEmail = data?.customer_email;
+    // Types that REQUIRE a valid customer_email recipient
+    const recipientRequired = new Set([
+      "order", "order_confirmation", "cash_payment_confirmed",
+      "waitlist", "waitlist_available", "lead_confirmation",
+      "lead_offer", "lead_decline", "capture_failed", "order_cancelled",
+    ]);
+    if (recipientRequired.has(type)) {
+      if (!recipientEmail || typeof recipientEmail !== "string") {
+        return new Response(
+          JSON.stringify({ error: "missing_email", message: "customer_email is required for this email type" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!EMAIL_RE.test(recipientEmail.trim())) {
+        return new Response(
+          JSON.stringify({ error: "invalid_email", message: `customer_email is not a valid format: ${recipientEmail}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Test mode guard — suppress all emails
     if (emailCfg.stripe_mode === "test") {
       console.log(`[send-email] TEST MODE — suppressing ${type} email`);
@@ -1458,11 +1483,22 @@ ${WEBSITE} | ${PHONE} | ${LEGAL_NAME}`.trim();
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Email error:", error);
+    const msg = String(error?.message || "");
+    // Resend / upstream provider failures → 502 Bad Gateway (not 500)
+    const isUpstream =
+      msg.toLowerCase().includes("resend") ||
+      msg.toLowerCase().includes("rate limit") ||
+      msg.toLowerCase().includes("fetch failed") ||
+      error?.name === "ResendError";
+    const status = isUpstream ? 502 : 500;
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to send email" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: isUpstream ? "upstream_email_provider_failed" : "internal_error",
+        message: msg || "Failed to send email",
+      }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
