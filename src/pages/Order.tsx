@@ -588,10 +588,22 @@ const Order = () => {
 
   // Listen for cross-tab Stripe payment signals (from popup return tab)
   useEffect(() => {
+    // Idempotency guard: track processed signal IDs in this session so a stale
+    // payload in localStorage isn't replayed by the 1s poll (which previously
+    // caused the page to appear to "reset" every 10-15s).
+    const processedSignals = new Set<string>();
     const processSignal = (raw: string) => {
       try {
         const signal = JSON.parse(raw);
         if (signal.type !== "stripe-payment-result") return false;
+        const signalId = signal.session_id || signal.order_number || signal.order_id || raw;
+        if (processedSignals.has(signalId)) {
+          // Stale signal still in localStorage — clear and skip to break the loop.
+          localStorage.removeItem("stripe_payment_signal");
+          console.warn("[Stripe signal] Ignoring already-processed signal:", signalId);
+          return false;
+        }
+        processedSignals.add(signalId);
         localStorage.removeItem("stripe_payment_signal");
         setSubmitting(false);
 

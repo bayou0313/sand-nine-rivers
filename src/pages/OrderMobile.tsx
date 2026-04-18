@@ -535,11 +535,21 @@ const OrderMobile = () => {
     if (stripeReturnHandled.current) return;
     const isSuccessStep = step === "success";
 
+    // Idempotency guard: track processed signal IDs in this session so a stale
+    // payload in localStorage isn't replayed by the 1s poll loop.
+    const processedSignals = new Set<string>();
     const processSignal = (raw: string) => {
       if (isSuccessStep) return;
       try {
         const signal = JSON.parse(raw);
         if (signal.type !== "stripe-payment-result") return;
+        const signalId = signal.session_id || signal.order_number || signal.order_id || raw;
+        if (processedSignals.has(signalId)) {
+          localStorage.removeItem("stripe_payment_signal");
+          console.warn("[Stripe signal] Ignoring already-processed signal:", signalId);
+          return;
+        }
+        processedSignals.add(signalId);
         localStorage.removeItem("stripe_payment_signal");
         setSubmitting(false);
         if (signal.status === "success") {

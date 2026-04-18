@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Admin route flag for GTM blocking — must run BEFORE GTM snippet -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      (function () {
+        var path = window.location.pathname;
+        if (path.indexOf('/leads') === 0 || path.indexOf('/admin') === 0) {
+          window.dataLayer.push({ 'admin_route': true });
+        }
+      })();
+    </script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-KPKFPCXM');</script>
+    <!-- End Google Tag Manager -->
+    <link rel="preconnect" href="https://lclbexhytmpfxzcztzva.supabase.co" />
+    <link rel="preconnect" href="https://maps.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Same-Day River Sand Delivery | New Orleans, LA | RiverSand.net</title>
+    <meta name="description" content="Same-day bulk river sand delivery in New Orleans and Greater Louisiana. Pumped directly from the Mississippi River. Order online — delivery within hours." />
+    <meta name="author" content="Ways Materials, LLC" />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href="https://riversand.net/" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+    <meta name="theme-color" content="#CC0000" />
+  </head>
+  <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KPKFPCXM"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
