@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Droplets, Calculator, HelpCircle, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 const RiverSandInfo = ({ cityName = "New Orleans" }: { cityName?: string }) => {
   const [expanded, setExpanded] = useState(false);

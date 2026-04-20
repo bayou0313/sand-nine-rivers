@@ -1,6 +1,7 @@
 import { Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 const CTA = ({ cityName }: { cityName?: string }) => {
   const scrollToEstimator = () => {
@@ -58,11 +59,11 @@ const CTA = ({ cityName }: { cityName?: string }) => {
             No account needed · Same-day available · Cash or card accepted
           </p>
           <a
-            href="tel:+18554689297"
+            href={WAYS_PHONE_TEL}
             className="font-body text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors flex items-center gap-1.5 text-base font-bold"
           >
             <Phone className="w-3.5 h-3.5" />
-            or call us: 1-855-GOT-WAYS
+            or call us: {WAYS_PHONE_DISPLAY}
           </a>
         </motion.div>
       </div>

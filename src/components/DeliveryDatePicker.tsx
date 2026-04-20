@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { WAYS_PHONE_DISPLAY } from "@/lib/constants";
 
 const SATURDAY_SURCHARGE = 35;
 const CUTOFF_HOUR = 10; // 10:00 AM Central
@@ -374,7 +375,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
             </button>
           ) : (
             <p className="font-body text-xs text-amber-600 mt-1">
-              Call 1-855-GOT-WAYS for scheduling.
+              Call {WAYS_PHONE_DISPLAY} for scheduling.
             </p>
           )}
         </div>
@@ -528,7 +529,7 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
         >
           <p className="font-body text-sm text-amber-800 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
-            You're close to the same-day cutoff. We recommend calling 1-855-GOT-WAYS to confirm availability before placing the order.
+            You're close to the same-day cutoff. We recommend calling {WAYS_PHONE_DISPLAY} to confirm availability before placing the order.
           </p>
         </motion.div>
       )}

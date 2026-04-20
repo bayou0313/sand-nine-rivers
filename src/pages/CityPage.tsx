@@ -25,6 +25,7 @@ import { MapPin, Loader2, Mail, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { WAYS_PHONE_RAW } from "@/lib/constants";
 
 const cleanCityName = (name: string): string =>
   name.replace(/\s*,?\s*[Ll][Aa]$/, '').trim();
@@ -355,7 +356,7 @@ const CityPage = () => {
     "@type": "LocalBusiness",
     name: `River Sand — ${cityPage.city_name}`,
     url: canonicalUrl,
-    telephone: "+18554689297",
+    telephone: `+${WAYS_PHONE_RAW}`,
     description: cityPage.meta_description || `Same-day river sand delivery in ${cityPage.city_name}, ${cityPage.state}`,
     image: "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
     priceRange: "$$",

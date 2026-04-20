@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 import Index from "./pages/Index.tsx";
 import HomeMobile from "./pages/HomeMobile.tsx";
 import Order from "./pages/Order.tsx";
@@ -123,7 +124,7 @@ const MaintenancePage = () => (
         Our team is standing by to take your order and arrange same-day delivery.
       </p>
       <a
-        href="tel:18554689297"
+        href={WAYS_PHONE_TEL}
         style={{
           display: 'inline-block',
           backgroundColor: '#C07A00',
@@ -137,7 +138,7 @@ const MaintenancePage = () => (
           boxShadow: '0 4px 20px rgba(192,122,0,0.4)',
         }}
       >
-        📞 1-855-GOT-WAYS
+        📞 {WAYS_PHONE_DISPLAY}
       </a>
       <p style={{
         color: 'rgba(255,255,255,0.3)',
@@ -292,7 +293,7 @@ function AppContent() {
         }}>
           🔧 PAYMENT TEST MODE — Orders placed will not be charged &nbsp;|&nbsp;
           <a
-            href="tel:18554689297"
+            href={WAYS_PHONE_TEL}
             style={{
               color: "#FFFFFF",
               textDecoration: "underline",
@@ -428,7 +429,7 @@ function AppContent() {
               <div style={{ flex: 1, height: "1px", backgroundColor: "#E8E5DC" }} />
             </div>
             <a
-              href="tel:18554689297"
+              href={WAYS_PHONE_TEL}
               style={{
                 display: "block",
                 width: "100%",
@@ -443,7 +444,7 @@ function AppContent() {
                 boxSizing: "border-box",
               }}
             >
-              📞 Call 1-855-GOT-WAYS
+              📞 Call {WAYS_PHONE_DISPLAY}
             </a>
             <p style={{
               color: "#999",

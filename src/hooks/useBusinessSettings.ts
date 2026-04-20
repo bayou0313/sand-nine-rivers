@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_RAW } from "@/lib/constants";
 
 export interface BusinessSettings {
   legal_name: string;
@@ -17,8 +18,8 @@ export interface BusinessSettings {
 const DEFAULTS: BusinessSettings = {
   legal_name: "WAYS® Materials LLC",
   site_name: "River Sand",
-  phone: "1-855-GOT-WAYS",
-  phone_tel: "+18554689297",
+  phone: WAYS_PHONE_DISPLAY,
+  phone_tel: `+${WAYS_PHONE_RAW}`,
   website: "riversand.net",
   footer_address: "",
   support_email: "orders@riversand.net",

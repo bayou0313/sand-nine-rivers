@@ -27,6 +27,7 @@ import logoImg from "@/assets/riversand-logo.png";
 import { type PitData, type GlobalPricing, type FindBestPitResult, findBestPitDriving, findAllPitDistances, getEffectivePrice, calcPitPrice, parseGlobalSettings, FALLBACK_GLOBAL_PRICING } from "@/lib/pits";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
 import AddressMismatchDialog from "@/components/AddressMismatchDialog";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -1519,9 +1520,9 @@ const Order = () => {
               );
             })}
           </div>
-          <a href="tel:+18554689297" className="flex items-center gap-1.5 font-display text-sm tracking-wider text-accent hover:text-accent/80 transition-colors">
+          <a href={WAYS_PHONE_TEL} className="flex items-center gap-1.5 font-display text-sm tracking-wider text-accent hover:text-accent/80 transition-colors">
             <Phone className="w-4 h-4" />
-            1-855-GOT-WAYS
+            {WAYS_PHONE_DISPLAY}
           </a>
         </div>
       )}

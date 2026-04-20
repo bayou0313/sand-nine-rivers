@@ -7,6 +7,7 @@ import { formatCurrency, LA_STATE_TAX_RATE } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 import {
   Accordion,
   AccordionContent,
@@ -213,11 +214,11 @@ export default function OrderConfirmation({
             />
           </Link>
           <a
-            href="tel:18554689297"
+            href={WAYS_PHONE_TEL}
             className="font-display text-sm tracking-wider"
             style={{ color: "#C07A00" }}
           >
-            1-855-GOT-WAYS
+            {WAYS_PHONE_DISPLAY}
           </a>
         </div>
       </FadeIn>
@@ -625,11 +626,11 @@ export default function OrderConfirmation({
               Questions about your order?
             </p>
             <a
-              href="tel:18554689297"
+              href={WAYS_PHONE_TEL}
               className="font-display text-lg tracking-wider"
               style={{ color: "#C07A00" }}
             >
-              1-855-GOT-WAYS
+              {WAYS_PHONE_DISPLAY}
             </a>
             <p className="text-xs font-body" style={{ color: "#9CA3AF" }}>
               orders@riversand.net

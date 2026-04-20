@@ -38,6 +38,7 @@ import {
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
 import AddressMismatchDialog from "@/components/AddressMismatchDialog";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
 import { useCountdown } from "@/hooks/use-countdown";
 
@@ -983,7 +984,7 @@ const OrderMobile = () => {
         title: "Payment could not be processed",
         description: err.message?.includes('email')
           ? "Please check your email address and try again."
-          : "Something went wrong. Please try again or call 1-855-GOT-WAYS.",
+          : `Something went wrong. Please try again or call ${WAYS_PHONE_DISPLAY}.`,
         variant: "destructive",
       });
     } finally { setSubmitting(false); }
@@ -1122,11 +1123,11 @@ const OrderMobile = () => {
             {/* Footer */}
             <div className="px-5 pb-6 space-y-3 mt-4">
               <a
-                href="tel:+18554689297"
+                href={WAYS_PHONE_TEL}
                 className="flex items-center justify-center gap-2 w-full h-14 rounded-2xl font-display text-xl tracking-wide"
                 style={{ backgroundColor: "hsl(var(--accent))", color: "hsl(var(--primary))" }}
               >
-                <Phone className="w-5 h-5" style={{ color: "hsl(var(--primary))" }} /> 1-855-GOT-WAYS
+                <Phone className="w-5 h-5" style={{ color: "hsl(var(--primary))" }} /> {WAYS_PHONE_DISPLAY}
               </a>
               <div className="flex flex-col items-center gap-1 mt-3">
                 <span className="font-body text-xs text-white/50">Operated by</span>

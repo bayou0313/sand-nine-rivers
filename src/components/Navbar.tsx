@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadCart, clearCart, type CartState } from "@/lib/cart";
 import { formatCurrency } from "@/lib/format";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 const navLinks = ["Pricing", "How It Works", "Why Us", "About", "FAQ", "Learn More", "Contact"];
 
@@ -196,9 +197,9 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
 
           <div className="hidden lg:block">
             <Button size="sm" variant="outline" className="font-display tracking-wider rounded-lg border-accent/30 text-accent-foreground bg-accent hover:bg-accent/80" asChild>
-              <a href="tel:+18554689297">
+              <a href={WAYS_PHONE_TEL}>
                 <Phone className="w-4 h-4 mr-1" />
-                1-855-GOT-WAYS
+                {WAYS_PHONE_DISPLAY}
               </a>
             </Button>
           </div>
@@ -269,8 +270,8 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
                 </Link>
               </Button>
               <Button size="sm" variant="outline" className="font-display tracking-wider w-full rounded-lg" asChild>
-                <a href="tel:+18554689297">
-                  <Phone className="w-4 h-4 mr-1" /> 1-855-GOT-WAYS
+                <a href={WAYS_PHONE_TEL}>
+                  <Phone className="w-4 h-4 mr-1" /> {WAYS_PHONE_DISPLAY}
                 </a>
               </Button>
             </div>
