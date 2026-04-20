@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
@@ -209,11 +210,11 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
               <div className="mt-6 space-y-2 text-center">
                 <p className="text-sm" style={{ color: "#6B7280" }}>Questions?</p>
                 <a
-                  href="tel:18554689297"
+                  href={WAYS_PHONE_TEL}
                   className="font-display text-base tracking-wider block"
                   style={{ color: "#C07A00" }}
                 >
-                  1-855-GOT-WAYS
+                  {WAYS_PHONE_DISPLAY}
                 </a>
               </div>
 

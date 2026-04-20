@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 interface RefundPolicyModalProps {
   open: boolean;
@@ -24,7 +25,7 @@ export default function RefundPolicyModal({ open, onClose, pricingMode }: Refund
             <p>If your order is canceled before loading, you will receive a full refund.</p>
           )}
           <p>We recommend reviewing your order details carefully before submitting to avoid any issues.</p>
-          <p>If you need help or have questions, please call us at <a href="tel:+18554689297" className="text-accent underline font-medium whitespace-nowrap">1-855-GOT-WAYS</a> — our team is here to help.</p>
+          <p>If you need help or have questions, please call us at <a href={WAYS_PHONE_TEL} className="text-accent underline font-medium whitespace-nowrap">{WAYS_PHONE_DISPLAY}</a> — our team is here to help.</p>
           <div className="bg-muted/50 rounded-xl p-3 text-xs mt-2">
             <p>By placing an order you agree to this refund and cancellation policy. WAYS® Materials LLC reserves the right to make final decisions on all refund requests.</p>
           </div>

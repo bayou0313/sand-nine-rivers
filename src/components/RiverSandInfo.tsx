@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Droplets, Calculator, HelpCircle, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 const RiverSandInfo = ({ cityName = "New Orleans" }: { cityName?: string }) => {
   const [expanded, setExpanded] = useState(false);
@@ -145,7 +146,7 @@ const RiverSandInfo = ({ cityName = "New Orleans" }: { cityName?: string }) => {
 
             <p className="font-body text-muted-foreground leading-relaxed mt-4 text-sm">
               Not sure which material fits your project? Call{" "}
-              <a href="tel:+18554689297" className="text-accent hover:underline font-display">1-855-GOT-WAYS</a>{" "}
+              <a href={WAYS_PHONE_TEL} className="text-accent hover:underline font-display">{WAYS_PHONE_DISPLAY}</a>{" "}
               and describe what you are building. We will tell you honestly whether river sand is the right call or whether you should be looking at something else.
             </p>
           </motion.div>
@@ -246,7 +247,7 @@ const RiverSandInfo = ({ cityName = "New Orleans" }: { cityName?: string }) => {
             <div className="bg-accent/10 border border-accent/30 rounded-xl p-4 mt-6">
               <p className="font-body text-muted-foreground text-sm">
                 <strong className="text-foreground">Not sure how much you need?</strong> Call{" "}
-                <a href="tel:+18554689297" className="text-accent hover:underline font-display">1-855-GOT-WAYS</a>{" "}
+                <a href={WAYS_PHONE_TEL} className="text-accent hover:underline font-display">{WAYS_PHONE_DISPLAY}</a>{" "}
                 with your project dimensions. We calculate it for you at no charge. It takes about two minutes and we have done it thousands of times.
               </p>
             </div>

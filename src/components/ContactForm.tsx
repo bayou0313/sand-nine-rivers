@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatPhone } from "@/lib/format";
 import EmailInput from "@/components/EmailInput";
 import BrandedConfirmation from "@/components/BrandedConfirmation";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 const ContactForm = ({ cityName }: { cityName?: string }) => {
   const [submitted, setSubmitted] = useState(false);
@@ -48,13 +49,13 @@ const ContactForm = ({ cityName }: { cityName?: string }) => {
             </div>
 
             <div className="space-y-5">
-              <a href="tel:+18554689297" className="flex items-center gap-4 text-foreground hover:text-accent transition-colors group">
+              <a href={WAYS_PHONE_TEL} className="flex items-center gap-4 text-foreground hover:text-accent transition-colors group">
                 <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                   <Phone className="w-6 h-6 text-primary group-hover:text-accent" />
                 </div>
                 <div>
                   <p className="font-display text-lg tracking-widest">CALL US</p>
-                  <p className="font-body text-muted-foreground">1-855-GOT-WAYS</p>
+                  <p className="font-body text-muted-foreground">{WAYS_PHONE_DISPLAY}</p>
                 </div>
               </a>
               <a href="mailto:orders@riversand.net" className="flex items-center gap-4 text-foreground hover:text-accent transition-colors group">

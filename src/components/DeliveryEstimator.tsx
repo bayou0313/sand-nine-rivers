@@ -15,6 +15,7 @@ import { type PitData, type GlobalPricing, findBestPitDriving, parseGlobalSettin
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { getPlaceInputValue, type PlaceSelectResult, type AddressMismatchData } from "@/components/PlaceAutocompleteInput";
 import AddressMismatchDialog from "@/components/AddressMismatchDialog";
+import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 
 type EstimateResult = {
   distance: number;
@@ -531,7 +532,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                 <Link to={`/order?address=${encodeURIComponent(address)}&distance=${result.distance}&price=${result.price}&quantity=${quantity}&pit_id=${matchedPit?.id || ""}&pit_name=${encodeURIComponent(matchedPit?.name || "")}${matchedPit?.operating_days ? `&operating_days=${matchedPit.operating_days.join(",")}` : ""}${matchedPit?.saturday_surcharge_override != null ? `&sat_surcharge=${matchedPit.saturday_surcharge_override}` : ""}${matchedPit?.same_day_cutoff ? `&same_day_cutoff=${encodeURIComponent(matchedPit.same_day_cutoff)}` : ""}`} onClick={() => updateSession({ stage: "clicked_order_now", calculated_price: result!.price * quantity, delivery_address: address })}><ShoppingCart className="w-5 h-5 mr-2" /> ORDER NOW{quantity > 1 ? ` (${quantity} LOADS)` : ""}</Link>
               </Button>
               <Button variant="outline" className={`flex-1 h-12 font-display tracking-wider text-lg rounded-xl ${embedded ? "border-2 border-white text-white bg-white/10 hover:bg-white/20" : "border-2 border-accent text-accent bg-transparent hover:bg-accent/10"}`} asChild>
-                <a href="tel:+18554689297">CALL TO ORDER</a>
+                <a href={WAYS_PHONE_TEL}>CALL TO ORDER</a>
               </Button>
             </div>
 
@@ -575,7 +576,7 @@ const DeliveryEstimator = ({ prefillAddress, embedded }: DeliveryEstimatorProps)
                           setVolumeSuccess(true);
                           trackEvent("volume_quote_requested", { loads: 10, price: result!.price * 10 });
                         } catch {
-                          setVolumeError("Something went wrong. Please call 1-855-GOT-WAYS");
+                          setVolumeError(`Something went wrong. Please call ${WAYS_PHONE_DISPLAY}`);
                         } finally {
                           setVolumeSubmitting(false);
                         }

@@ -21,6 +21,7 @@ import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
+import { WAYS_PHONE_RAW } from "@/lib/constants";
 
 const FALLBACK_LOW = "195.00";
 const FALLBACK_HIGH = "231.00";
@@ -115,7 +116,7 @@ const Index = () => {
     "@type": "LocalBusiness",
     "name": "River Sand",
     "url": "https://riversand.net",
-    "telephone": "+18554689297",
+    "telephone": `+${WAYS_PHONE_RAW}`,
     "description": "Same-day bulk river sand delivery serving the Gulf South region. Instant price quotes, cash or card payment.",
     "image": "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_BLACK.png.png",
     "priceRange": "$$",

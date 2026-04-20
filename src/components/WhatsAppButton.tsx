@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, isSameDay, isSunday, isBefore, startOfDay, isSaturday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatPhone } from "@/lib/format";
+import { WAYS_PHONE_RAW } from "@/lib/constants";
 
 const WHATSAPP_NUMBER = "15043582000";
-const PHONE_NUMBER = "+18554689297";
+const PHONE_NUMBER = `+${WAYS_PHONE_RAW}`;
 const MESSAGE = "Hi! I'm interested in ordering river sand delivery in New Orleans.";
 
 type ContactMode = "whatsapp" | "phone" | "message";

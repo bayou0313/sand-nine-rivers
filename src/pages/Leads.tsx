@@ -16,6 +16,7 @@ declare global {
 
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import { WAYS_PHONE_DISPLAY } from "@/lib/constants";
 const BRAND_GOLD = "#C07A00";
 const BRAND_NAVY = "#0D2137"; // used for login screen only
 const POSITIVE = "#059669";
@@ -69,7 +70,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 const DEFAULT_SETTINGS: Record<string, string> = {
   saturday_surcharge: "35.00",
   site_name: "River Sand",
-  phone: "1-855-GOT-WAYS",
+  phone: WAYS_PHONE_DISPLAY,
 };
 
 interface Lead {
@@ -5417,7 +5418,7 @@ const Leads = () => {
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Primary phone</label>
-                  <Input className="h-9" value={profileSettings.phone || ""} onChange={e => setProfileSettings({ ...profileSettings, phone: e.target.value })} placeholder="1-855-GOT-WAYS" />
+                  <Input className="h-9" value={profileSettings.phone || ""} onChange={e => setProfileSettings({ ...profileSettings, phone: e.target.value })} placeholder={WAYS_PHONE_DISPLAY} />
                 </div>
               </div>
             </div>
@@ -7738,7 +7739,7 @@ const Leads = () => {
                   <Copy className="w-3 h-3 mr-1" /> Copy Link
                 </Button>
                 <Button variant="outline" size="sm" className="flex-1" style={{ borderColor: "#22C55E30", color: "#22C55E" }} onClick={() => {
-                  const msg = `Hi ${quickProposalLead.customer_name.split(" ")[0]}, River Sand can deliver to your area! Here is your quote:\n\nRiver Sand — 9 Cubic Yards\nDelivered to: ${quickProposalLead.address}\nYour price: $${qpPrice}\n\nOrder here (address pre-filled):\n${qpOrderUrl}\n\nQuestions? Call 1-855-GOT-WAYS`;
+                  const msg = `Hi ${quickProposalLead.customer_name.split(" ")[0]}, River Sand can deliver to your area! Here is your quote:\n\nRiver Sand — 9 Cubic Yards\nDelivered to: ${quickProposalLead.address}\nYour price: $${qpPrice}\n\nOrder here (address pre-filled):\n${qpOrderUrl}\n\nQuestions? Call ${WAYS_PHONE_DISPLAY}`;
                   const phone = quickProposalLead.customer_phone?.replace(/\D/g, "") || "";
                   window.open(`https://wa.me/${phone ? "1" + phone : ""}?text=${encodeURIComponent(msg)}`, "_blank");
                 }}>
