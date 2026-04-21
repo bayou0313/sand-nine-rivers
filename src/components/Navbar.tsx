@@ -104,7 +104,6 @@ const Navbar = ({ solid = false, logoHref = "/", activeSections }: { solid?: boo
       price: String(cart.price),
       quantity: String(cart.quantity),
       pit_id: cart.pitId,
-      pit_name: cart.pitName,
     });
     if (cart.operatingDays.length > 0) params.set("operating_days", cart.operatingDays.join(","));
     if (cart.satSurcharge) params.set("sat_surcharge", String(cart.satSurcharge));
