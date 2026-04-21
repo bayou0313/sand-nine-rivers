@@ -149,7 +149,7 @@ type Props = {
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
-  const isLoadingPitDistances = !!pitId && (!allPitDistances || allPitDistances.length === 0);
+  const isLoadingPitDistances = !allPitDistances || allPitDistances.length === 0;
 
   // Fetch holidays for next 60 days
   const [holidays, setHolidays] = useState<Map<string, HolidayRow>>(new Map());
