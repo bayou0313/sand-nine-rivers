@@ -200,6 +200,12 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
 
   // STEP 2: Classify ALL 60 days (no filtering)
   const classifiedDates = useMemo<ClassifiedDate[]>(() => {
+    console.log("[DDP] classifiedDates run", {
+      isLoadingPitDistances,
+      allPitDistancesLen: allPitDistances?.length ?? 0,
+      pitId,
+      holidaysSize: holidays.size,
+    });
     if (isLoadingPitDistances) return [];
     const today = getCentralDate();
     const todayDay = today.getDay();
