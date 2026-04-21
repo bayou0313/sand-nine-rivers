@@ -318,11 +318,11 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomeRouter />} />
         <Route path="/products/river-sand" element={<Navigate to="/" replace />} />
-        <Route path="/order" element={<OrderRouter />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/leads" element={<Leads />} />
-        <Route path="/review" element={<Review />} />
+        <Route path="/order" element={<Suspense fallback={<RouteFallback />}><OrderRouter /></Suspense>} />
+        <Route path="/admin" element={<Suspense fallback={<RouteFallback />}><Admin /></Suspense>} />
+        <Route path="/admin/login" element={<Suspense fallback={<RouteFallback />}><AdminLogin /></Suspense>} />
+        <Route path="/leads" element={<Suspense fallback={<RouteFallback />}><Leads /></Suspense>} />
+        <Route path="/review" element={<Suspense fallback={<RouteFallback />}><Review /></Suspense>} />
         <Route path="/chalmette-la/river-sand-delivery" element={<Navigate to="/chalmette/river-sand-delivery" replace />} />
         <Route path="/bridge-city-la/river-sand-delivery" element={<Navigate to="/bridge-city/river-sand-delivery" replace />} />
         <Route path="/destrehan-la/river-sand-delivery" element={<Navigate to="/destrehan/river-sand-delivery" replace />} />
@@ -331,9 +331,9 @@ function AppContent() {
         <Route path="/meraux-la/river-sand-delivery" element={<Navigate to="/meraux/river-sand-delivery" replace />} />
         <Route path="/metairie-la/river-sand-delivery" element={<Navigate to="/metairie/river-sand-delivery" replace />} />
         <Route path="/new-orleans-la/river-sand-delivery" element={<Navigate to="/new-orleans/river-sand-delivery" replace />} />
-        <Route path="/:citySlug/river-sand-delivery" element={<CityPage />} />
+        <Route path="/:citySlug/river-sand-delivery" element={<Suspense fallback={<RouteFallback />}><CityPage /></Suspense>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
       </Routes>
       {typeof window !== "undefined" && stripeMode === "test" && showTestModal && !isAdminRoute && (
         <div style={{
