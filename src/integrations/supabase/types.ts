@@ -793,6 +793,7 @@ export type Database = {
           address: string
           base_price: number | null
           created_at: string
+          delivery_hours: Json | null
           free_miles: number | null
           holiday_load_limit: number | null
           holiday_surcharge_override: number | null
@@ -819,6 +820,7 @@ export type Database = {
           address: string
           base_price?: number | null
           created_at?: string
+          delivery_hours?: Json | null
           free_miles?: number | null
           holiday_load_limit?: number | null
           holiday_surcharge_override?: number | null
@@ -845,6 +847,7 @@ export type Database = {
           address?: string
           base_price?: number | null
           created_at?: string
+          delivery_hours?: Json | null
           free_miles?: number | null
           holiday_load_limit?: number | null
           holiday_surcharge_override?: number | null
