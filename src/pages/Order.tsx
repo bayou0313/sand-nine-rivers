@@ -1731,7 +1731,7 @@ const Order = () => {
                             address: `${pitDist.distance.toFixed(1)} mi away`,
                           } : prev);
                           if (weekdayPit && fullPit.id !== weekdayPit.id) {
-                            toast({ title: "Price updated for this delivery date", description: `Delivering from ${fullPit.name}.` });
+                            toast({ title: "Price updated for this delivery date", description: "Pricing adjusted based on the date you selected." });
                           }
                         }
                       }}
