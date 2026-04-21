@@ -10,7 +10,7 @@ jobs:
   submit:
     runs-on: ubuntu-latest
     steps:
-      - name: Submit sitemap to search engines
+      - name: Submit URLs to IndexNow
         run: |
           echo "Submitting sitemap..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
