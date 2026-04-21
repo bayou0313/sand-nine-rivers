@@ -1800,7 +1800,9 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       let existingPitStatus: string | null = null;
       if (pit.id) {
         const { data: ep } = await supabase
-          .from("pits").select("base_price, free_miles, price_per_extra_mile, status").eq("id", pit.id).maybeSingle();
+          .from("pits")
+          .select("base_price, free_miles, price_per_extra_mile, status, same_day_cutoff, operating_days")
+          .eq("id", pit.id).maybeSingle();
         existingPit = ep;
         existingPitStatus = ep?.status || null;
       }
@@ -1894,24 +1896,42 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         }
       }
 
-      // ── PART 1b: Always-regen for non-pricing edits (deduplicated) ──
-      if (!regenTriggered && !isNewPit) {
-        const { data: regenPages } = await supabase
-          .from("city_pages")
-          .select("id, city_name")
-          .eq("pit_id", savedPit.id)
-          .in("status", ["active", "draft"]);
+      // ── PART 1b: Content-affecting non-pricing edits (whitelisted) ──
+      // Only same_day_cutoff and operating_days are passed to generate-city-page
+      // outside of pricing inputs. All other PIT columns (delivery_hours, load
+      // limits, surcharges, address, max_distance, notes, is_pickup_only) do
+      // NOT appear in rendered city page content and must not trigger regen.
+      if (!regenTriggered && !isNewPit && existingPit) {
+        const cutoffChanged =
+          (pit.same_day_cutoff ?? null) !== (existingPit.same_day_cutoff ?? null);
+        const operatingDaysChanged =
+          JSON.stringify(pit.operating_days ?? null) !==
+          JSON.stringify(existingPit.operating_days ?? null);
 
-        if (regenPages && regenPages.length > 0) {
-          console.log(`[save_pit] Non-pricing edit — flagging ${regenPages.length} city pages for regen`);
-          const regenIds = regenPages.map((p: any) => p.id);
-          await supabase.from("city_pages").update({
-            needs_regen: true,
-            regen_reason: 'pit_updated',
-            updated_at: new Date().toISOString()
-          }).in("id", regenIds);
-          pages_regenerated = regenPages.length;
-          regenTriggered = true;
+        if (cutoffChanged || operatingDaysChanged) {
+          const reason = cutoffChanged && operatingDaysChanged
+            ? 'cutoff_and_operating_days_changed'
+            : cutoffChanged ? 'same_day_cutoff_changed' : 'operating_days_changed';
+
+          const { data: regenPages } = await supabase
+            .from("city_pages")
+            .select("id, city_name")
+            .eq("pit_id", savedPit.id)
+            .in("status", ["active", "draft"]);
+
+          if (regenPages && regenPages.length > 0) {
+            console.log(`[save_pit] ${reason} — flagging ${regenPages.length} city pages for regen`);
+            const regenIds = regenPages.map((p: any) => p.id);
+            await supabase.from("city_pages").update({
+              needs_regen: true,
+              regen_reason: reason,
+              updated_at: new Date().toISOString()
+            }).in("id", regenIds);
+            pages_regenerated = regenPages.length;
+            regenTriggered = true;
+          }
+        } else {
+          console.log(`[save_pit] No content-affecting changes for ${savedPit.name} — skipping regen`);
         }
       }
 
@@ -2348,9 +2368,20 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
               }),
             });
             if (response.ok) {
+              const { data: pageBefore } = await supabase
+                .from("city_pages")
+                .select("regen_reason")
+                .eq("id", page.id)
+                .maybeSingle();
               await supabase.from("city_pages").update({
-                needs_regen: false, pit_reassigned: false, price_changed: false,
-                regen_reason: null, status: "active", updated_at: new Date().toISOString(),
+                needs_regen: false,
+                pit_reassigned: false,
+                price_changed: false,
+                last_regen_reason: pageBefore?.regen_reason ?? null,
+                last_regen_at: new Date().toISOString(),
+                regen_reason: null,
+                status: "active",
+                updated_at: new Date().toISOString(),
               }).eq("id", page.id);
               inline_processed++;
               console.log(`[save_pit] Inline regen done: ${page.city_name}`);
@@ -3993,12 +4024,19 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           });
 
           if (response.ok) {
+            const { data: pageBefore } = await supabase
+              .from("city_pages")
+              .select("regen_reason")
+              .eq("id", page.id)
+              .maybeSingle();
             await supabase
               .from("city_pages")
               .update({
                 needs_regen: false,
                 pit_reassigned: false,
                 price_changed: false,
+                last_regen_reason: pageBefore?.regen_reason ?? null,
+                last_regen_at: new Date().toISOString(),
                 regen_reason: null,
                 status: "active",
                 updated_at: new Date().toISOString(),
