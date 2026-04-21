@@ -2,7 +2,7 @@ name: Submit URLs to IndexNow
 
 on:
   schedule:
-    # Run every 36 hours ≈ twice daily at 6 AM and 6 PM UTC
+    # Run twice daily at 6 AM and 6 PM UTC
     - cron: '0 6,18 * * *'
   workflow_dispatch: # Allow manual trigger
 
@@ -10,7 +10,7 @@ jobs:
   submit:
     runs-on: ubuntu-latest
     steps:
-      - name: Submit sitemap to search engines
+      - name: Submit URLs to IndexNow
         run: |
           echo "Submitting sitemap..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
