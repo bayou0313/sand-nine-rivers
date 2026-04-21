@@ -4,7 +4,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { updateSession, initSession, getSessionToken } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
-import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
+import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE, formatDeliveryWindow, DELIVERY_HOURS_FALLBACK } from "@/lib/format";
 import { formatProperName, formatProperNameFinal, formatSentence, formatEmail } from "@/lib/textFormat";
 
 import OrderConfirmation from "@/components/OrderConfirmation";
@@ -164,6 +164,9 @@ const OrderMobile = () => {
   const effectiveSunSurcharge = getEffectiveSundaySurcharge(matchedPitSchedule);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
   const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
+  const deliveryWindow = selectedDeliveryDate
+    ? formatDeliveryWindow(matchedPit?.delivery_hours, selectedDeliveryDate.date.getDay())
+    : DELIVERY_HOURS_FALLBACK;
   const isBaked = pricingMode === "baked";
   const isCOD = paymentMethod === "cash" || paymentMethod === "check";
   // In baked mode, everyone pays the same price — no COD discount
@@ -262,7 +265,7 @@ const OrderMobile = () => {
     const fetchData = async () => {
       const [settingsRes, pitsRes] = await Promise.all([
         supabase.from("global_settings").select("key, value"),
-        supabase.from("pits").select("id, name, address, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff, sunday_surcharge").eq("status", "active"),
+        supabase.from("pits").select("id, name, address, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff, sunday_surcharge, delivery_hours").eq("status", "active"),
       ]);
       if (settingsRes.data) {
         const gp = parseGlobalSettings(settingsRes.data as any);
@@ -321,7 +324,7 @@ const OrderMobile = () => {
           delivery_address: address,
           delivery_date: selectedDeliveryDate?.iso || null,
           delivery_day_of_week: selectedDeliveryDate?.dayOfWeek || null,
-          delivery_window: "8:00 AM – 5:00 PM",
+          delivery_window: deliveryWindow,
           quantity,
           price: pMethod === "stripe-link" ? totalWithProcessingFee : totalPrice,
           distance_miles: result.distance,
@@ -675,7 +678,7 @@ const OrderMobile = () => {
       items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
       rs_session_id: sid,
       rs_delivery_date: selectedDeliveryDate.iso,
-      rs_delivery_window: "8:00 AM – 5:00 PM",
+      rs_delivery_window: deliveryWindow,
       rs_distance: result.distance,
       rs_pit: matchedPit.name,
       rs_zip: detectedZip,
@@ -854,7 +857,7 @@ const OrderMobile = () => {
       sunday_surcharge: selectedDeliveryDate!.isSunday,
       sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
       pit_id: matchedPit?.id || null,
-      delivery_window: "8:00 AM – 5:00 PM",
+      delivery_window: deliveryWindow,
       same_day_requested: selectedDeliveryDate!.isSameDay,
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,

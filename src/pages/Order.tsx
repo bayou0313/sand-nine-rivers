@@ -5,7 +5,7 @@ import { trackEvent } from "@/lib/analytics";
 import { MapPin, Truck, DollarSign, AlertCircle, CheckCircle2, Loader2, User, Phone, Mail, FileText, CreditCard, ArrowLeft, Lock, Banknote, CalendarDays, Clock, ExternalLink, Minus, Plus, Package, ShieldCheck } from "lucide-react";
 import OrderConfirmation from "@/components/OrderConfirmation";
 import { useCountdown } from "@/hooks/use-countdown";
-import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
+import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE, formatDeliveryWindow, DELIVERY_HOURS_FALLBACK } from "@/lib/format";
 import { formatProperName, formatProperNameFinal, formatSentence, formatEmail } from "@/lib/textFormat";
 import EmailInput from "@/components/EmailInput";
 import { Button } from "@/components/ui/button";
@@ -113,7 +113,7 @@ const Order = () => {
     const fetchData = async () => {
       const [settingsRes, pitsRes] = await Promise.all([
         supabase.from("global_settings").select("key, value"),
-        supabase.from("pits").select("id, name, address, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff, sunday_surcharge").eq("status", "active"),
+        supabase.from("pits").select("id, name, address, lat, lon, status, base_price, free_miles, price_per_extra_mile, max_distance, operating_days, saturday_surcharge_override, same_day_cutoff, sunday_surcharge, delivery_hours").eq("status", "active"),
       ]);
       if (settingsRes.data) {
         const gp = parseGlobalSettings(settingsRes.data as any);
@@ -191,6 +191,9 @@ const Order = () => {
   const effectiveSunSurcharge = getEffectiveSundaySurcharge(matchedPitSchedule);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
   const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
+  const deliveryWindow = selectedDeliveryDate
+    ? formatDeliveryWindow(matchedPit?.delivery_hours, selectedDeliveryDate.date.getDay())
+    : DELIVERY_HOURS_FALLBACK;
   const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
   const isBaked = pricingMode === "baked";
   const isCOD = paymentMethod === "cash" || paymentMethod === "check";
@@ -741,7 +744,7 @@ const Order = () => {
       delivery_address: address,
       delivery_date: selectedDeliveryDate?.iso || null,
       delivery_day_of_week: selectedDeliveryDate?.dayOfWeek || null,
-      delivery_window: "8:00 AM – 5:00 PM",
+      delivery_window: deliveryWindow,
       quantity,
       price: pMethod === "stripe-link" ? emailTotalWithFee : emailTotalPrice,
       distance_miles: distMiles,
@@ -955,7 +958,7 @@ const Order = () => {
       items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
       rs_session_id: sid,
       rs_delivery_date: selectedDeliveryDate.iso,
-      rs_delivery_window: "8:00 AM – 5:00 PM",
+      rs_delivery_window: deliveryWindow,
       rs_distance: result.distance,
       rs_pit: matchedPit.name,
       rs_zip: detectedZip,
@@ -1204,7 +1207,7 @@ const Order = () => {
       sunday_surcharge: selectedDeliveryDate!.isSunday,
       sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
       pit_id: matchedPit?.id || null,
-      delivery_window: "8:00 AM – 5:00 PM",
+      delivery_window: deliveryWindow,
       same_day_requested: selectedDeliveryDate!.isSameDay,
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,
@@ -1819,7 +1822,7 @@ const Order = () => {
                       <div className="border-b border-dashed border-border" />
                       <ReceiptRow label="Delivery Date" value={selectedDeliveryDate.fullLabel} />
                       <div className="border-b border-dashed border-border" />
-                      <ReceiptRow label="Delivery Window" value="8:00 AM – 5:00 PM" />
+                      <ReceiptRow label="Delivery Window" value={deliveryWindow} />
 
                       {selectedDeliveryDate.isSameDay && (
                         <p className="font-body text-xs text-destructive bg-destructive/5 p-2 rounded-lg my-2">
