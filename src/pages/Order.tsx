@@ -1207,7 +1207,7 @@ const Order = () => {
       sunday_surcharge: selectedDeliveryDate!.isSunday,
       sunday_surcharge_amount: selectedDeliveryDate!.isSunday ? effectiveSunSurcharge * quantity : 0,
       pit_id: matchedPit?.id || null,
-      delivery_window: "8:00 AM – 5:00 PM",
+      delivery_window: deliveryWindow,
       same_day_requested: selectedDeliveryDate!.isSameDay,
       tax_rate: taxInfo.rate,
       tax_amount: taxAmount,
