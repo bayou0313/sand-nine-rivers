@@ -2,3 +2,6 @@ project_id = "lclbexhytmpfxzcztzva"
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.holiday-notifier]
+verify_jwt = false
