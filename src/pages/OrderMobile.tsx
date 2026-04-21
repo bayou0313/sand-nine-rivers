@@ -1163,7 +1163,7 @@ const OrderMobile = () => {
               {/* Price display */}
               <div className="text-center mb-8">
                 <p className="font-body text-xs uppercase tracking-wider text-muted-foreground mb-1">Per Load Starting At</p>
-                <p className="font-display text-7xl text-accent leading-none">{formatCurrency(result.price)}</p>
+                <p className="font-display text-7xl text-accent leading-none">{formatCurrency(result.price + (selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge : 0))}</p>
                 <p className="font-body text-sm text-muted-foreground mt-2">per 9 cu yd load - delivered curbside</p>
               </div>
 

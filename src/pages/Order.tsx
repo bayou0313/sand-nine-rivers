@@ -1661,11 +1661,8 @@ const Order = () => {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="font-display text-2xl text-primary">{formatCurrency(result.price)}</span>
+                    <span className="font-display text-2xl text-primary">{formatCurrency(result.price + (selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge : 0))}</span>
                     <span className="text-[10px] font-body text-muted-foreground block">/load</span>
-                    {selectedDeliveryDate?.isSaturday && (
-                      <span className="text-[10px] font-body text-amber-700 block">Includes ${effectiveSatSurcharge} Saturday delivery fee</span>
-                    )}
                     <span className="text-xs font-body text-muted-foreground">{quantity} load{quantity > 1 ? "s" : ""} · {formatCurrency(totalPrice)} total</span>
                   </div>
                 </motion.div>
