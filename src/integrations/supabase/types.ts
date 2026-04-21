@@ -391,6 +391,63 @@ export type Database = {
         }
         Relationships: []
       }
+      holidays: {
+        Row: {
+          confirmation_token: string
+          created_at: string
+          customer_visible: boolean
+          holiday_date: string
+          id: string
+          is_closed: boolean
+          is_federal: boolean
+          name: string
+          notification_10day_sent: boolean
+          notification_10day_sent_at: string | null
+          notification_7day_sent: boolean
+          notification_7day_sent_at: string | null
+          operator_decision_at: string | null
+          operator_decision_by: string | null
+          surcharge_override: number | null
+          updated_at: string
+        }
+        Insert: {
+          confirmation_token?: string
+          created_at?: string
+          customer_visible?: boolean
+          holiday_date: string
+          id?: string
+          is_closed?: boolean
+          is_federal?: boolean
+          name: string
+          notification_10day_sent?: boolean
+          notification_10day_sent_at?: string | null
+          notification_7day_sent?: boolean
+          notification_7day_sent_at?: string | null
+          operator_decision_at?: string | null
+          operator_decision_by?: string | null
+          surcharge_override?: number | null
+          updated_at?: string
+        }
+        Update: {
+          confirmation_token?: string
+          created_at?: string
+          customer_visible?: boolean
+          holiday_date?: string
+          id?: string
+          is_closed?: boolean
+          is_federal?: boolean
+          name?: string
+          notification_10day_sent?: boolean
+          notification_10day_sent_at?: string | null
+          notification_7day_sent?: boolean
+          notification_7day_sent_at?: string | null
+          operator_decision_at?: string | null
+          operator_decision_by?: string | null
+          surcharge_override?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -737,6 +794,8 @@ export type Database = {
           base_price: number | null
           created_at: string
           free_miles: number | null
+          holiday_load_limit: number | null
+          holiday_surcharge_override: number | null
           id: string
           is_default: boolean
           is_pickup_only: boolean
@@ -761,6 +820,8 @@ export type Database = {
           base_price?: number | null
           created_at?: string
           free_miles?: number | null
+          holiday_load_limit?: number | null
+          holiday_surcharge_override?: number | null
           id?: string
           is_default?: boolean
           is_pickup_only?: boolean
@@ -785,6 +846,8 @@ export type Database = {
           base_price?: number | null
           created_at?: string
           free_miles?: number | null
+          holiday_load_limit?: number | null
+          holiday_surcharge_override?: number | null
           id?: string
           is_default?: boolean
           is_pickup_only?: boolean
