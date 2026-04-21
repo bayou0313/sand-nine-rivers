@@ -678,7 +678,7 @@ const OrderMobile = () => {
       items: [{ item_name: "River Sand 9 cu/yd", item_id: "river-sand-9yd", price: result.price, quantity }],
       rs_session_id: sid,
       rs_delivery_date: selectedDeliveryDate.iso,
-      rs_delivery_window: "8:00 AM – 5:00 PM",
+      rs_delivery_window: deliveryWindow,
       rs_distance: result.distance,
       rs_pit: matchedPit.name,
       rs_zip: detectedZip,
