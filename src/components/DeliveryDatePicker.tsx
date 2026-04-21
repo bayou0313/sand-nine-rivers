@@ -239,7 +239,14 @@ type Props = {
 };
 
 const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule, globalSaturdaySurcharge, pitId, allPitDistances }: Props) => {
-  const dates = useMemo(() => getAvailableDeliveryDates(pitSchedule, 60, null, allPitDistances), [pitSchedule, allPitDistances]);
+  // Loading state: a pitId is set (address resolved) but allPitDistances hasn't arrived yet.
+  // In this window, the legacy pitSchedule fallback would incorrectly hide Saturday because
+  // matchedPit is always a weekday pit. Render a skeleton instead.
+  const isLoadingPitDistances = !!pitId && (!allPitDistances || allPitDistances.length === 0);
+  const dates = useMemo(
+    () => isLoadingPitDistances ? [] : getAvailableDeliveryDates(pitSchedule, 60, null, allPitDistances),
+    [pitSchedule, allPitDistances, isLoadingPitDistances]
+  );
   const [datePage, setDatePage] = useState(0);
   const datesPerPage = 6;
   const totalPages = Math.ceil(dates.length / datesPerPage);
@@ -358,7 +365,20 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
   return (
     <div className="space-y-4">
 
-      {allBlocked ? (
+      {isLoadingPitDistances ? (
+        <div className="flex items-center gap-1">
+          <div className="flex-shrink-0 w-8 h-8" />
+          <div className="flex gap-3 flex-1 justify-center">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex-shrink-0 w-[88px] min-h-[96px] rounded-xl border-2 border-border bg-muted/30 animate-pulse"
+              />
+            ))}
+          </div>
+          <div className="flex-shrink-0 w-8 h-8" />
+        </div>
+      ) : allBlocked ? (
         <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl text-center">
           <AlertTriangle className="w-5 h-5 text-amber-600 mx-auto mb-2" />
           <p className="font-body text-sm text-amber-800 font-medium">

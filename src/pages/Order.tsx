@@ -1105,9 +1105,12 @@ const Order = () => {
       }
 
       console.log("[calculateDistance] calling findBestPitDriving, pits:", allPits.length);
-      // Default to Monday (1) for initial price calc — excludes Saturday-only pits
-      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, 1, detectedZip);
-      console.log("[calculateDistance] bestResult:", bestResult);
+      // Use today's day-of-week so the preview price matches the most likely delivery day.
+      // Sunday (0) is not a delivery day → fall back to Monday (1) to avoid empty pit pool.
+      const todayDow = new Date().getDay();
+      const previewDow = todayDow === 0 ? 1 : todayDow;
+      const bestResult = await findBestPitDriving(allPits, currentAddress, globalPricing, supabase, previewDow, detectedZip);
+      console.log("[calculateDistance] bestResult:", bestResult, "previewDow:", previewDow);
 
       if (!bestResult) {
         setError("No delivery locations available. Please call us.");
