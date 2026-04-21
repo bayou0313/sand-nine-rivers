@@ -1212,8 +1212,8 @@ const OrderMobile = () => {
               {selectedDeliveryDate && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-muted/50 border border-border rounded-xl p-4 space-y-2 font-body text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal ({quantity} × {formatCurrency(result.price)})</span>
-                    <span className="text-foreground">{formatCurrency(result.price * quantity)}</span>
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-foreground">{formatCurrency(subtotal)}</span>
                   </div>
                   {saturdaySurchargeTotal > 0 && (
                     <div className="flex justify-between">

@@ -1845,7 +1845,7 @@ const Order = () => {
                       <div className="mt-3 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 space-y-1.5">
                         <div className="flex justify-between text-sm">
                           <span className="font-body text-muted-foreground">Subtotal</span>
-                          <span className="font-display text-foreground">{formatCurrency(result.price * quantity)}</span>
+                          <span className="font-display text-foreground">{formatCurrency(subtotal)}</span>
                         </div>
                         {(() => {
                           const stateTaxAmt = Math.round((taxAmount / (taxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
