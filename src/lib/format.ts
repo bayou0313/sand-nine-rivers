@@ -117,3 +117,45 @@ export function getTaxRateByParish(parishName: string): { rate: number; parish: 
   }
   return { rate: DEFAULT_TAX_RATE, parish: normalized.replace(/\b\w/g, c => c.toUpperCase()) + " Parish (default rate)" };
 }
+
+// ─── Delivery window formatting ──────────────────────────────────────────────
+
+import type { PitDeliveryHours } from "@/lib/pits";
+
+export const DELIVERY_HOURS_FALLBACK = "Contact us for hours";
+
+/**
+ * Format a 24h "HH:MM" string into a 12h display, e.g. "07:00" → "7:00 AM".
+ * Returns null on invalid input.
+ */
+function format12h(hhmm: string): string | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (isNaN(h) || isNaN(min) || h < 0 || h > 23 || min < 0 || min > 59) return null;
+  const period = h >= 12 ? "PM" : "AM";
+  const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  const displayM = min.toString().padStart(2, "0");
+  return `${displayH}:${displayM} ${period}`;
+}
+
+/**
+ * Format the delivery window for a given day-of-week from a PIT's delivery_hours jsonb.
+ * - dayOfWeek: 0=Sun..6=Sat (use selectedDeliveryDate.date.getDay()).
+ * - Returns "7:00 AM – 5:00 PM" if hours are configured for that day.
+ * - Returns DELIVERY_HOURS_FALLBACK if hours are null, missing, or malformed.
+ */
+export function formatDeliveryWindow(
+  hours: PitDeliveryHours | null | undefined,
+  dayOfWeek: number,
+): string {
+  if (!hours || typeof hours !== "object") return DELIVERY_HOURS_FALLBACK;
+  const entry = hours[String(dayOfWeek)];
+  if (!entry || !entry.open || !entry.close) return DELIVERY_HOURS_FALLBACK;
+  const open = format12h(entry.open);
+  const close = format12h(entry.close);
+  if (!open || !close) return DELIVERY_HOURS_FALLBACK;
+  return `${open} – ${close}`;
+}
+
