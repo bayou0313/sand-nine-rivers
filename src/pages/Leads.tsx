@@ -7377,7 +7377,20 @@ const Leads = () => {
         style={{ width: 220, minWidth: 220, backgroundColor: T.sidebarBg, borderRight: `1px solid ${T.sidebarBorder}` }}
       >
         <div className="px-4 py-4">
-          <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>LMT</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold tracking-widest" style={{ color: BRAND_GOLD }}>LMT</h2>
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wider"
+              style={{
+                backgroundColor: IS_PROD_HOST ? '#FEE2E2' : '#DBEAFE',
+                color: IS_PROD_HOST ? '#991B1B' : '#1E40AF',
+                border: `1px solid ${IS_PROD_HOST ? '#FCA5A5' : '#93C5FD'}`,
+              }}
+              title={typeof window !== 'undefined' ? window.location.hostname : ''}
+            >
+              {IS_PROD_HOST ? 'PROD' : 'PREVIEW'}
+            </span>
+          </div>
           <p className="text-xs mt-0.5" style={{ color: T.textSecond }}>Live: {livePricing}</p>
           {globalSettings.site_mode === 'maintenance' && (
             <div className="text-xs font-bold px-2 py-1 rounded mt-2" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B' }}>
