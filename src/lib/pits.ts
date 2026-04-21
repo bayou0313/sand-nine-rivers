@@ -15,6 +15,16 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+/**
+ * Per-day-of-week delivery hours for a PIT.
+ * Keys are day-of-week strings: "0"=Sun ... "6"=Sat (matches JS Date.getDay()).
+ * Missing keys = that day is not configured (UI shows fallback).
+ * Times are 24h local format "HH:MM" (e.g. "07:00", "17:30").
+ */
+export interface PitDeliveryHours {
+  [dayOfWeek: string]: { open: string; close: string };
+}
+
 export interface PitData {
   id: string;
   name: string;
@@ -31,6 +41,7 @@ export interface PitData {
   same_day_cutoff: string | null;
   sunday_surcharge: number | null;
   is_pickup_only?: boolean;
+  delivery_hours: PitDeliveryHours | null;
 }
 
 /** Non-pricing global settings still read from global_settings */
