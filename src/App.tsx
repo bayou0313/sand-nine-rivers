@@ -12,6 +12,7 @@ import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
 // Eager-load homepage variants (LCP path); lazy-load everything else.
 import Index from "./pages/Index.tsx";
 import HomeMobile from "./pages/HomeMobile.tsx";
+import HolidayBanner from "./components/HolidayBanner";
 
 const Order = lazy(() => import("./pages/Order.tsx"));
 const OrderMobile = lazy(() => import("./pages/OrderMobile.tsx"));
@@ -279,6 +280,7 @@ function AppContent() {
 
   return (
     <div suppressHydrationWarning={true}>
+      <HolidayBanner />
       
       {typeof window !== "undefined" && stripeMode === "test" && !isAdminRoute && (
         <div id="stripe-test-banner" suppressHydrationWarning={true} className="hidden md:flex" style={{
