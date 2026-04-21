@@ -879,7 +879,7 @@ const Order = () => {
         setStep("details");
       }
     }
-  }, [searchParams]);
+  }, [searchParams, allPits]);
 
   const [mismatchData, setMismatchData] = useState<AddressMismatchData | null>(null);
   const [detectedZip, setDetectedZip] = useState('');
