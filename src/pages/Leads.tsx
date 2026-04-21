@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
+
+// Environment detection: true when running on the GH Pages production host (riversand.net)
+const IS_PROD_HOST = typeof window !== "undefined" && /(^|\.)riversand\.net$/i.test(window.location.hostname);
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
