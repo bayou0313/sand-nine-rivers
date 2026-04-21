@@ -1822,7 +1822,7 @@ const Order = () => {
                       <div className="border-b border-dashed border-border" />
                       <ReceiptRow label="Delivery Date" value={selectedDeliveryDate.fullLabel} />
                       <div className="border-b border-dashed border-border" />
-                      <ReceiptRow label="Delivery Window" value="8:00 AM – 5:00 PM" />
+                      <ReceiptRow label="Delivery Window" value={deliveryWindow} />
 
                       {selectedDeliveryDate.isSameDay && (
                         <p className="font-body text-xs text-destructive bg-destructive/5 p-2 rounded-lg my-2">
