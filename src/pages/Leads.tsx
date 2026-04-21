@@ -129,6 +129,7 @@ interface Pit {
   saturday_load_limit: number | null;
   sunday_load_limit: number | null;
   is_pickup_only?: boolean;
+  delivery_hours: DeliveryHoursMap;
 }
 
 interface GlobalSettings {
