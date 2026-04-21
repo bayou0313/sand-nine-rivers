@@ -1799,19 +1799,7 @@ const Order = () => {
                     <div className="p-6">
                       <SectionHeading icon={Package} title="ORDER SUMMARY" />
 
-                      {/* Quantity selector */}
-                      <div className="flex items-center justify-between py-2.5 border-b border-dashed border-border">
-                        <span className="font-body text-sm text-muted-foreground">Number of Loads</span>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="font-display text-lg text-foreground w-6 text-center">{quantity}</span>
-                          <button onClick={() => setQuantity(q => Math.min(10, q + 1))} className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
+
 
                       <ReceiptRow label={`River Sand (9 cu yds × ${quantity})`} value={`${quantity} load${quantity > 1 ? "s" : ""}`} />
                       <div className="border-b border-dashed border-border" />
