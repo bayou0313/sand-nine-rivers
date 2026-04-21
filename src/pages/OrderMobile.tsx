@@ -324,7 +324,7 @@ const OrderMobile = () => {
           delivery_address: address,
           delivery_date: selectedDeliveryDate?.iso || null,
           delivery_day_of_week: selectedDeliveryDate?.dayOfWeek || null,
-          delivery_window: "8:00 AM – 5:00 PM",
+          delivery_window: deliveryWindow,
           quantity,
           price: pMethod === "stripe-link" ? totalWithProcessingFee : totalPrice,
           distance_miles: result.distance,
