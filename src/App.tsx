@@ -4,21 +4,30 @@ import { HelmetProvider } from "react-helmet-async";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
+// Eager-load homepage variants (LCP path); lazy-load everything else.
 import Index from "./pages/Index.tsx";
 import HomeMobile from "./pages/HomeMobile.tsx";
-import Order from "./pages/Order.tsx";
-import OrderMobile from "./pages/OrderMobile.tsx";
-import Admin from "./pages/Admin.tsx";
-import AdminLogin from "./pages/AdminLogin.tsx";
-import Leads from "./pages/Leads.tsx";
-import CityPage from "./pages/CityPage.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Review from "./pages/Review.tsx";
+
+const Order = lazy(() => import("./pages/Order.tsx"));
+const OrderMobile = lazy(() => import("./pages/OrderMobile.tsx"));
+const Admin = lazy(() => import("./pages/Admin.tsx"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
+const Leads = lazy(() => import("./pages/Leads.tsx"));
+const CityPage = lazy(() => import("./pages/CityPage.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Review = lazy(() => import("./pages/Review.tsx"));
+
+const RouteFallback = () => (
+  <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ width: 32, height: 32, border: "3px solid #E8E5DC", borderTopColor: "#C07A00", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
