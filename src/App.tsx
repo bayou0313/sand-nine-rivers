@@ -4,21 +4,30 @@ import { HelmetProvider } from "react-helmet-async";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
+// Eager-load homepage variants (LCP path); lazy-load everything else.
 import Index from "./pages/Index.tsx";
 import HomeMobile from "./pages/HomeMobile.tsx";
-import Order from "./pages/Order.tsx";
-import OrderMobile from "./pages/OrderMobile.tsx";
-import Admin from "./pages/Admin.tsx";
-import AdminLogin from "./pages/AdminLogin.tsx";
-import Leads from "./pages/Leads.tsx";
-import CityPage from "./pages/CityPage.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Review from "./pages/Review.tsx";
+
+const Order = lazy(() => import("./pages/Order.tsx"));
+const OrderMobile = lazy(() => import("./pages/OrderMobile.tsx"));
+const Admin = lazy(() => import("./pages/Admin.tsx"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
+const Leads = lazy(() => import("./pages/Leads.tsx"));
+const CityPage = lazy(() => import("./pages/CityPage.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Review = lazy(() => import("./pages/Review.tsx"));
+
+const RouteFallback = () => (
+  <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ width: 32, height: 32, border: "3px solid #E8E5DC", borderTopColor: "#C07A00", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -309,11 +318,11 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomeRouter />} />
         <Route path="/products/river-sand" element={<Navigate to="/" replace />} />
-        <Route path="/order" element={<OrderRouter />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/leads" element={<Leads />} />
-        <Route path="/review" element={<Review />} />
+        <Route path="/order" element={<Suspense fallback={<RouteFallback />}><OrderRouter /></Suspense>} />
+        <Route path="/admin" element={<Suspense fallback={<RouteFallback />}><Admin /></Suspense>} />
+        <Route path="/admin/login" element={<Suspense fallback={<RouteFallback />}><AdminLogin /></Suspense>} />
+        <Route path="/leads" element={<Suspense fallback={<RouteFallback />}><Leads /></Suspense>} />
+        <Route path="/review" element={<Suspense fallback={<RouteFallback />}><Review /></Suspense>} />
         <Route path="/chalmette-la/river-sand-delivery" element={<Navigate to="/chalmette/river-sand-delivery" replace />} />
         <Route path="/bridge-city-la/river-sand-delivery" element={<Navigate to="/bridge-city/river-sand-delivery" replace />} />
         <Route path="/destrehan-la/river-sand-delivery" element={<Navigate to="/destrehan/river-sand-delivery" replace />} />
@@ -322,9 +331,9 @@ function AppContent() {
         <Route path="/meraux-la/river-sand-delivery" element={<Navigate to="/meraux/river-sand-delivery" replace />} />
         <Route path="/metairie-la/river-sand-delivery" element={<Navigate to="/metairie/river-sand-delivery" replace />} />
         <Route path="/new-orleans-la/river-sand-delivery" element={<Navigate to="/new-orleans/river-sand-delivery" replace />} />
-        <Route path="/:citySlug/river-sand-delivery" element={<CityPage />} />
+        <Route path="/:citySlug/river-sand-delivery" element={<Suspense fallback={<RouteFallback />}><CityPage /></Suspense>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
       </Routes>
       {typeof window !== "undefined" && stripeMode === "test" && showTestModal && !isAdminRoute && (
         <div style={{

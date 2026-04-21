@@ -1,23 +1,25 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import SocialProofStrip from "@/components/SocialProofStrip";
-import About from "@/components/About";
-import Features from "@/components/Features";
-import HowItWorks from "@/components/HowItWorks";
-import Testimonials from "@/components/Testimonials";
-import CTA from "@/components/CTA";
-import Pricing from "@/components/Pricing";
-import FAQ from "@/components/FAQ";
-import RiverSandInfo from "@/components/RiverSandInfo";
-import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import MobilePhoneBar from "@/components/MobilePhoneBar";
 import ScrollToTop from "@/components/ScrollToTop";
-import WhatsAppButton from "@/components/WhatsAppButton";
 import ReturnVisitorBanner from "@/components/ReturnVisitorBanner";
+// Below-the-fold sections lazy-loaded to reduce initial JS bundle.
+const About = lazy(() => import("@/components/About"));
+const Features = lazy(() => import("@/components/Features"));
+const HowItWorks = lazy(() => import("@/components/HowItWorks"));
+const Testimonials = lazy(() => import("@/components/Testimonials"));
+const CTA = lazy(() => import("@/components/CTA"));
+const Pricing = lazy(() => import("@/components/Pricing"));
+const FAQ = lazy(() => import("@/components/FAQ"));
+const RiverSandInfo = lazy(() => import("@/components/RiverSandInfo"));
+const ContactForm = lazy(() => import("@/components/ContactForm"));
+const WhatsAppButton = lazy(() => import("@/components/WhatsAppButton"));
+const SectionFallback = () => <div className="h-32" aria-hidden="true" />;
 import { initSession, getSession, incrementVisitCount, updateSession } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandPalette } from "@/hooks/useBrandPalette";
@@ -258,19 +260,21 @@ const Index = () => {
       <ReturnVisitorBanner session={session} onRecalculate={handleRecalculate} />
       <Hero h1Override={seo.seo_h1 || DEFAULT_H1} prefillAddress={returnAddress} />
       <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><SocialProofStrip /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}><HowItWorks /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><About /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Features /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Testimonials /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><CTA /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Pricing /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><FAQ /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><RiverSandInfo /></motion.div>
-      <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><ContactForm /></motion.div>
+      <Suspense fallback={<SectionFallback />}>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}><HowItWorks /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><About /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Features /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Testimonials /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><CTA /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><Pricing /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><FAQ /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><RiverSandInfo /></motion.div>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, ease: "easeOut" }}><ContactForm /></motion.div>
+      </Suspense>
       <Footer />
       <MobilePhoneBar />
       <ScrollToTop />
-      <WhatsAppButton />
+      <Suspense fallback={null}><WhatsAppButton /></Suspense>
     </div>
   );
 };
