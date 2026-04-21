@@ -1,6 +1,18 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Trailing-slash redirect — must run BEFORE anything else for SEO consolidation.
+         GitHub Pages can't issue HTTP 301s, so we strip trailing slashes client-side.
+         Skip the root "/" itself. -->
+    <script>
+      (function () {
+        var p = window.location.pathname;
+        if (p.length > 1 && p.charAt(p.length - 1) === '/') {
+          var clean = p.replace(/\/+$/, '') || '/';
+          window.location.replace(clean + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
     <!-- Admin route flag for GTM blocking — must run BEFORE GTM snippet -->
     <script>
       window.dataLayer = window.dataLayer || [];
