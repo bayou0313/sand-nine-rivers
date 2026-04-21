@@ -53,6 +53,8 @@ export type Database = {
           h1_text: string | null
           hero_intro: string | null
           id: string
+          last_regen_at: string | null
+          last_regen_reason: string | null
           last_viewed_at: string | null
           lat: number | null
           lng: number | null
@@ -93,6 +95,8 @@ export type Database = {
           h1_text?: string | null
           hero_intro?: string | null
           id?: string
+          last_regen_at?: string | null
+          last_regen_reason?: string | null
           last_viewed_at?: string | null
           lat?: number | null
           lng?: number | null
@@ -133,6 +137,8 @@ export type Database = {
           h1_text?: string | null
           hero_intro?: string | null
           id?: string
+          last_regen_at?: string | null
+          last_regen_reason?: string | null
           last_viewed_at?: string | null
           lat?: number | null
           lng?: number | null
