@@ -290,14 +290,18 @@ async function main() {
   }
   console.log(`Pre-rendered ${cities.length} city pages.`);
 
-  // 4. Generate static redirect pages for legacy -la slugs
-  for (const { from, to } of LEGACY_REDIRECTS) {
-    const dir = join(DIST, from, 'river-sand-delivery');
+  // 4. Generate static redirect pages for every active city's -la legacy slug.
+  // (e.g. chalmette → also writes chalmette-la/river-sand-delivery/index.html as a redirect.)
+  let legacyCount = 0;
+  for (const city of cities) {
+    const fromSlug = `${city.city_slug}-la`;
+    const dir = join(DIST, fromSlug, 'river-sand-delivery');
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'index.html'), buildRedirect(from, to), 'utf-8');
-    console.log(`  ↪ ${from}/river-sand-delivery → ${to}/river-sand-delivery`);
+    writeFileSync(join(dir, 'index.html'), buildRedirect(fromSlug, city.city_slug), 'utf-8');
+    console.log(`  ↪ ${fromSlug}/river-sand-delivery → ${city.city_slug}/river-sand-delivery`);
+    legacyCount++;
   }
-  console.log(`Generated ${LEGACY_REDIRECTS.length} legacy redirects.`);
+  console.log(`Generated ${legacyCount} legacy -la redirects.`);
 
   // 5. Generate static sitemap.xml
   const now = new Date().toISOString().split('T')[0];
