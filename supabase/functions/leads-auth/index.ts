@@ -1823,6 +1823,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         sunday_surcharge: pit.sunday_surcharge ?? null,
         saturday_load_limit: pit.saturday_load_limit ?? null,
         sunday_load_limit: pit.sunday_load_limit ?? null,
+        delivery_hours: pit.delivery_hours ?? null,
         is_pickup_only: pit.is_pickup_only || false,
       };
 
