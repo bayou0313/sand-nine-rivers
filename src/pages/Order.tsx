@@ -1822,6 +1822,12 @@ const Order = () => {
                           <ReceiptRow label={`Extra Mile Fee (${Math.round(result.distance - effectivePricing.free_miles)} mi beyond service area) × ${quantity}`} value={`+${formatCurrency((result.distance - effectivePricing.free_miles) * effectivePricing.extra_per_mile * quantity)}`} />
                         </>
                       )}
+                      {selectedDeliveryDate.isSaturday && (
+                        <>
+                          <div className="border-b border-dashed border-border" />
+                          <ReceiptRow label={`Saturday Surcharge ($${effectiveSatSurcharge} × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} />
+                        </>
+                      )}
                       <div className="border-b border-dashed border-border" />
                       <ReceiptRow label="Delivery Date" value={selectedDeliveryDate.fullLabel} />
                       <div className="border-b border-dashed border-border" />
@@ -1833,17 +1839,10 @@ const Order = () => {
                         </p>
                       )}
 
-                      {selectedDeliveryDate.isSaturday && (
-                        <>
-                          <div className="border-b border-dashed border-border" />
-                          <ReceiptRow label={`Saturday Surcharge ($${effectiveSatSurcharge} × ${quantity})`} value={`+${formatCurrency(saturdaySurchargeTotal)}`} destructive />
-                        </>
-                      )}
-
                       {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
                         <>
                           <div className="border-b border-dashed border-border" />
-                          <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} destructive />
+                          <ReceiptRow label={`Sunday Delivery Fee ($${effectiveSunSurcharge} × ${quantity})`} value={`+${formatCurrency(sundaySurchargeTotal)}`} />
                         </>
                       )}
 
