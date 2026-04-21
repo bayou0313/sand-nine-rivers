@@ -1217,14 +1217,14 @@ const OrderMobile = () => {
                   </div>
                   {saturdaySurchargeTotal > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-amber-700">Saturday surcharge</span>
-                      <span className="text-amber-700">+{formatCurrency(saturdaySurchargeTotal)}</span>
+                      <span className="text-muted-foreground">Saturday Surcharge (${effectiveSatSurcharge} × {quantity})</span>
+                      <span className="text-foreground">+{formatCurrency(saturdaySurchargeTotal)}</span>
                     </div>
                   )}
                   {sundaySurchargeTotal > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-indigo-700">Sunday fee</span>
-                      <span className="text-indigo-700">+{formatCurrency(sundaySurchargeTotal)}</span>
+                      <span className="text-muted-foreground">Sunday Delivery Fee (${effectiveSunSurcharge} × {quantity})</span>
+                      <span className="text-foreground">+{formatCurrency(sundaySurchargeTotal)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
