@@ -19,17 +19,8 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5c
 const DIST = join(process.cwd(), 'dist');
 const SITE = 'https://riversand.net';
 
-// Legacy city slugs that had a -la suffix — redirect to clean versions
-const LEGACY_REDIRECTS = [
-  { from: 'chalmette-la', to: 'chalmette' },
-  { from: 'bridge-city-la', to: 'bridge-city' },
-  { from: 'destrehan-la', to: 'destrehan' },
-  { from: 'kenner-la', to: 'kenner' },
-  { from: 'luling-la', to: 'luling' },
-  { from: 'meraux-la', to: 'meraux' },
-  { from: 'metairie-la', to: 'metairie' },
-  { from: 'new-orleans-la', to: 'new-orleans' },
-];
+// Legacy city slugs that had a -la suffix — auto-generated below from active cities.
+// (Hardcoded list removed; we now generate a -la redirect for EVERY active city slug.)
 
 function buildRedirect(fromSlug, toSlug) {
   const target = `${SITE}/${toSlug}/river-sand-delivery`;
@@ -231,6 +222,8 @@ function buildPage(city, cssLinks, scriptTags) {
 <meta property="og:url" content="${canonical}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="${ogImage}">
+<!-- Trailing-slash redirect — must run BEFORE anything else for SEO consolidation -->
+<script>(function(){var p=window.location.pathname;if(p.length>1&&p.charAt(p.length-1)==='/'){var c=p.replace(/\\/+$/,'')||'/';window.location.replace(c+window.location.search+window.location.hash);}})();</script>
 <!-- Admin route flag for GTM blocking — must run BEFORE GTM snippet -->
 <script>window.dataLayer=window.dataLayer||[];(function(){var p=window.location.pathname;if(p.indexOf('/leads')===0||p.indexOf('/admin')===0){window.dataLayer.push({'admin_route':true});}})();</script>
 <!-- Google Tag Manager -->
@@ -297,14 +290,18 @@ async function main() {
   }
   console.log(`Pre-rendered ${cities.length} city pages.`);
 
-  // 4. Generate static redirect pages for legacy -la slugs
-  for (const { from, to } of LEGACY_REDIRECTS) {
-    const dir = join(DIST, from, 'river-sand-delivery');
+  // 4. Generate static redirect pages for every active city's -la legacy slug.
+  // (e.g. chalmette → also writes chalmette-la/river-sand-delivery/index.html as a redirect.)
+  let legacyCount = 0;
+  for (const city of cities) {
+    const fromSlug = `${city.city_slug}-la`;
+    const dir = join(DIST, fromSlug, 'river-sand-delivery');
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'index.html'), buildRedirect(from, to), 'utf-8');
-    console.log(`  ↪ ${from}/river-sand-delivery → ${to}/river-sand-delivery`);
+    writeFileSync(join(dir, 'index.html'), buildRedirect(fromSlug, city.city_slug), 'utf-8');
+    console.log(`  ↪ ${fromSlug}/river-sand-delivery → ${city.city_slug}/river-sand-delivery`);
+    legacyCount++;
   }
-  console.log(`Generated ${LEGACY_REDIRECTS.length} legacy redirects.`);
+  console.log(`Generated ${legacyCount} legacy -la redirects.`);
 
   // 5. Generate static sitemap.xml
   const now = new Date().toISOString().split('T')[0];
