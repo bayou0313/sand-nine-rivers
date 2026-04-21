@@ -51,6 +51,21 @@ export default {
           light: "hsl(var(--sand-light))",
           dark: "hsl(var(--sand-dark))",
         },
+        booked: {
+          DEFAULT: "hsl(var(--booked))",
+          foreground: "hsl(var(--booked-foreground))",
+          muted: "hsl(var(--booked-muted))",
+        },
+        closed: {
+          DEFAULT: "hsl(var(--closed))",
+          foreground: "hsl(var(--closed-foreground))",
+          muted: "hsl(var(--closed-muted))",
+        },
+        holiday: {
+          DEFAULT: "hsl(var(--holiday))",
+          foreground: "hsl(var(--holiday-foreground))",
+          muted: "hsl(var(--holiday-muted))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

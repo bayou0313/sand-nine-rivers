@@ -38,6 +38,19 @@
     --sand-dark: 209 87% 12%;
     --hero-overlay: 209 80% 8%;
 
+    /* Date-picker availability tokens */
+    --booked: 38 92% 50%;              /* amber 500 — fully booked, not clickable */
+    --booked-foreground: 26 83% 14%;   /* dark amber text on amber bg */
+    --booked-muted: 38 92% 95%;        /* very light amber bg tint */
+
+    --closed: 215 16% 47%;             /* slate 500 — operating-day mismatch */
+    --closed-foreground: 0 0% 100%;    /* white text on slate */
+    --closed-muted: 215 20% 92%;       /* light slate bg tint */
+
+    --holiday: 353 72% 44%;            /* matches --destructive — closed holiday */
+    --holiday-foreground: 0 0% 100%;
+    --holiday-muted: 353 80% 96%;      /* very light red bg tint */
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
