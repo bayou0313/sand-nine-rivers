@@ -11,18 +11,23 @@
         }
       })();
     </script>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-KPKFPCXM');</script>
+    <!-- Google Tag Manager (deferred to unblock first paint) -->
+    <script>
+    window.addEventListener('load', function() {
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-KPKFPCXM');
+    });
+    </script>
     <!-- End Google Tag Manager -->
     <link rel="preconnect" href="https://lclbexhytmpfxzcztzva.supabase.co" />
     <link rel="preconnect" href="https://maps.googleapis.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" /></noscript>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -104,8 +109,15 @@
         "query-input": "required name=search_term_string"
       }
     }</script>
-   <script type="module" crossorigin src="/assets/index-C9gt1ihS.js"></script>
-   <link rel="stylesheet" crossorigin href="/assets/index-DriLSoTQ.css">
+   <script type="module" crossorigin src="/assets/index-9T5d1dyH.js"></script>
+   <link rel="modulepreload" crossorigin href="/assets/vendor-5mmd7ptc.js">
+   <link rel="modulepreload" crossorigin href="/assets/vendor-react-CSgIyNyv.js">
+   <link rel="modulepreload" crossorigin href="/assets/vendor-query-D8QLDDhf.js">
+   <link rel="modulepreload" crossorigin href="/assets/vendor-ui-Ca-5S6H-.js">
+   <link rel="modulepreload" crossorigin href="/assets/vendor-icons-wlXKa788.js">
+   <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-Z2Yecjqw.js">
+   <link rel="modulepreload" crossorigin href="/assets/vendor-motion-Hk6bRoLj.js">
+   <link rel="stylesheet" crossorigin href="/assets/index-ZHXCOeDs.css">
  </head>
   <body>
     <!-- Google Tag Manager (noscript) -->

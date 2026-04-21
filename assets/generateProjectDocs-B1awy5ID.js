@@ -1,4 +1,4 @@
-import{s as l}from"./index-C9gt1ihS.js";const _="v1.01";async function y(){try{const{data:r}=await l.from("global_settings").select("value").eq("key","docs_current_version").maybeSingle();return(r==null?void 0:r.value)||_}catch{return _}}function p(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const E=`## 1. Architecture Overview
+import{s as l}from"./index-9T5d1dyH.js";import"./vendor-react-CSgIyNyv.js";import"./vendor-5mmd7ptc.js";import"./vendor-query-D8QLDDhf.js";import"./vendor-ui-Ca-5S6H-.js";import"./vendor-icons-wlXKa788.js";import"./vendor-supabase-Z2Yecjqw.js";import"./vendor-motion-Hk6bRoLj.js";const _="v1.01";async function y(){try{const{data:r}=await l.from("global_settings").select("value").eq("key","docs_current_version").maybeSingle();return r?.value||_}catch{return _}}function p(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const E=`## 1. Architecture Overview
 
 **Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind CSS v3 + Supabase (Lovable Cloud)
 
@@ -934,58 +934,58 @@ STOP: once session.order_id is populated
 
 /admin  → Supabase Auth (email/password) → user_roles table → RLS enforcement
 \`\`\`
-`;function c(r){return String(r??"").replace(/\|/g,"\\|").replace(/\n/g," ")}function u(r,e){const i=e instanceof Error?e.message:String(e);return`
+`;function d(r){return String(r??"").replace(/\|/g,"\\|").replace(/\n/g," ")}function u(r,a){const i=a instanceof Error?a.message:String(a);return`
 > ⚠️ **${r} fetch failed:** ${i}
-`}async function R(){const r=p();if(r)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"list_settings"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"list_settings failed");const a=(e==null?void 0:e.settings)??[];if(a.length===0)return`## 4. Global Settings (Live)
+`}async function R(){const r=p();if(r)try{const{data:a,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"list_settings"}});if(i)throw i;if(a&&a.ok===!1)throw new Error(a.error||"list_settings failed");const t=a?.settings??[];if(t.length===0)return`## 4. Global Settings (Live)
 
 *(no settings found)*
-`;const t=`## 4. Global Settings (Live — full, via service role)
+`;const e=`## 4. Global Settings (Live — full, via service role)
 
-**Total keys:** ${a.length}
+**Total keys:** ${t.length}
 
 | Key | Value | Public | Description |
 |-----|-------|--------|-------------|
-`,o=a.map(s=>`| ${c(s.key)} | ${c(s.value)} | ${s.is_public?"✓":""} | ${c(s.description??"")} |`).join(`
-`);return t+o+`
-`}catch(e){console.warn("[docs] list_settings via leads-auth failed, falling back to anon:",e)}try{const{data:e,error:i}=await l.from("global_settings").select("key, value, description, is_public").order("key",{ascending:!0}).limit(1e4);if(i)throw i;const a=e??[],t=r?`> ⚠️ Service-role fetch failed; showing only public rows.
+`,o=t.map(s=>`| ${d(s.key)} | ${d(s.value)} | ${s.is_public?"✓":""} | ${d(s.description??"")} |`).join(`
+`);return e+o+`
+`}catch(a){console.warn("[docs] list_settings via leads-auth failed, falling back to anon:",a)}try{const{data:a,error:i}=await l.from("global_settings").select("key, value, description, is_public").order("key",{ascending:!0}).limit(1e4);if(i)throw i;const t=a??[],e=r?`> ⚠️ Service-role fetch failed; showing only public rows.
 
-`:"> ℹ️ Showing only `is_public = true` rows. Sign in to /leads (sets `sessionStorage.leads_pw`) to see all keys.\n\n";if(a.length===0)return`## 4. Global Settings (Live)
+`:"> ℹ️ Showing only `is_public = true` rows. Sign in to /leads (sets `sessionStorage.leads_pw`) to see all keys.\n\n";if(t.length===0)return`## 4. Global Settings (Live)
 
-${t}*(no public settings)*
+${e}*(no public settings)*
 `;const o=`## 4. Global Settings (Live — public-only)
 
-${t}**Total keys:** ${a.length}
+${e}**Total keys:** ${t.length}
 
 | Key | Value | Description |
 |-----|-------|-------------|
-`,s=a.map(n=>`| ${c(n.key)} | ${c(n.value)} | ${c(n.description??"")} |`).join(`
+`,s=t.map(n=>`| ${d(n.key)} | ${d(n.value)} | ${d(n.description??"")} |`).join(`
 `);return o+s+`
-`}catch(e){return`## 4. Global Settings (Live)
-${u("global_settings",e)}`}}async function F(){try{const{data:r,error:e}=await l.from("pits").select("*").order("name",{ascending:!0}).limit(1e4);if(e)throw e;const i=r??[];if(i.length===0)return`## 5. Active PITs (Live)
+`}catch(a){return`## 4. Global Settings (Live)
+${u("global_settings",a)}`}}async function F(){try{const{data:r,error:a}=await l.from("pits").select("*").order("name",{ascending:!0}).limit(1e4);if(a)throw a;const i=r??[];if(i.length===0)return`## 5. Active PITs (Live)
 
 *(no pits found)*
-`;let a=`## 5. Active PITs (Live)
+`;let t=`## 5. Active PITs (Live)
 
 **Total PITs:** ${i.length}
 
-`;for(const t of i)a+=`### ${t.name} ${t.status!=="active"?`(${t.status})`:""}
+`;for(const e of i)t+=`### ${e.name} ${e.status!=="active"?`(${e.status})`:""}
 
-`,a+=`- **Address:** ${t.address}
-`,a+=`- **Coordinates:** ${t.lat}, ${t.lon}
-`,a+=`- **Base Price:** $${t.base_price??"—"} | **Free Miles:** ${t.free_miles??"—"} | **$/extra mile:** $${t.price_per_extra_mile??"—"}
-`,a+=`- **Max Distance:** ${t.max_distance??"—"} mi
-`,a+=`- **Operating Days:** ${Array.isArray(t.operating_days)?t.operating_days.join(","):"—"}
-`,a+=`- **Saturday Surcharge Override:** $${t.saturday_surcharge_override??"—"} | **Sunday Surcharge:** $${t.sunday_surcharge??"—"}
-`,a+=`- **Sat Load Limit:** ${t.saturday_load_limit??"—"} | **Sun Load Limit:** ${t.sunday_load_limit??"—"}
-`,a+=`- **Same-Day Cutoff:** ${t.same_day_cutoff??"—"}
-`,a+=`- **Default:** ${t.is_default} | **Pickup Only:** ${t.is_pickup_only}
-`,t.notes&&(a+=`- **Notes:** ${t.notes}
-`),a+=`
-`;return a}catch(r){return`## 5. Active PITs (Live)
-${u("pits",r)}`}}async function B(){try{const{data:r,error:e}=await l.from("zip_tax_rates").select("zip_code, tax_region_name, combined_rate, state_rate, local_rate").order("zip_code",{ascending:!0}).limit(1e4);if(e)throw e;const i=r??[];if(i.length===0)return`## 6. Service ZIP Codes (Live)
+`,t+=`- **Address:** ${e.address}
+`,t+=`- **Coordinates:** ${e.lat}, ${e.lon}
+`,t+=`- **Base Price:** $${e.base_price??"—"} | **Free Miles:** ${e.free_miles??"—"} | **$/extra mile:** $${e.price_per_extra_mile??"—"}
+`,t+=`- **Max Distance:** ${e.max_distance??"—"} mi
+`,t+=`- **Operating Days:** ${Array.isArray(e.operating_days)?e.operating_days.join(","):"—"}
+`,t+=`- **Saturday Surcharge Override:** $${e.saturday_surcharge_override??"—"} | **Sunday Surcharge:** $${e.sunday_surcharge??"—"}
+`,t+=`- **Sat Load Limit:** ${e.saturday_load_limit??"—"} | **Sun Load Limit:** ${e.sunday_load_limit??"—"}
+`,t+=`- **Same-Day Cutoff:** ${e.same_day_cutoff??"—"}
+`,t+=`- **Default:** ${e.is_default} | **Pickup Only:** ${e.is_pickup_only}
+`,e.notes&&(t+=`- **Notes:** ${e.notes}
+`),t+=`
+`;return t}catch(r){return`## 5. Active PITs (Live)
+${u("pits",r)}`}}async function B(){try{const{data:r,error:a}=await l.from("zip_tax_rates").select("zip_code, tax_region_name, combined_rate, state_rate, local_rate").order("zip_code",{ascending:!0}).limit(1e4);if(a)throw a;const i=r??[];if(i.length===0)return`## 6. Service ZIP Codes (Live)
 
 *(no ZIPs found)*
-`;const a=new Map;for(const s of i){const n=s.tax_region_name||"Unknown";a.has(n)||a.set(n,{zips:[],rate:s.combined_rate}),a.get(n).zips.push(s.zip_code)}const t=[...a.entries()].sort(([s],[n])=>s.localeCompare(n));let o=`## 6. Service ZIP Codes (Live)
+`;const t=new Map;for(const s of i){const n=s.tax_region_name||"Unknown";t.has(n)||t.set(n,{zips:[],rate:s.combined_rate}),t.get(n).zips.push(s.zip_code)}const e=[...t.entries()].sort(([s],[n])=>s.localeCompare(n));let o=`## 6. Service ZIP Codes (Live)
 
 **Total ZIPs:** ${i.length}
 
@@ -993,82 +993,82 @@ ${u("pits",r)}`}}async function B(){try{const{data:r,error:e}=await l.from("zip_
 
 | Parish/Region | ZIP Count | Combined Rate |
 |---------------|-----------|---------------|
-`;for(const[s,n]of t)o+=`| ${c(s)} | ${n.zips.length} | ${(n.rate*100).toFixed(3)}% |
+`;for(const[s,n]of e)o+=`| ${d(s)} | ${n.zips.length} | ${(n.rate*100).toFixed(3)}% |
 `;return o+=`
 **Full ZIP list (comma-separated):**
 
 ${i.map(s=>s.zip_code).join(", ")}
 `,o}catch(r){return`## 6. Service ZIP Codes (Live)
-${u("zip_tax_rates",r)}`}}async function $(){try{const{data:r,error:e}=await l.from("city_pages").select("city_slug, status, region, page_views").limit(1e4);if(e)throw e;const i=r??[];if(i.length===0)return`## 11. City Pages & SEO (Live)
+${u("zip_tax_rates",r)}`}}async function $(){try{const{data:r,error:a}=await l.from("city_pages").select("city_slug, status, region, page_views").limit(1e4);if(a)throw a;const i=r??[];if(i.length===0)return`## 11. City Pages & SEO (Live)
 
 *(no city pages found)*
-`;const a={};for(const o of i){const s=o.status||"unknown";a[s]||(a[s]=[]),a[s].push(o.city_slug)}Object.values(a).forEach(o=>o.sort());let t=`## 11. City Pages & SEO (Live)
+`;const t={};for(const o of i){const s=o.status||"unknown";t[s]||(t[s]=[]),t[s].push(o.city_slug)}Object.values(t).forEach(o=>o.sort());let e=`## 11. City Pages & SEO (Live)
 
 **Total pages:** ${i.length}
 
-`;for(const o of Object.keys(a).sort())t+=`### ${o.charAt(0).toUpperCase()+o.slice(1)} (${a[o].length})
+`;for(const o of Object.keys(t).sort())e+=`### ${o.charAt(0).toUpperCase()+o.slice(1)} (${t[o].length})
 
-`,t+=a[o].map(s=>`\`${s}\``).join(", ")+`
+`,e+=t[o].map(s=>`\`${s}\``).join(", ")+`
 
-`;return t}catch(r){return`## 11. City Pages & SEO (Live)
-${u("city_pages",r)}`}}async function z(){try{const{count:r,error:e}=await l.from("fraud_blocklist").select("*",{count:"exact",head:!0});if(e)throw e;return`## 13. Fraud System (Live)
+`;return e}catch(r){return`## 11. City Pages & SEO (Live)
+${u("city_pages",r)}`}}async function z(){try{const{count:r,error:a}=await l.from("fraud_blocklist").select("*",{count:"exact",head:!0});if(a)throw a;return`## 13. Fraud System (Live)
 
 **Active blocklist entries:** ${r??0}
 
 See \`mem://features/lead-and-fraud-management\` for full architecture.
 `}catch(r){return`## 13. Fraud System (Live)
-${u("fraud_blocklist",r)}`}}async function M(){try{const{count:r,error:e}=await l.from("reviews").select("*",{count:"exact",head:!0});if(e)throw e;return`## 14. Review Collection (Live)
+${u("fraud_blocklist",r)}`}}async function M(){try{const{count:r,error:a}=await l.from("reviews").select("*",{count:"exact",head:!0});if(a)throw a;return`## 14. Review Collection (Live)
 
 **Total reviews captured:** ${r??0}
 
 Automated 24hr post-delivery requests; 4+ stars redirect to Google My Business.
 `}catch(r){return`## 14. Review Collection (Live)
-${u("reviews",r)}`}}async function G(){const r=p();if(r)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"get_order_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_order_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 18. Live Order Stats (via service role)
+${u("reviews",r)}`}}async function G(){const r=p();if(r)try{const{data:a,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"get_order_stats"}});if(i)throw i;if(a&&a.ok===!1)throw new Error(a.error||"get_order_stats failed");const t=a?.stats??{};let e=`## 18. Live Order Stats (via service role)
 
-`;t+=`**Total orders:** ${a.total??0}
-`,t+=`**Total revenue (gross):** $${Number(a.revenue??0).toFixed(2)}
+`;e+=`**Total orders:** ${t.total??0}
+`,e+=`**Total revenue (gross):** $${Number(t.revenue??0).toFixed(2)}
 
-`,t+=`### By Status
+`,e+=`### By Status
 
-`;for(const[o,s]of Object.entries(a.byStatus??{}).sort())t+=`- ${o}: ${s}
-`;t+=`
+`;for(const[o,s]of Object.entries(t.byStatus??{}).sort())e+=`- ${o}: ${s}
+`;e+=`
 ### By Payment Method
 
-`;for(const[o,s]of Object.entries(a.byMethod??{}).sort())t+=`- ${o}: ${s}
-`;t+=`
+`;for(const[o,s]of Object.entries(t.byMethod??{}).sort())e+=`- ${o}: ${s}
+`;e+=`
 ### By Payment Status
 
-`;for(const[o,s]of Object.entries(a.byPayStatus??{}).sort())t+=`- ${o}: ${s}
-`;return a.latest&&(t+=`
-**Latest order:** ${a.latest}
-`),t+`
-`}catch(e){return console.warn("[docs] get_order_stats via leads-auth failed:",e),`## 18. Live Order Stats
+`;for(const[o,s]of Object.entries(t.byPayStatus??{}).sort())e+=`- ${o}: ${s}
+`;return t.latest&&(e+=`
+**Latest order:** ${t.latest}
+`),e+`
+`}catch(a){return console.warn("[docs] get_order_stats via leads-auth failed:",a),`## 18. Live Order Stats
 
-> ⚠️ Service-role fetch failed: ${e instanceof Error?e.message:String(e)}
+> ⚠️ Service-role fetch failed: ${a instanceof Error?a.message:String(a)}
 
 Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populate.
-`}return"## 18. Live Order Stats\n\n> ℹ️ Anon role cannot read `orders` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function U(){const r=p();if(r)try{const{data:e,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"get_session_stats"}});if(i)throw i;if(e&&e.ok===!1)throw new Error(e.error||"get_session_stats failed");const a=(e==null?void 0:e.stats)??{};let t=`## 19. Live Session Stats (via service role)
+`}return"## 18. Live Order Stats\n\n> ℹ️ Anon role cannot read `orders` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function U(){const r=p();if(r)try{const{data:a,error:i}=await l.functions.invoke("leads-auth",{body:{password:r,action:"get_session_stats"}});if(i)throw i;if(a&&a.ok===!1)throw new Error(a.error||"get_session_stats failed");const t=a?.stats??{};let e=`## 19. Live Session Stats (via service role)
 
-`;t+=`**Total sessions:** ${a.total??0}
-`,t+=`**Stripe link clicked:** ${a.stripeLinkClicked??0}
+`;e+=`**Total sessions:** ${t.total??0}
+`,e+=`**Stripe link clicked:** ${t.stripeLinkClicked??0}
 
-`,t+=`### Email touch counts
+`,e+=`### Email touch counts
 
-`,t+=`- 1hr sent: ${a.email_1hr_sent??0}
-`,t+=`- 24hr sent: ${a.email_24hr_sent??0}
-`,t+=`- 48hr sent: ${a.email_48hr_sent??0}
-`,t+=`- 72hr sent: ${a.email_72hr_sent??0}
+`,e+=`- 1hr sent: ${t.email_1hr_sent??0}
+`,e+=`- 24hr sent: ${t.email_24hr_sent??0}
+`,e+=`- 48hr sent: ${t.email_48hr_sent??0}
+`,e+=`- 72hr sent: ${t.email_72hr_sent??0}
 
-`,t+=`### By Stage
+`,e+=`### By Stage
 
-`;for(const[o,s]of Object.entries(a.byStage??{}).sort())t+=`- ${o}: ${s}
-`;return t+`
-`}catch(e){return console.warn("[docs] get_session_stats via leads-auth failed:",e),`## 19. Live Session Stats
+`;for(const[o,s]of Object.entries(t.byStage??{}).sort())e+=`- ${o}: ${s}
+`;return e+`
+`}catch(a){return console.warn("[docs] get_session_stats via leads-auth failed:",a),`## 19. Live Session Stats
 
-> ⚠️ Service-role fetch failed: ${e instanceof Error?e.message:String(e)}
+> ⚠️ Service-role fetch failed: ${a instanceof Error?a.message:String(a)}
 
 Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
-`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function H(){const[r,e,i,a,t,o,s,n]=await Promise.all([R(),F(),B(),$(),z(),M(),G(),U()]),S=[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
+`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function X(){const[r,a,i,t,e,o,s,n]=await Promise.all([R(),F(),B(),$(),z(),M(),G(),U()]),S=[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
 
 *Version: __DOC_VERSION__ — Year 1, Build 01*
 *Generated: ${new Date().toISOString()} — Live database snapshot*
@@ -1077,9 +1077,9 @@ Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
 
 ---
 
-`,E,f,h,r,e,i,x,v,w,Y,a,N,t,o,O,T,D,s,n,C,k,P,A+`
+`,E,f,h,r,a,i,x,v,w,Y,t,N,e,o,O,T,D,s,n,C,k,P,A+`
 
 `+L,I].join(`
 ---
 
-`);let m=_;const g=p();if(g)try{const{data:d,error:b}=await l.functions.invoke("leads-auth",{body:{action:"increment_doc_version",password:g,newDocLength:String(S.length)}});if(b)throw b;if((d==null?void 0:d.ok)===!1)throw new Error(d.error||"version bump failed");d!=null&&d.version&&(m=d.version)}catch(d){console.warn("[docs] increment_doc_version failed:",d);try{m=await y()}catch{}}else m=await y();return S.replace("__DOC_VERSION__",m)}export{_ as DOC_VERSION,H as generateProjectDocs,y as getCurrentDocsVersion};
+`);let m=_;const g=p();if(g)try{const{data:c,error:b}=await l.functions.invoke("leads-auth",{body:{action:"increment_doc_version",password:g,newDocLength:String(S.length)}});if(b)throw b;if(c?.ok===!1)throw new Error(c.error||"version bump failed");c?.version&&(m=c.version)}catch(c){console.warn("[docs] increment_doc_version failed:",c);try{m=await y()}catch{}}else m=await y();return S.replace("__DOC_VERSION__",m)}export{_ as DOC_VERSION,X as generateProjectDocs,y as getCurrentDocsVersion};
