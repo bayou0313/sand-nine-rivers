@@ -1,4 +1,4 @@
-name: Submit Sitemap
+name: Submit URLs to IndexNow
 
 on:
   schedule:
