@@ -19,17 +19,8 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5c
 const DIST = join(process.cwd(), 'dist');
 const SITE = 'https://riversand.net';
 
-// Legacy city slugs that had a -la suffix — redirect to clean versions
-const LEGACY_REDIRECTS = [
-  { from: 'chalmette-la', to: 'chalmette' },
-  { from: 'bridge-city-la', to: 'bridge-city' },
-  { from: 'destrehan-la', to: 'destrehan' },
-  { from: 'kenner-la', to: 'kenner' },
-  { from: 'luling-la', to: 'luling' },
-  { from: 'meraux-la', to: 'meraux' },
-  { from: 'metairie-la', to: 'metairie' },
-  { from: 'new-orleans-la', to: 'new-orleans' },
-];
+// Legacy city slugs that had a -la suffix — auto-generated below from active cities.
+// (Hardcoded list removed; we now generate a -la redirect for EVERY active city slug.)
 
 function buildRedirect(fromSlug, toSlug) {
   const target = `${SITE}/${toSlug}/river-sand-delivery`;
