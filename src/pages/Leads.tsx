@@ -8068,6 +8068,10 @@ const Leads = () => {
                   })()}
                   <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
                 </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs mb-1 block" style={{ color: "#666" }}>Delivery Hours by Day</label>
+                  <DeliveryHoursEditor value={newPit.delivery_hours} onChange={v => setNewPit({ ...newPit, delivery_hours: v })} />
+                </div>
               </div>
 
               {/* Section 3 — Live Price Preview */}
