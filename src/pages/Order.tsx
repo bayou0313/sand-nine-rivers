@@ -1847,18 +1847,6 @@ const Order = () => {
                           <span className="font-body text-muted-foreground">Subtotal</span>
                           <span className="font-display text-foreground">{formatCurrency(result.price * quantity)}</span>
                         </div>
-                        {selectedDeliveryDate.isSaturday && (
-                          <div className="flex justify-between text-sm">
-                            <span className="font-body text-muted-foreground">Saturday surcharge</span>
-                            <span className="font-display text-foreground">+{formatCurrency(saturdaySurchargeTotal)}</span>
-                          </div>
-                        )}
-                        {selectedDeliveryDate.isSunday && sundaySurchargeTotal > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="font-body text-muted-foreground">Sunday delivery fee</span>
-                            <span className="font-display text-foreground">+{formatCurrency(sundaySurchargeTotal)}</span>
-                          </div>
-                        )}
                         {(() => {
                           const stateTaxAmt = Math.round((taxAmount / (taxInfo.rate || 1)) * LA_STATE_TAX_RATE * 100) / 100;
                           const parishTaxAmt = Math.round((taxAmount - stateTaxAmt) * 100) / 100;
