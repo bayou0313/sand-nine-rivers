@@ -110,35 +110,7 @@ type HolidayRow = {
   customer_visible: boolean;
 };
 
-// Legacy export retained for any external callers — no longer used internally
-export function getAvailableDeliveryDates(
-  pitSchedule?: PitSchedule | null,
-  maxSlots: number = 7,
-  _weekendPitMap?: any,
-  allPitDistances?: PitDistanceEntry[],
-): DeliveryDateWithPit[] {
-  const today = getCentralDate();
-  const dates: DeliveryDateWithPit[] = [];
-  for (let i = 0; dates.length < maxSlots && i < (maxSlots * 2); i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    const dayOfWeek = d.getDay();
-    if (allPitDistances && allPitDistances.length > 0) {
-      const eligible = allPitDistances.filter(pd => {
-        const opDays = pd.pit.operating_days;
-        return !opDays || opDays.length === 0 || opDays.includes(dayOfWeek);
-      });
-      if (eligible.length === 0) continue;
-      const serviceable = eligible.filter(pd => pd.serviceable);
-      if (serviceable.length > 0) dates.push({
-        date: d, label: formatDayShort(d), dateStr: formatDateShort(d), fullLabel: formatFull(d),
-        isSameDay: i === 0, isSaturday: isSaturday(d), isSunday: isSunday(d),
-        iso: toIso(d), dayOfWeek: formatDayOfWeek(d), assignedPit: serviceable[0],
-      });
-    }
-  }
-  return dates;
-}
+
 
 export function getSameDayCutoffWarning(pitSchedule?: PitSchedule | null): boolean {
   const hour = getCentralHour();
@@ -200,10 +172,6 @@ const DeliveryDatePicker = ({ selectedDate, onSelect, onPitAssigned, pitSchedule
 
   // STEP 2: Classify ALL 60 days (no filtering)
   const classifiedDates = useMemo<ClassifiedDate[]>(() => {
-    console.log("[DDP] classifiedDates run - isLoadingPitDistances:", isLoadingPitDistances);
-    console.log("[DDP] classifiedDates run - allPitDistancesLen:", allPitDistances?.length ?? 0);
-    console.log("[DDP] classifiedDates run - pitId:", pitId);
-    console.log("[DDP] classifiedDates run - holidaysSize:", holidays.size);
     if (isLoadingPitDistances) return [];
     const today = getCentralDate();
     const todayDay = today.getDay();
