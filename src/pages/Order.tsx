@@ -191,6 +191,9 @@ const Order = () => {
   const effectiveSunSurcharge = getEffectiveSundaySurcharge(matchedPitSchedule);
   const saturdaySurchargeTotal = selectedDeliveryDate?.isSaturday ? effectiveSatSurcharge * quantity : 0;
   const sundaySurchargeTotal = selectedDeliveryDate?.isSunday ? effectiveSunSurcharge * quantity : 0;
+  const deliveryWindow = selectedDeliveryDate
+    ? formatDeliveryWindow(matchedPit?.delivery_hours, selectedDeliveryDate.date.getDay())
+    : DELIVERY_HOURS_FALLBACK;
   const effectiveDiscount = result ? Math.min(discountAmount * quantity, result.price * quantity) : 0;
   const isBaked = pricingMode === "baked";
   const isCOD = paymentMethod === "cash" || paymentMethod === "check";
