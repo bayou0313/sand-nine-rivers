@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- SPA redirect decoder — must run BEFORE anything else.
+         Decodes ?/path/here back into the real URL via history.replaceState
+         so React Router sees the original deep link. Pairs with public/404.html. -->
+    <script>
+      (function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function (s) {
+            return s.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location));
+    </script>
     <!-- Admin route flag for GTM blocking — must run BEFORE GTM snippet -->
     <script>
       window.dataLayer = window.dataLayer || [];
