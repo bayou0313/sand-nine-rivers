@@ -4,7 +4,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { updateSession, initSession, getSessionToken } from "@/lib/session";
 import { trackEvent } from "@/lib/analytics";
 import { MapPin, Loader2, Phone, ArrowLeft, Lock, Banknote, CreditCard, CheckCircle2, Clock, ChevronDown } from "lucide-react";
-import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE } from "@/lib/format";
+import { formatPhone, formatCurrency, getTaxRateFromAddress, getParishFromPlaceResult, getTaxRateByParish, LA_STATE_TAX_RATE, formatDeliveryWindow, DELIVERY_HOURS_FALLBACK } from "@/lib/format";
 import { formatProperName, formatProperNameFinal, formatSentence, formatEmail } from "@/lib/textFormat";
 
 import OrderConfirmation from "@/components/OrderConfirmation";
