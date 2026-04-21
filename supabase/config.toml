@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.holiday-notifier]
 verify_jwt = false
+
+[functions.send-holiday-email]
+verify_jwt = false
+
+[functions.holiday-confirm]
+verify_jwt = false
