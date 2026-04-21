@@ -129,6 +129,7 @@ interface Pit {
   saturday_load_limit: number | null;
   sunday_load_limit: number | null;
   is_pickup_only?: boolean;
+  delivery_hours: DeliveryHoursMap;
 }
 
 interface GlobalSettings {
@@ -453,6 +454,86 @@ function LiveGoogleMap({ visitors, pits }: LiveGoogleMapProps) {
   );
 }
 
+// ─── Per-PIT Delivery Hours editor ──────────────────────────────────────────
+type DeliveryHoursMap = Record<string, { open: string; close: string }> | null;
+
+const DAY_LABELS: { idx: number; label: string }[] = [
+  { idx: 0, label: "Sunday" },
+  { idx: 1, label: "Monday" },
+  { idx: 2, label: "Tuesday" },
+  { idx: 3, label: "Wednesday" },
+  { idx: 4, label: "Thursday" },
+  { idx: 5, label: "Friday" },
+  { idx: 6, label: "Saturday" },
+];
+
+function DeliveryHoursEditor({ value, onChange }: { value: DeliveryHoursMap; onChange: (v: DeliveryHoursMap) => void }) {
+  const hours = value || {};
+  const setDay = (idx: number, next: { open: string; close: string } | null) => {
+    const updated: Record<string, { open: string; close: string }> = { ...hours };
+    if (next === null) {
+      delete updated[String(idx)];
+    } else {
+      updated[String(idx)] = next;
+    }
+    onChange(Object.keys(updated).length === 0 ? null : updated);
+  };
+  const copyMonToWeekdays = () => {
+    const mon = hours["1"];
+    if (!mon) return;
+    const updated: Record<string, { open: string; close: string }> = { ...hours };
+    [2, 3, 4, 5].forEach(d => { updated[String(d)] = { open: mon.open, close: mon.close }; });
+    onChange(updated);
+  };
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-[10px] text-gray-400">Customer-facing window. Unchecked days show "Contact us for hours."</p>
+        <button
+          type="button"
+          onClick={copyMonToWeekdays}
+          disabled={!hours["1"]}
+          className="text-[10px] underline text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:no-underline"
+        >
+          Copy Mon → Tue–Fri
+        </button>
+      </div>
+      {DAY_LABELS.map(({ idx, label }) => {
+        const entry = hours[String(idx)];
+        const enabled = !!entry;
+        const invalid = enabled && entry.open && entry.close && entry.close <= entry.open;
+        return (
+          <div key={idx} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={e => setDay(idx, e.target.checked ? { open: "08:00", close: "17:00" } : null)}
+              className="h-4 w-4"
+            />
+            <span className="w-20 text-xs" style={{ color: enabled ? "#111" : "#999" }}>{label}</span>
+            <input
+              type="time"
+              disabled={!enabled}
+              value={entry?.open ?? ""}
+              onChange={e => entry && setDay(idx, { ...entry, open: e.target.value })}
+              className="h-8 px-2 rounded-md border text-xs w-28 disabled:bg-gray-50 disabled:text-gray-300"
+            />
+            <span className="text-xs text-gray-400">–</span>
+            <input
+              type="time"
+              disabled={!enabled}
+              value={entry?.close ?? ""}
+              onChange={e => entry && setDay(idx, { ...entry, close: e.target.value })}
+              className="h-8 px-2 rounded-md border text-xs w-28 disabled:bg-gray-50 disabled:text-gray-300"
+            />
+            {invalid && <span className="text-[10px] text-red-600">close must be after open</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const Leads = () => {
   const { toast } = useToast();
   const [password, setPassword] = useState("");
@@ -497,7 +578,7 @@ const Leads = () => {
 
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "", sunday_surcharge: null as number | null, saturday_load_limit: null as number | null, sunday_load_limit: null as number | null, is_pickup_only: false });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "", sunday_surcharge: null as number | null, saturday_load_limit: null as number | null, sunday_load_limit: null as number | null, is_pickup_only: false, delivery_hours: null as DeliveryHoursMap });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number; location_type?: string; formatted_address?: string }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
@@ -1513,7 +1594,7 @@ const Leads = () => {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit, is_pickup_only: newPit.is_pickup_only },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit, is_pickup_only: newPit.is_pickup_only, delivery_hours: newPit.delivery_hours },
         },
       });
       if (fnError) throw fnError;
@@ -1523,7 +1604,7 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
-      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false, delivery_hours: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -1711,6 +1792,7 @@ const Leads = () => {
         saturday_load_limit: editPitData.saturday_load_limit ?? null,
         sunday_load_limit: editPitData.sunday_load_limit ?? null,
         is_pickup_only: editPitData.is_pickup_only || false,
+        delivery_hours: (editPitData as any).delivery_hours ?? null,
       };
 
       // Save directly — price rollover handled server-side
@@ -7986,6 +8068,10 @@ const Leads = () => {
                   })()}
                   <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
                 </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs mb-1 block" style={{ color: "#666" }}>Delivery Hours by Day</label>
+                  <DeliveryHoursEditor value={newPit.delivery_hours} onChange={v => setNewPit({ ...newPit, delivery_hours: v })} />
+                </div>
               </div>
 
               {/* Section 3 — Live Price Preview */}
@@ -8291,6 +8377,10 @@ const Leads = () => {
                     );
                   })()}
                   <p className="text-[10px] text-gray-400 mt-1">Orders before this time may qualify for same-day delivery. Leave blank to use global.</p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs mb-1 block" style={{ color: "#666" }}>Delivery Hours by Day</label>
+                  <DeliveryHoursEditor value={(editPitData as any).delivery_hours ?? null} onChange={v => setEditPitData({ ...editPitData, delivery_hours: v } as any)} />
                 </div>
               </div>
 
