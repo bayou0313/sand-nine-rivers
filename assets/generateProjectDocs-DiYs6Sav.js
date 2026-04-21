@@ -1,4 +1,4 @@
-import{s as l}from"./index-9T5d1dyH.js";import"./vendor-react-CSgIyNyv.js";import"./vendor-5mmd7ptc.js";import"./vendor-query-D8QLDDhf.js";import"./vendor-ui-Ca-5S6H-.js";import"./vendor-icons-wlXKa788.js";import"./vendor-supabase-Z2Yecjqw.js";import"./vendor-motion-Hk6bRoLj.js";const _="v1.01";async function y(){try{const{data:r}=await l.from("global_settings").select("value").eq("key","docs_current_version").maybeSingle();return r?.value||_}catch{return _}}function p(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const E=`## 1. Architecture Overview
+import{s as l}from"./index-DvgTSdmi.js";const _="v1.01";async function y(){try{const{data:r}=await l.from("global_settings").select("value").eq("key","docs_current_version").maybeSingle();return r?.value||_}catch{return _}}function p(){try{return sessionStorage.getItem("leads_pw")||""}catch{return""}}const E=`## 1. Architecture Overview
 
 **Stack:** React 18 + Vite 5 + TypeScript 5 + Tailwind CSS v3 + Supabase (Lovable Cloud)
 
@@ -1068,7 +1068,7 @@ Anon role cannot read \`orders\` (RLS: admin-only). Sign in to /leads to populat
 > ⚠️ Service-role fetch failed: ${a instanceof Error?a.message:String(a)}
 
 Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
-`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function X(){const[r,a,i,t,e,o,s,n]=await Promise.all([R(),F(),B(),$(),z(),M(),G(),U()]),S=[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
+`}return"## 19. Live Session Stats\n\n> ℹ️ Anon role cannot read `visitor_sessions` (RLS: admin-only). Sign in to /leads (sets `sessionStorage.leads_pw`) and re-export to populate this section.\n"}async function H(){const[r,a,i,t,e,o,s,n]=await Promise.all([R(),F(),B(),$(),z(),M(),G(),U()]),S=[`# RIVERSAND.NET — COMPLETE PROJECT DOCUMENTATION
 
 *Version: __DOC_VERSION__ — Year 1, Build 01*
 *Generated: ${new Date().toISOString()} — Live database snapshot*
@@ -1082,4 +1082,4 @@ Anon role cannot read \`visitor_sessions\` (RLS: admin-only).
 `+L,I].join(`
 ---
 
-`);let m=_;const g=p();if(g)try{const{data:c,error:b}=await l.functions.invoke("leads-auth",{body:{action:"increment_doc_version",password:g,newDocLength:String(S.length)}});if(b)throw b;if(c?.ok===!1)throw new Error(c.error||"version bump failed");c?.version&&(m=c.version)}catch(c){console.warn("[docs] increment_doc_version failed:",c);try{m=await y()}catch{}}else m=await y();return S.replace("__DOC_VERSION__",m)}export{_ as DOC_VERSION,X as generateProjectDocs,y as getCurrentDocsVersion};
+`);let m=_;const g=p();if(g)try{const{data:c,error:b}=await l.functions.invoke("leads-auth",{body:{action:"increment_doc_version",password:g,newDocLength:String(S.length)}});if(b)throw b;if(c?.ok===!1)throw new Error(c.error||"version bump failed");c?.version&&(m=c.version)}catch(c){console.warn("[docs] increment_doc_version failed:",c);try{m=await y()}catch{}}else m=await y();return S.replace("__DOC_VERSION__",m)}export{_ as DOC_VERSION,H as generateProjectDocs,y as getCurrentDocsVersion};
