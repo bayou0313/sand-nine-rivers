@@ -4,7 +4,6 @@
  * mode=driving and avoid=ferries. Toll roads (I-10 etc.) are used for
  * deliveries, so tolls are NOT avoided. Never add haversine as a fallback.
  */
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -201,7 +200,7 @@ const LARGE_CITIES_NO_STATIC_PRICE = new Set([
   "baton rouge",
 ]);
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
