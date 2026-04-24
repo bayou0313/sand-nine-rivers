@@ -11,6 +11,7 @@ import { Loader2, UserX, UserPlus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPhone, stripPhone } from "@/lib/format";
+import { formatEmail } from "@/lib/textFormat";
 import EmailInput from "@/components/EmailInput";
 import { PAYMENT_TYPES, type Driver, type PaymentType } from "./types";
 
