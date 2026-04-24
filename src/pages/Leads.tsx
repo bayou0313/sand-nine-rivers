@@ -1917,8 +1917,9 @@ const Leads = () => {
 
 
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
+  // Cold-start fix added with Slice 1 ScheduleTab — closes cross-nav gap introduced by card-click navigation.
   useEffect(() => {
-    if (activePage === "cash_orders" && authenticated) {
+    if ((activePage === "cash_orders" || activePage === "all") && authenticated) {
       fetchCashOrders();
       fetchAllOrders();
       const interval = setInterval(() => {
