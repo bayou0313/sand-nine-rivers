@@ -10,6 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
+import { formatPhone } from "@/lib/format";
+import { formatProperName, formatProperNameFinal, formatEmail, formatSentence } from "@/lib/textFormat";
+import EmailInput from "@/components/EmailInput";
 
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
