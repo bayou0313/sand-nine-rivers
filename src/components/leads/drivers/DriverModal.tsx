@@ -283,7 +283,7 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
             <EmailInput
               id="drv-email"
               value={form.email}
-              onChange={(v) => update("email", v)}
+              onChange={(v) => update("email", formatEmail(v))}
               placeholder="driver@example.com"
               className={INPUT_CLS}
             />
