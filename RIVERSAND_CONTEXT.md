@@ -1,6 +1,9 @@
 # RIVERSAND_CONTEXT.md
-Version: 1.10 (2026-04-24)
+Version: 1.11 (2026-04-24)
 Last synced: 2026-04-24
+
+## Companion documents
+- RIVERSAND_FORM_GUIDELINES_v1.1_2026-04-24.md — canonical form entry reference (labels, inputs, validation, case handling) for all operator and customer-facing forms.
 
 ## Project identity
 - Repo: bayou0313/sand-nine-rivers
