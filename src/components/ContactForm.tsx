@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPhone } from "@/lib/format";
+import { formatProperName, formatProperNameFinal, formatEmail, formatSentence } from "@/lib/textFormat";
 import EmailInput from "@/components/EmailInput";
 import BrandedConfirmation from "@/components/BrandedConfirmation";
 import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
