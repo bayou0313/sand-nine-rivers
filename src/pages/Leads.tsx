@@ -6179,6 +6179,70 @@ const Leads = () => {
                       ))}
                     </div>
 
+                    {/* Driver */}
+                    {/* Path B Phase 1b — driver assignment. Single driver per order (known limitation, multi-load dispatch is a future phase). */}
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#0D2137",
+                        textTransform:"uppercase", marginBottom:8 }}>Driver</div>
+                      <select
+                        value={selectedOrder.driver_id ?? ""}
+                        disabled={orderActionLoading === "assign_driver" + selectedOrder.id}
+                        onChange={async (e) => {
+                          const prevDriverId = selectedOrder.driver_id ?? null;
+                          const newDriverId = e.target.value === "" ? null : e.target.value;
+                          if (newDriverId === prevDriverId) return;
+                          setOrderActionLoading("assign_driver" + selectedOrder.id);
+                          try {
+                            const { data, error } = await supabase.functions.invoke("leads-auth", {
+                              body: {
+                                password: storedPassword(),
+                                action: "update_order",
+                                order_id: selectedOrder.id,
+                                driver_id: newDriverId,
+                              },
+                            });
+                            if (error) throw error;
+                            const payload: any = data;
+                            if (payload?.error) {
+                              toast({ title: "Driver assignment failed", description: String(payload.error), variant: "destructive" as any });
+                              setAllOrders(prev => [...prev]);
+                              return;
+                            }
+                            const updated = payload?.order;
+                            if (updated) {
+                              setAllOrders(prev => prev.map((o: any) => o.id === selectedOrder.id ? { ...o, ...updated } : o));
+                            } else {
+                              setAllOrders(prev => prev.map((o: any) => o.id === selectedOrder.id ? { ...o, driver_id: newDriverId } : o));
+                            }
+                            toast({ title: newDriverId ? "Driver assigned" : "Driver unassigned" });
+                          } catch (err: any) {
+                            toast({ title: "Driver assignment failed", description: err?.message || "Network error", variant: "destructive" as any });
+                            setAllOrders(prev => [...prev]);
+                          } finally {
+                            setOrderActionLoading(null);
+                          }
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "8px 10px",
+                          fontSize: 12,
+                          border: "1px solid #E5E7EB",
+                          borderRadius: 6,
+                          background: "#fff",
+                          color: "#0D2137",
+                          fontWeight: 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <option value="">Unassigned</option>
+                        {drivers.filter(d => d.active).map(d => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}{d.truck_number ? ` (${d.truck_number})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* Order details */}
                     <div style={{ marginBottom:16 }}>
                       <div style={{ fontSize:10, fontWeight:500, letterSpacing:".06em", color:"#9CA3AF",
