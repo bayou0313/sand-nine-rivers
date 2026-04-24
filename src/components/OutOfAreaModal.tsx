@@ -283,12 +283,11 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
                 <Label htmlFor="lead-email" className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5" /> Email <span className="text-red-500">*</span>
                 </Label>
-                <Input
+                <EmailInput
                   id="lead-email"
-                  type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(v) => setEmail(formatEmail(v))}
                   maxLength={255}
                 />
               </div>
