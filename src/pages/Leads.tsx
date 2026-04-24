@@ -1049,6 +1049,28 @@ const Leads = () => {
   }, [fetchAbandonedSessions, toast]);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
+
+  // Path B Phase 1 — refreshDrivers is stable (empty deps). Reads sessionStorage at call-time, not capture-time.
+  // Mount effect below has [refreshDrivers] dep array — fires once, not per render or per tab switch.
+  const refreshDrivers = useCallback(async () => {
+    setLoadingDrivers(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { password: sessionStorage.getItem("leads_pw") || "", action: "list_drivers" },
+      });
+      if (error) throw error;
+      setDrivers(((data as any)?.drivers || []) as Driver[]);
+    } catch (e) {
+      console.error("[Leads] list_drivers failed:", e);
+    } finally {
+      setLoadingDrivers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    refreshDrivers();
+  }, [authenticated, refreshDrivers]);
   const basePrice = 195; // Pricing now lives on individual PITs
 
   const fetchLeads = useCallback(async (pw: string) => {
