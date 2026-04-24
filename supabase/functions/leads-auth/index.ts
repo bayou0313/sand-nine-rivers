@@ -343,6 +343,142 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile, url } = body;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // SLICE 1a: 2FA actions (verify_password, verify_totp, setup_totp_preview)
+    // ─────────────────────────────────────────────────────────────────────────
+    const ip = clientIp(req);
+    const sessionTokenForRate = (body?.session_token as string | undefined) || "no-session";
+
+    // ── VERIFY PASSWORD (step 1 of 2FA login) ──
+    if (action === "verify_password") {
+      if (!checkRateLimit([`pw:${ip}`, `pw:${ip}|${sessionTokenForRate}`])) {
+        return new Response(JSON.stringify({ valid: false, error: "Rate limited" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const expected = Deno.env.get("LEADS_PASSWORD");
+      const ok = !!expected && password === expected;
+      return new Response(JSON.stringify({ valid: ok }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── VERIFY TOTP (step 2 — accepts 6-digit code OR 12-char backup code) ──
+    if (action === "verify_totp") {
+      if (!checkRateLimit([`totp:${ip}`, `totp:${ip}|${sessionTokenForRate}`])) {
+        return new Response(JSON.stringify({ valid: false, error: "Rate limited" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const expectedPw = Deno.env.get("LEADS_PASSWORD");
+      if (!expectedPw || password !== expectedPw) {
+        return new Response(JSON.stringify({ valid: false, error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const totpSecret = Deno.env.get("LEADS_TOTP_SECRET");
+      const signingKey = Deno.env.get("LEADS_SESSION_SIGNING_KEY");
+      if (!totpSecret || !signingKey) {
+        return new Response(JSON.stringify({ valid: false, error: "2FA not configured. Visit /leads/setup-2fa." }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const code = typeof body?.code === "string" ? body.code.trim() : "";
+      const backupCode = typeof body?.backup_code === "string" ? body.backup_code.trim().toUpperCase() : "";
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      let valid = false;
+
+      if (code) {
+        valid = verifyTOTPCode(code, totpSecret);
+      } else if (backupCode) {
+        const { data: rows } = await sb
+          .from("leads_totp_backup_codes")
+          .select("id, code_hash")
+          .is("used_at", null);
+        for (const row of (rows || [])) {
+          try {
+            if (await bcrypt.compare(backupCode, row.code_hash)) {
+              await sb.from("leads_totp_backup_codes")
+                .update({ used_at: new Date().toISOString() })
+                .eq("id", row.id);
+              valid = true;
+              break;
+            }
+          } catch { /* continue */ }
+        }
+      }
+
+      if (!valid) {
+        return new Response(JSON.stringify({ valid: false }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const totp_session_token = await signSessionToken();
+      return new Response(JSON.stringify({ valid: true, totp_session_token }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── SETUP TOTP PREVIEW (password required; generates fresh secrets + backup codes) ──
+    // Wipes any existing backup codes (re-enrollment). Returns plaintext secrets ONCE.
+    if (action === "setup_totp_preview") {
+      if (!checkRateLimit([`setup:${ip}`])) {
+        return new Response(JSON.stringify({ ok: false, error: "Rate limited" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const expectedPw = Deno.env.get("LEADS_PASSWORD");
+      if (!expectedPw || password !== expectedPw) {
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      const totpSecretBase32 = generateTotpSecretBase32();
+      const sessionSigningKey = generateSigningKey();
+
+      const totp = new TOTP({
+        issuer: "Riversand-Leads",
+        label: "admin",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: Secret.fromBase32(totpSecretBase32),
+      });
+      const otpauthUrl = totp.toString();
+
+      // Generate 10 backup codes, hash each, wipe old, insert new
+      const plainCodes: string[] = [];
+      const hashedRows: { code_hash: string }[] = [];
+      for (let i = 0; i < 10; i++) {
+        const c = generateBackupCode();
+        plainCodes.push(c);
+        hashedRows.push({ code_hash: await bcrypt.hash(c, 10) });
+      }
+      await sb.from("leads_totp_backup_codes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      const { error: insErr } = await sb.from("leads_totp_backup_codes").insert(hashedRows);
+      if (insErr) {
+        return new Response(JSON.stringify({ ok: false, error: "Failed to store backup codes: " + insErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        leads_totp_secret: totpSecretBase32,
+        leads_session_signing_key: sessionSigningKey,
+        otpauth_url: otpauthUrl,
+        backup_codes: plainCodes,
+        instructions: [
+          "1. Copy LEADS_TOTP_SECRET and LEADS_SESSION_SIGNING_KEY into Lovable Cloud → Secrets.",
+          "2. Save the 10 backup codes somewhere safe — they will NOT be shown again.",
+          "3. Scan the QR code with your authenticator app (or paste the secret manually).",
+          "4. Do NOT close this page until you have verified BOTH secrets are saved in Cloud.",
+          "5. Test login at /leads with the 6-digit code before relying on this enrollment.",
+        ],
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // END SLICE 1a additions — existing actions below are UNCHANGED.
+    // ─────────────────────────────────────────────────────────────────────────
+
     // ── LIST SETTINGS (password required — for docs export) ──
     if (action === "list_settings") {
       console.log("[list_settings] reached, pw_len:", (password || "").length);
