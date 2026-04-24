@@ -5,6 +5,9 @@
  * deliveries, so tolls are NOT avoided. Never add haversine as a fallback.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { TOTP, Secret } from "https://esm.sh/otpauth@9.3.2";
+import bcrypt from "https://esm.sh/bcryptjs@2.4.3";
+import { encodeBase32 } from "https://deno.land/std@0.224.0/encoding/base32.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -200,6 +203,137 @@ const LARGE_CITIES_NO_STATIC_PRICE = new Set([
   "baton rouge",
 ]);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LEADS 2FA — Slice 1a: helpers + new actions (verify_password, verify_totp,
+// setup_totp_preview). Existing password gates are NOT modified in this slice.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// In-memory rate limiter. Persists across invocations within the same warm
+// isolate (~minutes). Keyed on `ip|sessionToken` AND `ip` separately so an
+// attacker rotating session tokens still hits the IP-level cap.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 5;
+const rateLimitBuckets = new Map<string, number[]>();
+
+function checkRateLimit(keys: string[]): boolean {
+  const now = Date.now();
+  for (const key of keys) {
+    if (!key) continue;
+    const arr = (rateLimitBuckets.get(key) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (arr.length >= RATE_LIMIT_MAX) {
+      rateLimitBuckets.set(key, arr);
+      return false;
+    }
+    arr.push(now);
+    rateLimitBuckets.set(key, arr);
+  }
+  // Opportunistic cleanup
+  if (rateLimitBuckets.size > 5000) {
+    for (const [k, v] of rateLimitBuckets) {
+      const filtered = v.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+      if (filtered.length === 0) rateLimitBuckets.delete(k);
+      else rateLimitBuckets.set(k, filtered);
+    }
+  }
+  return true;
+}
+
+function clientIp(req: Request): string {
+  return (req.headers.get("x-forwarded-for") || "").split(",")[0].trim()
+    || req.headers.get("cf-connecting-ip")
+    || req.headers.get("x-real-ip")
+    || "unknown";
+}
+
+// HMAC-SHA256 session token: base64url(JSON payload).base64url(signature)
+async function hmacSign(payload: string, key: string): Promise<string> {
+  const enc = new TextEncoder();
+  const ck = await crypto.subtle.importKey(
+    "raw", enc.encode(key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", ck, enc.encode(payload));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlEncode(s: string): string {
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlDecode(s: string): string {
+  const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+  return atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
+}
+
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12h
+
+async function signSessionToken(): Promise<string | null> {
+  const key = Deno.env.get("LEADS_SESSION_SIGNING_KEY");
+  if (!key) return null;
+  const payload = JSON.stringify({ iat: Date.now(), exp: Date.now() + SESSION_TTL_MS, v: 1 });
+  const encoded = b64urlEncode(payload);
+  const sig = await hmacSign(encoded, key);
+  return `${encoded}.${sig}`;
+}
+
+async function verifySessionToken(token: string | undefined | null): Promise<boolean> {
+  if (!token || typeof token !== "string") return false;
+  const key = Deno.env.get("LEADS_SESSION_SIGNING_KEY");
+  if (!key) return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const [encoded, sig] = parts;
+  const expected = await hmacSign(encoded, key);
+  // Constant-time compare
+  if (expected.length !== sig.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ sig.charCodeAt(i);
+  if (diff !== 0) return false;
+  try {
+    const payload = JSON.parse(b64urlDecode(encoded));
+    if (typeof payload?.exp !== "number" || Date.now() > payload.exp) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function verifyTOTPCode(code: string, secretBase32: string): boolean {
+  try {
+    const totp = new TOTP({
+      issuer: "Riversand-Leads",
+      label: "admin",
+      algorithm: "SHA1",
+      digits: 6,
+      period: 30,
+      secret: Secret.fromBase32(secretBase32),
+    });
+    // ±1 step window (90s tolerance)
+    const delta = totp.validate({ token: code, window: 1 });
+    return delta !== null;
+  } catch {
+    return false;
+  }
+}
+
+function generateBackupCode(): string {
+  // 12-char base32-style alphanumeric (excludes ambiguous 0/O/1/I/L)
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
+}
+
+function generateTotpSecretBase32(): string {
+  const bytes = new Uint8Array(20); // 160 bits
+  crypto.getRandomValues(bytes);
+  return encodeBase32(bytes).replace(/=+$/, "");
+}
+
+function generateSigningKey(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return encodeBase32(bytes).replace(/=+$/, "");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -208,6 +342,142 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const { password, action, id, ids, stage, notes, lead_number, order_number, settings, pit, order_id, collected_by, send_email, pit_id, cities, city_page, city_page_id, base_price, free_miles, price_per_extra_mile, url } = body;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SLICE 1a: 2FA actions (verify_password, verify_totp, setup_totp_preview)
+    // ─────────────────────────────────────────────────────────────────────────
+    const ip = clientIp(req);
+    const sessionTokenForRate = (body?.session_token as string | undefined) || "no-session";
+
+    // ── VERIFY PASSWORD (step 1 of 2FA login) ──
+    if (action === "verify_password") {
+      if (!checkRateLimit([`pw:${ip}`, `pw:${ip}|${sessionTokenForRate}`])) {
+        return new Response(JSON.stringify({ valid: false, error: "Rate limited" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const expected = Deno.env.get("LEADS_PASSWORD");
+      const ok = !!expected && password === expected;
+      return new Response(JSON.stringify({ valid: ok }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── VERIFY TOTP (step 2 — accepts 6-digit code OR 12-char backup code) ──
+    if (action === "verify_totp") {
+      if (!checkRateLimit([`totp:${ip}`, `totp:${ip}|${sessionTokenForRate}`])) {
+        return new Response(JSON.stringify({ valid: false, error: "Rate limited" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const expectedPw = Deno.env.get("LEADS_PASSWORD");
+      if (!expectedPw || password !== expectedPw) {
+        return new Response(JSON.stringify({ valid: false, error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const totpSecret = Deno.env.get("LEADS_TOTP_SECRET");
+      const signingKey = Deno.env.get("LEADS_SESSION_SIGNING_KEY");
+      if (!totpSecret || !signingKey) {
+        return new Response(JSON.stringify({ valid: false, error: "2FA not configured. Visit /leads/setup-2fa." }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const code = typeof body?.code === "string" ? body.code.trim() : "";
+      const backupCode = typeof body?.backup_code === "string" ? body.backup_code.trim().toUpperCase() : "";
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      let valid = false;
+
+      if (code) {
+        valid = verifyTOTPCode(code, totpSecret);
+      } else if (backupCode) {
+        const { data: rows } = await sb
+          .from("leads_totp_backup_codes")
+          .select("id, code_hash")
+          .is("used_at", null);
+        for (const row of (rows || [])) {
+          try {
+            if (await bcrypt.compare(backupCode, row.code_hash)) {
+              await sb.from("leads_totp_backup_codes")
+                .update({ used_at: new Date().toISOString() })
+                .eq("id", row.id);
+              valid = true;
+              break;
+            }
+          } catch { /* continue */ }
+        }
+      }
+
+      if (!valid) {
+        return new Response(JSON.stringify({ valid: false }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const totp_session_token = await signSessionToken();
+      return new Response(JSON.stringify({ valid: true, totp_session_token }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── SETUP TOTP PREVIEW (password required; generates fresh secrets + backup codes) ──
+    // Wipes any existing backup codes (re-enrollment). Returns plaintext secrets ONCE.
+    if (action === "setup_totp_preview") {
+      if (!checkRateLimit([`setup:${ip}`])) {
+        return new Response(JSON.stringify({ ok: false, error: "Rate limited" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const expectedPw = Deno.env.get("LEADS_PASSWORD");
+      if (!expectedPw || password !== expectedPw) {
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      const totpSecretBase32 = generateTotpSecretBase32();
+      const sessionSigningKey = generateSigningKey();
+
+      const totp = new TOTP({
+        issuer: "Riversand-Leads",
+        label: "admin",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: Secret.fromBase32(totpSecretBase32),
+      });
+      const otpauthUrl = totp.toString();
+
+      // Generate 10 backup codes, hash each, wipe old, insert new
+      const plainCodes: string[] = [];
+      const hashedRows: { code_hash: string }[] = [];
+      for (let i = 0; i < 10; i++) {
+        const c = generateBackupCode();
+        plainCodes.push(c);
+        hashedRows.push({ code_hash: await bcrypt.hash(c, 10) });
+      }
+      await sb.from("leads_totp_backup_codes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      const { error: insErr } = await sb.from("leads_totp_backup_codes").insert(hashedRows);
+      if (insErr) {
+        return new Response(JSON.stringify({ ok: false, error: "Failed to store backup codes: " + insErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        leads_totp_secret: totpSecretBase32,
+        leads_session_signing_key: sessionSigningKey,
+        otpauth_url: otpauthUrl,
+        backup_codes: plainCodes,
+        instructions: [
+          "1. Copy LEADS_TOTP_SECRET and LEADS_SESSION_SIGNING_KEY into Lovable Cloud → Secrets.",
+          "2. Save the 10 backup codes somewhere safe — they will NOT be shown again.",
+          "3. Scan the QR code with your authenticator app (or paste the secret manually).",
+          "4. Do NOT close this page until you have verified BOTH secrets are saved in Cloud.",
+          "5. Test login at /leads with the 6-digit code before relying on this enrollment.",
+        ],
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // END SLICE 1a additions — existing actions below are UNCHANGED.
+    // ─────────────────────────────────────────────────────────────────────────
 
     // ── LIST SETTINGS (password required — for docs export) ──
     if (action === "list_settings") {
