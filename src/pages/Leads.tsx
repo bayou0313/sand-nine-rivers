@@ -3336,7 +3336,17 @@ const Leads = () => {
           </>
         );
 
-      case "city_pages": {
+      case "drivers":
+        return (
+          <DriversTab
+            drivers={drivers}
+            loading={loadingDrivers}
+            password={storedPassword()}
+            onRefresh={refreshDrivers}
+          />
+        );
+
+
         // Detect duplicate slugs
         const slugCounts: Record<string, number> = {};
         cityPages.forEach((cp: any) => { slugCounts[cp.city_slug] = (slugCounts[cp.city_slug] || 0) + 1; });
