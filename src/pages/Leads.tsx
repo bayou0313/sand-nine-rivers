@@ -3346,7 +3346,7 @@ const Leads = () => {
           />
         );
 
-
+      case "city_pages": {
         // Detect duplicate slugs
         const slugCounts: Record<string, number> = {};
         cityPages.forEach((cp: any) => { slugCounts[cp.city_slug] = (slugCounts[cp.city_slug] || 0) + 1; });
