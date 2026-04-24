@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Driver } from "@/components/leads/drivers/types";
 import { summarizeOrders, toIsoDate } from "@/lib/schedule-adapter";
 import WeekStrip from "./WeekStrip";
 import DayPanel from "./DayPanel";
@@ -11,9 +12,13 @@ interface Props {
    * to drill into the existing Order Detail side panel (Decision 3).
    */
   onOrderClick: (orderId: string) => void;
+  /** Path B Phase 2 — drivers list lifted from Leads.tsx, threaded for Send-to-Driver button. */
+  drivers?: Driver[];
+  /** Path B Phase 2 — Send to Driver. Opens WhatsApp with prefilled message; operator presses send. */
+  onSendToDriver?: (order: any, driver: Driver) => void;
 }
 
-export default function ScheduleTab({ onOrderClick }: Props) {
+export default function ScheduleTab({ onOrderClick, drivers = [], onSendToDriver }: Props) {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -91,6 +96,16 @@ export default function ScheduleTab({ onOrderClick }: Props) {
     fetchWindowCounts(new Date());
   }, [fetchWindowCounts]);
 
+  // Path B Phase 2 — Send to Driver from a Schedule card. Optimistically patch local
+  // dayOrders so "Last sent" updates immediately; parent owns the persistent allOrders
+  // patch + revert-on-failure flow.
+  const handleCardSend = useCallback((order: any, driver: Driver) => {
+    if (!onSendToDriver) return;
+    const iso = new Date().toISOString();
+    setDayOrders(prev => prev.map(o => o.id === order.id ? { ...o, message_sent_at: iso } : o));
+    onSendToDriver(order, driver);
+  }, [onSendToDriver]);
+
   const summary = useMemo(() => summarizeOrders(dayOrders), [dayOrders]);
   const dateLabel = selectedDate.toLocaleDateString("en-US", {
     weekday: "long",
@@ -126,6 +141,8 @@ export default function ScheduleTab({ onOrderClick }: Props) {
         orders={dayOrders}
         loading={loading}
         onOpenOrder={onOrderClick}
+        drivers={drivers}
+        onSendToDriver={onSendToDriver ? handleCardSend : undefined}
       />
     </div>
   );

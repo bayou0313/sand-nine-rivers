@@ -1,3 +1,4 @@
+import type { Driver } from "@/components/leads/drivers/types";
 import ScheduleOrderCard from "./ScheduleOrderCard";
 
 interface OrderLike {
@@ -12,9 +13,12 @@ interface Props {
   orders: OrderLike[];
   loading: boolean;
   onOpenOrder: (id: string) => void;
+  /** Path B Phase 2 — threaded down for Send-to-Driver button on cards. */
+  drivers?: Driver[];
+  onSendToDriver?: (order: any, driver: Driver) => void;
 }
 
-export default function DayPanel({ date, orders, loading, onOpenOrder }: Props) {
+export default function DayPanel({ date, orders, loading, onOpenOrder, drivers = [], onSendToDriver }: Props) {
   const heading = date.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -82,7 +86,13 @@ export default function DayPanel({ date, orders, loading, onOpenOrder }: Props) 
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {orders.map(o => (
-            <ScheduleOrderCard key={o.id} order={o} onOpen={onOpenOrder} />
+            <ScheduleOrderCard
+              key={o.id}
+              order={o}
+              onOpen={onOpenOrder}
+              drivers={drivers}
+              onSendToDriver={onSendToDriver}
+            />
           ))}
         </div>
       )}
