@@ -295,7 +295,7 @@ const WhatsAppButton = () => {
                     <Input
                       placeholder="Notes (optional)"
                       value={formData.notes}
-                      onChange={(e) => setFormData((d) => ({ ...d, notes: e.target.value }))}
+                      onChange={(e) => setFormData((d) => ({ ...d, notes: formatSentence(e.target.value) }))}
                       maxLength={200}
                       className="text-sm h-9"
                     />
