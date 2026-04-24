@@ -707,7 +707,7 @@ const Leads = () => {
     try {
       const { data, error } = await supabase.functions.invoke("leads-auth", {
         body: {
-          password: storedPassword(),
+          password: sessionStorage.getItem("leads_pw") || "",
           action: "update_order",
           order_id: order.id,
           message_sent_at: iso,
