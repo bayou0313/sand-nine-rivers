@@ -11,7 +11,7 @@ import { Loader2, UserX, UserPlus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPhone, stripPhone } from "@/lib/format";
-import { formatEmail } from "@/lib/textFormat";
+import { formatEmail, formatProperName, formatProperNameFinal } from "@/lib/textFormat";
 import EmailInput from "@/components/EmailInput";
 import { PAYMENT_TYPES, type Driver, type PaymentType } from "./types";
 
@@ -243,7 +243,8 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
               autoComplete="name"
               maxLength={100}
               value={form.name}
-              onChange={(e) => update("name", e.target.value)}
+              onChange={(e) => update("name", formatProperName(e.target.value))}
+              onBlur={(e) => update("name", formatProperNameFinal(e.target.value))}
               placeholder="John Smith"
               className={`${INPUT_CLS} ${showNameError ? "border-2" : ""}`}
               style={showNameError ? { borderColor: ERROR_RED } : undefined}
