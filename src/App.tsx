@@ -19,6 +19,7 @@ const OrderMobile = lazy(() => import("./pages/OrderMobile.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const Leads = lazy(() => import("./pages/Leads.tsx"));
+const LeadsSetup2FA = lazy(() => import("./pages/LeadsSetup2FA.tsx"));
 const CityPage = lazy(() => import("./pages/CityPage.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
@@ -324,6 +325,7 @@ function AppContent() {
         <Route path="/admin" element={<Suspense fallback={<RouteFallback />}><Admin /></Suspense>} />
         <Route path="/admin/login" element={<Suspense fallback={<RouteFallback />}><AdminLogin /></Suspense>} />
         <Route path="/leads" element={<Suspense fallback={<RouteFallback />}><Leads /></Suspense>} />
+        <Route path="/leads/setup-2fa" element={<Suspense fallback={<RouteFallback />}><LeadsSetup2FA /></Suspense>} />
         <Route path="/review" element={<Suspense fallback={<RouteFallback />}><Review /></Suspense>} />
         <Route path="/chalmette-la/river-sand-delivery" element={<Navigate to="/chalmette/river-sand-delivery" replace />} />
         <Route path="/bridge-city-la/river-sand-delivery" element={<Navigate to="/bridge-city/river-sand-delivery" replace />} />
