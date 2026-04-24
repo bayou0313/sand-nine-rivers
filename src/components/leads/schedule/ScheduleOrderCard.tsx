@@ -85,7 +85,7 @@ export default function ScheduleOrderCard({ order, onOpen }: Props) {
           <div style={{ display: "flex", gap: 12, marginTop: 6, fontSize: 11, color: "#6B7280" }}>
             <span>{order.delivery_window || "—"}</span>
             <span>•</span>
-            <span>{qty} load{qty === 1 ? "" : "s"}</span>
+            <span>{qty} yard{qty === 1 ? "" : "s"}</span>
             <span>•</span>
             <span>{paymentLabel}</span>
           </div>
