@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, isSameDay, isSunday, isBefore, startOfDay, isSaturday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatPhone } from "@/lib/format";
+import { formatProperName, formatProperNameFinal, formatSentence } from "@/lib/textFormat";
 import { WAYS_PHONE_RAW } from "@/lib/constants";
 
 const WHATSAPP_NUMBER = "15043582000";
