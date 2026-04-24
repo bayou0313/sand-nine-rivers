@@ -6,14 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, UserX, UserPlus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPhone, stripPhone } from "@/lib/format";
+import EmailInput from "@/components/EmailInput";
 import { PAYMENT_TYPES, type Driver, type PaymentType } from "./types";
 
 const BRAND_GOLD = "#C07A00";
 const BRAND_NAVY = "#0D2137";
+const ERROR_RED = "#DC2626";
+const LABEL_CLS = "font-body text-xs text-muted-foreground uppercase tracking-wider mb-1 block";
+const INPUT_CLS = "h-11 rounded-lg";
 
 interface Props {
   open: boolean;
@@ -68,6 +73,8 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
   const [original, setOriginal] = useState<FormState>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [formAttempted, setFormAttempted] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
   useEffect(() => {
@@ -76,6 +83,8 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
       setForm(next);
       setOriginal(next);
       setPhoneError(null);
+      setNameError(null);
+      setFormAttempted(false);
       setConfirmDeactivate(false);
     }
   }, [open, driver]);
@@ -83,6 +92,7 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) => {
     setForm(f => ({ ...f, [k]: v }));
     if (k === "phone") setPhoneError(null);
+    if (k === "name") setNameError(null);
   };
 
   async function invokeUpsert(payload: Record<string, unknown>) {
@@ -92,30 +102,34 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
   }
 
   async function handleSave() {
+    setFormAttempted(true);
     setPhoneError(null);
+    setNameError(null);
 
     const trimmedName = form.name.trim();
     const phoneDigits = stripPhone(form.phone);
 
+    let hasError = false;
     if (!isEdit) {
       if (!trimmedName) {
-        toast({ title: "Name is required", variant: "destructive" });
-        return;
+        setNameError("Name is required");
+        hasError = true;
       }
       if (phoneDigits.length < 10) {
         setPhoneError("Phone must have at least 10 digits");
-        return;
+        hasError = true;
       }
     } else {
       if (form.name !== original.name && !trimmedName) {
-        toast({ title: "Name cannot be empty", variant: "destructive" });
-        return;
+        setNameError("Name cannot be empty");
+        hasError = true;
       }
       if (form.phone !== original.phone && phoneDigits.length < 10) {
         setPhoneError("Phone must have at least 10 digits");
-        return;
+        hasError = true;
       }
     }
+    if (hasError) return;
 
     setSaving(true);
     try {
@@ -208,6 +222,9 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
     }
   }
 
+  const showNameError = formAttempted && !!nameError;
+  const showPhoneError = formAttempted && !!phoneError;
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && !saving && onClose()}>
       <DialogContent className="max-w-lg">
@@ -219,27 +236,41 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
 
         <div className="space-y-3">
           <div>
-            <Label htmlFor="drv-name">Name *</Label>
+            <Label htmlFor="drv-name" className={LABEL_CLS}>Name *</Label>
             <Input
               id="drv-name"
+              autoComplete="name"
               maxLength={100}
               value={form.name}
               onChange={(e) => update("name", e.target.value)}
               placeholder="John Smith"
+              className={`${INPUT_CLS} ${showNameError ? "border-2" : ""}`}
+              style={showNameError ? { borderColor: ERROR_RED } : undefined}
             />
+            {showNameError && (
+              <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ERROR_RED }}>
+                <AlertCircle className="w-3 h-3" />
+                {nameError}
+              </div>
+            )}
           </div>
 
           <div>
-            <Label htmlFor="drv-phone">Phone *</Label>
+            <Label htmlFor="drv-phone" className={LABEL_CLS}>Phone *</Label>
             <Input
               id="drv-phone"
+              type="tel"
+              autoComplete="tel"
+              maxLength={14}
+              inputMode="tel"
               value={form.phone}
               onChange={(e) => update("phone", formatPhone(e.target.value))}
               placeholder="(504) 555-1234"
-              inputMode="tel"
+              className={`${INPUT_CLS} ${showPhoneError ? "border-2" : ""}`}
+              style={showPhoneError ? { borderColor: ERROR_RED } : undefined}
             />
-            {phoneError && (
-              <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: "#DC2626" }}>
+            {showPhoneError && (
+              <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ERROR_RED }}>
                 <AlertCircle className="w-3 h-3" />
                 {phoneError}
               </div>
@@ -247,53 +278,55 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
           </div>
 
           <div>
-            <Label htmlFor="drv-email">Email</Label>
-            <Input
+            <Label htmlFor="drv-email" className={LABEL_CLS}>Email</Label>
+            <EmailInput
               id="drv-email"
-              type="email"
               value={form.email}
-              onChange={(e) => update("email", e.target.value)}
+              onChange={(v) => update("email", v)}
               placeholder="driver@example.com"
+              className={INPUT_CLS}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="drv-truck">Truck Number</Label>
+              <Label htmlFor="drv-truck" className={LABEL_CLS}>Truck Number</Label>
               <Input
                 id="drv-truck"
                 value={form.truck_number}
                 onChange={(e) => update("truck_number", e.target.value)}
                 placeholder="T-101"
+                className={INPUT_CLS}
               />
             </div>
             <div>
-              <Label htmlFor="drv-license">License Expires</Label>
+              <Label htmlFor="drv-license" className={LABEL_CLS}>License Expires</Label>
               <Input
                 id="drv-license"
                 type="date"
                 value={form.license_expires_on}
                 onChange={(e) => update("license_expires_on", e.target.value)}
+                className={INPUT_CLS}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="drv-paytype">Payment Type</Label>
-              <select
-                id="drv-paytype"
-                value={form.payment_type}
-                onChange={(e) => update("payment_type", e.target.value as PaymentType)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {PAYMENT_TYPES.map(p => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
-                ))}
-              </select>
+              <Label htmlFor="drv-paytype" className={LABEL_CLS}>Payment Type</Label>
+              <Select value={form.payment_type} onValueChange={(v) => update("payment_type", v as PaymentType)}>
+                <SelectTrigger id="drv-paytype" className={INPUT_CLS}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_TYPES.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <Label htmlFor="drv-payrate">Payment Rate ($)</Label>
+              <Label htmlFor="drv-payrate" className={LABEL_CLS}>Payment Rate ($)</Label>
               <Input
                 id="drv-payrate"
                 type="number"
@@ -301,15 +334,17 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
                 min="0"
                 value={form.payment_rate}
                 onChange={(e) => update("payment_rate", e.target.value)}
+                className={INPUT_CLS}
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="drv-notes">Notes</Label>
+            <Label htmlFor="drv-notes" className={LABEL_CLS}>Notes</Label>
             <Textarea
               id="drv-notes"
-              rows={3}
+              rows={2}
+              maxLength={1000}
               value={form.notes}
               onChange={(e) => update("notes", e.target.value)}
               placeholder="Internal notes about this driver"
@@ -318,7 +353,7 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
 
           {isEdit && (
             <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: "#E5E7EB" }}>
-              <Label htmlFor="drv-active" className="cursor-pointer">Active</Label>
+              <Label htmlFor="drv-active" className={`${LABEL_CLS} cursor-pointer mb-0`}>Active</Label>
               <Switch id="drv-active" checked={form.active} onCheckedChange={(v) => update("active", v)} />
             </div>
           )}
