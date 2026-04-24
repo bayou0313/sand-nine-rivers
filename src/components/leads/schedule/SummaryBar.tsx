@@ -50,7 +50,7 @@ export default function SummaryBar({ summary, dateLabel }: Props) {
         <div style={numStyle}>{summary.orders}</div>
       </div>
       <div style={cell}>
-        <div style={labelStyle}>Loads</div>
+        <div style={labelStyle}>Yards</div>
         <div style={numStyle}>{summary.loads}</div>
       </div>
       <div style={cell}>

@@ -93,7 +93,7 @@ export default function WeekStrip({ selectedDate, onSelectDate, counts }: Props)
                 color: isSelected ? "#FFFFFF" : c.orders > 0 ? BRAND_GOLD : "#9CA3AF",
               }}
             >
-              {c.orders > 0 ? `${c.orders} • ${c.loads}L` : "—"}
+              {c.orders > 0 ? `${c.orders} • ${c.loads}Y` : "—"}
             </div>
           </button>
         );
