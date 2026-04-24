@@ -203,6 +203,137 @@ const LARGE_CITIES_NO_STATIC_PRICE = new Set([
   "baton rouge",
 ]);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LEADS 2FA — Slice 1a: helpers + new actions (verify_password, verify_totp,
+// setup_totp_preview). Existing password gates are NOT modified in this slice.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// In-memory rate limiter. Persists across invocations within the same warm
+// isolate (~minutes). Keyed on `ip|sessionToken` AND `ip` separately so an
+// attacker rotating session tokens still hits the IP-level cap.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 5;
+const rateLimitBuckets = new Map<string, number[]>();
+
+function checkRateLimit(keys: string[]): boolean {
+  const now = Date.now();
+  for (const key of keys) {
+    if (!key) continue;
+    const arr = (rateLimitBuckets.get(key) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (arr.length >= RATE_LIMIT_MAX) {
+      rateLimitBuckets.set(key, arr);
+      return false;
+    }
+    arr.push(now);
+    rateLimitBuckets.set(key, arr);
+  }
+  // Opportunistic cleanup
+  if (rateLimitBuckets.size > 5000) {
+    for (const [k, v] of rateLimitBuckets) {
+      const filtered = v.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+      if (filtered.length === 0) rateLimitBuckets.delete(k);
+      else rateLimitBuckets.set(k, filtered);
+    }
+  }
+  return true;
+}
+
+function clientIp(req: Request): string {
+  return (req.headers.get("x-forwarded-for") || "").split(",")[0].trim()
+    || req.headers.get("cf-connecting-ip")
+    || req.headers.get("x-real-ip")
+    || "unknown";
+}
+
+// HMAC-SHA256 session token: base64url(JSON payload).base64url(signature)
+async function hmacSign(payload: string, key: string): Promise<string> {
+  const enc = new TextEncoder();
+  const ck = await crypto.subtle.importKey(
+    "raw", enc.encode(key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", ck, enc.encode(payload));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlEncode(s: string): string {
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlDecode(s: string): string {
+  const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+  return atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
+}
+
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12h
+
+async function signSessionToken(): Promise<string | null> {
+  const key = Deno.env.get("LEADS_SESSION_SIGNING_KEY");
+  if (!key) return null;
+  const payload = JSON.stringify({ iat: Date.now(), exp: Date.now() + SESSION_TTL_MS, v: 1 });
+  const encoded = b64urlEncode(payload);
+  const sig = await hmacSign(encoded, key);
+  return `${encoded}.${sig}`;
+}
+
+async function verifySessionToken(token: string | undefined | null): Promise<boolean> {
+  if (!token || typeof token !== "string") return false;
+  const key = Deno.env.get("LEADS_SESSION_SIGNING_KEY");
+  if (!key) return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const [encoded, sig] = parts;
+  const expected = await hmacSign(encoded, key);
+  // Constant-time compare
+  if (expected.length !== sig.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ sig.charCodeAt(i);
+  if (diff !== 0) return false;
+  try {
+    const payload = JSON.parse(b64urlDecode(encoded));
+    if (typeof payload?.exp !== "number" || Date.now() > payload.exp) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function verifyTOTPCode(code: string, secretBase32: string): boolean {
+  try {
+    const totp = new TOTP({
+      issuer: "Riversand-Leads",
+      label: "admin",
+      algorithm: "SHA1",
+      digits: 6,
+      period: 30,
+      secret: Secret.fromBase32(secretBase32),
+    });
+    // ±1 step window (90s tolerance)
+    const delta = totp.validate({ token: code, window: 1 });
+    return delta !== null;
+  } catch {
+    return false;
+  }
+}
+
+function generateBackupCode(): string {
+  // 12-char base32-style alphanumeric (excludes ambiguous 0/O/1/I/L)
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => alphabet[b % alphabet.length]).join("");
+}
+
+function generateTotpSecretBase32(): string {
+  const bytes = new Uint8Array(20); // 160 bits
+  crypto.getRandomValues(bytes);
+  return encodeBase32(bytes).replace(/=+$/, "");
+}
+
+function generateSigningKey(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return encodeBase32(bytes).replace(/=+$/, "");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
