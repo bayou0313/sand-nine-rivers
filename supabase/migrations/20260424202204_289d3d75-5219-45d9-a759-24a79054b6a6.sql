@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN message_sent_at TIMESTAMPTZ NULL;
