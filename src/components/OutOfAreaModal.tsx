@@ -258,8 +258,10 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
                   id="lead-name"
                   placeholder="Your full name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(formatProperName(e.target.value))}
+                  onBlur={(e) => setName(formatProperNameFinal(e.target.value))}
                   maxLength={100}
+                  autoComplete="name"
                 />
               </div>
               <div>
