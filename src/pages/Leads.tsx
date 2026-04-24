@@ -225,7 +225,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "drivers" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: "#0D2137", called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
