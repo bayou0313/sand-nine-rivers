@@ -24,6 +24,7 @@ import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 import { WAYS_PHONE_DISPLAY } from "@/lib/constants";
 import ScheduleTab from "@/components/leads/schedule/ScheduleTab";
+import { formatOrderMessage, buildWhatsAppUrl, canSendToDriver } from "@/lib/whatsapp-message";
 const BRAND_GOLD = "#C07A00";
 const BRAND_NAVY = "#0D2137"; // used for login screen only
 const POSITIVE = "#059669";
