@@ -130,17 +130,19 @@ const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
                   type="text"
                   placeholder="Name (optional)"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(formatProperName(e.target.value))}
+                  onBlur={(e) => setName(formatProperNameFinal(e.target.value))}
+                  maxLength={100}
+                  autoComplete="name"
                   className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                 />
               </div>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  type="email"
+                <EmailInput
                   placeholder="Email (required)"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(v) => setEmail(formatEmail(v))}
                   required
                   className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                 />
@@ -149,9 +151,12 @@ const WaitlistPage = ({ cityPage }: { cityPage: any }) => {
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={14}
                   placeholder="Phone (optional)"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
                   className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                 />
               </div>
