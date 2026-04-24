@@ -25,20 +25,22 @@ export default function ScheduleTab({ onOrderClick }: Props) {
 
   const selectedIso = useMemo(() => toIsoDate(selectedDate), [selectedDate]);
 
-  // Fetch orders for the selected day. Direct supabase read per Decision A
-  // (matches existing Schedule pattern; no new leads-auth action).
+  // Correction to Slice 1 — Schedule reads now route through leads-auth, not direct supabase.from().
+  // Original Decision A assumed the direct read pattern worked; diagnosis revealed the orders table
+  // RLS policy (admins_read_all_orders) requires an authenticated admin JWT, but /leads sessions
+  // hold only a sessionStorage password and query as the anon role. Anon reads were silently
+  // filtered to []. All other Leads tabs already route through leads-auth — this aligns Schedule
+  // with that pattern.
   const fetchDay = useCallback(async (iso: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("delivery_date", iso)
-        .order("delivery_window", { ascending: true })
-        .order("created_at", { ascending: true })
-        .limit(10000); // defensive cap — Supabase silent 1000-row truncation
+      const password = sessionStorage.getItem("leads_pw") || "";
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { action: "schedule_get_day", password, iso },
+      });
       if (error) throw error;
-      setDayOrders(data || []);
+      if (data?.error) throw new Error(data.error);
+      setDayOrders(data?.orders || []);
     } catch (err) {
       console.warn("[ScheduleTab] fetchDay failed:", err);
       setDayOrders([]);
@@ -54,15 +56,19 @@ export default function ScheduleTab({ onOrderClick }: Props) {
     const end = new Date(centerDate);
     end.setDate(end.getDate() + 83);
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("delivery_date, quantity")
-        .gte("delivery_date", toIsoDate(start))
-        .lte("delivery_date", toIsoDate(end))
-        .limit(10000); // defensive cap
+      const password = sessionStorage.getItem("leads_pw") || "";
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: {
+          action: "schedule_get_window_counts",
+          password,
+          start: toIsoDate(start),
+          end: toIsoDate(end),
+        },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       const next: Record<string, { orders: number; loads: number }> = {};
-      (data || []).forEach((o: any) => {
+      (data?.rows || []).forEach((o: any) => {
         const d = o.delivery_date;
         if (!d) return;
         if (!next[d]) next[d] = { orders: 0, loads: 0 };
