@@ -688,6 +688,10 @@ const Leads = () => {
   const [generatedStripeUrl, setGeneratedStripeUrl] = useState<string | null>(null);
   const [genLinkEmail, setGenLinkEmail] = useState("");
 
+  // Path B Phase 1 — Drivers shared state. Single fetch on mount; explicit refresh after edits. No polling.
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
+
   // SEO state
   const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
   const [notrackIps, setNotrackIps] = useState<string[]>([]);
