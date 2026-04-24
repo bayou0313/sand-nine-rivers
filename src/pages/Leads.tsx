@@ -6275,6 +6275,50 @@ const Leads = () => {
                           </option>
                         ))}
                       </select>
+
+                      {/* Path B Phase 2 — Send to Driver. Opens WhatsApp with prefilled message; operator presses send. */}
+                      {(() => {
+                        const assignedDriver = drivers.find(d => d.id === selectedOrder.driver_id) || null;
+                        const { canSend, reason } = canSendToDriver(selectedOrder, assignedDriver);
+                        const lastSent = selectedOrder.message_sent_at
+                          ? new Date(selectedOrder.message_sent_at).toLocaleString("en-US", {
+                              month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                            })
+                          : null;
+                        return (
+                          <div style={{ marginTop: 10 }}>
+                            <button
+                              type="button"
+                              disabled={!canSend}
+                              title={reason || ""}
+                              onClick={() => assignedDriver && handleSendToDriver(selectedOrder, assignedDriver)}
+                              style={{
+                                width: "100%",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 8,
+                                padding: "9px 12px",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                letterSpacing: ".02em",
+                                borderRadius: 6,
+                                border: "none",
+                                cursor: canSend ? "pointer" : "not-allowed",
+                                background: canSend ? BRAND_GOLD : "#9CA3AF",
+                                color: "#FFFFFF",
+                                transition: "opacity 150ms ease",
+                              }}
+                            >
+                              <MessageCircle size={14} />
+                              Send to Driver
+                            </button>
+                            <div style={{ marginTop: 6, fontSize: 11, color: "#6B7280", textAlign: "center" }}>
+                              {lastSent ? `Last sent to driver: ${lastSent}` : "Not sent yet."}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Order details */}
