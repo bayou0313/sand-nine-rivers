@@ -4372,6 +4372,8 @@ const Leads = () => {
               setActivePage("all");
               setSelectedOrderId(id);
             }}
+            drivers={drivers}
+            onSendToDriver={handleSendToDriver}
           />
         );
 
