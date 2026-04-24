@@ -5,6 +5,9 @@
  * deliveries, so tolls are NOT avoided. Never add haversine as a fallback.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { TOTP, Secret } from "https://esm.sh/otpauth@9.3.2";
+import bcrypt from "https://esm.sh/bcryptjs@2.4.3";
+import { encodeBase32 } from "https://deno.land/std@0.224.0/encoding/base32.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
