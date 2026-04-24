@@ -2878,50 +2878,93 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Required-field validation
-      const name = typeof driver.name === "string" ? driver.name.trim() : "";
-      const phoneRaw = typeof driver.phone === "string" ? driver.phone.trim() : "";
-      if (!name) {
+      // Phase 0 validator fix — partial updates by id do not require re-sending name/phone.
+      // Required fields apply to INSERT only.
+      const isUpdate = !!driver.id;
+      const hasName = Object.prototype.hasOwnProperty.call(driver, "name");
+      const hasPhone = Object.prototype.hasOwnProperty.call(driver, "phone");
+
+      let name: string | undefined;
+      if (hasName) {
+        name = typeof driver.name === "string" ? driver.name.trim() : "";
+        if (!name) {
+          return new Response(JSON.stringify({ error: "Driver name is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      } else if (!isUpdate) {
         return new Response(JSON.stringify({ error: "Driver name is required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (!phoneRaw) {
+
+      let phone: string | undefined;
+      if (hasPhone) {
+        const phoneRaw = typeof driver.phone === "string" ? driver.phone.trim() : "";
+        if (!phoneRaw) {
+          return new Response(JSON.stringify({ error: "Driver phone is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        // Normalize phone to digits-only (matches riversand's existing phone handling)
+        phone = phoneRaw.replace(/\D/g, "");
+        if (!phone) {
+          return new Response(JSON.stringify({ error: "Driver phone must contain digits" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      } else if (!isUpdate) {
         return new Response(JSON.stringify({ error: "Driver phone is required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Normalize phone to digits-only (matches riversand's existing phone handling)
-      const phone = phoneRaw.replace(/\D/g, "");
-      if (!phone) {
-        return new Response(JSON.stringify({ error: "Driver phone must contain digits" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      const payload: Record<string, any> = {
-        name,
-        phone,
-        email: driver.email ? String(driver.email).trim() || null : null,
-        truck_number: driver.truck_number ? String(driver.truck_number).trim() || null : null,
-        payment_type: driver.payment_type || "per_load",
-        payment_rate: driver.payment_rate != null ? Number(driver.payment_rate) : 0,
-        license_expires_on: driver.license_expires_on || null,
-        notes: driver.notes ? String(driver.notes) : null,
-        active: driver.active !== undefined ? !!driver.active : true,
-      };
+      const selectCols = "id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at";
 
       let result;
-      if (driver.id) {
+      if (isUpdate) {
+        // Build payload from only the fields actually present in driver (excluding id).
+        // Omitted fields are not touched.
+        const payload: Record<string, any> = {};
+        if (hasName) payload.name = name;
+        if (hasPhone) payload.phone = phone;
+        if (Object.prototype.hasOwnProperty.call(driver, "email"))
+          payload.email = driver.email ? String(driver.email).trim() || null : null;
+        if (Object.prototype.hasOwnProperty.call(driver, "truck_number"))
+          payload.truck_number = driver.truck_number ? String(driver.truck_number).trim() || null : null;
+        if (Object.prototype.hasOwnProperty.call(driver, "payment_type"))
+          payload.payment_type = driver.payment_type || "per_load";
+        if (Object.prototype.hasOwnProperty.call(driver, "payment_rate"))
+          payload.payment_rate = driver.payment_rate != null ? Number(driver.payment_rate) : 0;
+        if (Object.prototype.hasOwnProperty.call(driver, "license_expires_on"))
+          payload.license_expires_on = driver.license_expires_on || null;
+        if (Object.prototype.hasOwnProperty.call(driver, "notes"))
+          payload.notes = driver.notes ? String(driver.notes) : null;
+        if (Object.prototype.hasOwnProperty.call(driver, "active"))
+          payload.active = !!driver.active;
+
+        if (Object.keys(payload).length === 0) {
+          return new Response(JSON.stringify({ error: "No fields to update" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
         result = await supabase
           .from("drivers")
           .update(payload)
           .eq("id", driver.id)
-          .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at")
+          .select(selectCols)
           .maybeSingle();
       } else {
+        const payload: Record<string, any> = {
+          name,
+          phone,
+          email: driver.email ? String(driver.email).trim() || null : null,
+          truck_number: driver.truck_number ? String(driver.truck_number).trim() || null : null,
+          payment_type: driver.payment_type || "per_load",
+          payment_rate: driver.payment_rate != null ? Number(driver.payment_rate) : 0,
+          license_expires_on: driver.license_expires_on || null,
+          notes: driver.notes ? String(driver.notes) : null,
+          active: driver.active !== undefined ? !!driver.active : true,
+        };
         result = await supabase
           .from("drivers")
           .insert(payload)
-          .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at")
+          .select(selectCols)
           .maybeSingle();
       }
 
