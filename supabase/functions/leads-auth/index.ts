@@ -3044,7 +3044,8 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
 
     // ── UPDATE ORDER ──
     if (action === "update_order") {
-      const { order_id, status, notes, delivery_date, delivery_day_of_week } = body as any;
+      // Path B Phase 1b — driver_id whitelist addition. Active-driver guard enforced server-side; UI dropdown already filters to active, this is defense in depth.
+      const { order_id, status, notes, delivery_date, delivery_day_of_week, driver_id } = body as any;
       if (!order_id) throw new Error("Missing order_id");
 
       const updates: Record<string, any> = { updated_at: new Date().toISOString() };
@@ -3053,10 +3054,39 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       if (delivery_date !== undefined) updates.delivery_date = delivery_date;
       if (delivery_day_of_week !== undefined) updates.delivery_day_of_week = delivery_day_of_week;
 
-      const { error } = await supabase.from("orders").update(updates).eq("id", order_id);
+      if (driver_id !== undefined) {
+        if (driver_id !== null) {
+          const { data: driverRow, error: driverErr } = await supabase
+            .from("drivers")
+            .select("id, active")
+            .eq("id", driver_id)
+            .maybeSingle();
+          if (driverErr) throw driverErr;
+          if (!driverRow) {
+            return new Response(
+              JSON.stringify({ error: "Driver not found" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          if (driverRow.active === false) {
+            return new Response(
+              JSON.stringify({ error: "Cannot assign inactive driver" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+        updates.driver_id = driver_id;
+      }
+
+      const { data: updatedOrder, error } = await supabase
+        .from("orders")
+        .update(updates)
+        .eq("id", order_id)
+        .select("*")
+        .single();
       if (error) throw error;
       return new Response(
-        JSON.stringify({ success: true }),
+        JSON.stringify({ success: true, order: updatedOrder }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
