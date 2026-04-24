@@ -2450,6 +2450,7 @@ const Leads = () => {
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
     waitlist: { title: "WAITLIST", subtitle: "Coming soon areas" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
+    drivers: { title: "DRIVERS", subtitle: `${drivers.filter(d => d.active).length} active` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
     settings: { title: "GLOBAL SETTINGS" },
