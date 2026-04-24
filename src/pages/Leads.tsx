@@ -259,6 +259,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
     items: [
       { id: "city_pages", label: "City Pages", icon: MapIcon },
       { id: "pit", label: "PITs", icon: Zap },
+      { id: "drivers", label: "Drivers", icon: Truck },
       { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
     ],
   },
