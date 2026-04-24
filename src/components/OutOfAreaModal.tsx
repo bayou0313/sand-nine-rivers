@@ -275,6 +275,8 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
                   value={phone}
                   onChange={(e) => setPhone(formatPhone(e.target.value))}
                   maxLength={14}
+                  inputMode="tel"
+                  autoComplete="tel"
                 />
               </div>
               <div>
