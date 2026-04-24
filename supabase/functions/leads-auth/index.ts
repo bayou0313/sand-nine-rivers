@@ -2840,6 +2840,61 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       );
     }
 
+    // ── SCHEDULE: GET DAY ──
+    // Correction to Slice 1 — routes Schedule reads through leads-auth per existing Leads tab pattern.
+    // Original Decision A assumed direct supabase read worked; diagnosis revealed RLS was silently
+    // filtering anon-role reads (orders has no anon SELECT policy, only authenticated admin JWT).
+    if (action === "schedule_get_day") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Invalid password" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const iso = body.iso as string | undefined;
+      if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+        return new Response(JSON.stringify({ error: "Missing or invalid iso (YYYY-MM-DD)" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Minimum data — only fields ScheduleOrderCard + schedule-adapter consume.
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, order_number, customer_name, customer_phone, delivery_address, delivery_window, quantity, price, payment_method, payment_status, status, delivery_date, cancelled_at, pit_id, created_at")
+        .eq("delivery_date", iso)
+        .order("delivery_window", { ascending: true })
+        .order("created_at", { ascending: true })
+        .limit(10000);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ orders: data || [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── SCHEDULE: GET WINDOW COUNTS ──
+    // Correction to Slice 1 — see schedule_get_day above for context.
+    if (action === "schedule_get_window_counts") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Invalid password" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const start = body.start as string | undefined;
+      const end = body.end as string | undefined;
+      if (!start || !end || !/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+        return new Response(JSON.stringify({ error: "Missing or invalid start/end (YYYY-MM-DD)" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data, error } = await supabase
+        .from("orders")
+        .select("delivery_date, quantity")
+        .gte("delivery_date", start)
+        .lte("delivery_date", end)
+        .limit(10000);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ rows: data || [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── UPDATE ORDER ──
     if (action === "update_order") {
       const { order_id, status, notes, delivery_date, delivery_day_of_week } = body as any;
