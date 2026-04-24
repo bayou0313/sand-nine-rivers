@@ -63,3 +63,7 @@ Last synced: 2026-04-24
 
 ## Version gate protocol
 Future task briefs check this file's Version line. If the task specifies a minimum version higher than what's in this file, the task author must update this file first.
+
+## Changelog
+- v1.11 (2026-04-24) — Added reference to RIVERSAND_FORM_GUIDELINES_v1.1 as canonical form reference doc.
+
