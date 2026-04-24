@@ -1985,45 +1985,6 @@ const Leads = () => {
     }
   }, [activePage, authenticated, refreshOverview]);
 
-  // Schedule fetch functions
-  const fetchScheduleOrders = useCallback(async (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    const { data } = await supabase.from("orders").select("*").eq("delivery_date", dateStr).order("created_at", { ascending: true });
-    const orders = data || [];
-    setScheduleOrders(orders);
-    setScheduleSummary({
-      revenue: orders.reduce((sum, o) => sum + (Number(o.price) || 0), 0),
-      loads: orders.reduce((sum, o) => sum + (Number(o.quantity) || 0), 0),
-      orders: orders.length,
-      pending: orders.filter(o => o.payment_status === "pending" || o.payment_method === "COD").length,
-      paid: orders.filter(o => ["paid", "captured", "authorized"].includes(o.payment_status)).length,
-    });
-  }, []);
-
-  const weekStripRef = useRef<HTMLDivElement>(null);
-
-  const fetchWeekCounts = useCallback(async (centerDate: Date) => {
-    const start = new Date(centerDate); start.setDate(start.getDate() - 7);
-    const end = new Date(centerDate); end.setDate(end.getDate() + 83);
-    const { data } = await supabase.from("orders").select("delivery_date, quantity").gte("delivery_date", start.toISOString().split("T")[0]).lte("delivery_date", end.toISOString().split("T")[0]);
-    const counts: Record<string, { orders: number; loads: number }> = {};
-    (data || []).forEach((o: any) => {
-      const d = o.delivery_date;
-      if (!d) return;
-      if (!counts[d]) counts[d] = { orders: 0, loads: 0 };
-      counts[d].orders++;
-      counts[d].loads += Number(o.quantity) || 0;
-    });
-    setWeekCounts(counts);
-  }, []);
-
-  useEffect(() => {
-    if (activePage === "schedule" && authenticated) {
-      fetchScheduleOrders(scheduleDate);
-      fetchWeekCounts(scheduleDate);
-    }
-  }, [activePage, authenticated, scheduleDate, fetchScheduleOrders, fetchWeekCounts]);
-
   // Fetch fraud data when navigating to fraud tab
   const fetchFraudData = useCallback(async () => {
     setFraudLoading(true);
