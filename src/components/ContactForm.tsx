@@ -93,7 +93,7 @@ const ContactForm = ({ cityName }: { cityName?: string }) => {
               </div>
               <div>
                 <label htmlFor="contact-phone" className="sr-only">Phone Number</label>
-                <Input id="contact-phone" name="phone" type="tel" autoComplete="tel" placeholder="Phone Number" maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
+                <Input id="contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone Number" maxLength={14} value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} className="h-12 rounded-xl" />
               </div>
               <div>
                 <label htmlFor="contact-message" className="sr-only">Message</label>
