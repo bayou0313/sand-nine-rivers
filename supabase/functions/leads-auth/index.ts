@@ -2840,6 +2840,110 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       );
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // PATH B PHASE 0: Drivers foundation (schema-only feature, no UI yet)
+    // Backend actions to read/write the new public.drivers table introduced
+    // in the Phase 0 migration. Follows the schedule_get_day pattern: explicit
+    // password check, service-role supabase client, minimal response shape.
+    // Phase 1 will add the Drivers tab UI in Leads.tsx that consumes these.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── LIST DRIVERS ──
+    if (action === "list_drivers") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Invalid password" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data, error } = await supabase
+        .from("drivers")
+        .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at")
+        .eq("active", true)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ drivers: data || [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── UPSERT DRIVER ──
+    if (action === "upsert_driver") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Invalid password" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const driver = (body as any).driver;
+      if (!driver || typeof driver !== "object") {
+        return new Response(JSON.stringify({ error: "Missing driver object" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Required-field validation
+      const name = typeof driver.name === "string" ? driver.name.trim() : "";
+      const phoneRaw = typeof driver.phone === "string" ? driver.phone.trim() : "";
+      if (!name) {
+        return new Response(JSON.stringify({ error: "Driver name is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!phoneRaw) {
+        return new Response(JSON.stringify({ error: "Driver phone is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Normalize phone to digits-only (matches riversand's existing phone handling)
+      const phone = phoneRaw.replace(/\D/g, "");
+      if (!phone) {
+        return new Response(JSON.stringify({ error: "Driver phone must contain digits" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const payload: Record<string, any> = {
+        name,
+        phone,
+        email: driver.email ? String(driver.email).trim() || null : null,
+        truck_number: driver.truck_number ? String(driver.truck_number).trim() || null : null,
+        payment_type: driver.payment_type || "per_load",
+        payment_rate: driver.payment_rate != null ? Number(driver.payment_rate) : 0,
+        license_expires_on: driver.license_expires_on || null,
+        notes: driver.notes ? String(driver.notes) : null,
+        active: driver.active !== undefined ? !!driver.active : true,
+      };
+
+      let result;
+      if (driver.id) {
+        result = await supabase
+          .from("drivers")
+          .update(payload)
+          .eq("id", driver.id)
+          .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at")
+          .maybeSingle();
+      } else {
+        result = await supabase
+          .from("drivers")
+          .insert(payload)
+          .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at")
+          .maybeSingle();
+      }
+
+      if (result.error) {
+        // Postgres unique-violation code is 23505 — surface friendly message
+        const code = (result.error as any).code;
+        const msg = (result.error as any).message || "";
+        if (code === "23505" || /duplicate key|unique/i.test(msg)) {
+          return new Response(
+            JSON.stringify({ error: "A driver with that phone number already exists" }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw result.error;
+      }
+
+      return new Response(
+        JSON.stringify({ driver: result.data }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── SCHEDULE: GET DAY ──
     // Correction to Slice 1 — routes Schedule reads through leads-auth per existing Leads tab pattern.
     // Original Decision A assumed direct supabase read worked; diagnosis revealed RLS was silently
