@@ -224,9 +224,11 @@ const WhatsAppButton = () => {
                     <Input
                       placeholder="Your name"
                       value={formData.name}
-                      onChange={(e) => setFormData((d) => ({ ...d, name: e.target.value }))}
+                      onChange={(e) => setFormData((d) => ({ ...d, name: formatProperName(e.target.value) }))}
+                      onBlur={(e) => setFormData((d) => ({ ...d, name: formatProperNameFinal(e.target.value) }))}
                       required
                       maxLength={100}
+                      autoComplete="name"
                       className="text-sm h-9"
                     />
                     <Input
