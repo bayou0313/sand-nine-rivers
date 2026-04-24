@@ -85,7 +85,7 @@ const ContactForm = ({ cityName }: { cityName?: string }) => {
               <h3 className="font-display text-2xl text-foreground tracking-wider mb-4">SEND US A MESSAGE</h3>
               <div>
                 <label htmlFor="contact-name" className="sr-only">Your Name</label>
-                <Input id="contact-name" name="name" autoComplete="name" placeholder="Your Name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" />
+                <Input id="contact-name" name="name" autoComplete="name" placeholder="Your Name" required maxLength={100} value={form.name} onChange={(e) => setForm({ ...form, name: formatProperName(e.target.value) })} onBlur={(e) => setForm({ ...form, name: formatProperNameFinal(e.target.value) })} className="h-12 rounded-xl" />
               </div>
               <div>
                 <label htmlFor="contact-email" className="sr-only">Email</label>
