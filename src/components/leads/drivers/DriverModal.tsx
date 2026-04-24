@@ -243,7 +243,8 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
               autoComplete="name"
               maxLength={100}
               value={form.name}
-              onChange={(e) => update("name", e.target.value)}
+              onChange={(e) => update("name", formatProperName(e.target.value))}
+              onBlur={(e) => update("name", formatProperNameFinal(e.target.value))}
               placeholder="John Smith"
               className={`${INPUT_CLS} ${showNameError ? "border-2" : ""}`}
               style={showNameError ? { borderColor: ERROR_RED } : undefined}
