@@ -602,6 +602,7 @@ export type Database = {
           lead_reference: string | null
           lookup_token: string | null
           lookup_token_used: boolean
+          message_sent_at: string | null
           notes: string | null
           order_number: string | null
           parish_tax_amount: number | null
@@ -680,6 +681,7 @@ export type Database = {
           lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
+          message_sent_at?: string | null
           notes?: string | null
           order_number?: string | null
           parish_tax_amount?: number | null
@@ -758,6 +760,7 @@ export type Database = {
           lead_reference?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
+          message_sent_at?: string | null
           notes?: string | null
           order_number?: string | null
           parish_tax_amount?: number | null

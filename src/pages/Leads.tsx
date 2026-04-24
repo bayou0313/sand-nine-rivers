@@ -24,6 +24,7 @@ import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 import { WAYS_PHONE_DISPLAY } from "@/lib/constants";
 import ScheduleTab from "@/components/leads/schedule/ScheduleTab";
+import { formatOrderMessage, buildWhatsAppUrl, canSendToDriver } from "@/lib/whatsapp-message";
 const BRAND_GOLD = "#C07A00";
 const BRAND_NAVY = "#0D2137"; // used for login screen only
 const POSITIVE = "#059669";
@@ -692,6 +693,39 @@ const Leads = () => {
   // Path B Phase 1 — Drivers shared state. Single fetch on mount; explicit refresh after edits. No polling.
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
+
+  // Path B Phase 2 — Send to Driver. Opens WhatsApp with prefilled message; operator presses send.
+  // Optimistic timestamp update; non-blocking persist; revert + toast on failure.
+  const handleSendToDriver = useCallback(async (order: any, driver: Driver) => {
+    const message = formatOrderMessage(order, driver);
+    const url = buildWhatsAppUrl(driver.phone, message);
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    const iso = new Date().toISOString();
+    setAllOrders(prev => prev.map((o: any) => o.id === order.id ? { ...o, message_sent_at: iso } : o));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: {
+          password: sessionStorage.getItem("leads_pw") || "",
+          action: "update_order",
+          order_id: order.id,
+          message_sent_at: iso,
+        },
+      });
+      if (error) throw error;
+      const payload: any = data;
+      if (payload?.error) throw new Error(String(payload.error));
+    } catch (err: any) {
+      // Revert optimistic patch on failure.
+      setAllOrders(prev => prev.map((o: any) => o.id === order.id ? { ...o, message_sent_at: order.message_sent_at ?? null } : o));
+      toast({
+        title: "Send record failed",
+        description: "WhatsApp opened but send record failed to save. Try again to update timestamp.",
+        variant: "destructive" as any,
+      });
+    }
+  }, []);
 
   // SEO state
   const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
@@ -4338,6 +4372,8 @@ const Leads = () => {
               setActivePage("all");
               setSelectedOrderId(id);
             }}
+            drivers={drivers}
+            onSendToDriver={handleSendToDriver}
           />
         );
 
@@ -6241,6 +6277,50 @@ const Leads = () => {
                           </option>
                         ))}
                       </select>
+
+                      {/* Path B Phase 2 — Send to Driver. Opens WhatsApp with prefilled message; operator presses send. */}
+                      {(() => {
+                        const assignedDriver = drivers.find(d => d.id === selectedOrder.driver_id) || null;
+                        const { canSend, reason } = canSendToDriver(selectedOrder, assignedDriver);
+                        const lastSent = selectedOrder.message_sent_at
+                          ? new Date(selectedOrder.message_sent_at).toLocaleString("en-US", {
+                              month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                            })
+                          : null;
+                        return (
+                          <div style={{ marginTop: 10 }}>
+                            <button
+                              type="button"
+                              disabled={!canSend}
+                              title={reason || ""}
+                              onClick={() => assignedDriver && handleSendToDriver(selectedOrder, assignedDriver)}
+                              style={{
+                                width: "100%",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 8,
+                                padding: "9px 12px",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                letterSpacing: ".02em",
+                                borderRadius: 6,
+                                border: "none",
+                                cursor: canSend ? "pointer" : "not-allowed",
+                                background: canSend ? BRAND_GOLD : "#9CA3AF",
+                                color: "#FFFFFF",
+                                transition: "opacity 150ms ease",
+                              }}
+                            >
+                              <MessageCircle size={14} />
+                              Send to Driver
+                            </button>
+                            <div style={{ marginTop: 6, fontSize: 11, color: "#6B7280", textAlign: "center" }}>
+                              {lastSent ? `Last sent to driver: ${lastSent}` : "Not sent yet."}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Order details */}
