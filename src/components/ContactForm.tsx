@@ -89,7 +89,7 @@ const ContactForm = ({ cityName }: { cityName?: string }) => {
               </div>
               <div>
                 <label htmlFor="contact-email" className="sr-only">Email</label>
-                <EmailInput id="contact-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required className="h-12 rounded-xl" />
+                <EmailInput id="contact-email" name="email" value={form.email} onChange={(v) => setForm({ ...form, email: formatEmail(v) })} required className="h-12 rounded-xl" />
               </div>
               <div>
                 <label htmlFor="contact-phone" className="sr-only">Phone Number</label>
