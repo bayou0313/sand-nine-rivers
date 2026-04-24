@@ -21,6 +21,7 @@ declare global {
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 import { WAYS_PHONE_DISPLAY } from "@/lib/constants";
+import ScheduleTab from "@/components/leads/schedule/ScheduleTab";
 const BRAND_GOLD = "#C07A00";
 const BRAND_NAVY = "#0D2137"; // used for login screen only
 const POSITIVE = "#059669";
@@ -732,12 +733,6 @@ const Leads = () => {
   const [deletingAll, setDeletingAll] = useState(false);
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
   const [syncingPayment, setSyncingPayment] = useState<string | null>(null);
-
-  // Schedule state
-  const [scheduleDate, setScheduleDate] = useState(new Date());
-  const [scheduleOrders, setScheduleOrders] = useState<any[]>([]);
-  const [scheduleSummary, setScheduleSummary] = useState({ revenue: 0, loads: 0, orders: 0, pending: 0, paid: 0 });
-  const [weekCounts, setWeekCounts] = useState<Record<string, { orders: number; loads: number }>>({});
 
   // Pending review orders state
   const [pendingReviewOrders, setPendingReviewOrders] = useState<any[]>([]);
@@ -1917,8 +1912,9 @@ const Leads = () => {
 
 
   // Fetch cash orders when navigating to that page + auto-refresh every 60s
+  // Cold-start fix added with Slice 1 ScheduleTab — closes cross-nav gap introduced by card-click navigation.
   useEffect(() => {
-    if (activePage === "cash_orders" && authenticated) {
+    if ((activePage === "cash_orders" || activePage === "all") && authenticated) {
       fetchCashOrders();
       fetchAllOrders();
       const interval = setInterval(() => {
@@ -1985,45 +1981,6 @@ const Leads = () => {
     }
   }, [activePage, authenticated, refreshOverview]);
 
-  // Schedule fetch functions
-  const fetchScheduleOrders = useCallback(async (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    const { data } = await supabase.from("orders").select("*").eq("delivery_date", dateStr).order("created_at", { ascending: true });
-    const orders = data || [];
-    setScheduleOrders(orders);
-    setScheduleSummary({
-      revenue: orders.reduce((sum, o) => sum + (Number(o.price) || 0), 0),
-      loads: orders.reduce((sum, o) => sum + (Number(o.quantity) || 0), 0),
-      orders: orders.length,
-      pending: orders.filter(o => o.payment_status === "pending" || o.payment_method === "COD").length,
-      paid: orders.filter(o => ["paid", "captured", "authorized"].includes(o.payment_status)).length,
-    });
-  }, []);
-
-  const weekStripRef = useRef<HTMLDivElement>(null);
-
-  const fetchWeekCounts = useCallback(async (centerDate: Date) => {
-    const start = new Date(centerDate); start.setDate(start.getDate() - 7);
-    const end = new Date(centerDate); end.setDate(end.getDate() + 83);
-    const { data } = await supabase.from("orders").select("delivery_date, quantity").gte("delivery_date", start.toISOString().split("T")[0]).lte("delivery_date", end.toISOString().split("T")[0]);
-    const counts: Record<string, { orders: number; loads: number }> = {};
-    (data || []).forEach((o: any) => {
-      const d = o.delivery_date;
-      if (!d) return;
-      if (!counts[d]) counts[d] = { orders: 0, loads: 0 };
-      counts[d].orders++;
-      counts[d].loads += Number(o.quantity) || 0;
-    });
-    setWeekCounts(counts);
-  }, []);
-
-  useEffect(() => {
-    if (activePage === "schedule" && authenticated) {
-      fetchScheduleOrders(scheduleDate);
-      fetchWeekCounts(scheduleDate);
-    }
-  }, [activePage, authenticated, scheduleDate, fetchScheduleOrders, fetchWeekCounts]);
-
   // Fetch fraud data when navigating to fraud tab
   const fetchFraudData = useCallback(async () => {
     setFraudLoading(true);
@@ -2047,15 +2004,6 @@ const Leads = () => {
       fetchFraudData();
     }
   }, [activePage, authenticated, fetchFraudData]);
-
-  useEffect(() => {
-    if (weekStripRef.current) {
-      const selected = weekStripRef.current.querySelector("[data-selected='true']");
-      if (selected) {
-        selected.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      }
-    }
-  }, [scheduleDate]);
 
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
@@ -4342,6 +4290,16 @@ const Leads = () => {
           </>
         );
       }
+
+      case "schedule":
+        return (
+          <ScheduleTab
+            onOrderClick={(id) => {
+              setActivePage("all");
+              setSelectedOrderId(id);
+            }}
+          />
+        );
 
       case "all":
         return (
