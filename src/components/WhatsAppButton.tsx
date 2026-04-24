@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, isSameDay, isSunday, isBefore, startOfDay, isSaturday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatPhone } from "@/lib/format";
+import { formatProperName, formatProperNameFinal, formatSentence } from "@/lib/textFormat";
 import { WAYS_PHONE_RAW } from "@/lib/constants";
 
 const WHATSAPP_NUMBER = "15043582000";
@@ -223,14 +224,18 @@ const WhatsAppButton = () => {
                     <Input
                       placeholder="Your name"
                       value={formData.name}
-                      onChange={(e) => setFormData((d) => ({ ...d, name: e.target.value }))}
+                      onChange={(e) => setFormData((d) => ({ ...d, name: formatProperName(e.target.value) }))}
+                      onBlur={(e) => setFormData((d) => ({ ...d, name: formatProperNameFinal(e.target.value) }))}
                       required
                       maxLength={100}
+                      autoComplete="name"
                       className="text-sm h-9"
                     />
                     <Input
                       placeholder="Phone number"
                       type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData((d) => ({ ...d, phone: formatPhone(e.target.value) }))}
                       required
@@ -290,7 +295,7 @@ const WhatsAppButton = () => {
                     <Input
                       placeholder="Notes (optional)"
                       value={formData.notes}
-                      onChange={(e) => setFormData((d) => ({ ...d, notes: e.target.value }))}
+                      onChange={(e) => setFormData((d) => ({ ...d, notes: formatSentence(e.target.value) }))}
                       maxLength={200}
                       className="text-sm h-9"
                     />
