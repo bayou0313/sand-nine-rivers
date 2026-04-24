@@ -4343,6 +4343,16 @@ const Leads = () => {
         );
       }
 
+      case "schedule":
+        return (
+          <ScheduleTab
+            onOrderClick={(id) => {
+              setActivePage("all");
+              setSelectedOrderId(id);
+            }}
+          />
+        );
+
       case "all":
         return (
           <>
