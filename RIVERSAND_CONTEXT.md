@@ -1,5 +1,5 @@
 # RIVERSAND_CONTEXT.md
-Version: 1.09 (2026-04-24)
+Version: 1.10 (2026-04-24)
 Last synced: 2026-04-24
 
 ## Project identity
@@ -47,6 +47,16 @@ Last synced: 2026-04-24
 - No demo/fake data in production code
 - No new npm dependencies without approval
 - Respect the scope fence in any task brief
+
+## Data access patterns
+
+- All /leads data reads MUST route through the leads-auth edge function. The /leads session is password-gated (sessionStorage, anon Supabase role). Direct supabase.from(...) reads from the browser fail silently because orders and similar tables have RLS policies requiring authenticated admin JWT claims. Anon reads return [] with no error.
+
+- All /admin data reads use Supabase Auth session (admin JWT) and CAN use direct supabase.from(...) reads against RLS-protected tables.
+
+- When adding a new tab or feature to /leads that needs DB data: add a new read action to leads-auth, do not use direct client queries.
+
+- This pattern caught a Slice 1 Schedule regression (April 2026) — future sessions should flag any proposed direct-read pattern on /leads.
 
 ## Version gate protocol
 Future task briefs check this file's Version line. If the task specifies a minimum version higher than what's in this file, the task author must update this file first.
