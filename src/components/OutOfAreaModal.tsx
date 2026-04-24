@@ -310,7 +310,7 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
                   id="lead-notes"
                   placeholder="Gate code, special instructions, project details..."
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => setNotes(formatSentence(e.target.value))}
                   maxLength={500}
                   rows={2}
                 />
