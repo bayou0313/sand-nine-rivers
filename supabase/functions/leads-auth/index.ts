@@ -3045,7 +3045,8 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
     // ── UPDATE ORDER ──
     if (action === "update_order") {
       // Path B Phase 1b — driver_id whitelist addition. Active-driver guard enforced server-side; UI dropdown already filters to active, this is defense in depth.
-      const { order_id, status, notes, delivery_date, delivery_day_of_week, driver_id } = body as any;
+      // Path B Phase 2 — message_sent_at whitelist addition. Pass-through, client owns the timestamp.
+      const { order_id, status, notes, delivery_date, delivery_day_of_week, driver_id, message_sent_at } = body as any;
       if (!order_id) throw new Error("Missing order_id");
 
       const updates: Record<string, any> = { updated_at: new Date().toISOString() };
@@ -3053,6 +3054,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       if (notes !== undefined) updates.notes = notes;
       if (delivery_date !== undefined) updates.delivery_date = delivery_date;
       if (delivery_day_of_week !== undefined) updates.delivery_day_of_week = delivery_day_of_week;
+      if (message_sent_at !== undefined) updates.message_sent_at = message_sent_at;
 
       if (driver_id !== undefined) {
         if (driver_id !== null) {
