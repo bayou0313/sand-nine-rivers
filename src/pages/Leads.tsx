@@ -7,7 +7,9 @@ const IS_PROD_HOST = typeof window !== "undefined" && /(^|\.)riversand\.net$/i.t
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell, Star, Calendar, Shield, ExternalLink } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell, Star, Calendar, Shield, ExternalLink, Truck } from "lucide-react";
+import DriversTab from "@/components/leads/drivers/DriversTab";
+import type { Driver } from "@/components/leads/drivers/types";
 import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
 import { useToast } from "@/hooks/use-toast";
@@ -223,7 +225,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "drivers" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: "#0D2137", called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -257,6 +259,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
     items: [
       { id: "city_pages", label: "City Pages", icon: MapIcon },
       { id: "pit", label: "PITs", icon: Zap },
+      { id: "drivers", label: "Drivers", icon: Truck },
       { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
     ],
   },
@@ -686,6 +689,10 @@ const Leads = () => {
   const [generatedStripeUrl, setGeneratedStripeUrl] = useState<string | null>(null);
   const [genLinkEmail, setGenLinkEmail] = useState("");
 
+  // Path B Phase 1 — Drivers shared state. Single fetch on mount; explicit refresh after edits. No polling.
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
+
   // SEO state
   const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
   const [notrackIps, setNotrackIps] = useState<string[]>([]);
@@ -1043,6 +1050,28 @@ const Leads = () => {
   }, [fetchAbandonedSessions, toast]);
 
   const storedPassword = () => sessionStorage.getItem("leads_pw") || "";
+
+  // Path B Phase 1 — refreshDrivers is stable (empty deps). Reads sessionStorage at call-time, not capture-time.
+  // Mount effect below has [refreshDrivers] dep array — fires once, not per render or per tab switch.
+  const refreshDrivers = useCallback(async () => {
+    setLoadingDrivers(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { password: sessionStorage.getItem("leads_pw") || "", action: "list_drivers" },
+      });
+      if (error) throw error;
+      setDrivers(((data as any)?.drivers || []) as Driver[]);
+    } catch (e) {
+      console.error("[Leads] list_drivers failed:", e);
+    } finally {
+      setLoadingDrivers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    refreshDrivers();
+  }, [authenticated, refreshDrivers]);
   const basePrice = 195; // Pricing now lives on individual PITs
 
   const fetchLeads = useCallback(async (pw: string) => {
@@ -2448,6 +2477,7 @@ const Leads = () => {
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
     waitlist: { title: "WAITLIST", subtitle: "Coming soon areas" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
+    drivers: { title: "DRIVERS", subtitle: `${drivers.filter(d => d.active).length} active` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
     settings: { title: "GLOBAL SETTINGS" },
@@ -3305,6 +3335,16 @@ const Leads = () => {
               </>
             )}
           </>
+        );
+
+      case "drivers":
+        return (
+          <DriversTab
+            drivers={drivers}
+            loading={loadingDrivers}
+            password={storedPassword()}
+            onRefresh={refreshDrivers}
+          />
         );
 
       case "city_pages": {
