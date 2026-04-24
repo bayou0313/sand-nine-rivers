@@ -234,6 +234,8 @@ const WhatsAppButton = () => {
                     <Input
                       placeholder="Phone number"
                       type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData((d) => ({ ...d, phone: formatPhone(e.target.value) }))}
                       required
