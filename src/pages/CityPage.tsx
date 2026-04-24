@@ -26,6 +26,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { WAYS_PHONE_RAW } from "@/lib/constants";
+import EmailInput from "@/components/EmailInput";
+import { formatPhone } from "@/lib/format";
+import { formatProperName, formatProperNameFinal, formatEmail } from "@/lib/textFormat";
 
 const cleanCityName = (name: string): string =>
   name.replace(/\s*,?\s*[Ll][Aa]$/, '').trim();
