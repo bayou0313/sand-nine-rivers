@@ -2048,15 +2048,6 @@ const Leads = () => {
     }
   }, [activePage, authenticated, fetchFraudData]);
 
-  useEffect(() => {
-    if (weekStripRef.current) {
-      const selected = weekStripRef.current.querySelector("[data-selected='true']");
-      if (selected) {
-        selected.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      }
-    }
-  }, [scheduleDate]);
-
   const handlePriceBlur = (field: "base_price" | "price_per_extra_mile", value: number | null, setter: (v: any) => void, current: any) => {
     if (value != null && !isNaN(value)) {
       setter({ ...current, [field]: Math.round(value * 100) / 100 });
