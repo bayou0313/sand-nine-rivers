@@ -694,6 +694,39 @@ const Leads = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
 
+  // Path B Phase 2 — Send to Driver. Opens WhatsApp with prefilled message; operator presses send.
+  // Optimistic timestamp update; non-blocking persist; revert + toast on failure.
+  const handleSendToDriver = useCallback(async (order: any, driver: Driver) => {
+    const message = formatOrderMessage(order, driver);
+    const url = buildWhatsAppUrl(driver.phone, message);
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    const iso = new Date().toISOString();
+    setAllOrders(prev => prev.map((o: any) => o.id === order.id ? { ...o, message_sent_at: iso } : o));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: {
+          password: storedPassword(),
+          action: "update_order",
+          order_id: order.id,
+          message_sent_at: iso,
+        },
+      });
+      if (error) throw error;
+      const payload: any = data;
+      if (payload?.error) throw new Error(String(payload.error));
+    } catch (err: any) {
+      // Revert optimistic patch on failure.
+      setAllOrders(prev => prev.map((o: any) => o.id === order.id ? { ...o, message_sent_at: order.message_sent_at ?? null } : o));
+      toast({
+        title: "Send record failed",
+        description: "WhatsApp opened but send record failed to save. Try again to update timestamp.",
+        variant: "destructive" as any,
+      });
+    }
+  }, []);
+
   // SEO state
   const [settingsTab, setSettingsTab] = useState<"pricing" | "profile" | "seo" | "tracking">("pricing");
   const [notrackIps, setNotrackIps] = useState<string[]>([]);
