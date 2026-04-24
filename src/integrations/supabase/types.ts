@@ -304,6 +304,51 @@ export type Database = {
         }
         Relationships: []
       }
+      drivers: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string | null
+          id: string
+          license_expires_on: string | null
+          name: string
+          notes: string | null
+          payment_rate: number | null
+          payment_type: string | null
+          phone: string
+          truck_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          license_expires_on?: string | null
+          name: string
+          notes?: string | null
+          payment_rate?: number | null
+          payment_type?: string | null
+          phone: string
+          truck_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          license_expires_on?: string | null
+          name?: string
+          notes?: string | null
+          payment_rate?: number | null
+          payment_type?: string | null
+          phone?: string
+          truck_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fraud_blocklist: {
         Row: {
           blocked_by: string | null
@@ -546,6 +591,8 @@ export type Database = {
           discount_amount: number | null
           distance_fee: number | null
           distance_miles: number
+          driver_id: string | null
+          driver_workflow_status: string | null
           fraud_score: number | null
           fraud_signals: Json | null
           fraud_window_cleared_at: string | null
@@ -622,6 +669,8 @@ export type Database = {
           discount_amount?: number | null
           distance_fee?: number | null
           distance_miles: number
+          driver_id?: string | null
+          driver_workflow_status?: string | null
           fraud_score?: number | null
           fraud_signals?: Json | null
           fraud_window_cleared_at?: string | null
@@ -698,6 +747,8 @@ export type Database = {
           discount_amount?: number | null
           distance_fee?: number | null
           distance_miles?: number
+          driver_id?: string | null
+          driver_workflow_status?: string | null
           fraud_score?: number | null
           fraud_signals?: Json | null
           fraud_window_cleared_at?: string | null
@@ -743,6 +794,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
         ]
