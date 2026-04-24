@@ -10,6 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { WAYS_PHONE_DISPLAY, WAYS_PHONE_TEL } from "@/lib/constants";
+import { formatPhone } from "@/lib/format";
+import { formatProperName, formatProperNameFinal, formatEmail, formatSentence } from "@/lib/textFormat";
+import EmailInput from "@/components/EmailInput";
 
 const LOGO_WHITE =
   "https://lclbexhytmpfxzcztzva.supabase.co/storage/v1/object/public/assets/riversand-logo_WHITE.png.png";
@@ -23,12 +26,6 @@ interface OutOfAreaModalProps {
   calculatedPrice?: number | null;
 }
 
-function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 10);
-  if (digits.length <= 3) return digits.length ? `(${digits}` : "";
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
 
 /* ── Animated checkmark ── */
 const AnimatedCheckmark = () => (
@@ -261,8 +258,10 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
                   id="lead-name"
                   placeholder="Your full name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(formatProperName(e.target.value))}
+                  onBlur={(e) => setName(formatProperNameFinal(e.target.value))}
                   maxLength={100}
+                  autoComplete="name"
                 />
               </div>
               <div>
@@ -276,18 +275,19 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
                   value={phone}
                   onChange={(e) => setPhone(formatPhone(e.target.value))}
                   maxLength={14}
+                  inputMode="tel"
+                  autoComplete="tel"
                 />
               </div>
               <div>
                 <Label htmlFor="lead-email" className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5" /> Email <span className="text-red-500">*</span>
                 </Label>
-                <Input
+                <EmailInput
                   id="lead-email"
-                  type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(v) => setEmail(formatEmail(v))}
                   maxLength={255}
                 />
               </div>
@@ -310,7 +310,7 @@ const OutOfAreaModal = ({ open, onClose, address, distanceMiles, nearestPit, cal
                   id="lead-notes"
                   placeholder="Gate code, special instructions, project details..."
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => setNotes(formatSentence(e.target.value))}
                   maxLength={500}
                   rows={2}
                 />
