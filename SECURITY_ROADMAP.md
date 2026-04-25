@@ -1,6 +1,6 @@
 # SECURITY_ROADMAP.md — Ways Materials LLC
 
-**Version:** 1.3 (2026-04-25)
+**Version:** 1.4 (2026-04-25)
 **Scope:** riversand.net (customer-facing), /leads operator surface (LMT), fleetwork.net (planned driver-facing home), and all shared Supabase infrastructure.
 **Audience:** Silas Caldeira (CEO/CVO), future CSO or security consultant, future operator hires.
 
@@ -18,6 +18,7 @@ Document current security posture, known gaps, and planned hardening work for Wa
 **Review cadence:** Quarterly. Next review: 2026-07-25.
 
 **Version history:**
+- v1.4 (2026-04-25) — §2.5 gap location updated from at_pit→loaded to loaded→delivered transition per Phase 3b workflow correction. Same gap, new location. Fix plan unchanged.
 - v1.3 (2026-04-25) — Phase 3b shipped (driver order detail + workflow actions). New Priority 2 item §2.5 documents the client-side COD parity gate as a known limitation: server accepts `driver_collected_at` non-null as the gate to advance from at_pit → loaded; UI prevents under-collection but a malicious driver bypassing the UI could mark "loaded" with $0 collected. Threat model = honest-mistake prevention only. Server-side parity check deferred to a later slice.
 - v1.2 (2026-04-25) — Phase 3a validation completed (T1/T2 PASS, T3 FAIL). Driver-auth rate limiter recategorized from "best-effort acknowledged" to "non-functional in production." New Priority 1 item §1.4. See PHASE_3_PLAN.md §"Phase 3a Validation Results" for test details.
 - v1.1 (2026-04-25) — Updated planned driver portal home from izons.com to fleetwork.net per brand decision
@@ -137,9 +138,9 @@ Document current security posture, known gaps, and planned hardening work for Wa
 - **Owner:** Phase 4 or dedicated security work.
 
 #### 2.5 COD payment-parity check is client-side only
-- **Current:** Driver order detail UI (DriverOrder.tsx) disables the "Mark Loaded" button until `driver_collected_cash + check + card >= price`. The server (`advance_workflow`) only verifies that `driver_collected_at` is non-null before allowing at_pit → loaded; it does not re-check the sum against `price`.
-- **Risk:** Honest-mistake prevention only. A malicious driver who bypasses the UI (curl, devtools) can record `$0/$0/$0`, get `driver_collected_at` stamped, then advance to loaded with the order under-collected. Threat model is fraud-by-employee, not external attacker.
-- **Fix:** Move the parity check server-side. Either inside `record_payment_collected` (reject sums below price for COD) or inside `advance_workflow` (re-fetch sums and gate at_pit → loaded). The latter is cleaner because it keeps the recording action permissive (driver can save partial progress) and the gate at the state transition.
+- **Current:** Driver order detail UI (DriverOrder.tsx) disables the "Mark Delivered" button until `driver_collected_cash + check + card >= price`. The server (`advance_workflow`) only verifies that `driver_collected_at` is non-null before allowing loaded → delivered; it does not re-check the sum against `price`.
+- **Risk:** Honest-mistake prevention only. A malicious driver who bypasses the UI (curl, devtools) can record `$0/$0/$0`, get `driver_collected_at` stamped, then advance to delivered with the order under-collected. Threat model is fraud-by-employee, not external attacker.
+- **Fix:** Move the parity check server-side. Either inside `record_payment_collected` (reject sums below price for COD) or inside `advance_workflow` (re-fetch sums and gate loaded → delivered). The latter is cleaner because it keeps the recording action permissive (driver can save partial progress) and the gate at the state transition.
 - **Effort:** ~1-2 hours. One SQL/business-logic change in driver-auth, one new test case in the smoke suite, decision on which action to host it in. Coordinate with how operators currently handle partial-collection situations (e.g., customer pays half cash on arrival, half check after unload) — moving the gate too aggressively could block legitimate workflows.
 - **Owner:** Before driver fleet grows past 5, or before any compensation/incentive structure that creates pressure to under-collect (e.g., hauls-per-day bonuses).
 
@@ -310,4 +311,4 @@ Quick self-assessment against OWASP Top 10 (2021):
 
 ---
 
-End of SECURITY_ROADMAP.md v1.3
+End of SECURITY_ROADMAP.md v1.4

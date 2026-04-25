@@ -3,8 +3,8 @@
 // Single-order view + 4-state workflow machine:
 //   NULL → acknowledged → at_pit → loaded → delivered
 // No skipping, no re-entering. COD payment must be recorded before
-// the at_pit → loaded transition. UI also enforces a client-side parity
-// gate (collected sum >= price) BEFORE the Loaded button is enabled.
+// the loaded → delivered transition. UI also enforces a client-side parity
+// gate (collected sum >= price) BEFORE the Delivered button is enabled.
 // SECURITY NOTE: That parity gate is UI-only. The server (advance_workflow)
 // only checks driver_collected_at !== null. See SECURITY_ROADMAP.md §2.5
 // for the threat model and planned server-side enforcement.
@@ -44,14 +44,14 @@ type WorkflowState = typeof WORKFLOW_STEPS[number];
 
 const STEP_LABELS: Record<WorkflowState, string> = {
   acknowledged: "Acknowledged",
-  at_pit:       "At pit",
+  at_pit:       "Arrived at PIT",
   loaded:       "Loaded",
   delivered:    "Delivered",
 };
 
 const STEP_BUTTONS: Record<WorkflowState, string> = {
   acknowledged: "Acknowledge",
-  at_pit:       "Arrived at pit",
+  at_pit:       "Arrived at PIT",
   loaded:       "Mark loaded",
   delivered:    "Mark delivered",
 };
@@ -198,12 +198,12 @@ export default function DriverOrder() {
   const meetsParity = order ? collectedSum >= order.price : false;
   const paymentSavedToServer = !!order?.driver_collected_at;
 
-  // Server gate (mirror): can the driver advance from at_pit → loaded?
+  // Server gate (mirror): can the driver advance from loaded → delivered?
   // Server only checks driver_collected_at !== null OR payment_status === "paid".
-  const canAdvanceAtPit = stripePaid || paymentSavedToServer;
+  const canAdvanceLoaded = stripePaid || paymentSavedToServer;
 
   // UI parity gate (stricter — see §2.5): for COD, also require collected sum >= price.
-  const uiCanMarkLoaded = !codOrder || stripePaid || (paymentSavedToServer && meetsParity);
+  const uiCanMarkDelivered = !codOrder || stripePaid || (paymentSavedToServer && meetsParity);
 
   // ── Workflow advance ──
   async function handleAdvance() {
@@ -465,8 +465,8 @@ export default function DriverOrder() {
           </ol>
         </section>
 
-        {/* COD payment form — only relevant once at_pit, hidden for Stripe-paid */}
-        {codOrder && current === "at_pit" && (
+        {/* COD payment form — only relevant once loaded, hidden for Stripe-paid */}
+        {codOrder && current === "loaded" && (
           <section className="bg-white rounded-xl shadow-sm p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" style={{ color: BRAND_GOLD }} />
@@ -562,16 +562,16 @@ export default function DriverOrder() {
         {!isTerminal && next && (
           <section className="bg-white rounded-xl shadow-sm p-4 space-y-2">
             {/* Two-hint split: not at parity vs at parity but unsaved */}
-            {next === "loaded" && codOrder && !stripePaid && !meetsParity && (
+            {next === "delivered" && codOrder && !stripePaid && !meetsParity && (
               <div className="flex items-start gap-2 text-xs" style={{ color: ERROR_RED }}>
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>Collect payment in full before marking Loaded.</span>
+                <span>Collect payment in full before marking Delivered.</span>
               </div>
             )}
-            {next === "loaded" && codOrder && !stripePaid && meetsParity && !paymentSavedToServer && (
+            {next === "delivered" && codOrder && !stripePaid && meetsParity && !paymentSavedToServer && (
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>Tap Save Totals above to record before marking Loaded.</span>
+                <span>Tap Save Totals above to record before marking Delivered.</span>
               </div>
             )}
 
@@ -580,8 +580,8 @@ export default function DriverOrder() {
               onClick={handleAdvance}
               disabled={
                 advancing ||
-                (next === "loaded" && !uiCanMarkLoaded) ||
-                (next === "loaded" && !canAdvanceAtPit)
+                (next === "delivered" && !uiCanMarkDelivered) ||
+                (next === "delivered" && !canAdvanceLoaded)
               }
               className="w-full h-14 font-display uppercase tracking-wide text-base"
               style={{ backgroundColor: BRAND_GOLD, color: "white" }}
