@@ -3,8 +3,8 @@
 // Single-order view + 4-state workflow machine:
 //   NULL → acknowledged → at_pit → loaded → delivered
 // No skipping, no re-entering. COD payment must be recorded before
-// the at_pit → loaded transition. UI also enforces a client-side parity
-// gate (collected sum >= price) BEFORE the Loaded button is enabled.
+// the loaded → delivered transition. UI also enforces a client-side parity
+// gate (collected sum >= price) BEFORE the Delivered button is enabled.
 // SECURITY NOTE: That parity gate is UI-only. The server (advance_workflow)
 // only checks driver_collected_at !== null. See SECURITY_ROADMAP.md §2.5
 // for the threat model and planned server-side enforcement.
