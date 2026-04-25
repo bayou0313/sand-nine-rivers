@@ -2,7 +2,7 @@
 
 _Tracking deferred work. Not a feature backlog — these are concrete, scoped items already audited and approved-for-later._
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
 
 ---
 
@@ -59,12 +59,54 @@ Phase 3b should add explicit operator timezone setting (likely America/Chicago f
 
 ---
 
-## Done / superseded
+## Pending — Security hardening
 
+### P5-03 — CORS allowlist tightening on remaining edge functions
+- `leads-auth` and others still use `Access-Control-Allow-Origin: "*"` wildcard
+- Same approach as P5-01 (driver-auth model: ALLOWED_ORIGINS array + isAllowed() + corsFor() + per-request `const cors = ...` injection)
+- Effort: ~30 min per function, can batch into one slice
+- Priority: Medium (less urgent now that the most-exposed function is hardened)
+- Discovered: Security Roadmap Priority 1.1 follow-on (2026-04-25)
+
+### P5-04 (Security Priority 2.1) — Move driver session tokens from localStorage to httpOnly cookies
+- Current: `localStorage["driver_session_token"]` readable by any JavaScript
+- Risk: XSS attack could steal session tokens
+- Fix: server sets `Set-Cookie` with `httpOnly` + `Secure` + `SameSite=None` flags
+- Effort: ~4–6 hours; refactor `driver-auth` + `Driver.tsx`
+- Priority: Should ship before fleetwork.net migration
+- Discovered: Security Roadmap (2026-04-25)
+
+### P5-05 (Security Priority 2.3) — CSP headers on all surfaces
+- Current: no Content Security Policy headers anywhere
+- Fix: add CSP via Lovable config (riversand.net) and meta tag (fleetwork.net)
+- Effort: ~4 hours including report-only testing period
+- Priority: Before ways.us brand launch
+- Discovered: Security Roadmap (2026-04-25)
+
+---
+
+## Completed
+
+### Phase 3a + Priority 1 security hardening (2026-04-25)
+- ✅ **P5-01 (Security Priority 1.1)** — CORS allowlist tightened on `driver-auth`
+  - Replaced `Access-Control-Allow-Origin: "*"` with origin-based allowlist
+  - Allowed: `riversand.net`, `www.riversand.net`, `fleetwork.net`, `www.fleetwork.net`, `*.lovable.app`, localhost ports (3000/5173/8080)
+  - Disallowed origins receive no ACAO header (browser blocks); missing origin processed without ACAO (server-to-server unaffected)
+  - Smoke tests passed: 5 origin scenarios verified (allowed echoes, no-origin, malicious-origin, lovable preview wildcard, OPTIONS preflight)
+- ✅ **P5-02 (Security Priority 1.2)** — `pin_hash` → `pin_set` boolean in `list_drivers`
+  - `leads-auth` `list_drivers` now returns derived `pin_set: !!pin_hash`
+  - `pin_hash` field stripped from API response (still selected server-side for the `!!` derivation)
+  - `DriverModal` and `Driver` type updated to read `pin_set` instead of `pin_hash`
+  - Server-side verified via curl: `pin_set` present as bool, `pin_hash` absent
+
+### P1 frontend formatting cleanup (2026-04-24)
+- ✅ **Slice 1.A** — CityPage waitlist form
+- ✅ **Slice 1.B** — OutOfAreaModal
+- ✅ **Slice 1.C** — ContactForm
+- ✅ **Slice 1.D** — WhatsAppButton callback form
+
+### Documentation (2026-04-24)
+- ✅ **CORE_FLOW_REFERENCE regeneration** — split into `CORE_FLOW_REFERENCE.md` (customer flow) + `LMT_REFERENCE.md` (operator surface). Both supersede the April 1 snapshot.
+
+### Earlier
 - ✅ DriverModal Name field — `formatProperName` + `formatProperNameFinal` wrappers (applied 2026-04-24)
-- ⏳ P1 frontend slices in progress:
-  - ✅ Slice 1.A — CityPage waitlist (applied 2026-04-24, awaiting smoke test approval)
-  - ⏳ Slice 1.B — OutOfAreaModal
-  - ⏳ Slice 1.C — ContactForm
-  - ⏳ Slice 1.D — WhatsAppButton callback form
-- ⏳ Doc regen — `CORE_FLOW_REFERENCE.md` fresh snapshot dated 2026-04-24 after all P1 slices ship
