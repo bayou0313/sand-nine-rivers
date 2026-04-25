@@ -146,6 +146,8 @@ async function verifySession(
 // ─────────────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
+  const cors = corsFor(req.headers.get("origin"));
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: cors });
   }
