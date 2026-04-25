@@ -199,6 +199,43 @@ All three touch driver workflow layer; bundle as single Phase 4 effort.
 
 ---
 
+**Dispatch architecture additions (2026-04-25, late session):**
+
+Beyond the workflow redesign + decline + map + design system already
+captured, Phase 4 must include:
+
+- On-Duty / Off-Duty driver toggle (Uber-style availability self-management)
+- Driver location reporting (periodic geolocation updates while on-duty)
+- Driver state machine: offline → on_duty → busy → on_duty → off_duty
+- Manual assignment path (operator picks driver, current pattern)
+- Auto-dispatch path (no driver assigned, system finds nearest eligible)
+- Proximity calculation: driver location → pit → delivery address total distance
+- First-Accept-Wins logic with atomic single-winner enforcement
+- Push cascade on decline or timeout (next-nearest driver gets push)
+- Operator visibility into fleet status (all drivers + states + locations)
+
+**Phase 4 split recommendation:**
+
+- Phase 4.1 (~7-10 days): Workflow redesign + decline + design system +
+  manual assignment push notifications + route preview. Operationally
+  usable as standalone.
+- Phase 4.2 (~5-7 days): On-duty toggle + location tracking + auto-dispatch
+  + proximity routing + cascade logic. Automation layer on top of 4.1.
+
+**Total Phase 4 (4.1 + 4.2): ~12-15 working days focused effort.**
+
+**Open dispatch design decisions (pending CVO):**
+
+- Decision A: Ship 4.1 and 4.2 sequentially, or as one Phase 4?
+- Decision B: Push timeout window (30s / 60s / 2min)?
+- Decision C: Push cascade automatic or operator-controlled?
+- Decision D: Location update frequency for on-duty drivers?
+
+These decisions are required before Phase 4 design document can be
+finalized.
+
+---
+
 ## P3 — UX polish (deferred indefinitely until prioritized)
 
 - `formAttempted` red-border validation pattern → ContactForm, WhatsAppButton, OutOfAreaModal, CityPage (match Order.tsx UX)
