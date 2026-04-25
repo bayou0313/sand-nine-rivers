@@ -18,6 +18,7 @@ Document current security posture, known gaps, and planned hardening work for Wa
 **Review cadence:** Quarterly. Next review: 2026-07-25.
 
 **Version history:**
+- v1.4 (2026-04-25) — §2.5 gap location updated from at_pit→loaded to loaded→delivered transition per Phase 3b workflow correction. Same gap, new location. Fix plan unchanged.
 - v1.3 (2026-04-25) — Phase 3b shipped (driver order detail + workflow actions). New Priority 2 item §2.5 documents the client-side COD parity gate as a known limitation: server accepts `driver_collected_at` non-null as the gate to advance from at_pit → loaded; UI prevents under-collection but a malicious driver bypassing the UI could mark "loaded" with $0 collected. Threat model = honest-mistake prevention only. Server-side parity check deferred to a later slice.
 - v1.2 (2026-04-25) — Phase 3a validation completed (T1/T2 PASS, T3 FAIL). Driver-auth rate limiter recategorized from "best-effort acknowledged" to "non-functional in production." New Priority 1 item §1.4. See PHASE_3_PLAN.md §"Phase 3a Validation Results" for test details.
 - v1.1 (2026-04-25) — Updated planned driver portal home from izons.com to fleetwork.net per brand decision
