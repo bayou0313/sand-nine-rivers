@@ -46,6 +46,10 @@ Reference gap: `leads-auth` driver upsert (lines 2927, 2956) currently trims ema
 - Priority: Medium — functions currently work in production (errors are build-check warnings, not runtime failures); but any future deploy that triggers a full recheck will fail
 - Discovered: Phase 3a migration post-check (2026-04-25)
 
+### P4-02 — Driver portal today/tomorrow view uses UTC date slicing
+Phase 3b should add explicit operator timezone setting (likely America/Chicago for Louisiana) to the `driver-auth` `list_my_orders` action. Current ±1 day slop is acceptable for Phase 3a but will cause edge-case confusion during late-night driver sessions.
+- Discovered: Phase 3a code review (2026-04-25)
+
 ---
 
 ## P3 — UX polish (deferred indefinitely until prioritized)
