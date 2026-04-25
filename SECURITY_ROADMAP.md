@@ -33,7 +33,7 @@ Document current security posture, known gaps, and planned hardening work for Wa
 - PINs hashed with bcryptjs cost factor 10 (matches 2FA backup code pattern)
 - Session tokens: 256-bit cryptographically random, base64url encoded (RFC 4648 §5), returned to client once, stored server-side as SHA-256 hash
 - 30-day session expiry, revocable via `revoked_at` column
-- Rate limiting: 5 login attempts per 60 seconds per IP (in-memory, best-effort; cold-start bypass acknowledged)
+- Rate limiting: nominally 5 login attempts per 60 seconds per IP, **non-functional in production** — in-memory limiter does not survive Supabase isolate boots; effective rate is ~14 attempts/sec/IP gated only by bcrypt latency. Scheduled fix: Phase 3b+1 (DB-backed `driver_login_attempts` table with `(ip_address, attempted_at)` index, server-side count check before bcrypt comparison, ~30–45 min slice). See §2.1.4. Validated 2026-04-25 (PHASE_3_PLAN.md T3).
 - Generic "Invalid credentials" error message prevents enumeration
 - Constant-time bcrypt comparison even when driver not found (dummy hash defense against timing-based enumeration)
 
