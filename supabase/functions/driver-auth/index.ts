@@ -86,7 +86,14 @@ function generateSessionToken(): string {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // In-memory rate limit (5 attempts / 60s / IP)
-// Cold-start bypass is acknowledged. Best-effort only at this phase.
+//
+// STATUS (verified 2026-04-25): non-functional in production — in-memory
+// limiter does not survive Supabase isolate boots; effective rate is
+// ~14 attempts/sec/IP gated only by bcrypt latency. Scheduled fix: Phase 3b+1
+// (DB-backed `driver_login_attempts` table with `(ip_address, attempted_at)`
+// index, server-side count check before bcrypt comparison, ~30–45 min slice).
+//
+// See SECURITY_ROADMAP.md §2 Priority 1 for matching language and roadmap entry.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const RATE_WINDOW_MS = 60_000;
