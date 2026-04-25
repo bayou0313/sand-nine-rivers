@@ -50,22 +50,135 @@ Reference gap: `leads-auth` driver upsert (lines 2927, 2956) currently trims ema
 Phase 3b should add explicit operator timezone setting (likely America/Chicago for Louisiana) to the `driver-auth` `list_my_orders` action. Current ±1 day slop is acceptable for Phase 3a but will cause edge-case confusion during late-night driver sessions.
 - Discovered: Phase 3a code review (2026-04-25)
 
-### P4-03 — Driver portal Phase 4 feature bundle
-Three related driver-experience improvements grouped as a single Phase 4 slice. All three share the same surface (`/driver` and `/driver/order/:id`) and the same data path (`driver-auth`), so they should be planned and shipped together to avoid repeated regression sweeps of the workflow gates.
+## P4 — Driver workflow redesign + decline mechanism + embedded map (CVO-flagged 2026-04-25)
 
-**Sub-feature A — Workflow redesign**
-Revisit the four-state workflow (`acknowledged` → `at_pit` → `loaded` → `delivered`) end-to-end after Phase 3b smoke validation. Candidates include: explicit "en route to PIT" and "en route to customer" intermediate states, configurable per-pit step requirements, and tighter coupling between the COD payment gate and the loaded/delivered transition. Driver-facing label vocabulary ("Accept" / "Accepted" applied in Phase 3b) should be reviewed for the remaining steps as part of this pass.
+**Status:** Scope captured. Implementation deferred to Phase 4 driver
+financial module + dispatch foundation.
 
-**Sub-feature B — Decline mechanism**
-Today a driver has no first-class way to refuse an assigned order (sick, vehicle issue, route conflict). Add a "Decline" action available from the `acknowledged` step that: (1) records the decline with a reason code + free-text note on the order, (2) clears the driver assignment so the LMT Schedule tab surfaces the order for reassignment, (3) emits a notification to the operator. Must not be available after `at_pit` (loaded inventory cannot be unwound by a decline).
+**Background:** Three Phase 4 requirements surfaced during Phase 3b smoke:
+1. Workflow redesign (pit expense + customer collection separation, Google
+   Maps handoffs, granular states)
+2. Driver decline mechanism (return order to unassigned pool)
+3. Embedded driver map at top of order detail view (live driver location +
+   route to current destination)
 
-**Sub-feature C — Embedded driver map**
-Replace the current "open in Google/Apple Maps" deep-link pattern on `DriverOrder.tsx` with an embedded map view showing: PIT origin, customer destination, current driver location (with permission), and the suggested route. Should degrade gracefully to the existing deep-link if geolocation is denied or the maps script fails to load. Coordinate with the existing `useGoogleMaps` loader rather than introducing a second Maps script tag.
+All three touch driver workflow layer; bundle as single Phase 4 effort.
 
-**Cross-cutting notes**
-- LMT Schedule tab currently has no realtime/polling for driver workflow updates (Phase 3b investigation finding) — Phase 4 should fold a polling or realtime subscription pass into this slice so decline + status changes surface to operators without manual refresh.
-- All three sub-features touch `driver-auth`; budget one consolidated edge function diff rather than three separate deploys.
-- Discovered: Phase 3b post-correction review (2026-04-25)
+**Required workflow (replaces current 4-state machine):**
+1. Accepted → driver accepts assignment
+2. (Driver may decline at this state — order returns to unassigned pool)
+3. En route to pit → driver navigating (embedded map shows route to pit)
+4. At pit → driver arrived, loading truck
+5. Pit purchase recorded → cash/check/card paid TO the pit (business outflow)
+6. Loaded → truck loaded, expense recorded, decline no longer allowed
+7. En route to customer → driver navigating (embedded map switches to
+   customer destination)
+8. At delivery → driver arrived at customer site
+9. Delivered → load delivered, customer payment collected (business inflow)
+10. Order complete → driver advances to next assigned order
+
+**Schema additions:**
+- New columns on orders:
+  - pit_purchase_cash, pit_purchase_check, pit_purchase_card
+  - pit_purchase_at
+  - declined_at, declined_by_driver_id, decline_reason, decline_count
+- New workflow states: en_route_to_pit, en_route_to_customer, at_delivery
+- Possibly: pit_transactions table (multi-order pit trips)
+- Possibly: driver_locations table (if persisting driver positions for
+  operator fleet view — see embedded map design notes below)
+
+**New edge function actions (driver-auth):**
+- decline_order — sets driver_id NULL, stamps declined_at, increments
+  decline_count, records reason; only allowed at acknowledged or earlier
+- record_pit_purchase — records material expense at pit
+- advance_workflow needs to support new states with proper gates
+- Possibly: update_driver_location — if persisting positions
+
+**Integrations:**
+- Embedded Google Maps in DriverOrder.tsx (vs current deep link only)
+  - Browser Geolocation API for live driver position
+  - Map shows driver marker + current destination marker + route polyline
+  - Destination marker swaps based on workflow state (pit → customer)
+  - Permission flow: prompt on first state transition that needs map
+- Possibly pit selection engine (closest + cheapest tie-break)
+- Google Maps deep link as fallback if embedded map fails
+
+**Embedded map design decisions (Phase 4 spec phase):**
+- Live tracking vs static destination map
+  (live = battery/data/cost; static = simpler, ~80% of value)
+- Persist driver location server-side (enables fleet view) vs client-only
+  (lower privacy footprint, no PII custody)
+- Update frequency for live tracking (every 5s, 30s, 60s?)
+- Battery saver / pause tracking option for drivers
+- Permission denial fallback (static destination map only)
+- Dead zone behavior (freeze last position, show offline state)
+- Cost modeling — Google Maps embedded loads have per-impression pricing;
+  negligible at 2 drivers, real at 50
+
+**Operator dashboard updates:**
+- Pit expense ledger view
+- End-of-day reconciliation report
+- Declined order queue with reassignment workflow
+- Decline pattern analytics per driver
+- Per-order decline_count flag (3+ declines = problematic order alert)
+- Possibly: fleet map view (all drivers on one map) — only if location is
+  persisted server-side
+
+**Effort estimate:** ~5-7 working days focused effort.
+- Schema: ~1.5 hours
+- driver-auth: ~6-8 hours
+- DriverOrder.tsx: ~10-14 hours (workflow UI + decline + embedded map)
+- Operator dashboard: ~6-8 hours
+- Notifications: ~1 hour
+- Map integration design + cost modeling: ~2-3 hours
+- Testing + smoke: ~3-4 hours
+- Documentation: ~2 hours
+
+**Dependencies:**
+- Audit log (SECURITY_ROADMAP §2.4) becomes Priority 1
+- Server-side parity gates (§2.5) need symmetric enforcement on both
+  payment transactions
+- Realtime subscriptions on orders table (currently only on notifications)
+  — required for operator visibility on declined orders if 15-second
+  polling delay is unacceptable
+- Decision on driver location PII persistence (privacy/security review)
+
+**Threat model expansion (vs current Phase 3b):**
+- Driver under-reporting pit purchase
+- Driver over-reporting pit purchase
+- Driver cherry-picking via decline
+- Two-sided financial fraud surface
+- Driver location PII custody (if persisted)
+- Driver location spoofing (if used for any business logic) — currently
+  display-only so not a vector, but flagged for future
+- Mitigation: pit receipts, supplier invoices, periodic reconciliation,
+  decline pattern analytics, location persistence governance
+
+**Edge cases to design for:**
+- Multiple loads from same pit on same trip
+- Mixed payment methods (cash to pit, Stripe from customer)
+- Pit on terms (accounts payable tracking)
+- Customer underpayment or dispute at delivery
+- Google Maps offline / dead zone (both deep link and embedded map)
+- Truck breakdown mid-route
+- Pit closes mid-day, driver redirects
+- Driver declines after 3 prior drivers also declined (cascade)
+- Customer-paid Stripe order gets declined (no auto-refund; operator decides)
+- Driver denies location permission
+- Battery drain complaints / driver requests pause tracking
+
+**Notes:**
+- Foundational for business model, not feature polish
+- Required before owner-operator marketplace, franchise, multi-pit expansion
+- Required before DriveDigits-style automated dispatch
+- Required before operator fleet visibility (location-dependent)
+- Phase 3b's payment-at-delivery correction is the interim solution
+  until Phase 4 ships
+- "Acknowledge → Accept" vocabulary fix shipped in Phase 3b polish (2026-04-25)
+
+**Owner:** Silas Caldeira (CVO)
+**Logged:** 2026-04-25
+**Target phase:** Phase 4
 
 ---
 
