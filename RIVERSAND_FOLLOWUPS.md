@@ -236,6 +236,53 @@ finalized.
 
 ---
 
+**ETA tracking + schedule arithmetic (2026-04-25, late session):**
+
+Required Phase 4 capability:
+
+- Per-order ETA at pit and at delivery, calculated from driver current
+  location + Google Maps Distance Matrix
+- 10 min load time at pit + 10 min unload time at customer baked into
+  schedule arithmetic
+- Chained ETAs across driver's order queue (each order's ETA depends
+  on prior order completion)
+- Recalculation on: driver location update, order assignment, workflow
+  advance, completion
+- Schedule visualization for driver (own day) and operator (fleet view)
+- ETA-aware auto-dispatch: prefer driver who finishes soonest, not just
+  nearest
+
+Schema additions:
+
+- orders.eta_at, orders.eta_at_pit, orders.eta_calculated_at
+- orders.queue_position
+- Possibly: configurable load_time_minutes / unload_time_minutes per
+  business or per driver
+
+Cost implication: Distance Matrix API call volume increases significantly.
+Mitigation: smart recalc triggers (location delta thresholds, not blind
+interval polling).
+
+**Phase 4 sub-phase split (revised from 2-way to 3-way):**
+
+- **Phase 4.1 — Foundation (~7-10 days):** Workflow redesign + decline +
+  design system compliance + manual assignment + push notifications +
+  static route preview map. Operationally usable as standalone.
+- **Phase 4.2 — Dispatch automation (~5-7 days):** On-duty toggle +
+  location tracking + auto-dispatch + proximity routing + push cascade
+  + operator fleet visibility. Layered on 4.1.
+- **Phase 4.3 — ETA + schedule (~3-4 days):** Chained ETA calculation +
+  driver schedule view + operator fleet schedule + ETA-aware dispatch +
+  customer ETA notifications (or deferred to Phase 5). Layered on 4.2.
+
+**Total Phase 4 (all three sub-phases): ~15-19 working days focused effort.**
+
+**Phase 4 design document:** Deferred to next session per CVO direction.
+All three sub-phases captured here; design document will spec each
+sub-phase with state machines, schemas, action contracts, and slice plans.
+
+---
+
 ## P3 — UX polish (deferred indefinitely until prioritized)
 
 - `formAttempted` red-border validation pattern → ContactForm, WhatsAppButton, OutOfAreaModal, CityPage (match Order.tsx UX)
