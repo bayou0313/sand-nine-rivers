@@ -178,17 +178,20 @@ All three touch driver workflow layer; bundle as single Phase 4 effort.
   until Phase 4 ships
 - "Acknowledge → Accept" vocabulary fix shipped in Phase 3b polish (2026-04-25)
 
-**Open architecture decision (2026-04-25):** Phase 4 must include driver push notification ("driver app on top" when assigned) plus route preview before Accept/Decline. This forces a strategic choice:
-- Option A: Web PWA + Web Push API (~2-3 days, iOS limitations, Android works)
-- Option B: Native iOS + Android apps via Capacitor or React Native (~7-10 days additional, full capability, App Store maintenance)
-- Option C: Hybrid — ship Web PWA first (Phase 4), native shell as Phase 5 (~5-7 days additional)
+**Architecture decisions confirmed (2026-04-25):**
 
-CVO decision required before Phase 4 design document is finalized. Decision affects timeline (web ~10 days vs hybrid ~17 days), reliability (web has iOS push gaps), and ongoing maintenance (native = app store discipline).
+- **Architecture path: Hybrid (Option C).** Phase 4 ships as Web PWA first. Phase 5 wraps with native iOS + Android shell via Capacitor or React Native (~5-7 days additional effort).
+- **iOS push tolerance for v1: acceptable.** Web Push API limitations on iOS are tolerated for Phase 4. Phase 5 native shell resolves them.
+- **Driver onboarding deadline: none fixed.** Phase 4 builds without compression pressure. Real drivers onboard onto fully-validated system.
 
-Pending CVO inputs:
-- Architecture choice (A/B/C)
-- Real driver onboarding deadline
-- Tolerance for iOS push unreliability in v1
+**Architectural constraints flowing from these decisions:**
+
+- Phase 4 must be Capacitor-wrappable from day one. No web-only APIs where native equivalents exist. Service worker design must accommodate native packaging.
+- Push notification infrastructure uses Web Push API + FCM for Phase 4. Phase 5 swaps in native FCM (Android) and APNs (iOS) without rewriting the assignment-trigger logic.
+- Asset bundle (icons, fonts, splash screens) sized for native packaging from start.
+- Route preview map uses Google Maps embed (no live tracking in v1) — live tracking added when Phase 5 native unlocks reliable background geolocation.
+
+**Next deliverable:** Phase 4 design document (~60-90 minutes structured writing). To be drafted next session. Phase 4 implementation begins only after design document is approved by CVO.
 
 **Owner:** Silas Caldeira (CVO)
 **Logged:** 2026-04-25
