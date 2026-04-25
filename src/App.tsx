@@ -25,6 +25,7 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
 // Path B Phase 3a — driver portal auth foundation
 const Driver = lazy(() => import("./pages/Driver.tsx"));
+const DriverOrder = lazy(() => import("./pages/DriverOrder.tsx"));
 
 const RouteFallback = () => (
   <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -340,7 +341,8 @@ function AppContent() {
         <Route path="/new-orleans-la/river-sand-delivery" element={<Navigate to="/new-orleans/river-sand-delivery" replace />} />
         {/* Path B Phase 3a — driver portal auth foundation */}
         <Route path="/driver" element={<Suspense fallback={<RouteFallback />}><Driver /></Suspense>} />
-        <Route path="/driver/order/:id" element={<Suspense fallback={<RouteFallback />}><Driver /></Suspense>} />
+        {/* Path B Phase 3b — driver order detail + workflow actions */}
+        <Route path="/driver/order/:id" element={<Suspense fallback={<RouteFallback />}><DriverOrder /></Suspense>} />
         <Route path="/:citySlug/river-sand-delivery" element={<Suspense fallback={<RouteFallback />}><CityPage /></Suspense>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
