@@ -304,18 +304,65 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_sessions: {
+        Row: {
+          created_at: string
+          driver_id: string
+          expires_at: string
+          id: string
+          ip_address: string | null
+          last_active_at: string
+          revoked_at: string | null
+          session_token_hash: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string
+          revoked_at?: string | null
+          session_token_hash: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string
+          revoked_at?: string | null
+          session_token_hash?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_sessions_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           active: boolean
           created_at: string
           email: string | null
           id: string
+          last_login_at: string | null
           license_expires_on: string | null
           name: string
           notes: string | null
           payment_rate: number | null
           payment_type: string | null
           phone: string
+          pin_hash: string | null
+          pin_set_at: string | null
           truck_number: string | null
           updated_at: string
         }
@@ -324,12 +371,15 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          last_login_at?: string | null
           license_expires_on?: string | null
           name: string
           notes?: string | null
           payment_rate?: number | null
           payment_type?: string | null
           phone: string
+          pin_hash?: string | null
+          pin_set_at?: string | null
           truck_number?: string | null
           updated_at?: string
         }
@@ -338,12 +388,15 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          last_login_at?: string | null
           license_expires_on?: string | null
           name?: string
           notes?: string | null
           payment_rate?: number | null
           payment_type?: string | null
           phone?: string
+          pin_hash?: string | null
+          pin_set_at?: string | null
           truck_number?: string | null
           updated_at?: string
         }
