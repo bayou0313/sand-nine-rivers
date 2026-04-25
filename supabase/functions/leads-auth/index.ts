@@ -2860,8 +2860,15 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         .eq("active", true)
         .order("name", { ascending: true });
       if (error) throw error;
+
+      // Path B Phase 3a Slice 1.2 — derive pin_set boolean, never expose pin_hash to client
+      const drivers = (data || []).map((d: any) => {
+        const { pin_hash, ...rest } = d;
+        return { ...rest, pin_set: !!pin_hash };
+      });
+
       return new Response(
-        JSON.stringify({ drivers: data || [] }),
+        JSON.stringify({ drivers }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
