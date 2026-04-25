@@ -198,12 +198,12 @@ export default function DriverOrder() {
   const meetsParity = order ? collectedSum >= order.price : false;
   const paymentSavedToServer = !!order?.driver_collected_at;
 
-  // Server gate (mirror): can the driver advance from at_pit → loaded?
+  // Server gate (mirror): can the driver advance from loaded → delivered?
   // Server only checks driver_collected_at !== null OR payment_status === "paid".
-  const canAdvanceAtPit = stripePaid || paymentSavedToServer;
+  const canAdvanceLoaded = stripePaid || paymentSavedToServer;
 
   // UI parity gate (stricter — see §2.5): for COD, also require collected sum >= price.
-  const uiCanMarkLoaded = !codOrder || stripePaid || (paymentSavedToServer && meetsParity);
+  const uiCanMarkDelivered = !codOrder || stripePaid || (paymentSavedToServer && meetsParity);
 
   // ── Workflow advance ──
   async function handleAdvance() {
