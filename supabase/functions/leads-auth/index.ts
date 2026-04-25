@@ -2987,6 +2987,46 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       );
     }
 
+    // ── SET DRIVER PIN ──
+    // Path B Phase 3a — set driver PIN. Operator-facing. Revokes existing sessions on change.
+    if (action === "set_driver_pin") {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Invalid password" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const driverId = (body as any).driver_id;
+      const newPin = (body as any).new_pin;
+      if (!driverId || typeof driverId !== "string") {
+        return new Response(JSON.stringify({ error: "Missing driver_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (typeof newPin !== "string" || !/^\d{4,6}$/.test(newPin)) {
+        return new Response(JSON.stringify({ error: "PIN must be 4-6 digits, numeric only" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const pinHash = await bcrypt.hash(newPin, 10);
+
+      const { error: updErr } = await supabase
+        .from("drivers")
+        .update({ pin_hash: pinHash, pin_set_at: new Date().toISOString() })
+        .eq("id", driverId);
+      if (updErr) {
+        return new Response(JSON.stringify({ error: "Failed to update PIN: " + updErr.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Revoke all currently active sessions for this driver — forces re-login with new PIN
+      await supabase
+        .from("driver_sessions")
+        .update({ revoked_at: new Date().toISOString() })
+        .eq("driver_id", driverId)
+        .is("revoked_at", null);
+
+      return new Response(JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── SCHEDULE: GET DAY ──
     // Correction to Slice 1 — routes Schedule reads through leads-auth per existing Leads tab pattern.
     // Original Decision A assumed direct supabase read worked; diagnosis revealed RLS was silently
