@@ -215,7 +215,8 @@ function AppContent() {
 
   const isAdminRoute =
     location.pathname.startsWith("/leads") ||
-    location.pathname.startsWith("/admin");
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/driver");
 
   useEffect(() => {
     let cancelled = false;
