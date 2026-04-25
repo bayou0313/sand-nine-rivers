@@ -1,0 +1,1 @@
+UPDATE public.orders SET delivery_date = CURRENT_DATE WHERE id IN ('3a10552a-64dd-4cd5-b38e-8fd04dfdcc5d', '5dcc06a7-7997-44cb-90de-ce5d519b7b67');
