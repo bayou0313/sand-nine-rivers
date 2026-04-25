@@ -73,6 +73,7 @@ Last synced: 2026-04-25
 Future task briefs check this file's Version line. If the task specifies a minimum version higher than what's in this file, the task author must update this file first.
 
 ## Changelog
+- v1.13 (2026-04-25) — Committed fleetwork.net as driver portal production home (migration after Phase 3c). Added SECURITY_ROADMAP, INCIDENT_RESPONSE, PHASE_3_PLAN, FLEETWORK_MIGRATION_PLAN as companion documents.
 - v1.12 (2026-04-24) — Split reference into two docs: CORE_FLOW_REFERENCE.md (customer flow, regenerated) and LMT_REFERENCE.md (operator surface, new). Both supersede April 1 snapshot. Reflects Phase 0/1/2 work, Schedule Slice 1, 2FA Slice 1a, DriverModal Phase 1 polish, and P1 form cleanup (CityPage waitlist + OutOfAreaModal + ContactForm + WhatsAppButton).
 - v1.11 (2026-04-24) — Added reference to RIVERSAND_FORM_GUIDELINES_v1.1 as canonical form reference doc.
 
