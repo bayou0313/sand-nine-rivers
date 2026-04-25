@@ -1,6 +1,6 @@
 # SECURITY_ROADMAP.md — Ways Materials LLC
 
-**Version:** 1.3 (2026-04-25)
+**Version:** 1.4 (2026-04-25)
 **Scope:** riversand.net (customer-facing), /leads operator surface (LMT), fleetwork.net (planned driver-facing home), and all shared Supabase infrastructure.
 **Audience:** Silas Caldeira (CEO/CVO), future CSO or security consultant, future operator hires.
 
