@@ -320,7 +320,7 @@ serve(async (req) => {
       supabase
         .from("orders")
         .select(
-          "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes",
+          "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at",
         )
         .eq("driver_id", driverId)
         .gte("delivery_date", fmt(today))
@@ -346,6 +346,230 @@ serve(async (req) => {
         headers: { ...cors, "Content-Type": "application/json" },
       },
     );
+  }
+
+  // ── ADVANCE WORKFLOW ──
+  // Path B Phase 3b — driver workflow states + payment capture
+  // Strict state machine: NULL → acknowledged → at_pit → loaded → delivered.
+  // No skipping. No re-entering. Payment must be recorded (or Stripe-paid) before
+  // at_pit → loaded. Ownership enforced server-side: driver must own the order.
+  if (action === "advance_workflow") {
+    const rawToken = typeof body.session_token === "string" ? body.session_token : "";
+    const driverId = await verifySession(supabase, rawToken);
+    if (!driverId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const orderId = typeof body.order_id === "string" ? body.order_id : "";
+    const newStatus = typeof body.new_status === "string" ? body.new_status : "";
+
+    // Strict whitelist — exact match against the four legal states.
+    const VALID_STATES = ["acknowledged", "at_pit", "loaded", "delivered"] as const;
+    type WorkflowState = typeof VALID_STATES[number];
+    if (!orderId || !VALID_STATES.includes(newStatus as WorkflowState)) {
+      return new Response(JSON.stringify({ error: "Invalid request" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch order with ownership + state + payment context in one query.
+    const { data: order, error: fetchErr } = await supabase
+      .from("orders")
+      .select("id, driver_id, driver_workflow_status, payment_status, driver_collected_at")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (fetchErr || !order) {
+      // Generic message — do not leak whether the order exists or just isn't ours.
+      return new Response(JSON.stringify({ error: "Order not found" }), {
+        status: 404,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Ownership check. Same generic 404 to prevent enumeration of other drivers' orders.
+    if (order.driver_id !== driverId) {
+      return new Response(JSON.stringify({ error: "Order not found" }), {
+        status: 404,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // State machine: legal next-state for the current state.
+    // Map current → only allowed next. Anything else is rejected.
+    const legalNext: Record<string, WorkflowState> = {
+      "":              "acknowledged", // sentinel for NULL (handled below)
+      "acknowledged":  "at_pit",
+      "at_pit":        "loaded",
+      "loaded":        "delivered",
+    };
+    const currentKey = order.driver_workflow_status ?? "";
+    const allowedNext = legalNext[currentKey];
+
+    // Terminal state ('delivered') has no entry in legalNext → allowedNext undefined → reject.
+    // Same-state-to-same-state ('acknowledged' → 'acknowledged') also rejected because
+    // legalNext['acknowledged'] = 'at_pit', not 'acknowledged'.
+    if (!allowedNext || allowedNext !== newStatus) {
+      return new Response(JSON.stringify({ error: "Cannot skip workflow steps" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Payment gate: at_pit → loaded requires either recorded payment OR Stripe-paid.
+    // OR semantics: payment_status === "paid" (Stripe orders) bypasses cash recording.
+    // For COD orders, driver_collected_at must be non-null.
+    if (currentKey === "at_pit" && newStatus === "loaded") {
+      const isStripePaid = order.payment_status === "paid";
+      const paymentRecorded = order.driver_collected_at !== null;
+      if (!isStripePaid && !paymentRecorded) {
+        return new Response(
+          JSON.stringify({ error: "Record payment before continuing" }),
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    // Map newStatus → which timestamp column gets stamped.
+    const timestampCol: Record<WorkflowState, string> = {
+      "acknowledged": "acknowledged_at",
+      "at_pit":       "at_pit_at",
+      "loaded":       "loaded_at",
+      "delivered":    "workflow_delivered_at",
+    };
+    const stampCol = timestampCol[newStatus as WorkflowState];
+
+    const update: Record<string, unknown> = {
+      driver_workflow_status: newStatus,
+      [stampCol]: new Date().toISOString(),
+    };
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("orders")
+      .update(update)
+      .eq("id", orderId)
+      .eq("driver_id", driverId) // belt + suspenders: ownership re-asserted in WHERE
+      .select(
+        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at",
+      )
+      .maybeSingle();
+
+    if (updateErr || !updated) {
+      return new Response(JSON.stringify({ error: "Failed to update order" }), {
+        status: 500,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ order: updated }), {
+      status: 200,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
+  // ── RECORD PAYMENT COLLECTED ──
+  // Path B Phase 3b — driver workflow states + payment capture
+  // Driver records cash/check/card amounts at the at_pit step. Allowed only when
+  // the order is currently at_pit — not before, not after. Non-negative numbers
+  // only. Zero is acceptable in any field. Negative / NaN / Infinity / non-number
+  // rejected.
+  if (action === "record_payment_collected") {
+    const rawToken = typeof body.session_token === "string" ? body.session_token : "";
+    const driverId = await verifySession(supabase, rawToken);
+    if (!driverId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const orderId = typeof body.order_id === "string" ? body.order_id : "";
+    if (!orderId) {
+      return new Response(JSON.stringify({ error: "Invalid request" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Strict numeric validation. Reject anything that isn't a finite, non-negative number.
+    // Accepts integer or float; rejects strings, NaN, Infinity, undefined, null, negatives.
+    const validateAmount = (v: unknown): number | null => {
+      if (typeof v !== "number") return null;
+      if (!Number.isFinite(v)) return null; // catches NaN and ±Infinity
+      if (v < 0) return null;
+      return v;
+    };
+
+    const cash  = validateAmount(body.cash);
+    const check = validateAmount(body.check);
+    const card  = validateAmount(body.card);
+
+    if (cash === null || check === null || card === null) {
+      return new Response(
+        JSON.stringify({ error: "Invalid payment amounts" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Fetch order to verify ownership AND that it's currently at_pit.
+    const { data: order, error: fetchErr } = await supabase
+      .from("orders")
+      .select("id, driver_id, driver_workflow_status")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (fetchErr || !order) {
+      return new Response(JSON.stringify({ error: "Order not found" }), {
+        status: 404,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    if (order.driver_id !== driverId) {
+      return new Response(JSON.stringify({ error: "Order not found" }), {
+        status: 404,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Hard gate: only at_pit can record payment. Not before. Not after.
+    if (order.driver_workflow_status !== "at_pit") {
+      return new Response(
+        JSON.stringify({ error: "Payment can only be recorded at the pit step" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("orders")
+      .update({
+        driver_collected_cash:  cash,
+        driver_collected_check: check,
+        driver_collected_card:  card,
+        driver_collected_at:    new Date().toISOString(),
+      })
+      .eq("id", orderId)
+      .eq("driver_id", driverId)
+      .select(
+        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at",
+      )
+      .maybeSingle();
+
+    if (updateErr || !updated) {
+      return new Response(JSON.stringify({ error: "Failed to record payment" }), {
+        status: 500,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ order: updated }), {
+      status: 200,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
   }
 
   return new Response(JSON.stringify({ error: "Unknown action" }), {
