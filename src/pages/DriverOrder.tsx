@@ -44,14 +44,14 @@ type WorkflowState = typeof WORKFLOW_STEPS[number];
 
 const STEP_LABELS: Record<WorkflowState, string> = {
   acknowledged: "Acknowledged",
-  at_pit:       "At pit",
+  at_pit:       "Arrived at PIT",
   loaded:       "Loaded",
   delivered:    "Delivered",
 };
 
 const STEP_BUTTONS: Record<WorkflowState, string> = {
   acknowledged: "Acknowledge",
-  at_pit:       "Arrived at pit",
+  at_pit:       "Arrived at PIT",
   loaded:       "Mark loaded",
   delivered:    "Mark delivered",
 };
