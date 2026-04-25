@@ -1,16 +1,21 @@
 # RIVERSAND_CONTEXT.md
-Version: 1.12 (2026-04-24)
-Last synced: 2026-04-24
+Version: 1.13 (2026-04-25)
+Last synced: 2026-04-25
 
 ## Companion documents
 - CORE_FLOW_REFERENCE.md — customer-facing source snapshot (pages, customer components, lib, customer-flow edge functions). Regenerated 2026-04-24, supersedes April 1 snapshot.
 - LMT_REFERENCE.md — operator-facing source snapshot (Leads.tsx shell, drivers/*, schedule/*, LeadsSetup2FA, full leads-auth). New as of 2026-04-24.
 - RIVERSAND_FORM_GUIDELINES_v1.1_2026-04-24.md — canonical form entry reference (labels, inputs, validation, case handling) for all operator and customer-facing forms.
 - RIVERSAND_FOLLOWUPS.md — deferred technical follow-ups (P2 server-side normalization, P3 UX polish).
+- SECURITY_ROADMAP.md — Security posture, known gaps, and hardening roadmap.
+- INCIDENT_RESPONSE.md — Response runbooks for credential, breach, payment, and outage incidents.
+- PHASE_3_PLAN.md — Driver portal phase planning (3a shipped, 3b/3c pending).
+- FLEETWORK_MIGRATION_PLAN.md — Migration plan for driver portal to fleetwork.net.
 
 ## Project identity
 - Repo: bayou0313/sand-nine-rivers
 - Live site: riversand.net
+- Driver portal production home (planned): fleetwork.net — migration target after Phase 3c validated. See FLEETWORK_MIGRATION_PLAN.md.
 - Parent business: Ways Materials LLC (WAYS trademark)
 - Supabase project: lclbexhytmpfxzcztzva
 - Stripe: live mode
@@ -68,6 +73,7 @@ Last synced: 2026-04-24
 Future task briefs check this file's Version line. If the task specifies a minimum version higher than what's in this file, the task author must update this file first.
 
 ## Changelog
+- v1.13 (2026-04-25) — Committed fleetwork.net as driver portal production home (migration after Phase 3c). Added SECURITY_ROADMAP, INCIDENT_RESPONSE, PHASE_3_PLAN, FLEETWORK_MIGRATION_PLAN as companion documents.
 - v1.12 (2026-04-24) — Split reference into two docs: CORE_FLOW_REFERENCE.md (customer flow, regenerated) and LMT_REFERENCE.md (operator surface, new). Both supersede April 1 snapshot. Reflects Phase 0/1/2 work, Schedule Slice 1, 2FA Slice 1a, DriverModal Phase 1 polish, and P1 form cleanup (CityPage waitlist + OutOfAreaModal + ContactForm + WhatsAppButton).
 - v1.11 (2026-04-24) — Added reference to RIVERSAND_FORM_GUIDELINES_v1.1 as canonical form reference doc.
 
