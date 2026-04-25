@@ -231,6 +231,42 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
     }
   }
 
+  // Path B Phase 3a — driver portal auth foundation: set/reset driver PIN.
+  // Server (leads-auth set_driver_pin) validates 4–6 digits, hashes with bcrypt,
+  // and revokes all active sessions for this driver.
+  async function handleSetPin() {
+    setPinError(null);
+    if (!/^\d{4,6}$/.test(pin)) {
+      setPinError("PIN must be 4–6 digits");
+      return;
+    }
+    if (pin !== pinConfirm) {
+      setPinError("PINs do not match");
+      return;
+    }
+    setPinSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { password, action: "set_driver_pin", driver_id: driver!.id, pin },
+      });
+      const errBody: any = (data as any) && (data as any).error ? data : null;
+      if (error || errBody) {
+        toast({
+          title: "PIN update failed",
+          description: errBody?.error || error?.message || "Unknown error",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({ title: "PIN updated. Driver's existing sessions have been revoked." });
+      setPin("");
+      setPinConfirm("");
+      onSaved();
+    } finally {
+      setPinSaving(false);
+    }
+  }
+
   const showNameError = formAttempted && !!nameError;
   const showPhoneError = formAttempted && !!phoneError;
 
