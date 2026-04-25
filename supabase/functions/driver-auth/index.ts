@@ -338,6 +338,8 @@ serve(async (req) => {
     ]);
 
     if (ordersRes.error || driverRes.error) {
+      if (ordersRes.error) console.error("[list_my_orders] orders error:", ordersRes.error);
+      if (driverRes.error) console.error("[list_my_orders] driver error:", driverRes.error);
       return new Response(JSON.stringify({ error: "Failed to load orders" }), {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
