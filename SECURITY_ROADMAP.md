@@ -106,6 +106,7 @@ Document current security posture, known gaps, and planned hardening work for Wa
 - **Fix:** DB-backed rate limiter — new `driver_login_attempts` table with `(ip_address, attempted_at)` index. In `driver-auth` login action, before bcrypt comparison: `SELECT count(*) FROM driver_login_attempts WHERE ip_address = $1 AND attempted_at > now() - interval '60 seconds'` → if ≥ 5, return 429. Always insert the attempt row. Background cleanup job prunes rows older than 24 hours.
 - **Effort:** 30–45 min slice. One migration (table + index + cleanup function), one edit to `driver-auth/index.ts` (replace `checkRate` with DB query), one redeploy.
 - **Owner:** Phase 3b+1 — ship immediately after Phase 3b code brief, before any real driver onboards. Update this entry to "fixed" and remove from Priority 1 once shipped.
+- **Status (2026-04-25):** Phase 3b+1 still ships ahead of Phase 4 design as a parallel security workstream. Phase 3b polish work HALTED on CVO direction (workflow redesign required — see RIVERSAND_FOLLOWUPS.md P4-03), but the rate limiter slice is independent of workflow design and proceeds on its own track.
 
 ### Priority 2 — Address within 2 months
 
