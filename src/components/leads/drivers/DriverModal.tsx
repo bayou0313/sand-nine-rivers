@@ -247,7 +247,7 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
     setPinSaving(true);
     try {
       const { data, error } = await supabase.functions.invoke("leads-auth", {
-        body: { password, action: "set_driver_pin", driver_id: driver!.id, pin },
+        body: { password, action: "set_driver_pin", driver_id: driver!.id, new_pin: pin },
       });
       const errBody: any = (data as any) && (data as any).error ? data : null;
       if (error || errBody) {
