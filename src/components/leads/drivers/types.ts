@@ -13,9 +13,9 @@ export interface Driver {
   license_expires_on: string | null; // ISO date
   notes: string | null;
   active: boolean;
-  // Path B Phase 3a — driver portal auth foundation
-  // Presence only — never render. Used to gate "Set PIN" vs "Reset PIN" label in DriverModal.
-  pin_hash?: string | null;
+  // Path B Phase 3a Slice 1.2 — derived server-side from !!pin_hash. Used to gate
+  // "Set PIN" vs "Reset PIN" label in DriverModal. The bcrypt hash is never exposed to the client.
+  pin_set?: boolean;
   created_at: string;
   updated_at: string;
 }
