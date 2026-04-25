@@ -18,7 +18,7 @@ Document current security posture, known gaps, and planned hardening work for Wa
 **Review cadence:** Quarterly. Next review: 2026-07-25.
 
 **Version history:**
-- v1.2 (2026-04-25) — Phase 3a validation completed (T1/T2 PASS, T3 FAIL). Driver-auth rate limiter recategorized from "best-effort acknowledged" to "non-functional in production." New Priority 1 item §2.1.4. See PHASE_3_PLAN.md §"Phase 3a Validation Results" for test details.
+- v1.2 (2026-04-25) — Phase 3a validation completed (T1/T2 PASS, T3 FAIL). Driver-auth rate limiter recategorized from "best-effort acknowledged" to "non-functional in production." New Priority 1 item §1.4. See PHASE_3_PLAN.md §"Phase 3a Validation Results" for test details.
 - v1.1 (2026-04-25) — Updated planned driver portal home from izons.com to fleetwork.net per brand decision
 - v1.0 (2026-04-24) — Initial draft
 
