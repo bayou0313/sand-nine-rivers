@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, UserX, UserPlus, AlertCircle } from "lucide-react";
+import { Loader2, UserX, UserPlus, AlertCircle, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatPhone, stripPhone } from "@/lib/format";
@@ -77,6 +77,11 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
   const [nameError, setNameError] = useState<string | null>(null);
   const [formAttempted, setFormAttempted] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  // Path B Phase 3a — driver portal auth foundation: PIN management state
+  const [pin, setPin] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinSaving, setPinSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -87,6 +92,9 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
       setNameError(null);
       setFormAttempted(false);
       setConfirmDeactivate(false);
+      setPin("");
+      setPinConfirm("");
+      setPinError(null);
     }
   }, [open, driver]);
 
@@ -220,6 +228,42 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
       onClose();
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Path B Phase 3a — driver portal auth foundation: set/reset driver PIN.
+  // Server (leads-auth set_driver_pin) validates 4–6 digits, hashes with bcrypt,
+  // and revokes all active sessions for this driver.
+  async function handleSetPin() {
+    setPinError(null);
+    if (!/^\d{4,6}$/.test(pin)) {
+      setPinError("PIN must be 4–6 digits");
+      return;
+    }
+    if (pin !== pinConfirm) {
+      setPinError("PINs do not match");
+      return;
+    }
+    setPinSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("leads-auth", {
+        body: { password, action: "set_driver_pin", driver_id: driver!.id, pin },
+      });
+      const errBody: any = (data as any) && (data as any).error ? data : null;
+      if (error || errBody) {
+        toast({
+          title: "PIN update failed",
+          description: errBody?.error || error?.message || "Unknown error",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({ title: "PIN updated. Driver's existing sessions have been revoked." });
+      setPin("");
+      setPinConfirm("");
+      onSaved();
+    } finally {
+      setPinSaving(false);
     }
   }
 
@@ -357,6 +401,70 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
             <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: "#E5E7EB" }}>
               <Label htmlFor="drv-active" className={`${LABEL_CLS} cursor-pointer mb-0`}>Active</Label>
               <Switch id="drv-active" checked={form.active} onCheckedChange={(v) => update("active", v)} />
+            </div>
+          )}
+
+          {/* Path B Phase 3a — driver portal auth foundation: PIN section (Edit mode only) */}
+          {isEdit && (
+            <div className="pt-3 border-t" style={{ borderColor: "#E5E7EB" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <KeyRound className="w-4 h-4" style={{ color: BRAND_GOLD }} />
+                <span className="font-display uppercase tracking-wide text-sm" style={{ color: BRAND_NAVY }}>
+                  Driver PIN
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                Setting a new PIN will sign the driver out of all active sessions.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="drv-pin" className={LABEL_CLS}>New PIN</Label>
+                  <Input
+                    id="drv-pin"
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    maxLength={6}
+                    value={pin}
+                    onChange={(e) => { setPin(e.target.value.replace(/\D/g, "")); setPinError(null); }}
+                    placeholder="4–6 digits"
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="drv-pin-confirm" className={LABEL_CLS}>Confirm PIN</Label>
+                  <Input
+                    id="drv-pin-confirm"
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    maxLength={6}
+                    value={pinConfirm}
+                    onChange={(e) => { setPinConfirm(e.target.value.replace(/\D/g, "")); setPinError(null); }}
+                    placeholder="Repeat"
+                    className={INPUT_CLS}
+                  />
+                </div>
+              </div>
+              {pinError && (
+                <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ERROR_RED }}>
+                  <AlertCircle className="w-3 h-3" />
+                  {pinError}
+                </div>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSetPin}
+                disabled={pinSaving || !pin || !pinConfirm}
+                className="mt-2"
+                style={{ backgroundColor: BRAND_NAVY, color: "white" }}
+              >
+                {pinSaving && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                {driver?.pin_hash ? "Reset PIN" : "Set PIN"}
+              </Button>
             </div>
           )}
         </div>

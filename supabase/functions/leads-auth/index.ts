@@ -2856,7 +2856,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       }
       const { data, error } = await supabase
         .from("drivers")
-        .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at")
+        .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, pin_hash, created_at, updated_at")
         .eq("active", true)
         .order("name", { ascending: true });
       if (error) throw error;

@@ -13,6 +13,9 @@ export interface Driver {
   license_expires_on: string | null; // ISO date
   notes: string | null;
   active: boolean;
+  // Path B Phase 3a — driver portal auth foundation
+  // Presence only — never render. Used to gate "Set PIN" vs "Reset PIN" label in DriverModal.
+  pin_hash?: string | null;
   created_at: string;
   updated_at: string;
 }
