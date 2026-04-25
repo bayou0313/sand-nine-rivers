@@ -15,6 +15,7 @@ Last synced: 2026-04-25
 ## Project identity
 - Repo: bayou0313/sand-nine-rivers
 - Live site: riversand.net
+- Driver portal production home (planned): fleetwork.net — migration target after Phase 3c validated. See FLEETWORK_MIGRATION_PLAN.md.
 - Parent business: Ways Materials LLC (WAYS trademark)
 - Supabase project: lclbexhytmpfxzcztzva
 - Stripe: live mode
