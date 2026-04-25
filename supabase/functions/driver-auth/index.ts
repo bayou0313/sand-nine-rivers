@@ -10,8 +10,9 @@
 // - bcryptjs@2.4.3 cost 10 (matches existing 2FA backup-code pattern in leads-auth)
 // - Session tokens: 32 random bytes, base64url (RFC 4648 §5) for return; SHA-256 hash stored
 // - Generic "Invalid credentials" for both missing phone and wrong PIN
-// - In-memory rate limit: 5 attempts per 60s per IP (best-effort; cold-start bypass
-//   acknowledged for Phase 3a — DB-backed limiter deferred to a later phase)
+// - In-memory rate limit: 5 attempts per 60s per IP, non-functional in production
+//   (Supabase isolate boots reset the counter on nearly every request — see
+//   SECURITY_ROADMAP.md §1.4; DB-backed limiter scheduled for Phase 3b+1)
 // - Session tokens never logged anywhere
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
@@ -337,6 +338,8 @@ serve(async (req) => {
     ]);
 
     if (ordersRes.error || driverRes.error) {
+      if (ordersRes.error) console.error("[list_my_orders] orders error:", ordersRes.error);
+      if (driverRes.error) console.error("[list_my_orders] driver error:", driverRes.error);
       return new Response(JSON.stringify({ error: "Failed to load orders" }), {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
@@ -389,6 +392,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (fetchErr || !order || order.driver_id !== driverId) {
+      if (fetchErr) console.error("[get_order] fetch error:", fetchErr);
       // Generic 404 for missing OR not-yours, to match anti-enumeration pattern
       // used by advance_workflow / record_payment_collected.
       return new Response(JSON.stringify({ error: "Order not found or not assigned to you" }), {
@@ -517,6 +521,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (updateErr || !updated) {
+      if (updateErr) console.error("[advance_workflow] update error:", updateErr);
       return new Response(JSON.stringify({ error: "Failed to update order" }), {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
@@ -618,6 +623,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (updateErr || !updated) {
+      if (updateErr) console.error("[record_payment_collected] update error:", updateErr);
       return new Response(JSON.stringify({ error: "Failed to record payment" }), {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
