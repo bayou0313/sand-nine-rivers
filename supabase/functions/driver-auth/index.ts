@@ -482,10 +482,10 @@ serve(async (req) => {
       });
     }
 
-    // Payment gate: at_pit → loaded requires either recorded payment OR Stripe-paid.
+    // Payment gate: loaded → delivered requires either recorded payment OR Stripe-paid.
     // OR semantics: payment_status === "paid" (Stripe orders) bypasses cash recording.
     // For COD orders, driver_collected_at must be non-null.
-    if (currentKey === "at_pit" && newStatus === "loaded") {
+    if (currentKey === "loaded" && newStatus === "delivered") {
       const isStripePaid = order.payment_status === "paid";
       const paymentRecorded = order.driver_collected_at !== null;
       if (!isStripePaid && !paymentRecorded) {
