@@ -562,16 +562,16 @@ export default function DriverOrder() {
         {!isTerminal && next && (
           <section className="bg-white rounded-xl shadow-sm p-4 space-y-2">
             {/* Two-hint split: not at parity vs at parity but unsaved */}
-            {next === "loaded" && codOrder && !stripePaid && !meetsParity && (
+            {next === "delivered" && codOrder && !stripePaid && !meetsParity && (
               <div className="flex items-start gap-2 text-xs" style={{ color: ERROR_RED }}>
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>Collect payment in full before marking Loaded.</span>
+                <span>Collect payment in full before marking Delivered.</span>
               </div>
             )}
-            {next === "loaded" && codOrder && !stripePaid && meetsParity && !paymentSavedToServer && (
+            {next === "delivered" && codOrder && !stripePaid && meetsParity && !paymentSavedToServer && (
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>Tap Save Totals above to record before marking Loaded.</span>
+                <span>Tap Save Totals above to record before marking Delivered.</span>
               </div>
             )}
 
@@ -580,8 +580,8 @@ export default function DriverOrder() {
               onClick={handleAdvance}
               disabled={
                 advancing ||
-                (next === "loaded" && !uiCanMarkLoaded) ||
-                (next === "loaded" && !canAdvanceAtPit)
+                (next === "delivered" && !uiCanMarkDelivered) ||
+                (next === "delivered" && !canAdvanceLoaded)
               }
               className="w-full h-14 font-display uppercase tracking-wide text-base"
               style={{ backgroundColor: BRAND_GOLD, color: "white" }}
