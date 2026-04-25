@@ -2,6 +2,10 @@
 
 **Version:** 1.2 (2026-04-25, Phase 3a validated with one P1 follow-up)
 **Status:** Phase 3a shipped + validated 2026-04-25 (T1/T2 PASS, T3 FAIL → SECURITY_ROADMAP.md §1.4 Priority 1 follow-up scheduled Phase 3b+1). Phase 3b code brief pending.
+
+### Phase 3b Status
+
+**Status (2026-04-25):** Shipped. Post-deploy corrections applied (FK migration, payment gate move, Accept vocabulary). Smoke testing HALTED on CVO direction — workflow design does not match operational reality. Phase 4 redesign required before driver onboarding. See RIVERSAND_FOLLOWUPS.md P4-03 for redesign scope. Phase 3b code remains deployed but unvalidated for real-world use.
 **Scope:** Operational dispatch only. Financial features (payroll, petty cash, check tracking) deferred to Phase 4. Tap to Pay NFC deferred to future web-compatible payment project.
 **Estimated timeline (3b + 3c):** 3-4 weeks across two sub-slices. Each independently shippable and rollback-able.
 **Production home:** Currently building at `riversand.net/driver` as staging surface. Migration to `fleetwork.net` happens after Phase 3c validated.

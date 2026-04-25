@@ -52,6 +52,8 @@ Phase 3b should add explicit operator timezone setting (likely America/Chicago f
 
 ## P4 — Driver workflow redesign + decline mechanism + embedded map (CVO-flagged 2026-04-25)
 
+**Decision (2026-04-25):** CVO confirmed Phase 3b workflow does not model operational reality. Phase 4 redesign is committed and prioritized ahead of real driver onboarding. Phase 3b polish work (UI/UX compliance pass, embedded map exploration, navigation modals) HALTED. Phase 3b+1 (rate limiter, SECURITY_ROADMAP §1.4) continues independently as a security item.
+
 **Status:** Scope captured. Implementation deferred to Phase 4 driver
 financial module + dispatch foundation.
 
