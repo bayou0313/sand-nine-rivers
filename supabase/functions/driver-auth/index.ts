@@ -562,7 +562,7 @@ serve(async (req) => {
       .eq("id", orderId)
       .eq("driver_id", driverId)
       .select(
-        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at",
+        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at, pit_id, pit:pits(name)",
       )
       .maybeSingle();
 
