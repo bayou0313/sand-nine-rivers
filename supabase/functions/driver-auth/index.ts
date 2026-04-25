@@ -283,28 +283,43 @@ serve(async (req) => {
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-    const { data: orders, error: oErr } = await supabase
-      .from("orders")
-      .select(
-        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes",
-      )
-      .eq("driver_id", driverId)
-      .gte("delivery_date", fmt(today))
-      .lte("delivery_date", fmt(tomorrow))
-      .order("delivery_date", { ascending: true })
-      .order("delivery_window", { ascending: true });
+    // Fetch driver record alongside orders so the client can rehydrate the
+    // header bar after a page refresh without a separate verify call.
+    const [driverRes, ordersRes] = await Promise.all([
+      supabase
+        .from("drivers")
+        .select("id, name, phone, truck_number")
+        .eq("id", driverId)
+        .maybeSingle(),
+      supabase
+        .from("orders")
+        .select(
+          "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes",
+        )
+        .eq("driver_id", driverId)
+        .gte("delivery_date", fmt(today))
+        .lte("delivery_date", fmt(tomorrow))
+        .order("delivery_date", { ascending: true })
+        .order("delivery_window", { ascending: true }),
+    ]);
 
-    if (oErr) {
+    if (ordersRes.error || driverRes.error) {
       return new Response(JSON.stringify({ error: "Failed to load orders" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ orders: orders || [] }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        driver: driverRes.data || null,
+        orders: ordersRes.data || [],
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   return new Response(JSON.stringify({ error: "Unknown action" }), {
