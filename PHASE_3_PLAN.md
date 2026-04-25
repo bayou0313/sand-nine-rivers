@@ -335,7 +335,8 @@ Phase 4 built on Phase 3 foundation. Probably 2-3 weeks of work split into its o
 **Update log:**
 - 2026-04-24 — v1.0 initial draft covering all three sub-slices
 - 2026-04-25 — v1.1 Updated production home from riversand.net/driver to fleetwork.net (migration after 3c). Phase 3a marked shipped-unvalidated.
+- 2026-04-25 — v1.2 Phase 3a validation executed against production. T1 PASS (login + session row + last_login_at), T2 PASS (session round-trip + tampered token rejection), T3 FAIL (in-memory rate limiter non-functional in production). T3 follow-up logged as Priority 1 in SECURITY_ROADMAP.md §1.4 and scheduled for Phase 3b+1. Test driver row retained, deactivated via migration. Driver-auth source comment (lines 88–106) updated to match SECURITY_ROADMAP.md language verbatim.
 
 ---
 
-End of PHASE_3_PLAN.md v1.1
+End of PHASE_3_PLAN.md v1.2
