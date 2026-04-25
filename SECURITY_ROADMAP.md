@@ -138,9 +138,9 @@ Document current security posture, known gaps, and planned hardening work for Wa
 - **Owner:** Phase 4 or dedicated security work.
 
 #### 2.5 COD payment-parity check is client-side only
-- **Current:** Driver order detail UI (DriverOrder.tsx) disables the "Mark Loaded" button until `driver_collected_cash + check + card >= price`. The server (`advance_workflow`) only verifies that `driver_collected_at` is non-null before allowing at_pit → loaded; it does not re-check the sum against `price`.
-- **Risk:** Honest-mistake prevention only. A malicious driver who bypasses the UI (curl, devtools) can record `$0/$0/$0`, get `driver_collected_at` stamped, then advance to loaded with the order under-collected. Threat model is fraud-by-employee, not external attacker.
-- **Fix:** Move the parity check server-side. Either inside `record_payment_collected` (reject sums below price for COD) or inside `advance_workflow` (re-fetch sums and gate at_pit → loaded). The latter is cleaner because it keeps the recording action permissive (driver can save partial progress) and the gate at the state transition.
+- **Current:** Driver order detail UI (DriverOrder.tsx) disables the "Mark Delivered" button until `driver_collected_cash + check + card >= price`. The server (`advance_workflow`) only verifies that `driver_collected_at` is non-null before allowing loaded → delivered; it does not re-check the sum against `price`.
+- **Risk:** Honest-mistake prevention only. A malicious driver who bypasses the UI (curl, devtools) can record `$0/$0/$0`, get `driver_collected_at` stamped, then advance to delivered with the order under-collected. Threat model is fraud-by-employee, not external attacker.
+- **Fix:** Move the parity check server-side. Either inside `record_payment_collected` (reject sums below price for COD) or inside `advance_workflow` (re-fetch sums and gate loaded → delivered). The latter is cleaner because it keeps the recording action permissive (driver can save partial progress) and the gate at the state transition.
 - **Effort:** ~1-2 hours. One SQL/business-logic change in driver-auth, one new test case in the smoke suite, decision on which action to host it in. Coordinate with how operators currently handle partial-collection situations (e.g., customer pays half cash on arrival, half check after unload) — moving the gate too aggressively could block legitimate workflows.
 - **Owner:** Before driver fleet grows past 5, or before any compensation/incentive structure that creates pressure to under-collect (e.g., hauls-per-day bonuses).
 
