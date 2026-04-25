@@ -392,6 +392,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (fetchErr || !order || order.driver_id !== driverId) {
+      if (fetchErr) console.error("[get_order] fetch error:", fetchErr);
       // Generic 404 for missing OR not-yours, to match anti-enumeration pattern
       // used by advance_workflow / record_payment_collected.
       return new Response(JSON.stringify({ error: "Order not found or not assigned to you" }), {
