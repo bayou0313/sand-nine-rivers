@@ -283,6 +283,175 @@ sub-phase with state machines, schemas, action contracts, and slice plans.
 
 ---
 
+**Communication architecture (2026-04-25, late session):**
+
+Decisions confirmed by CVO:
+
+**SMS-first with voice as escape hatch:**
+
+- Driver-customer communication primarily via SMS templates (pre-approved,
+  pre-translated, professional)
+- Free-text input available for both driver and customer when templates
+  don't fit
+- Voice calling reserved as escape hatch for genuinely complex situations
+- Both directions translated automatically (Google Translate API or DeepL
+  for free-text; pre-translated templates for common messages)
+- All SMS and voice communication logged to driver_customer_communications
+  table (or split into _sms and _calls tables)
+
+**Bidirectional translation:**
+
+- Customer's preferred language captured at order time (form field) with
+  auto-update if customer's reply language differs
+- Driver sends in English → customer receives in preferred language
+- Customer sends in any language → driver receives in English
+- Original + translation both stored for operator review and dispute resolution
+- Confidence scoring on free-text translations; low-confidence flagged
+
+**Customer arrival notifications:**
+
+- Automated SMS/email at T-60 minutes and T-30 minutes before driver's
+  calculated arrival
+- Each notification includes "Refuse delivery" option (tap link, reply STOP)
+- Customer refusal flips order to refused state, dispatch cancelled before
+  truck departure (or recall if en route)
+- Refusal reason captured for operator analytics
+- Billing implications: refusal before T-60 = no charge, T-60 to arrival =
+  potential cancellation fee (policy decision deferred)
+
+**Pending CVO inputs:**
+
+- Specific languages to support (likely English + Spanish minimum;
+  Vietnamese, French, others TBD based on customer demographics)
+- Free-text vs templates-only for driver outbound (recommendation: both,
+  templates default with free-text fallback)
+- Operator monitoring posture for SMS (recommendation: search-when-needed
+  for SMS; spot-check or triggered review for voice)
+
+---
+
+**Hardware platform (2026-04-25, late session):**
+
+Decision confirmed by CVO:
+
+- Driver app deployed on company-owned Samsung Galaxy Tab A11+ 5G tablets
+- Mounted in trucks, dedicated work device per truck
+- Android-only (iOS not in scope — every driver gets the same tablet)
+- Native Android via Capacitor wrap of existing web codebase
+
+Tablet specifications:
+
+- Samsung Galaxy Tab A11+ 5G
+- 11-inch TFT LCD, 1920x1200, 90Hz
+- MediaTek Dimensity 7300 (4nm)
+- 6GB or 8GB RAM, 128GB or 256GB storage
+- 7,040mAh battery, 25W fast charging
+- 5G sub-6, Wi-Fi 5, Bluetooth 5.3
+- Android 16, 7 years of support
+- ~$400-600 per truck including mount, case, screen protector
+
+Implications:
+
+- Phase 4 architecture is native Android via Capacitor from baseline
+  (not "PWA first, native later" — go native immediately)
+- Push notifications, background processing, NFC, full-screen alerts all
+  reliable on native Android
+- Sideload via APK or Google Play internal testing track
+- Mobile Device Management (MDM) recommended at 5+ tablets — deferred
+- Cellular data plan needed per tablet (~$20-30/month per device)
+
+**Pending CVO verification before ordering:**
+
+- Stripe Tap to Pay certification for Samsung Galaxy Tab A11+ 5G
+- Action: contact Stripe Terminal support to confirm device is on certified
+  hardware list before ordering
+- If not certified: switch to Galaxy Tab S9 or other certified model (NOT
+  add separate card reader — defeats the purpose of NFC)
+
+**Pending CVO decisions:**
+
+- NFC use cases beyond Stripe Tap to Pay (driver sign-in, pit yard tap-in,
+  truck pairing, etc. — none currently committed)
+- Tablet acquisition timeline (development-only first vs immediate truck
+  deployment)
+- Number of tablets in initial purchase (1 for development, 1 for Silas's
+  truck, more as drivers onboard)
+
+---
+
+**Stripe Tap to Pay (2026-04-25, late session):**
+
+Required Phase 4 capability:
+
+- Customer payment via NFC at delivery — customer taps card or phone on
+  tablet's NFC chip
+- No separate card reader hardware (tablet IS the reader)
+- Stripe Terminal SDK integrated into native Android app
+- Driver taps "Collect Payment" → customer taps card → payment processes
+  → workflow advances to delivered
+
+Architectural implications:
+
+- Tap to Pay forces native Android (Stripe Terminal SDK is a native
+  dependency, not web-compatible)
+- Confirms native-Android-from-baseline decision (cannot do PWA first
+  if tap-to-pay is a Phase 4 requirement)
+- Stripe Terminal account configuration required (extension of existing
+  Stripe account or separate Terminal account)
+- PCI compliance posture remains Stripe-handled, but our app must follow
+  Stripe Terminal integration requirements
+
+Cost estimate:
+
+- 2.7% + $0.05 per transaction (vs 2.9% + $0.30 for online)
+- For $232 sand delivery: $6.31 in fees
+- No monthly device fee, no separate hardware cost beyond tablet itself
+
+Pending CVO action:
+
+- Verify Galaxy Tab A11+ 5G certification (see Hardware section above)
+- If certified: order tablets, build Tap to Pay into Phase 4
+- If not certified: switch tablet model OR build with online payment only
+  initially, add Tap to Pay when certified hardware available
+
+---
+
+**Phase 4 sub-phase split (revised again — final pending prioritization):**
+
+Given full scope including hardware, native Android, Tap to Pay, and
+communication infrastructure, Phase 4 is now larger than any single
+shippable unit. Realistic sub-phase split:
+
+- **Phase 4.1 — Foundation (~10-13 days):** Workflow redesign + decline +
+  design system + manual assignment + push notifications + route preview.
+  Web PWA initially, runs on tablet via Chrome.
+- **Phase 4.2 — Native Android wrap (~5-7 days):** Capacitor wrap, deploy
+  as APK to tablet. Adds reliable push, background, NFC capability,
+  full-screen alerts. Same app, native shell.
+- **Phase 4.3 — Stripe Tap to Pay (~4-6 days):** Stripe Terminal SDK
+  integration, NFC payment flow at delivery.
+- **Phase 4.4 — SMS communication (~4-5 days):** Templates with
+  pre-translation, free-text translation, bidirectional flow, operator
+  monitoring.
+- **Phase 4.5 — Dispatch automation (~5-7 days):** On-duty toggle,
+  location tracking, auto-dispatch, proximity routing, push cascade.
+- **Phase 4.6 — ETA + customer notifications (~3-5 days):** Chained ETAs,
+  driver schedule, customer arrival notifications, refuse-before-arrival.
+- **Phase 4.7 — Twilio voice escape hatch (~3-4 days):** Voice calls when
+  SMS won't suffice, recording, transcription via Whisper API.
+
+**Total Phase 4: ~34-47 working days (7-10 weeks focused effort).**
+
+**Roadmap prioritization session required before Phase 4 design document.**
+This level of scope cannot ship as one phase. Next session opens with:
+
+- Score each capability on operational pain, build complexity, dependencies
+- Identify minimum viable Phase 4.1 (likely smaller than current ~10-13 day estimate)
+- Sequence remaining sub-phases or defer to Phase 5+
+- Phase 4 design document is written ONLY for the prioritized minimum viable scope
+
+---
+
 ## P3 — UX polish (deferred indefinitely until prioritized)
 
 - `formAttempted` red-border validation pattern → ContactForm, WhatsAppButton, OutOfAreaModal, CityPage (match Order.tsx UX)

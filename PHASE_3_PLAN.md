@@ -10,6 +10,12 @@
 **Estimated timeline (3b + 3c):** 3-4 weeks across two sub-slices. Each independently shippable and rollback-able.
 **Production home:** Currently building at `riversand.net/driver` as staging surface. Migration to `fleetwork.net` happens after Phase 3c validated.
 
+**Phase 4 scoping (2026-04-25):** Phase 4 scope expanded significantly
+in late-session conversation. Now ~34-47 day total effort across 7
+sub-phases. Roadmap prioritization required before Phase 4 design
+document is written. See RIVERSAND_FOLLOWUPS.md P4-03 for full scope
+capture and pending decisions.
+
 ---
 
 ## Architectural decisions (locked)
