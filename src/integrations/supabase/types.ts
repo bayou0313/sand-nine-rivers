@@ -608,6 +608,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          acknowledged_at: string | null
+          at_pit_at: string | null
           base_unit_price: number | null
           billed_distance_miles: number | null
           billing_address: string | null
@@ -644,6 +646,10 @@ export type Database = {
           discount_amount: number | null
           distance_fee: number | null
           distance_miles: number
+          driver_collected_at: string | null
+          driver_collected_card: number | null
+          driver_collected_cash: number | null
+          driver_collected_check: number | null
           driver_id: string | null
           driver_workflow_status: string | null
           fraud_score: number | null
@@ -653,6 +659,7 @@ export type Database = {
           is_northshore: boolean | null
           last_confirmation_sent_at: string | null
           lead_reference: string | null
+          loaded_at: string | null
           lookup_token: string | null
           lookup_token_used: boolean
           message_sent_at: string | null
@@ -685,8 +692,11 @@ export type Database = {
           tax_amount: number
           tax_rate: number
           updated_at: string
+          workflow_delivered_at: string | null
         }
         Insert: {
+          acknowledged_at?: string | null
+          at_pit_at?: string | null
           base_unit_price?: number | null
           billed_distance_miles?: number | null
           billing_address?: string | null
@@ -723,6 +733,10 @@ export type Database = {
           discount_amount?: number | null
           distance_fee?: number | null
           distance_miles: number
+          driver_collected_at?: string | null
+          driver_collected_card?: number | null
+          driver_collected_cash?: number | null
+          driver_collected_check?: number | null
           driver_id?: string | null
           driver_workflow_status?: string | null
           fraud_score?: number | null
@@ -732,6 +746,7 @@ export type Database = {
           is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
           lead_reference?: string | null
+          loaded_at?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
           message_sent_at?: string | null
@@ -764,8 +779,11 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           updated_at?: string
+          workflow_delivered_at?: string | null
         }
         Update: {
+          acknowledged_at?: string | null
+          at_pit_at?: string | null
           base_unit_price?: number | null
           billed_distance_miles?: number | null
           billing_address?: string | null
@@ -802,6 +820,10 @@ export type Database = {
           discount_amount?: number | null
           distance_fee?: number | null
           distance_miles?: number
+          driver_collected_at?: string | null
+          driver_collected_card?: number | null
+          driver_collected_cash?: number | null
+          driver_collected_check?: number | null
           driver_id?: string | null
           driver_workflow_status?: string | null
           fraud_score?: number | null
@@ -811,6 +833,7 @@ export type Database = {
           is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
           lead_reference?: string | null
+          loaded_at?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
           message_sent_at?: string | null
@@ -843,6 +866,7 @@ export type Database = {
           tax_amount?: number
           tax_rate?: number
           updated_at?: string
+          workflow_delivered_at?: string | null
         }
         Relationships: [
           {
