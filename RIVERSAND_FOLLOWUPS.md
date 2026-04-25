@@ -35,6 +35,19 @@ Reference gap: `leads-auth` driver upsert (lines 2927, 2956) currently trims ema
 
 ---
 
+## P4 — Edge function maintenance
+
+### P4-01 — Deno npm: import drift in edge functions
+- `send-email/index.ts` line 3: `import { createClient } from "npm:@supabase/supabase-js@2.57.2"` fails Deno runtime check
+- Affected: `send-email` + build-chain-related failures in `holiday-confirm`, `holiday-notifier`, `send-holiday-email`
+- Fix: swap to `https://esm.sh/@supabase/supabase-js@2.57.2` (matches other edge functions' pattern)
+- Scope: small, one-line change per file, 4 files total
+- Risk: `send-email` is on file-protection list — requires isolated audited slice with smoke test on transactional emails (order confirmation, lead emails, etc.)
+- Priority: Medium — functions currently work in production (errors are build-check warnings, not runtime failures); but any future deploy that triggers a full recheck will fail
+- Discovered: Phase 3a migration post-check (2026-04-25)
+
+---
+
 ## P3 — UX polish (deferred indefinitely until prioritized)
 
 - `formAttempted` red-border validation pattern → ContactForm, WhatsAppButton, OutOfAreaModal, CityPage (match Order.tsx UX)
