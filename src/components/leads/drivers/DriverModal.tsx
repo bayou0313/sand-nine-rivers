@@ -77,6 +77,11 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
   const [nameError, setNameError] = useState<string | null>(null);
   const [formAttempted, setFormAttempted] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  // Path B Phase 3a — driver portal auth foundation: PIN management state
+  const [pin, setPin] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinSaving, setPinSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
