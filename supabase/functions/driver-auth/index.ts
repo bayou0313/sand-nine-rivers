@@ -521,6 +521,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (updateErr || !updated) {
+      if (updateErr) console.error("[advance_workflow] update error:", updateErr);
       return new Response(JSON.stringify({ error: "Failed to update order" }), {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
