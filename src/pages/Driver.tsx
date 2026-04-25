@@ -36,6 +36,9 @@ interface OrderRow {
   payment_method: string;
   payment_status: string;
   notes: string | null;
+  driver_workflow_status: string | null;
+  pit_id: string | null;
+  pit: { name: string } | null;
 }
 
 export default function Driver() {
