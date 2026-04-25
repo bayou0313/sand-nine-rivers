@@ -1,7 +1,7 @@
 # PHASE_3_PLAN.md — Path B Phase 3 Driver Portal
 
-**Version:** 1.1 (2026-04-25, fleetwork.net brand committed)
-**Status:** Phase 3a shipped (unvalidated pending smoke test). Phase 3b and 3c pending Phase 3a validation.
+**Version:** 1.2 (2026-04-25, Phase 3a validated with one P1 follow-up)
+**Status:** Phase 3a shipped + validated 2026-04-25 (T1/T2 PASS, T3 FAIL → SECURITY_ROADMAP.md §1.4 Priority 1 follow-up scheduled Phase 3b+1). Phase 3b code brief pending.
 **Scope:** Operational dispatch only. Financial features (payroll, petty cash, check tracking) deferred to Phase 4. Tap to Pay NFC deferred to future web-compatible payment project.
 **Estimated timeline (3b + 3c):** 3-4 weeks across two sub-slices. Each independently shippable and rollback-able.
 **Production home:** Currently building at `riversand.net/driver` as staging surface. Migration to `fleetwork.net` happens after Phase 3c validated.
@@ -62,6 +62,24 @@ T6 — Rate limit (5 attempts/60s/IP, with cold-start bypass tolerance)
 T7 — Route gating (maintenance mode bypass for /driver)
 T8 — Session expiry message (invalid token → "Signed out. Please sign in again.")
 T9 — First-time visitor (fresh incognito, login renders cleanly)
+
+### Phase 3a Validation Results — executed 2026-04-25
+
+Method: bootstrapped a test driver row directly in production DB (`name='TEST_VALIDATION_DRIVER'`, `phone='5555550199'`, `pin='9999'`, bcrypt cost 10, id `98dd74c6-d8f0-4a1e-b07f-131abf783b70`), ran 3 tests against the deployed `driver-auth` edge function with `User-Agent: riversand-validation-2026-04-25`, then deactivated the driver and revoked the session via cleanup migration. Row retained for audit trail; not deleted.
+
+| # | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| T1 | PIN login (5555550199 / 9999) | HTTP 200 + session_token; `driver_sessions` row created with correct UA + IP + 30-day expiry; `drivers.last_login_at` updated | HTTP 200, token issued; session row present (UA=`riversand-validation-2026-04-25`, IP=34.7.97.187, `expires_at = now() + 30d`, `revoked_at IS NULL`); `last_login_at` set | ✅ PASS |
+| T2 | Session round-trip via `list_my_orders` (valid + tampered token) | Valid token → HTTP 200 + driver identity; tampered token → HTTP 401 | Valid → HTTP 200, returned `{driver: {…}, orders: []}`; tampered → HTTP 401 `{"error":"Unauthorized"}` | ✅ PASS |
+| T3 | Warm rate limiter (6 bad PINs from same IP within 60s) | Attempts 1–5: HTTP 401, attempt 6: HTTP 429 | 21 rapid bad-PIN attempts in ~25s, all 21 returned HTTP 401, **zero HTTP 429s** | ❌ FAIL |
+
+**T3 root cause:** The in-memory `rateMap` in `supabase/functions/driver-auth/index.ts` lines 88–106 does not survive Supabase isolate boots. Edge function logs confirm frequent `Boot` events (effectively per-request under low traffic). Each request lands on a fresh isolate with an empty rate map, so the counter never reaches the threshold. The code's prior comment "cold-start bypass acknowledged" understated the gap — it is non-functional in production, not best-effort.
+
+**Severity:** Bcrypt at cost 10 (~70ms per attempt) caps an attacker at ~14 attempts/sec/IP, ~50K/hour. A 4-digit PIN has 10K possibilities — worst-case brute force of a known-phone driver is ~12 minutes. Bcrypt latency is currently the only real brake. Not catastrophic (attacker must know a valid driver phone first; legitimate driver login still works during attack so it's noisy), but not the "5 attempts then locked out" defense the code claims to provide.
+
+**Follow-up plan:** Logged as Priority 1 in SECURITY_ROADMAP.md §1.4. Fix is a DB-backed limiter (`driver_login_attempts` table, `(ip_address, attempted_at)` index, server-side count check before bcrypt), ~30–45 min slice. **Ship immediately after Phase 3b code brief, before any real driver onboards.** Does not block Phase 3b.
+
+**Test driver cleanup:** Migration `deactivate_phase_3a_test_driver` ran 2026-04-25. `drivers.active` set to `false` for the test driver id; outstanding `driver_sessions.revoked_at` set to `now()` for that driver_id. Row retained for audit (PIN hash unchanged; reactivation possible if revalidation needed).
 
 ---
 
@@ -317,7 +335,8 @@ Phase 4 built on Phase 3 foundation. Probably 2-3 weeks of work split into its o
 **Update log:**
 - 2026-04-24 — v1.0 initial draft covering all three sub-slices
 - 2026-04-25 — v1.1 Updated production home from riversand.net/driver to fleetwork.net (migration after 3c). Phase 3a marked shipped-unvalidated.
+- 2026-04-25 — v1.2 Phase 3a validation executed against production. T1 PASS (login + session row + last_login_at), T2 PASS (session round-trip + tampered token rejection), T3 FAIL (in-memory rate limiter non-functional in production). T3 follow-up logged as Priority 1 in SECURITY_ROADMAP.md §1.4 and scheduled for Phase 3b+1. Test driver row retained, deactivated via migration. Driver-auth source comment (lines 88–106) updated to match SECURITY_ROADMAP.md language verbatim.
 
 ---
 
-End of PHASE_3_PLAN.md v1.1
+End of PHASE_3_PLAN.md v1.2

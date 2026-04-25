@@ -1,6 +1,6 @@
 # SECURITY_ROADMAP.md — Ways Materials LLC
 
-**Version:** 1.1 (2026-04-25)
+**Version:** 1.2 (2026-04-25)
 **Scope:** riversand.net (customer-facing), /leads operator surface (LMT), fleetwork.net (planned driver-facing home), and all shared Supabase infrastructure.
 **Audience:** Silas Caldeira (CEO/CVO), future CSO or security consultant, future operator hires.
 
@@ -18,6 +18,7 @@ Document current security posture, known gaps, and planned hardening work for Wa
 **Review cadence:** Quarterly. Next review: 2026-07-25.
 
 **Version history:**
+- v1.2 (2026-04-25) — Phase 3a validation completed (T1/T2 PASS, T3 FAIL). Driver-auth rate limiter recategorized from "best-effort acknowledged" to "non-functional in production." New Priority 1 item §1.4. See PHASE_3_PLAN.md §"Phase 3a Validation Results" for test details.
 - v1.1 (2026-04-25) — Updated planned driver portal home from izons.com to fleetwork.net per brand decision
 - v1.0 (2026-04-24) — Initial draft
 
@@ -32,7 +33,7 @@ Document current security posture, known gaps, and planned hardening work for Wa
 - PINs hashed with bcryptjs cost factor 10 (matches 2FA backup code pattern)
 - Session tokens: 256-bit cryptographically random, base64url encoded (RFC 4648 §5), returned to client once, stored server-side as SHA-256 hash
 - 30-day session expiry, revocable via `revoked_at` column
-- Rate limiting: 5 login attempts per 60 seconds per IP (in-memory, best-effort; cold-start bypass acknowledged)
+- Rate limiting: nominally 5 login attempts per 60 seconds per IP, **non-functional in production** — in-memory limiter does not survive Supabase isolate boots; effective rate is ~14 attempts/sec/IP gated only by bcrypt latency. Scheduled fix: Phase 3b+1 (DB-backed `driver_login_attempts` table with `(ip_address, attempted_at)` index, server-side count check before bcrypt comparison, ~30–45 min slice). See §2.1.4. Validated 2026-04-25 (PHASE_3_PLAN.md T3).
 - Generic "Invalid credentials" error message prevents enumeration
 - Constant-time bcrypt comparison even when driver not found (dummy hash defense against timing-based enumeration)
 
@@ -96,6 +97,13 @@ Document current security posture, known gaps, and planned hardening work for Wa
 - **Fix:** Write a one-page INCIDENT_RESPONSE.md covering: credential compromise, data breach, payment fraud, edge function outage. Include who to call, what to revoke, how to notify affected users.
 - **Effort:** 2 hours of writing, no code.
 - **Owner:** Silas or future CSO.
+
+#### 1.4 Driver-auth rate limiter non-functional in production
+- **Current:** In-memory `rateMap` in `supabase/functions/driver-auth/index.ts` (lines 88–106) intends to enforce 5 login attempts per 60 seconds per IP. Validated 2026-04-25 (PHASE_3_PLAN.md T3): 21 rapid bad-PIN attempts from a single IP produced 21 × HTTP 401 and zero × HTTP 429. Root cause: Supabase boots a fresh isolate frequently, resetting the in-memory counter on nearly every request. The code's prior "cold-start bypass acknowledged" comment understated the gap — it is non-functional in production, not best-effort.
+- **Risk:** With ~70ms bcrypt latency per attempt, a determined attacker who knows a valid driver phone number can brute-force a 4-digit PIN in roughly 12 minutes (10K possibilities ÷ ~14 attempts/sec). Bcrypt latency is currently the only real brake. The driver's own login still works during the attack, so a successful brute force is noisy but not blocked.
+- **Fix:** DB-backed rate limiter — new `driver_login_attempts` table with `(ip_address, attempted_at)` index. In `driver-auth` login action, before bcrypt comparison: `SELECT count(*) FROM driver_login_attempts WHERE ip_address = $1 AND attempted_at > now() - interval '60 seconds'` → if ≥ 5, return 429. Always insert the attempt row. Background cleanup job prunes rows older than 24 hours.
+- **Effort:** 30–45 min slice. One migration (table + index + cleanup function), one edit to `driver-auth/index.ts` (replace `checkRate` with DB query), one redeploy.
+- **Owner:** Phase 3b+1 — ship immediately after Phase 3b code brief, before any real driver onboards. Update this entry to "fixed" and remove from Priority 1 once shipped.
 
 ### Priority 2 — Address within 2 months
 
@@ -260,6 +268,7 @@ Move roadmap items UP in priority if any of these happen:
 **Next review:** 2026-07-25
 
 **Update log:**
+- 2026-04-25 — v1.2 Phase 3a validation completed (T1/T2 PASS, T3 FAIL). Driver-auth rate limiter recategorized non-functional in production; new Priority 1 item §1.4 added with DB-backed fix scoped at 30–45 min for Phase 3b+1. §1 Authentication entry updated to match. OWASP A07 status updated.
 - 2026-04-25 — v1.1 Updated planned driver portal home from izons.com to fleetwork.net per brand decision
 - 2026-04-24 — v1.0 Initial draft covering Phase 3a security posture, 10 identified gaps, threat model, quarterly review process
 
@@ -285,11 +294,11 @@ Quick self-assessment against OWASP Top 10 (2021):
 | A04 | Insecure Design | Mixed — auth design sound, audit logging gap (Priority 2.4) |
 | A05 | Security Misconfiguration | Mixed — no CSP, loose CORS (Priorities 1.1, 2.3) |
 | A06 | Vulnerable & Outdated Components | Unknown — no regular dep audit (add to quarterly review) |
-| A07 | Identification & Authentication Failures | Mixed — driver auth strong, operator auth weaker without 2FA enforcement (Priority 2.2) |
+| A07 | Identification & Authentication Failures | Mixed — driver PIN auth + sessions strong (T1/T2 PASS 2026-04-25), driver-auth rate limiter non-functional in production (Priority 1.4), operator auth weaker without 2FA enforcement (Priority 2.2) |
 | A08 | Software & Data Integrity Failures | Strong — no supply chain automation, all deploys reviewed |
 | A09 | Security Logging & Monitoring Failures | Weak — no audit log (Priority 2.4), no alerting (Priority 3.4) |
 | A10 | Server-Side Request Forgery | Strong — no user-controlled URLs in server code |
 
 ---
 
-End of SECURITY_ROADMAP.md v1.1
+End of SECURITY_ROADMAP.md v1.2
