@@ -50,6 +50,23 @@ Reference gap: `leads-auth` driver upsert (lines 2927, 2956) currently trims ema
 Phase 3b should add explicit operator timezone setting (likely America/Chicago for Louisiana) to the `driver-auth` `list_my_orders` action. Current ±1 day slop is acceptable for Phase 3a but will cause edge-case confusion during late-night driver sessions.
 - Discovered: Phase 3a code review (2026-04-25)
 
+### P4-03 — Driver portal Phase 4 feature bundle
+Three related driver-experience improvements grouped as a single Phase 4 slice. All three share the same surface (`/driver` and `/driver/order/:id`) and the same data path (`driver-auth`), so they should be planned and shipped together to avoid repeated regression sweeps of the workflow gates.
+
+**Sub-feature A — Workflow redesign**
+Revisit the four-state workflow (`acknowledged` → `at_pit` → `loaded` → `delivered`) end-to-end after Phase 3b smoke validation. Candidates include: explicit "en route to PIT" and "en route to customer" intermediate states, configurable per-pit step requirements, and tighter coupling between the COD payment gate and the loaded/delivered transition. Driver-facing label vocabulary ("Accept" / "Accepted" applied in Phase 3b) should be reviewed for the remaining steps as part of this pass.
+
+**Sub-feature B — Decline mechanism**
+Today a driver has no first-class way to refuse an assigned order (sick, vehicle issue, route conflict). Add a "Decline" action available from the `acknowledged` step that: (1) records the decline with a reason code + free-text note on the order, (2) clears the driver assignment so the LMT Schedule tab surfaces the order for reassignment, (3) emits a notification to the operator. Must not be available after `at_pit` (loaded inventory cannot be unwound by a decline).
+
+**Sub-feature C — Embedded driver map**
+Replace the current "open in Google/Apple Maps" deep-link pattern on `DriverOrder.tsx` with an embedded map view showing: PIT origin, customer destination, current driver location (with permission), and the suggested route. Should degrade gracefully to the existing deep-link if geolocation is denied or the maps script fails to load. Coordinate with the existing `useGoogleMaps` loader rather than introducing a second Maps script tag.
+
+**Cross-cutting notes**
+- LMT Schedule tab currently has no realtime/polling for driver workflow updates (Phase 3b investigation finding) — Phase 4 should fold a polling or realtime subscription pass into this slice so decline + status changes surface to operators without manual refresh.
+- All three sub-features touch `driver-auth`; budget one consolidated edge function diff rather than three separate deploys.
+- Discovered: Phase 3b post-correction review (2026-04-25)
+
 ---
 
 ## P3 — UX polish (deferred indefinitely until prioritized)
