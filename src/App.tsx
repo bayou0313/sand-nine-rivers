@@ -23,6 +23,8 @@ const LeadsSetup2FA = lazy(() => import("./pages/LeadsSetup2FA.tsx"));
 const CityPage = lazy(() => import("./pages/CityPage.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
+// Path B Phase 3a — driver portal auth foundation
+const Driver = lazy(() => import("./pages/Driver.tsx"));
 
 const RouteFallback = () => (
   <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
