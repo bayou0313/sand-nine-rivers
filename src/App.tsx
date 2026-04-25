@@ -338,6 +338,9 @@ function AppContent() {
         <Route path="/meraux-la/river-sand-delivery" element={<Navigate to="/meraux/river-sand-delivery" replace />} />
         <Route path="/metairie-la/river-sand-delivery" element={<Navigate to="/metairie/river-sand-delivery" replace />} />
         <Route path="/new-orleans-la/river-sand-delivery" element={<Navigate to="/new-orleans/river-sand-delivery" replace />} />
+        {/* Path B Phase 3a — driver portal auth foundation */}
+        <Route path="/driver" element={<Suspense fallback={<RouteFallback />}><Driver /></Suspense>} />
+        <Route path="/driver/order/:id" element={<Suspense fallback={<RouteFallback />}><Driver /></Suspense>} />
         <Route path="/:citySlug/river-sand-delivery" element={<Suspense fallback={<RouteFallback />}><CityPage /></Suspense>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
