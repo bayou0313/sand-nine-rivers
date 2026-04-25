@@ -178,6 +178,18 @@ All three touch driver workflow layer; bundle as single Phase 4 effort.
   until Phase 4 ships
 - "Acknowledge → Accept" vocabulary fix shipped in Phase 3b polish (2026-04-25)
 
+**Open architecture decision (2026-04-25):** Phase 4 must include driver push notification ("driver app on top" when assigned) plus route preview before Accept/Decline. This forces a strategic choice:
+- Option A: Web PWA + Web Push API (~2-3 days, iOS limitations, Android works)
+- Option B: Native iOS + Android apps via Capacitor or React Native (~7-10 days additional, full capability, App Store maintenance)
+- Option C: Hybrid — ship Web PWA first (Phase 4), native shell as Phase 5 (~5-7 days additional)
+
+CVO decision required before Phase 4 design document is finalized. Decision affects timeline (web ~10 days vs hybrid ~17 days), reliability (web has iOS push gaps), and ongoing maintenance (native = app store discipline).
+
+Pending CVO inputs:
+- Architecture choice (A/B/C)
+- Real driver onboarding deadline
+- Tolerance for iOS push unreliability in v1
+
 **Owner:** Silas Caldeira (CVO)
 **Logged:** 2026-04-25
 **Target phase:** Phase 4
