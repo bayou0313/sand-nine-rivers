@@ -364,7 +364,7 @@ serve(async (req) => {
     }
 
     const orderId = typeof body.order_id === "string" ? body.order_id : "";
-    const newStatus = typeof body.new_status === "string" ? body.new_status : "";
+    const newStatus = typeof body.to_status === "string" ? body.to_status : "";
 
     // Strict whitelist — exact match against the four legal states.
     const VALID_STATES = ["acknowledged", "at_pit", "loaded", "delivered"] as const;
