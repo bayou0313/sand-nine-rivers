@@ -1,6 +1,7 @@
 // Path B Phase 3a — driver portal auth foundation
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, AlertCircle, LogOut, Truck, Phone, MapPin, Clock, Package } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Loader2, AlertCircle, LogOut, Truck, Phone, MapPin, Clock, Package, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,9 @@ interface OrderRow {
   payment_method: string;
   payment_status: string;
   notes: string | null;
+  driver_workflow_status: string | null;
+  pit_id: string | null;
+  pit: { name: string } | null;
 }
 
 export default function Driver() {
@@ -277,9 +281,13 @@ export default function Driver() {
         )}
 
         {orders.map((o) => (
-          <div key={o.id} className="bg-white rounded-xl shadow-sm p-4 space-y-2">
+          <Link
+            key={o.id}
+            to={`/driver/order/${o.id}`}
+            className="block bg-white rounded-xl shadow-sm p-4 space-y-2 hover:shadow-md transition-shadow active:bg-gray-50"
+          >
             <div className="flex items-start justify-between gap-2">
-              <div>
+              <div className="min-w-0">
                 <div className="font-display uppercase tracking-wide text-sm" style={{ color: BRAND_NAVY }}>
                   {o.order_number || o.id.slice(0, 8)}
                 </div>
@@ -287,15 +295,18 @@ export default function Driver() {
                   {o.delivery_date || "—"} • {o.quantity} load{o.quantity > 1 ? "s" : ""}
                 </div>
               </div>
-              <span
-                className="text-[10px] uppercase font-semibold px-2 py-1 rounded"
-                style={{
-                  backgroundColor: o.payment_method === "COD" ? "#FEF3C7" : "#DBEAFE",
-                  color: o.payment_method === "COD" ? "#92400E" : "#1E40AF",
-                }}
-              >
-                {o.payment_method}
-              </span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span
+                  className="text-[10px] uppercase font-semibold px-2 py-1 rounded"
+                  style={{
+                    backgroundColor: o.payment_method === "COD" ? "#FEF3C7" : "#DBEAFE",
+                    color: o.payment_method === "COD" ? "#92400E" : "#1E40AF",
+                  }}
+                >
+                  {o.payment_method}
+                </span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
             </div>
 
             <div className="space-y-1 text-sm">
@@ -309,7 +320,12 @@ export default function Driver() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-                <a href={`tel:${o.customer_phone}`} className="text-blue-600 underline">
+                {/* Stop propagation so tapping the phone link doesn't also navigate */}
+                <a
+                  href={`tel:${o.customer_phone}`}
+                  className="text-blue-600 underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {formatPhone(o.customer_phone)}
                 </a>
                 <span className="text-muted-foreground">— {o.customer_name}</span>
@@ -319,8 +335,13 @@ export default function Driver() {
                   {o.notes}
                 </div>
               )}
+              {o.driver_workflow_status && (
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground pt-1">
+                  Status: {o.driver_workflow_status.replace(/_/g, " ")}
+                </div>
+              )}
             </div>
-          </div>
+          </Link>
         ))}
       </main>
     </div>

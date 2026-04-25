@@ -3,7 +3,7 @@
 // tokens. Mirrors the leads-auth structure: single entrypoint, action verb dispatch,
 // service-role supabase client, generic error messages to prevent enumeration.
 //
-// Actions: login, logout, list_my_orders
+// Actions: login, logout, list_my_orders, get_order, advance_workflow, record_payment_collected
 // Internal helper: verify_session (not exposed as a public action)
 //
 // Security:
@@ -327,7 +327,7 @@ serve(async (req) => {
       supabase
         .from("orders")
         .select(
-          "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at",
+          "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at, pit_id, pit:pits(name)",
         )
         .eq("driver_id", driverId)
         .gte("delivery_date", fmt(today))
@@ -353,6 +353,57 @@ serve(async (req) => {
         headers: { ...cors, "Content-Type": "application/json" },
       },
     );
+  }
+
+  // ── GET ORDER (single) ──
+  // Path B Phase 3b — driver order detail view.
+  // Returns the same column set as list_my_orders for one order, scoped to the
+  // calling driver. Uses 404 "Order not found" for both missing-id and
+  // wrong-driver cases to prevent enumeration of other drivers' orders.
+  // The driver_id column is fetched server-side for the ownership check but
+  // stripped from the response payload — clients never need it.
+  if (action === "get_order") {
+    const rawToken = typeof body.session_token === "string" ? body.session_token : "";
+    const driverId = await verifySession(supabase, rawToken);
+    if (!driverId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const orderId = typeof body.order_id === "string" ? body.order_id : "";
+    if (!orderId) {
+      return new Response(JSON.stringify({ error: "Order not found or not assigned to you" }), {
+        status: 404,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: order, error: fetchErr } = await supabase
+      .from("orders")
+      .select(
+        "id, driver_id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at, pit_id, pit:pits(name)",
+      )
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (fetchErr || !order || order.driver_id !== driverId) {
+      // Generic 404 for missing OR not-yours, to match anti-enumeration pattern
+      // used by advance_workflow / record_payment_collected.
+      return new Response(JSON.stringify({ error: "Order not found or not assigned to you" }), {
+        status: 404,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Strip driver_id before returning — client doesn't need it.
+    const { driver_id: _drop, ...safeOrder } = order as Record<string, unknown>;
+
+    return new Response(JSON.stringify({ order: safeOrder }), {
+      status: 200,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
   }
 
   // ── ADVANCE WORKFLOW ──
@@ -461,7 +512,7 @@ serve(async (req) => {
       .eq("id", orderId)
       .eq("driver_id", driverId) // belt + suspenders: ownership re-asserted in WHERE
       .select(
-        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at",
+        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at, pit_id, pit:pits(name)",
       )
       .maybeSingle();
 
@@ -562,7 +613,7 @@ serve(async (req) => {
       .eq("id", orderId)
       .eq("driver_id", driverId)
       .select(
-        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at",
+        "id, order_number, customer_name, customer_phone, delivery_address, delivery_window, delivery_date, quantity, price, payment_method, payment_status, notes, driver_workflow_status, acknowledged_at, at_pit_at, loaded_at, workflow_delivered_at, driver_collected_cash, driver_collected_check, driver_collected_card, driver_collected_at, pit_id, pit:pits(name)",
       )
       .maybeSingle();
 
