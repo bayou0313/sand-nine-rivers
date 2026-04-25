@@ -268,6 +268,7 @@ Move roadmap items UP in priority if any of these happen:
 **Next review:** 2026-07-25
 
 **Update log:**
+- 2026-04-25 — v1.2 Phase 3a validation completed (T1/T2 PASS, T3 FAIL). Driver-auth rate limiter recategorized non-functional in production; new Priority 1 item §1.4 added with DB-backed fix scoped at 30–45 min for Phase 3b+1. §1 Authentication entry updated to match. OWASP A07 status updated.
 - 2026-04-25 — v1.1 Updated planned driver portal home from izons.com to fleetwork.net per brand decision
 - 2026-04-24 — v1.0 Initial draft covering Phase 3a security posture, 10 identified gaps, threat model, quarterly review process
 
