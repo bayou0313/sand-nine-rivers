@@ -181,12 +181,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://riversand.net/harahan/river-sand-delivery</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://riversand.net/violet/river-sand-delivery</loc>
     <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
@@ -205,6 +199,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://riversand.net/harahan/river-sand-delivery</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://riversand.net/ama/river-sand-delivery</loc>
     <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
@@ -212,6 +212,12 @@
   </url>
   <url>
     <loc>https://riversand.net/reserve/river-sand-delivery</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/mathews/river-sand-delivery</loc>
     <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -236,6 +242,12 @@
   </url>
   <url>
     <loc>https://riversand.net/paradis/river-sand-delivery</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://riversand.net/killona/river-sand-delivery</loc>
     <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -266,18 +278,6 @@
   </url>
   <url>
     <loc>https://riversand.net/boutte/river-sand-delivery</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/mathews/river-sand-delivery</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://riversand.net/killona/river-sand-delivery</loc>
     <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
