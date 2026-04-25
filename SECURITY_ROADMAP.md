@@ -294,7 +294,7 @@ Quick self-assessment against OWASP Top 10 (2021):
 | A04 | Insecure Design | Mixed — auth design sound, audit logging gap (Priority 2.4) |
 | A05 | Security Misconfiguration | Mixed — no CSP, loose CORS (Priorities 1.1, 2.3) |
 | A06 | Vulnerable & Outdated Components | Unknown — no regular dep audit (add to quarterly review) |
-| A07 | Identification & Authentication Failures | Mixed — driver auth strong, operator auth weaker without 2FA enforcement (Priority 2.2) |
+| A07 | Identification & Authentication Failures | Mixed — driver PIN auth + sessions strong (T1/T2 PASS 2026-04-25), driver-auth rate limiter non-functional in production (Priority 1.4), operator auth weaker without 2FA enforcement (Priority 2.2) |
 | A08 | Software & Data Integrity Failures | Strong — no supply chain automation, all deploys reviewed |
 | A09 | Security Logging & Monitoring Failures | Weak — no audit log (Priority 2.4), no alerting (Priority 3.4) |
 | A10 | Server-Side Request Forgery | Strong — no user-controlled URLs in server code |
