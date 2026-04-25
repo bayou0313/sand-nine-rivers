@@ -406,6 +406,7 @@ serve(async (req) => {
     });
   }
 
+  // ── ADVANCE WORKFLOW ──
   // Path B Phase 3b — driver workflow states + payment capture
   // Strict state machine: NULL → acknowledged → at_pit → loaded → delivered.
   // No skipping. No re-entering. Payment must be recorded (or Stripe-paid) before
