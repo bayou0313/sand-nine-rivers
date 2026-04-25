@@ -465,8 +465,8 @@ export default function DriverOrder() {
           </ol>
         </section>
 
-        {/* COD payment form — only relevant once at_pit, hidden for Stripe-paid */}
-        {codOrder && current === "at_pit" && (
+        {/* COD payment form — only relevant once loaded, hidden for Stripe-paid */}
+        {codOrder && current === "loaded" && (
           <section className="bg-white rounded-xl shadow-sm p-4 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" style={{ color: BRAND_GOLD }} />
