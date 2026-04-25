@@ -82,11 +82,11 @@ interface OrderDetail {
   pit: { name: string } | null;
 }
 
-function isCOD(order: OrderDetail): boolean {
-  // Anything starting with "cod" is treated as COD. Stripe-paid orders skip
-  // the parity gate via payment_status === "paid".
-  return (order.payment_method || "").toLowerCase().startsWith("cod");
-}
+// COD detection: any order not Stripe-paid is treated as COD. This mirrors
+// the server-side gate in advance_workflow exactly (which only bypasses the
+// payment requirement when payment_status === "paid"). Do NOT gate on
+// payment_method — production values are "cash" / "stripe-link", not "cod_*".
+// See brief Mismatch #3 resolution + SECURITY_ROADMAP.md §2.5.
 
 function nextState(current: WorkflowState | null): WorkflowState | null {
   if (current === null) return "acknowledged";
@@ -193,8 +193,8 @@ export default function DriverOrder() {
   const card = useMemo(() => parseFloat(cardStr || "0") || 0, [cardStr]);
   const collectedSum = cash + check + card;
 
-  const codOrder = order ? isCOD(order) : false;
   const stripePaid = order?.payment_status === "paid";
+  const codOrder = order ? !stripePaid : false;
   const meetsParity = order ? collectedSum >= order.price : false;
   const paymentSavedToServer = !!order?.driver_collected_at;
 
