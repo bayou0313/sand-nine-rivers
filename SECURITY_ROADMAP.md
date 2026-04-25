@@ -310,4 +310,4 @@ Quick self-assessment against OWASP Top 10 (2021):
 
 ---
 
-End of SECURITY_ROADMAP.md v1.2
+End of SECURITY_ROADMAP.md v1.3
