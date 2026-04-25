@@ -18,11 +18,35 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import bcrypt from "https://esm.sh/bcryptjs@2.4.3";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const ALLOWED_ORIGINS = [
+  "https://riversand.net",
+  "https://www.riversand.net",
+  "https://fleetwork.net",
+  "https://www.fleetwork.net",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function isAllowed(origin: string | null): boolean {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (origin.endsWith(".lovable.app") && origin.startsWith("https://")) return true;
+  return false;
+}
+
+function corsFor(origin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+  if (isAllowed(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin!;
+  }
+  return headers;
+}
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -122,8 +146,10 @@ async function verifySession(
 // ─────────────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
+  const cors = corsFor(req.headers.get("origin"));
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -134,7 +160,7 @@ serve(async (req) => {
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -146,7 +172,7 @@ serve(async (req) => {
     if (!checkRate(ip)) {
       return new Response(
         JSON.stringify({ error: "Too many attempts. Try again in a minute." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 429, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -159,7 +185,7 @@ serve(async (req) => {
     if (!phoneDigits || !/^\d{4,6}$/.test(pin)) {
       return new Response(JSON.stringify({ error: "Invalid credentials" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -174,7 +200,7 @@ serve(async (req) => {
     if (dErr) {
       return new Response(JSON.stringify({ error: "Login failed" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -189,7 +215,7 @@ serve(async (req) => {
       await bcrypt.compare(pin, DUMMY_HASH).catch(() => false);
       return new Response(JSON.stringify({ error: "Invalid credentials" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -197,7 +223,7 @@ serve(async (req) => {
     if (!ok) {
       return new Response(JSON.stringify({ error: "Invalid credentials" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -218,7 +244,7 @@ serve(async (req) => {
     if (insErr) {
       return new Response(JSON.stringify({ error: "Login failed" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -237,7 +263,7 @@ serve(async (req) => {
           truck_number: driver.truck_number,
         },
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
     );
   }
 
@@ -249,7 +275,7 @@ serve(async (req) => {
     if (!rawToken) {
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
     const tokenHash = await sha256Hex(rawToken);
@@ -261,7 +287,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -272,7 +298,7 @@ serve(async (req) => {
     if (!driverId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -306,7 +332,7 @@ serve(async (req) => {
     if (ordersRes.error || driverRes.error) {
       return new Response(JSON.stringify({ error: "Failed to load orders" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -317,13 +343,13 @@ serve(async (req) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       },
     );
   }
 
   return new Response(JSON.stringify({ error: "Unknown action" }), {
     status: 400,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 });
