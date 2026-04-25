@@ -3,7 +3,7 @@
 // tokens. Mirrors the leads-auth structure: single entrypoint, action verb dispatch,
 // service-role supabase client, generic error messages to prevent enumeration.
 //
-// Actions: login, logout, list_my_orders
+// Actions: login, logout, list_my_orders, get_order, advance_workflow, record_payment_collected
 // Internal helper: verify_session (not exposed as a public action)
 //
 // Security:
