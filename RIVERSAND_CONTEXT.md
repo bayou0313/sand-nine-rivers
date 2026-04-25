@@ -1,12 +1,16 @@
 # RIVERSAND_CONTEXT.md
-Version: 1.12 (2026-04-24)
-Last synced: 2026-04-24
+Version: 1.13 (2026-04-25)
+Last synced: 2026-04-25
 
 ## Companion documents
 - CORE_FLOW_REFERENCE.md — customer-facing source snapshot (pages, customer components, lib, customer-flow edge functions). Regenerated 2026-04-24, supersedes April 1 snapshot.
 - LMT_REFERENCE.md — operator-facing source snapshot (Leads.tsx shell, drivers/*, schedule/*, LeadsSetup2FA, full leads-auth). New as of 2026-04-24.
 - RIVERSAND_FORM_GUIDELINES_v1.1_2026-04-24.md — canonical form entry reference (labels, inputs, validation, case handling) for all operator and customer-facing forms.
 - RIVERSAND_FOLLOWUPS.md — deferred technical follow-ups (P2 server-side normalization, P3 UX polish).
+- SECURITY_ROADMAP.md — Security posture, known gaps, and hardening roadmap.
+- INCIDENT_RESPONSE.md — Response runbooks for credential, breach, payment, and outage incidents.
+- PHASE_3_PLAN.md — Driver portal phase planning (3a shipped, 3b/3c pending).
+- FLEETWORK_MIGRATION_PLAN.md — Migration plan for driver portal to fleetwork.net.
 
 ## Project identity
 - Repo: bayou0313/sand-nine-rivers
