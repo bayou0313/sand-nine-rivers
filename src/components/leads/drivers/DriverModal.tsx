@@ -463,7 +463,7 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
                 style={{ backgroundColor: BRAND_NAVY, color: "white" }}
               >
                 {pinSaving && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                {driver?.pin_hash ? "Reset PIN" : "Set PIN"}
+                {driver?.pin_set ? "Reset PIN" : "Set PIN"}
               </Button>
             </div>
           )}
