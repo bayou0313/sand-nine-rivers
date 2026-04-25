@@ -599,10 +599,10 @@ serve(async (req) => {
       });
     }
 
-    // Hard gate: only at_pit can record payment. Not before. Not after.
-    if (order.driver_workflow_status !== "at_pit") {
+    // Hard gate: only loaded can record payment. Not before. Not after.
+    if (order.driver_workflow_status !== "loaded") {
       return new Response(
-        JSON.stringify({ error: "Payment can only be recorded at the pit step" }),
+        JSON.stringify({ error: "Payment can only be recorded at the loaded step" }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
