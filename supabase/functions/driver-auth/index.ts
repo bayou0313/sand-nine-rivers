@@ -10,8 +10,9 @@
 // - bcryptjs@2.4.3 cost 10 (matches existing 2FA backup-code pattern in leads-auth)
 // - Session tokens: 32 random bytes, base64url (RFC 4648 §5) for return; SHA-256 hash stored
 // - Generic "Invalid credentials" for both missing phone and wrong PIN
-// - In-memory rate limit: 5 attempts per 60s per IP (best-effort; cold-start bypass
-//   acknowledged for Phase 3a — DB-backed limiter deferred to a later phase)
+// - In-memory rate limit: 5 attempts per 60s per IP, non-functional in production
+//   (Supabase isolate boots reset the counter on nearly every request — see
+//   SECURITY_ROADMAP.md §1.4; DB-backed limiter scheduled for Phase 3b+1)
 // - Session tokens never logged anywhere
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
