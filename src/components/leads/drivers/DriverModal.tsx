@@ -92,6 +92,9 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
       setNameError(null);
       setFormAttempted(false);
       setConfirmDeactivate(false);
+      setPin("");
+      setPinConfirm("");
+      setPinError(null);
     }
   }, [open, driver]);
 
