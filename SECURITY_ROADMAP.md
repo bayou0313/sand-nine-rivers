@@ -98,6 +98,13 @@ Document current security posture, known gaps, and planned hardening work for Wa
 - **Effort:** 2 hours of writing, no code.
 - **Owner:** Silas or future CSO.
 
+#### 1.4 Driver-auth rate limiter non-functional in production
+- **Current:** In-memory `rateMap` in `supabase/functions/driver-auth/index.ts` (lines 88–106) intends to enforce 5 login attempts per 60 seconds per IP. Validated 2026-04-25 (PHASE_3_PLAN.md T3): 21 rapid bad-PIN attempts from a single IP produced 21 × HTTP 401 and zero × HTTP 429. Root cause: Supabase boots a fresh isolate frequently, resetting the in-memory counter on nearly every request. The code's prior "cold-start bypass acknowledged" comment understated the gap — it is non-functional in production, not best-effort.
+- **Risk:** With ~70ms bcrypt latency per attempt, a determined attacker who knows a valid driver phone number can brute-force a 4-digit PIN in roughly 12 minutes (10K possibilities ÷ ~14 attempts/sec). Bcrypt latency is currently the only real brake. The driver's own login still works during the attack, so a successful brute force is noisy but not blocked.
+- **Fix:** DB-backed rate limiter — new `driver_login_attempts` table with `(ip_address, attempted_at)` index. In `driver-auth` login action, before bcrypt comparison: `SELECT count(*) FROM driver_login_attempts WHERE ip_address = $1 AND attempted_at > now() - interval '60 seconds'` → if ≥ 5, return 429. Always insert the attempt row. Background cleanup job prunes rows older than 24 hours.
+- **Effort:** 30–45 min slice. One migration (table + index + cleanup function), one edit to `driver-auth/index.ts` (replace `checkRate` with DB query), one redeploy.
+- **Owner:** Phase 3b+1 — ship immediately after Phase 3b code brief, before any real driver onboards. Update this entry to "fixed" and remove from Priority 1 once shipped.
+
 ### Priority 2 — Address within 2 months
 
 #### 2.1 Session tokens in localStorage (XSS exposure)
