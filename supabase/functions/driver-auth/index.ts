@@ -623,6 +623,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (updateErr || !updated) {
+      if (updateErr) console.error("[record_payment_collected] update error:", updateErr);
       return new Response(JSON.stringify({ error: "Failed to record payment" }), {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
