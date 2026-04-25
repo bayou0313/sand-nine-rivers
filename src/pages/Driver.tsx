@@ -1,6 +1,7 @@
 // Path B Phase 3a — driver portal auth foundation
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, AlertCircle, LogOut, Truck, Phone, MapPin, Clock, Package } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Loader2, AlertCircle, LogOut, Truck, Phone, MapPin, Clock, Package, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
