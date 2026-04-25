@@ -43,14 +43,14 @@ const WORKFLOW_STEPS = ["acknowledged", "at_pit", "loaded", "delivered"] as cons
 type WorkflowState = typeof WORKFLOW_STEPS[number];
 
 const STEP_LABELS: Record<WorkflowState, string> = {
-  acknowledged: "Acknowledged",
+  acknowledged: "Accepted",
   at_pit:       "Arrived at PIT",
   loaded:       "Loaded",
   delivered:    "Delivered",
 };
 
 const STEP_BUTTONS: Record<WorkflowState, string> = {
-  acknowledged: "Acknowledge",
+  acknowledged: "Accept",
   at_pit:       "Arrived at PIT",
   loaded:       "Mark loaded",
   delivered:    "Mark delivered",
