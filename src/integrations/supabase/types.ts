@@ -883,6 +883,13 @@ export type Database = {
             referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "orders_pit_id_fkey"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payment_attempts: {
