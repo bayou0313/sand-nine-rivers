@@ -403,6 +403,70 @@ export default function DriverModal({ open, onClose, driver, password, onSaved }
               <Switch id="drv-active" checked={form.active} onCheckedChange={(v) => update("active", v)} />
             </div>
           )}
+
+          {/* Path B Phase 3a — driver portal auth foundation: PIN section (Edit mode only) */}
+          {isEdit && (
+            <div className="pt-3 border-t" style={{ borderColor: "#E5E7EB" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <KeyRound className="w-4 h-4" style={{ color: BRAND_GOLD }} />
+                <span className="font-display uppercase tracking-wide text-sm" style={{ color: BRAND_NAVY }}>
+                  Driver PIN
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                Setting a new PIN will sign the driver out of all active sessions.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="drv-pin" className={LABEL_CLS}>New PIN</Label>
+                  <Input
+                    id="drv-pin"
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    maxLength={6}
+                    value={pin}
+                    onChange={(e) => { setPin(e.target.value.replace(/\D/g, "")); setPinError(null); }}
+                    placeholder="4–6 digits"
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="drv-pin-confirm" className={LABEL_CLS}>Confirm PIN</Label>
+                  <Input
+                    id="drv-pin-confirm"
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    maxLength={6}
+                    value={pinConfirm}
+                    onChange={(e) => { setPinConfirm(e.target.value.replace(/\D/g, "")); setPinError(null); }}
+                    placeholder="Repeat"
+                    className={INPUT_CLS}
+                  />
+                </div>
+              </div>
+              {pinError && (
+                <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ERROR_RED }}>
+                  <AlertCircle className="w-3 h-3" />
+                  {pinError}
+                </div>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSetPin}
+                disabled={pinSaving || !pin || !pinConfirm}
+                className="mt-2"
+                style={{ backgroundColor: BRAND_NAVY, color: "white" }}
+              >
+                {pinSaving && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                {driver?.pin_hash ? "Reset PIN" : "Set PIN"}
+              </Button>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2">
