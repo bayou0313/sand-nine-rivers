@@ -888,6 +888,7 @@ export type Database = {
           cash_collected_by: string | null
           company_name: string | null
           confirmation_token: string
+          coupon_code: string | null
           created_at: string
           customer_email: string | null
           customer_id: string | null
@@ -901,6 +902,7 @@ export type Database = {
           delivery_terms_accepted: boolean | null
           delivery_terms_timestamp: string | null
           delivery_window: string
+          delivery_zip: string | null
           discount_amount: number | null
           discounts_total: number
           distance_fee: number | null
@@ -929,6 +931,7 @@ export type Database = {
           parish_tax_amount: number | null
           parish_tax_rate: number | null
           payment_attempts: number | null
+          payment_failure_id: string | null
           payment_method: string
           payment_status: string
           pit_id: string | null
@@ -948,6 +951,7 @@ export type Database = {
           state_tax_rate: number | null
           status: string
           stripe_account_id: string | null
+          stripe_checkout_session_id: string | null
           stripe_customer_id: string | null
           stripe_payment_id: string | null
           sunday_surcharge: boolean
@@ -982,6 +986,7 @@ export type Database = {
           cash_collected_by?: string | null
           company_name?: string | null
           confirmation_token?: string
+          coupon_code?: string | null
           created_at?: string
           customer_email?: string | null
           customer_id?: string | null
@@ -995,6 +1000,7 @@ export type Database = {
           delivery_terms_accepted?: boolean | null
           delivery_terms_timestamp?: string | null
           delivery_window?: string
+          delivery_zip?: string | null
           discount_amount?: number | null
           discounts_total?: number
           distance_fee?: number | null
@@ -1023,6 +1029,7 @@ export type Database = {
           parish_tax_amount?: number | null
           parish_tax_rate?: number | null
           payment_attempts?: number | null
+          payment_failure_id?: string | null
           payment_method?: string
           payment_status?: string
           pit_id?: string | null
@@ -1042,6 +1049,7 @@ export type Database = {
           state_tax_rate?: number | null
           status?: string
           stripe_account_id?: string | null
+          stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           sunday_surcharge?: boolean
@@ -1076,6 +1084,7 @@ export type Database = {
           cash_collected_by?: string | null
           company_name?: string | null
           confirmation_token?: string
+          coupon_code?: string | null
           created_at?: string
           customer_email?: string | null
           customer_id?: string | null
@@ -1089,6 +1098,7 @@ export type Database = {
           delivery_terms_accepted?: boolean | null
           delivery_terms_timestamp?: string | null
           delivery_window?: string
+          delivery_zip?: string | null
           discount_amount?: number | null
           discounts_total?: number
           distance_fee?: number | null
@@ -1117,6 +1127,7 @@ export type Database = {
           parish_tax_amount?: number | null
           parish_tax_rate?: number | null
           payment_attempts?: number | null
+          payment_failure_id?: string | null
           payment_method?: string
           payment_status?: string
           pit_id?: string | null
@@ -1136,6 +1147,7 @@ export type Database = {
           state_tax_rate?: number | null
           status?: string
           stripe_account_id?: string | null
+          stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           sunday_surcharge?: boolean
@@ -1159,6 +1171,13 @@ export type Database = {
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_payment_failure_id_fkey"
+            columns: ["payment_failure_id"]
+            isOneToOne: false
+            referencedRelation: "payment_failures"
             referencedColumns: ["id"]
           },
           {
@@ -1237,6 +1256,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_failures: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_phone: string | null
+          failure_reason: string | null
+          id: string
+          resolved_at: string | null
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_phone?: string | null
+          failure_reason?: string | null
+          id?: string
+          resolved_at?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_phone?: string | null
+          failure_reason?: string | null
+          id?: string
+          resolved_at?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: []
       }
       pit_inventory: {
         Row: {
