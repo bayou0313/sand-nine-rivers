@@ -14,6 +14,118 @@ export type Database = {
   }
   public: {
     Tables: {
+      addresses: {
+        Row: {
+          city: string | null
+          created_at: string
+          customer_id: string
+          delivery_notes: string | null
+          formatted_address: string
+          id: string
+          is_primary: boolean
+          lat: number | null
+          lng: number | null
+          state: string | null
+          street: string | null
+          zip: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          customer_id: string
+          delivery_notes?: string | null
+          formatted_address: string
+          id?: string
+          is_primary?: boolean
+          lat?: number | null
+          lng?: number | null
+          state?: string | null
+          street?: string | null
+          zip?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          customer_id?: string
+          delivery_notes?: string | null
+          formatted_address?: string
+          id?: string
+          is_primary?: boolean
+          lat?: number | null
+          lng?: number | null
+          state?: string | null
+          street?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addresses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_configurations: {
+        Row: {
+          branding_meta: Json
+          created_at: string
+          free_miles: number
+          id: string
+          min_trip_charge: number | null
+          per_mile_rate: number
+          pit_ids: string[]
+          pricing_mode: string
+          processing_fee_pct: number
+          product_ids: string[] | null
+          saturday_surcharge: number
+          storefront_id: string
+          ui_flags: Json
+          updated_at: string
+        }
+        Insert: {
+          branding_meta?: Json
+          created_at?: string
+          free_miles?: number
+          id?: string
+          min_trip_charge?: number | null
+          per_mile_rate: number
+          pit_ids?: string[]
+          pricing_mode?: string
+          processing_fee_pct?: number
+          product_ids?: string[] | null
+          saturday_surcharge?: number
+          storefront_id: string
+          ui_flags?: Json
+          updated_at?: string
+        }
+        Update: {
+          branding_meta?: Json
+          created_at?: string
+          free_miles?: number
+          id?: string
+          min_trip_charge?: number | null
+          per_mile_rate?: number
+          pit_ids?: string[]
+          pricing_mode?: string
+          processing_fee_pct?: number
+          product_ids?: string[] | null
+          saturday_surcharge?: number
+          storefront_id?: string
+          ui_flags?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_configurations_storefront_id_fkey"
+            columns: ["storefront_id"]
+            isOneToOne: true
+            referencedRelation: "storefronts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocked_ips: {
         Row: {
           blocked_at: string | null
@@ -217,6 +329,54 @@ export type Database = {
         }
         Relationships: []
       }
+      customers_v2: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_seen_at: string
+          first_storefront: string | null
+          id: string
+          last_order_at: string | null
+          name: string | null
+          notes: string | null
+          phone: string
+          total_orders: number
+          total_spent: number
+          trust_score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_seen_at?: string
+          first_storefront?: string | null
+          id?: string
+          last_order_at?: string | null
+          name?: string | null
+          notes?: string | null
+          phone: string
+          total_orders?: number
+          total_spent?: number
+          trust_score?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_seen_at?: string
+          first_storefront?: string | null
+          id?: string
+          last_order_at?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string
+          total_orders?: number
+          total_spent?: number
+          trust_score?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_leads: {
         Row: {
           address: string
@@ -224,6 +384,7 @@ export type Database = {
           browser_geolng: number | null
           calculated_price: number | null
           contacted: boolean
+          converted_order_id: string | null
           created_at: string
           customer_email: string | null
           customer_name: string
@@ -242,6 +403,12 @@ export type Database = {
           notes: string | null
           offer_sent_at: string | null
           pre_order_id: string | null
+          quote_accepted: boolean | null
+          quote_sent_at: string | null
+          quoted_price: number | null
+          requested_product_id: string | null
+          requested_quantity: number | null
+          source_platform: string
           stage: string | null
           submission_count: number | null
           user_agent: string | null
@@ -252,6 +419,7 @@ export type Database = {
           browser_geolng?: number | null
           calculated_price?: number | null
           contacted?: boolean
+          converted_order_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name: string
@@ -270,6 +438,12 @@ export type Database = {
           notes?: string | null
           offer_sent_at?: string | null
           pre_order_id?: string | null
+          quote_accepted?: boolean | null
+          quote_sent_at?: string | null
+          quoted_price?: number | null
+          requested_product_id?: string | null
+          requested_quantity?: number | null
+          source_platform?: string
           stage?: string | null
           submission_count?: number | null
           user_agent?: string | null
@@ -280,6 +454,7 @@ export type Database = {
           browser_geolng?: number | null
           calculated_price?: number | null
           contacted?: boolean
+          converted_order_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string
@@ -298,11 +473,32 @@ export type Database = {
           notes?: string | null
           offer_sent_at?: string | null
           pre_order_id?: string | null
+          quote_accepted?: boolean | null
+          quote_sent_at?: string | null
+          quoted_price?: number | null
+          requested_product_id?: string | null
+          requested_quantity?: number | null
+          source_platform?: string
           stage?: string | null
           submission_count?: number | null
           user_agent?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "delivery_leads_converted_order_id_fkey"
+            columns: ["converted_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_leads_requested_product_id_fkey"
+            columns: ["requested_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_sessions: {
         Row: {
@@ -606,6 +802,67 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          pit_id: string | null
+          price_per_unit: number
+          product_id: string
+          quantity: number
+          subtotal: number
+          unit: string
+          weight_total: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          pit_id?: string | null
+          price_per_unit: number
+          product_id: string
+          quantity: number
+          subtotal: number
+          unit: string
+          weight_total?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          pit_id?: string | null
+          price_per_unit?: number
+          product_id?: string
+          quantity?: number
+          subtotal?: number
+          unit?: string
+          weight_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_pit_id_fkey"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           acknowledged_at: string | null
@@ -640,10 +897,12 @@ export type Database = {
           delivery_address: string
           delivery_date: string | null
           delivery_day_of_week: string | null
+          delivery_fee: number
           delivery_terms_accepted: boolean | null
           delivery_terms_timestamp: string | null
           delivery_window: string
           discount_amount: number | null
+          discounts_total: number
           distance_fee: number | null
           distance_miles: number
           driver_collected_at: string | null
@@ -655,6 +914,7 @@ export type Database = {
           fraud_score: number | null
           fraud_signals: Json | null
           fraud_window_cleared_at: string | null
+          fuel_surcharge: number
           id: string
           is_northshore: boolean | null
           last_confirmation_sent_at: string | null
@@ -662,6 +922,7 @@ export type Database = {
           loaded_at: string | null
           lookup_token: string | null
           lookup_token_used: boolean
+          material_total: number
           message_sent_at: string | null
           notes: string | null
           order_number: string | null
@@ -682,15 +943,18 @@ export type Database = {
           same_day_requested: boolean
           saturday_surcharge: boolean
           saturday_surcharge_amount: number
+          source_platform: string
           state_tax_amount: number | null
           state_tax_rate: number | null
           status: string
+          stripe_account_id: string | null
           stripe_customer_id: string | null
           stripe_payment_id: string | null
           sunday_surcharge: boolean
           sunday_surcharge_amount: number
           tax_amount: number
           tax_rate: number
+          trustlevel_fee: number
           updated_at: string
           workflow_delivered_at: string | null
         }
@@ -727,10 +991,12 @@ export type Database = {
           delivery_address: string
           delivery_date?: string | null
           delivery_day_of_week?: string | null
+          delivery_fee?: number
           delivery_terms_accepted?: boolean | null
           delivery_terms_timestamp?: string | null
           delivery_window?: string
           discount_amount?: number | null
+          discounts_total?: number
           distance_fee?: number | null
           distance_miles: number
           driver_collected_at?: string | null
@@ -742,6 +1008,7 @@ export type Database = {
           fraud_score?: number | null
           fraud_signals?: Json | null
           fraud_window_cleared_at?: string | null
+          fuel_surcharge?: number
           id?: string
           is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
@@ -749,6 +1016,7 @@ export type Database = {
           loaded_at?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
+          material_total?: number
           message_sent_at?: string | null
           notes?: string | null
           order_number?: string | null
@@ -769,15 +1037,18 @@ export type Database = {
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
+          source_platform?: string
           state_tax_amount?: number | null
           state_tax_rate?: number | null
           status?: string
+          stripe_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           sunday_surcharge?: boolean
           sunday_surcharge_amount?: number
           tax_amount?: number
           tax_rate?: number
+          trustlevel_fee?: number
           updated_at?: string
           workflow_delivered_at?: string | null
         }
@@ -814,10 +1085,12 @@ export type Database = {
           delivery_address?: string
           delivery_date?: string | null
           delivery_day_of_week?: string | null
+          delivery_fee?: number
           delivery_terms_accepted?: boolean | null
           delivery_terms_timestamp?: string | null
           delivery_window?: string
           discount_amount?: number | null
+          discounts_total?: number
           distance_fee?: number | null
           distance_miles?: number
           driver_collected_at?: string | null
@@ -829,6 +1102,7 @@ export type Database = {
           fraud_score?: number | null
           fraud_signals?: Json | null
           fraud_window_cleared_at?: string | null
+          fuel_surcharge?: number
           id?: string
           is_northshore?: boolean | null
           last_confirmation_sent_at?: string | null
@@ -836,6 +1110,7 @@ export type Database = {
           loaded_at?: string | null
           lookup_token?: string | null
           lookup_token_used?: boolean
+          material_total?: number
           message_sent_at?: string | null
           notes?: string | null
           order_number?: string | null
@@ -856,15 +1131,18 @@ export type Database = {
           same_day_requested?: boolean
           saturday_surcharge?: boolean
           saturday_surcharge_amount?: number
+          source_platform?: string
           state_tax_amount?: number | null
           state_tax_rate?: number | null
           status?: string
+          stripe_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_payment_id?: string | null
           sunday_surcharge?: boolean
           sunday_surcharge_amount?: number
           tax_amount?: number
           tax_rate?: number
+          trustlevel_fee?: number
           updated_at?: string
           workflow_delivered_at?: string | null
         }
@@ -960,6 +1238,95 @@ export type Database = {
           },
         ]
       }
+      pit_inventory: {
+        Row: {
+          available: boolean
+          created_at: string
+          id: string
+          max_quantity_per_load: number | null
+          min_quantity: number
+          notes: string | null
+          pit_id: string
+          price_per_unit: number
+          product_id: string
+          updated_at: string
+          wholesale_cost: number | null
+        }
+        Insert: {
+          available?: boolean
+          created_at?: string
+          id?: string
+          max_quantity_per_load?: number | null
+          min_quantity?: number
+          notes?: string | null
+          pit_id: string
+          price_per_unit: number
+          product_id: string
+          updated_at?: string
+          wholesale_cost?: number | null
+        }
+        Update: {
+          available?: boolean
+          created_at?: string
+          id?: string
+          max_quantity_per_load?: number | null
+          min_quantity?: number
+          notes?: string | null
+          pit_id?: string
+          price_per_unit?: number
+          product_id?: string
+          updated_at?: string
+          wholesale_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pit_inventory_pit_id_fkey"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pit_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pit_zip_distances: {
+        Row: {
+          driving_miles: number
+          id: string
+          last_calculated_at: string
+          pit_id: string
+          zip: string
+        }
+        Insert: {
+          driving_miles: number
+          id?: string
+          last_calculated_at?: string
+          pit_id: string
+          zip: string
+        }
+        Update: {
+          driving_miles?: number
+          id?: string
+          last_calculated_at?: string
+          pit_id?: string
+          zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pit_zip_distances_pit_id_fkey"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pits: {
         Row: {
           address: string
@@ -975,18 +1342,21 @@ export type Database = {
           lat: number
           lon: number
           max_distance: number | null
+          min_trip_charge: number
           name: string
           notes: string | null
           operating_days: number[] | null
           price_per_extra_mile: number | null
           same_day_cutoff: string | null
           saturday_load_limit: number | null
+          saturday_only: boolean
           saturday_surcharge_override: number | null
           served_cities: Json | null
           status: string
           sunday_load_limit: number | null
           sunday_surcharge: number | null
           updated_at: string
+          vendor_relationship: string | null
         }
         Insert: {
           address: string
@@ -1002,18 +1372,21 @@ export type Database = {
           lat: number
           lon: number
           max_distance?: number | null
+          min_trip_charge?: number
           name: string
           notes?: string | null
           operating_days?: number[] | null
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
           saturday_load_limit?: number | null
+          saturday_only?: boolean
           saturday_surcharge_override?: number | null
           served_cities?: Json | null
           status?: string
           sunday_load_limit?: number | null
           sunday_surcharge?: number | null
           updated_at?: string
+          vendor_relationship?: string | null
         }
         Update: {
           address?: string
@@ -1029,18 +1402,69 @@ export type Database = {
           lat?: number
           lon?: number
           max_distance?: number | null
+          min_trip_charge?: number
           name?: string
           notes?: string | null
           operating_days?: number[] | null
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
           saturday_load_limit?: number | null
+          saturday_only?: boolean
           saturday_surcharge_override?: number | null
           served_cities?: Json | null
           status?: string
           sunday_load_limit?: number | null
           sunday_surcharge?: number | null
           updated_at?: string
+          vendor_relationship?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_urls: string[] | null
+          long_description_template: string | null
+          name: string
+          slug: string
+          sub_category: string | null
+          unit: string
+          updated_at: string
+          use_cases: string[] | null
+          weight_per_unit: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_urls?: string[] | null
+          long_description_template?: string | null
+          name: string
+          slug: string
+          sub_category?: string | null
+          unit: string
+          updated_at?: string
+          use_cases?: string[] | null
+          weight_per_unit?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_urls?: string[] | null
+          long_description_template?: string | null
+          name?: string
+          slug?: string
+          sub_category?: string | null
+          unit?: string
+          updated_at?: string
+          use_cases?: string[] | null
+          weight_per_unit?: number | null
         }
         Relationships: []
       }
@@ -1093,6 +1517,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      storefronts: {
+        Row: {
+          active: boolean
+          brand_name: string | null
+          created_at: string
+          domain: string
+          id: string
+          logo_url: string | null
+          name: string
+          stripe_account_id: string | null
+          support_email: string | null
+          support_phone: string | null
+        }
+        Insert: {
+          active?: boolean
+          brand_name?: string | null
+          created_at?: string
+          domain: string
+          id: string
+          logo_url?: string | null
+          name: string
+          stripe_account_id?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+        }
+        Update: {
+          active?: boolean
+          brand_name?: string | null
+          created_at?: string
+          domain?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          stripe_account_id?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+        }
+        Relationships: []
       }
       tax_rates: {
         Row: {
@@ -1332,30 +1795,51 @@ export type Database = {
       }
       zip_tax_rates: {
         Row: {
+          city: string | null
           combined_rate: number
+          county: string | null
           created_at: string | null
           id: string
+          in_service_pit_ids: string[] | null
+          lat: number | null
+          lng: number | null
           local_rate: number
+          population: number | null
+          state: string | null
           state_code: string
           state_rate: number
           tax_region_name: string
           zip_code: string
         }
         Insert: {
+          city?: string | null
           combined_rate: number
+          county?: string | null
           created_at?: string | null
           id?: string
+          in_service_pit_ids?: string[] | null
+          lat?: number | null
+          lng?: number | null
           local_rate?: number
+          population?: number | null
+          state?: string | null
           state_code?: string
           state_rate?: number
           tax_region_name: string
           zip_code: string
         }
         Update: {
+          city?: string | null
           combined_rate?: number
+          county?: string | null
           created_at?: string | null
           id?: string
+          in_service_pit_ids?: string[] | null
+          lat?: number | null
+          lng?: number | null
           local_rate?: number
+          population?: number | null
+          state?: string | null
           state_code?: string
           state_rate?: number
           tax_region_name?: string
