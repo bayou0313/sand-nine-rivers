@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const username = Deno.env.get("SURECAM_USERNAME");
-  const password = Deno.env.get("SURECAM_PASSWORD");
+  const username = Deno.env.get("LMT_SURECAM_USERNAME") ?? Deno.env.get("SURECAM_USERNAME");
+  const password = Deno.env.get("LMT_SURECAM_PASSWORD") ?? Deno.env.get("SURECAM_PASSWORD");
 
   if (!username || !password) {
     return new Response(
@@ -33,7 +33,11 @@ Deno.serve(async (req) => {
   }
 
   const basic = btoa(`${username}:${password}`);
-  const url = "https://www.vts.surecam.com/api/v1/devices";
+  let baseUrl = (Deno.env.get("LMT_SURECAM_API_URL") ?? "https://www.vts.surecam.com/api/v1").trim().replace(/\/$/, "");
+  if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
+  if (!/\/api\/v\d+$/i.test(baseUrl)) baseUrl = `${baseUrl}/api/v1`;
+  const url = `${baseUrl}/devices`;
+  console.log("surecam-probe: requesting", { host: new URL(url).host, path: new URL(url).pathname });
 
   let upstream: Response;
   try {
