@@ -3376,6 +3376,9 @@ const Leads = () => {
           </>
         );
 
+      case "hubs":
+        return <HubsTab T={T} storedPassword={storedPassword} />;
+
       case "drivers":
         return (
           <DriversTab
