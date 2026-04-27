@@ -1,6 +1,6 @@
 # RIVERSAND_CONTEXT.md
-Version: 1.13 (2026-04-25)
-Last synced: 2026-04-25
+Version: 1.14 (2026-04-26)
+Last synced: 2026-04-26
 
 ## Companion documents
 - CORE_FLOW_REFERENCE.md — customer-facing source snapshot (pages, customer components, lib, customer-flow edge functions). Regenerated 2026-04-24, supersedes April 1 snapshot.
@@ -11,6 +11,9 @@ Last synced: 2026-04-25
 - INCIDENT_RESPONSE.md — Response runbooks for credential, breach, payment, and outage incidents.
 - PHASE_3_PLAN.md — Driver portal phase planning (3a shipped, 3b/3c pending).
 - FLEETWORK_MIGRATION_PLAN.md — Migration plan for driver portal to fleetwork.net.
+- WAYS_LMT_UNIFICATION_v2_pit_driven.md — multi-storefront pit-driven catalog architecture (Block 1 applied 2026-04-26).
+- LMT_BLOCK_1_SCHEMA_PROMPT.md — propose-only Lovable prompt for Block 1 schema migration (executed 2026-04-26).
+- PROJECT_BRIEF_v1.0_2026-04-25.md — strategic-level brief covering full digital stack.
 
 ## Project identity
 - Repo: bayou0313/sand-nine-rivers
@@ -41,6 +44,28 @@ Last synced: 2026-04-25
 - orders (id, order_number, customer_name, customer_phone, customer_email, delivery_address, delivery_date, delivery_notes, price, quantity, payment_method, payment_status, status, pit_id, distance_miles, created_at, updated_at)
 - Order status enum: pending | confirmed | en_route | delivered | cancelled
 - Payment status: paid | unpaid | refunded (and variations)
+
+## Block 1 schema additions (live as of 2026-04-26)
+
+Block 1 of the unification work is applied. The following schema additions are live and queryable but not yet wired into application code:
+
+New tables (all with RLS):
+- products — master catalog (sand, dirt, rock, soil, mulch, gravel)
+- pit_inventory — pit × product × price (sellable rows)
+- pit_zip_distances — cached driving distances pit→ZIP
+- customers_v2 — phone-keyed unified customer identity (separate from existing public.customers; rename deferred to later block)
+- addresses — customer address book (FK to customers_v2)
+- storefronts — registry of storefronts (RS, WM, etc.)
+- app_configurations — per-storefront pricing and UI config
+- order_items — multi-product order line items
+
+Column additions to existing tables:
+- pits: min_trip_charge, saturday_only, vendor_relationship
+- orders: source_platform (default 'RS'), stripe_account_id, material_total, delivery_fee, fuel_surcharge, trustlevel_fee, discounts_total
+- delivery_leads: source_platform, requested_product_id, requested_quantity, quoted_price, quote_sent_at, quote_accepted, converted_order_id
+- zip_tax_rates: city, state, county, lat, lng, population, in_service_pit_ids
+
+Status: tables empty, no data seeded yet. Block 2 (seed catalog data) is the next unification step.
 
 ## Admin routes
 - /leads — password-gated via leads-auth edge function
