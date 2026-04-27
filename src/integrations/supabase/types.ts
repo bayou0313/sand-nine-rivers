@@ -838,47 +838,64 @@ export type Database = {
           hub_id: string
           pit_id: string
           priority: number
+          status: string
         }
         Insert: {
           created_at?: string
           hub_id: string
           pit_id: string
           priority?: number
+          status?: string
         }
         Update: {
           created_at?: string
           hub_id?: string
           pit_id?: string
           priority?: number
+          status?: string
         }
         Relationships: []
       }
       hub_truck_class_rates: {
         Row: {
           created_at: string
+          driver_extra_mile_bonus_pct: number
+          extra_mile_surcharge: number
+          free_miles_override: number | null
           hub_id: string
           per_mile_rate: number
           truck_class_id: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
+          driver_extra_mile_bonus_pct?: number
+          extra_mile_surcharge?: number
+          free_miles_override?: number | null
           hub_id: string
           per_mile_rate: number
           truck_class_id: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
+          driver_extra_mile_bonus_pct?: number
+          extra_mile_surcharge?: number
+          free_miles_override?: number | null
           hub_id?: string
           per_mile_rate?: number
           truck_class_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
       hubs: {
         Row: {
           address: string | null
+          base_delivery_fee: number
           contact_email: string | null
           created_at: string
+          free_miles: number
           id: string
           lat: number | null
           lng: number | null
@@ -889,8 +906,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          base_delivery_fee?: number
           contact_email?: string | null
           created_at?: string
+          free_miles?: number
           id?: string
           lat?: number | null
           lng?: number | null
@@ -901,8 +920,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          base_delivery_fee?: number
           contact_email?: string | null
           created_at?: string
+          free_miles?: number
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1870,6 +1891,7 @@ export type Database = {
           max_tons: number | null
           max_yards: number | null
           name: string
+          status: string
         }
         Insert: {
           capacity_tons?: number | null
@@ -1879,6 +1901,7 @@ export type Database = {
           max_tons?: number | null
           max_yards?: number | null
           name: string
+          status?: string
         }
         Update: {
           capacity_tons?: number | null
@@ -1888,6 +1911,7 @@ export type Database = {
           max_tons?: number | null
           max_yards?: number | null
           name?: string
+          status?: string
         }
         Relationships: []
       }
@@ -2328,6 +2352,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hub_save_rates: {
+        Args: { p_hub_id: string; p_rates: Json }
+        Returns: Json
       }
       increment_city_page_views: {
         Args: { p_slug: string }
