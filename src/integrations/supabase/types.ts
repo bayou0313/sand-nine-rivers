@@ -877,31 +877,37 @@ export type Database = {
       hubs: {
         Row: {
           address: string | null
+          contact_email: string | null
           created_at: string
           id: string
           lat: number | null
           lng: number | null
           name: string
+          phone: string | null
           status: string
           updated_at: string
         }
         Insert: {
           address?: string | null
+          contact_email?: string | null
           created_at?: string
           id?: string
           lat?: number | null
           lng?: number | null
           name: string
+          phone?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
+          contact_email?: string | null
           created_at?: string
           id?: string
           lat?: number | null
           lng?: number | null
           name?: string
+          phone?: string | null
           status?: string
           updated_at?: string
         }
@@ -1551,6 +1557,8 @@ export type Database = {
         Row: {
           address: string
           base_price: number | null
+          closed_dates: string[] | null
+          contact_email: string | null
           created_at: string
           delivery_hours: Json | null
           free_miles: number | null
@@ -1567,6 +1575,9 @@ export type Database = {
           name: string
           notes: string | null
           operating_days: number[] | null
+          operating_hours_end: string | null
+          operating_hours_start: string | null
+          phone: string | null
           price_per_extra_mile: number | null
           same_day_cutoff: string | null
           saturday_load_limit: number | null
@@ -1577,11 +1588,14 @@ export type Database = {
           sunday_load_limit: number | null
           sunday_surcharge: number | null
           updated_at: string
+          vendor_notes: string | null
           vendor_relationship: string | null
         }
         Insert: {
           address: string
           base_price?: number | null
+          closed_dates?: string[] | null
+          contact_email?: string | null
           created_at?: string
           delivery_hours?: Json | null
           free_miles?: number | null
@@ -1598,6 +1612,9 @@ export type Database = {
           name: string
           notes?: string | null
           operating_days?: number[] | null
+          operating_hours_end?: string | null
+          operating_hours_start?: string | null
+          phone?: string | null
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
           saturday_load_limit?: number | null
@@ -1608,11 +1625,14 @@ export type Database = {
           sunday_load_limit?: number | null
           sunday_surcharge?: number | null
           updated_at?: string
+          vendor_notes?: string | null
           vendor_relationship?: string | null
         }
         Update: {
           address?: string
           base_price?: number | null
+          closed_dates?: string[] | null
+          contact_email?: string | null
           created_at?: string
           delivery_hours?: Json | null
           free_miles?: number | null
@@ -1629,6 +1649,9 @@ export type Database = {
           name?: string
           notes?: string | null
           operating_days?: number[] | null
+          operating_hours_end?: string | null
+          operating_hours_start?: string | null
+          phone?: string | null
           price_per_extra_mile?: number | null
           same_day_cutoff?: string | null
           saturday_load_limit?: number | null
@@ -1639,54 +1662,70 @@ export type Database = {
           sunday_load_limit?: number | null
           sunday_surcharge?: number | null
           updated_at?: string
+          vendor_notes?: string | null
           vendor_relationship?: string | null
         }
         Relationships: []
       }
       products: {
         Row: {
+          alternatives: string[] | null
           category: string
           created_at: string
+          default_price: number | null
           description: string | null
           id: string
           image_urls: string[] | null
+          is_active: boolean | null
+          is_popular: boolean | null
           long_description_template: string | null
           min_quantity: number | null
           name: string
           slug: string
           sub_category: string | null
+          tag: string | null
           unit: string
           updated_at: string
           use_cases: string[] | null
           weight_per_unit: number | null
         }
         Insert: {
+          alternatives?: string[] | null
           category: string
           created_at?: string
+          default_price?: number | null
           description?: string | null
           id?: string
           image_urls?: string[] | null
+          is_active?: boolean | null
+          is_popular?: boolean | null
           long_description_template?: string | null
           min_quantity?: number | null
           name: string
           slug: string
           sub_category?: string | null
+          tag?: string | null
           unit: string
           updated_at?: string
           use_cases?: string[] | null
           weight_per_unit?: number | null
         }
         Update: {
+          alternatives?: string[] | null
           category?: string
           created_at?: string
+          default_price?: number | null
           description?: string | null
           id?: string
           image_urls?: string[] | null
+          is_active?: boolean | null
+          is_popular?: boolean | null
           long_description_template?: string | null
           min_quantity?: number | null
           name?: string
           slug?: string
           sub_category?: string | null
+          tag?: string | null
           unit?: string
           updated_at?: string
           use_cases?: string[] | null
@@ -1852,6 +1891,65 @@ export type Database = {
         }
         Relationships: []
       }
+      truck_maintenance: {
+        Row: {
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          mileage_at_service: number | null
+          next_service_due: string | null
+          notes: string | null
+          parts_replaced: string[] | null
+          performed_by: string | null
+          service_date: string
+          service_type: string
+          truck_id: string
+          updated_at: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          mileage_at_service?: number | null
+          next_service_due?: string | null
+          notes?: string | null
+          parts_replaced?: string[] | null
+          performed_by?: string | null
+          service_date: string
+          service_type: string
+          truck_id: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          mileage_at_service?: number | null
+          next_service_due?: string | null
+          notes?: string | null
+          parts_replaced?: string[] | null
+          performed_by?: string | null
+          service_date?: string
+          service_type?: string
+          truck_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_maintenance_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       truck_sessions: {
         Row: {
           created_at: string
@@ -1886,41 +1984,74 @@ export type Database = {
         Row: {
           class_id: string | null
           created_at: string
+          dot_number: string | null
           hub_id: string | null
           id: string
+          insurance_expiry: string | null
+          insurance_policy_number: string | null
+          insurance_provider: string | null
+          last_maintenance_date: string | null
           license_plate: string | null
+          make: string | null
+          model: string | null
           name: string
+          next_service_due_date: string | null
           notes: string | null
+          registration_expiry: string | null
+          registration_state: string | null
           status: string
           surecam_device_id: string | null
           updated_at: string
           vin: string | null
+          year: number | null
         }
         Insert: {
           class_id?: string | null
           created_at?: string
+          dot_number?: string | null
           hub_id?: string | null
           id?: string
+          insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          last_maintenance_date?: string | null
           license_plate?: string | null
+          make?: string | null
+          model?: string | null
           name: string
+          next_service_due_date?: string | null
           notes?: string | null
+          registration_expiry?: string | null
+          registration_state?: string | null
           status?: string
           surecam_device_id?: string | null
           updated_at?: string
           vin?: string | null
+          year?: number | null
         }
         Update: {
           class_id?: string | null
           created_at?: string
+          dot_number?: string | null
           hub_id?: string | null
           id?: string
+          insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          last_maintenance_date?: string | null
           license_plate?: string | null
+          make?: string | null
+          model?: string | null
           name?: string
+          next_service_due_date?: string | null
           notes?: string | null
+          registration_expiry?: string | null
+          registration_state?: string | null
           status?: string
           surecam_device_id?: string | null
           updated_at?: string
           vin?: string | null
+          year?: number | null
         }
         Relationships: []
       }
