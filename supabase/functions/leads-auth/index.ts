@@ -2040,6 +2040,111 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       );
     }
 
+    // ── SURECAM FLEET STATUS ──
+    // Returns live fleet roster + last-known GPS from SureCam VTS API.
+    // The /devices endpoint already includes latitude/longitude/gps_speed/gps_heading/gps_time,
+    // so no per-device fan-out is needed. Credentials never appear in responses or logs.
+    if (action === "surecam_fleet_status") {
+      const username = Deno.env.get("LMT_SURECAM_USERNAME");
+      const password = Deno.env.get("LMT_SURECAM_PASSWORD");
+      if (!username || !password) {
+        return new Response(
+          JSON.stringify({ error: "SureCam credentials not configured" }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Normalize base URL: accept bare host, missing scheme, missing /api/v1
+      let baseUrl = (Deno.env.get("LMT_SURECAM_API_URL") ?? "https://vts.surecam.com/api/v1")
+        .trim()
+        .replace(/\/$/, "");
+      if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
+      if (!/\/api\/v\d+$/i.test(baseUrl)) baseUrl = `${baseUrl}/api/v1`;
+
+      const auth = "Basic " + btoa(`${username}:${password}`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12_000);
+
+      try {
+        const upstream = await fetch(`${baseUrl}/devices`, {
+          method: "GET",
+          headers: { Authorization: auth, Accept: "application/json" },
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (upstream.status === 401 || upstream.status === 403) {
+          console.error("surecam: auth failed", { status: upstream.status });
+          return new Response(
+            JSON.stringify({ error: "SureCam auth failed - check credentials" }),
+            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        if (!upstream.ok) {
+          const text = await upstream.text();
+          console.error("surecam: upstream non-2xx", { status: upstream.status, bodyLen: text.length });
+          return new Response(
+            JSON.stringify({ error: `SureCam upstream error (${upstream.status})` }),
+            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+
+        const json = await upstream.json();
+        const rawDevices: any[] = Array.isArray(json?.devices)
+          ? json.devices
+          : Array.isArray(json)
+          ? json
+          : [];
+
+        const trucks = rawDevices.map((d) => {
+          const lat = parseFloat(d.latitude);
+          const lng = parseFloat(d.longitude);
+          const speedKmh = parseFloat(d.gps_speed);
+          const heading = parseFloat(d.gps_heading);
+          const gpsValid =
+            d.gps_status !== "invalid" &&
+            Number.isFinite(lat) &&
+            Number.isFinite(lng) &&
+            !(lat === 0 && lng === 0);
+
+          return {
+            serial: String(d.serial ?? d.id ?? ""),
+            license_plate: String(d.license_plate ?? ""),
+            vehicle_make: String(d.vehicle_make ?? ""),
+            vehicle_model: String(d.vehicle_model ?? ""),
+            driver_name: String(d.driver_name ?? ""),
+            fleet_number: String(d.fleet_number ?? ""),
+            state: String(d.state ?? d.event_state ?? "unknown"),
+            last_connected: d.last_connected ?? null,
+            last_location: gpsValid
+              ? {
+                  lat,
+                  lng,
+                  speed_mph: Number.isFinite(speedKmh)
+                    ? Math.round(speedKmh * 0.621371 * 10) / 10
+                    : null,
+                  heading: Number.isFinite(heading) ? heading : null,
+                  time: d.gps_time ?? null,
+                }
+              : null,
+          };
+        });
+
+        return new Response(
+          JSON.stringify({ trucks }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      } catch (err) {
+        clearTimeout(timeout);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("surecam: fetch failed", { message: msg });
+        return new Response(
+          JSON.stringify({ error: "SureCam request failed" }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     // ── SAVE PIT ──
     if (action === "save_pit") {
       if (!pit) {
