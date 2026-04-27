@@ -227,7 +227,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "drivers" | "trucks" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "hubs" | "drivers" | "trucks" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: "#0D2137", called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -262,6 +262,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
     items: [
       { id: "city_pages", label: "City Pages", icon: MapIcon },
       { id: "pit", label: "PITs", icon: Zap },
+      { id: "hubs" as NavPage, label: "Hubs", icon: Building2 },
       { id: "drivers", label: "Drivers", icon: Truck },
       { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
     ],
