@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell, Star, Calendar, Shield, ExternalLink, Truck } from "lucide-react";
 import DriversTab from "@/components/leads/drivers/DriversTab";
+import HubsTab from "@/components/leads/hubs/HubsTab";
 import type { Driver } from "@/components/leads/drivers/types";
 import { Switch } from "@/components/ui/switch";
 import { PALETTES, getPaletteById, deriveCssVars, hexToHsl } from "@/lib/palettes";
@@ -227,7 +228,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "drivers" | "trucks" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "hubs" | "drivers" | "trucks" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: "#0D2137", called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -262,6 +263,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
     items: [
       { id: "city_pages", label: "City Pages", icon: MapIcon },
       { id: "pit", label: "PITs", icon: Zap },
+      { id: "hubs" as NavPage, label: "Hubs", icon: Building2 },
       { id: "drivers", label: "Drivers", icon: Truck },
       { id: "waitlist" as NavPage, label: "Waitlist", icon: Users },
     ],
@@ -2513,6 +2515,7 @@ const Leads = () => {
     city_pages: { title: "CITY PAGES", subtitle: `${cityPages.length} pages` },
     waitlist: { title: "WAITLIST", subtitle: "Coming soon areas" },
     pit: { title: "PIT", subtitle: `${pits.length} locations` },
+    hubs: { title: "HUBS", subtitle: "Dispatch hubs & rate matrix" },
     drivers: { title: "DRIVERS", subtitle: `${drivers.filter(d => d.active).length} active` },
     all: { title: "ALL LEADS", subtitle: `${sortedLeads.length} leads` },
     profile: { title: "BUSINESS PROFILE" },
@@ -3373,6 +3376,9 @@ const Leads = () => {
             )}
           </>
         );
+
+      case "hubs":
+        return <HubsTab T={T} storedPassword={storedPassword} />;
 
       case "drivers":
         return (

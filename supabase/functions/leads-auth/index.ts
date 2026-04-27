@@ -5292,6 +5292,243 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       );
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // SLICE B — HUBS TAB (9 actions)
+    // All actions require LEADS_PASSWORD. Service role for all DB ops.
+    // ─────────────────────────────────────────────────────────────────────────
+    const HUB_ACTIONS = new Set([
+      "hub_list", "hub_get_detail", "hub_create", "hub_update_identity",
+      "hub_update_rates", "hub_attach_pit", "hub_detach_pit",
+      "hub_toggle_pit_status", "hub_list_unattached_pits",
+    ]);
+    if (HUB_ACTIONS.has(action)) {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      // ── HUB LIST (with computed counts) ──
+      if (action === "hub_list") {
+        const { data: hubs, error } = await sb
+          .from("hubs")
+          .select("*")
+          .order("name", { ascending: true });
+        if (error) throw error;
+
+        const { data: rateRows } = await sb.from("hub_truck_class_rates").select("hub_id, per_mile_rate");
+        const { data: pitRows } = await sb.from("hub_pits").select("hub_id, status");
+
+        const enriched = (hubs || []).map((h: any) => {
+          const rates = (rateRows || []).filter((r: any) => r.hub_id === h.id);
+          const pits = (pitRows || []).filter((p: any) => p.hub_id === h.id);
+          const ratesUnset = rates.filter((r: any) => Number(r.per_mile_rate || 0) === 0).length;
+          return {
+            ...h,
+            truck_class_count: rates.length,
+            rates_unset_count: ratesUnset,
+            attached_pit_count: pits.length,
+            active_pit_count: pits.filter((p: any) => p.status === "active").length,
+          };
+        });
+        return new Response(JSON.stringify({ hubs: enriched }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB GET DETAIL ──
+      if (action === "hub_get_detail") {
+        const hubId = body.hub_id;
+        if (!hubId) {
+          return new Response(JSON.stringify({ error: "hub_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data: hub, error: hubErr } = await sb.from("hubs").select("*").eq("id", hubId).maybeSingle();
+        if (hubErr) throw hubErr;
+        if (!hub) {
+          return new Response(JSON.stringify({ error: "Hub not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        const { data: truckClasses } = await sb.from("truck_classes").select("*").order("name", { ascending: true });
+        const { data: rates } = await sb.from("hub_truck_class_rates").select("*").eq("hub_id", hubId);
+        const { data: hubPits } = await sb.from("hub_pits").select("*").eq("hub_id", hubId);
+
+        // Resolve attached pits with details
+        const pitIds = (hubPits || []).map((hp: any) => hp.pit_id);
+        let attachedPits: any[] = [];
+        if (pitIds.length > 0) {
+          const { data: pitsData } = await sb.from("pits").select("id, name, address, status, lat, lon").in("id", pitIds);
+          attachedPits = (hubPits || []).map((hp: any) => {
+            const p = (pitsData || []).find((pp: any) => pp.id === hp.pit_id);
+            return {
+              pit_id: hp.pit_id,
+              status: hp.status,
+              priority: hp.priority,
+              created_at: hp.created_at,
+              pit: p || null,
+            };
+          }).sort((a: any, b: any) => (a.priority ?? 100) - (b.priority ?? 100));
+        }
+
+        return new Response(JSON.stringify({
+          hub,
+          truck_classes: truckClasses || [],
+          rates: rates || [],
+          attached_pits: attachedPits,
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB CREATE (auto-creates rate rows for active truck classes) ──
+      if (action === "hub_create") {
+        const h = body.hub || {};
+        if (!h.name || !String(h.name).trim()) {
+          return new Response(JSON.stringify({ error: "Name is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const insertRow: any = {
+          name: String(h.name).trim(),
+          address: h.address || null,
+          lat: h.lat != null ? Number(h.lat) : null,
+          lng: h.lng != null ? Number(h.lng) : null,
+          phone: h.phone || null,
+          contact_email: h.contact_email || null,
+          status: h.status === "inactive" ? "inactive" : "active",
+          free_miles: h.free_miles != null ? Number(h.free_miles) : 15,
+          base_delivery_fee: h.base_delivery_fee != null ? Number(h.base_delivery_fee) : 0,
+        };
+        const { data: created, error: createErr } = await sb.from("hubs").insert(insertRow).select().single();
+        if (createErr) throw createErr;
+
+        // Auto-create rate rows for each active truck class with per_mile_rate=0
+        const { data: activeClasses } = await sb.from("truck_classes").select("id").eq("status", "active");
+        if (activeClasses && activeClasses.length > 0) {
+          const rateRows = activeClasses.map((tc: any) => ({
+            hub_id: created.id,
+            truck_class_id: tc.id,
+            per_mile_rate: 0,
+            extra_mile_surcharge: 0,
+            free_miles_override: null,
+            driver_extra_mile_bonus_pct: 0,
+          }));
+          await sb.from("hub_truck_class_rates").insert(rateRows);
+        }
+
+        return new Response(JSON.stringify({ hub: created }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB UPDATE IDENTITY ──
+      if (action === "hub_update_identity") {
+        const hubId = body.hub_id;
+        const h = body.hub || {};
+        if (!hubId) {
+          return new Response(JSON.stringify({ error: "hub_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const updates: any = {};
+        if (h.name !== undefined) updates.name = String(h.name).trim();
+        if (h.address !== undefined) updates.address = h.address || null;
+        if (h.lat !== undefined) updates.lat = h.lat == null || h.lat === "" ? null : Number(h.lat);
+        if (h.lng !== undefined) updates.lng = h.lng == null || h.lng === "" ? null : Number(h.lng);
+        if (h.phone !== undefined) updates.phone = h.phone || null;
+        if (h.contact_email !== undefined) updates.contact_email = h.contact_email || null;
+        if (h.status !== undefined) updates.status = h.status === "inactive" ? "inactive" : "active";
+        if (h.free_miles !== undefined) updates.free_miles = Number(h.free_miles) || 0;
+        if (h.base_delivery_fee !== undefined) updates.base_delivery_fee = Number(h.base_delivery_fee) || 0;
+
+        const { data, error } = await sb.from("hubs").update(updates).eq("id", hubId).select().single();
+        if (error) throw error;
+        return new Response(JSON.stringify({ hub: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB UPDATE RATES (atomic via hub_save_rates RPC) ──
+      if (action === "hub_update_rates") {
+        const hubId = body.hub_id;
+        const rates = body.rates;
+        if (!hubId || !Array.isArray(rates)) {
+          return new Response(JSON.stringify({ error: "hub_id and rates[] required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await sb.rpc("hub_save_rates", { p_hub_id: hubId, p_rates: rates });
+        if (error) throw error;
+        return new Response(JSON.stringify({ result: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB ATTACH PIT (multi-select) ──
+      if (action === "hub_attach_pit") {
+        const hubId = body.hub_id;
+        const pitIds: string[] = Array.isArray(body.pit_ids) ? body.pit_ids : [];
+        if (!hubId || pitIds.length === 0) {
+          return new Response(JSON.stringify({ error: "hub_id and pit_ids[] required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const rows = pitIds.map((pid) => ({ hub_id: hubId, pit_id: pid, status: "active", priority: 100 }));
+        const { error } = await sb.from("hub_pits").insert(rows);
+        if (error) throw error;
+        return new Response(JSON.stringify({ attached: pitIds.length }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB DETACH PIT ──
+      if (action === "hub_detach_pit") {
+        const hubId = body.hub_id;
+        const pitId = body.pit_id;
+        if (!hubId || !pitId) {
+          return new Response(JSON.stringify({ error: "hub_id and pit_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { error } = await sb.from("hub_pits").delete().eq("hub_id", hubId).eq("pit_id", pitId);
+        if (error) throw error;
+        return new Response(JSON.stringify({ detached: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB TOGGLE PIT STATUS (active <-> paused) ──
+      if (action === "hub_toggle_pit_status") {
+        const hubId = body.hub_id;
+        const pitId = body.pit_id;
+        if (!hubId || !pitId) {
+          return new Response(JSON.stringify({ error: "hub_id and pit_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data: existing, error: getErr } = await sb
+          .from("hub_pits").select("status").eq("hub_id", hubId).eq("pit_id", pitId).maybeSingle();
+        if (getErr) throw getErr;
+        if (!existing) {
+          return new Response(JSON.stringify({ error: "Attachment not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const newStatus = existing.status === "active" ? "paused" : "active";
+        const { error } = await sb.from("hub_pits").update({ status: newStatus })
+          .eq("hub_id", hubId).eq("pit_id", pitId);
+        if (error) throw error;
+        return new Response(JSON.stringify({ status: newStatus }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── HUB LIST UNATTACHED PITS ──
+      if (action === "hub_list_unattached_pits") {
+        const hubId = body.hub_id;
+        if (!hubId) {
+          return new Response(JSON.stringify({ error: "hub_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data: attached } = await sb.from("hub_pits").select("pit_id").eq("hub_id", hubId);
+        const attachedIds = (attached || []).map((r: any) => r.pit_id);
+
+        let query = sb.from("pits").select("id, name, address, status, lat, lon").order("name", { ascending: true });
+        if (attachedIds.length > 0) {
+          query = query.not("id", "in", `(${attachedIds.join(",")})`);
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        return new Response(JSON.stringify({ pits: data || [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
