@@ -860,8 +860,6 @@ export type Database = {
         Row: {
           created_at: string
           driver_extra_mile_bonus_pct: number
-          extra_mile_surcharge: number
-          free_miles_override: number | null
           hub_id: string
           per_mile_rate: number
           truck_class_id: string
@@ -870,8 +868,6 @@ export type Database = {
         Insert: {
           created_at?: string
           driver_extra_mile_bonus_pct?: number
-          extra_mile_surcharge?: number
-          free_miles_override?: number | null
           hub_id: string
           per_mile_rate: number
           truck_class_id: string
@@ -880,8 +876,6 @@ export type Database = {
         Update: {
           created_at?: string
           driver_extra_mile_bonus_pct?: number
-          extra_mile_surcharge?: number
-          free_miles_override?: number | null
           hub_id?: string
           per_mile_rate?: number
           truck_class_id?: string
@@ -892,10 +886,8 @@ export type Database = {
       hubs: {
         Row: {
           address: string | null
-          base_delivery_fee: number
           contact_email: string | null
           created_at: string
-          free_miles: number
           id: string
           lat: number | null
           lng: number | null
@@ -906,10 +898,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          base_delivery_fee?: number
           contact_email?: string | null
           created_at?: string
-          free_miles?: number
           id?: string
           lat?: number | null
           lng?: number | null
@@ -920,10 +910,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          base_delivery_fee?: number
           contact_email?: string | null
           created_at?: string
-          free_miles?: number
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1577,6 +1565,7 @@ export type Database = {
       pits: {
         Row: {
           address: string
+          base_delivery_fee: number
           base_price: number | null
           closed_dates: string[] | null
           contact_email: string | null
@@ -1614,6 +1603,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          base_delivery_fee?: number
           base_price?: number | null
           closed_dates?: string[] | null
           contact_email?: string | null
@@ -1651,6 +1641,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          base_delivery_fee?: number
           base_price?: number | null
           closed_dates?: string[] | null
           contact_email?: string | null
