@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
 
   const basic = btoa(`${username}:${password}`);
   let baseUrl = (Deno.env.get("LMT_SURECAM_API_URL") ?? "https://www.vts.surecam.com/api/v1").trim().replace(/\/$/, "");
+  console.log("surecam-probe: env raw", { value: baseUrl });
   if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
   if (!/\/api\/v\d+$/i.test(baseUrl)) baseUrl = `${baseUrl}/api/v1`;
   const url = `${baseUrl}/devices`;
