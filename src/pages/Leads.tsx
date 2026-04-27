@@ -245,6 +245,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
       { id: "reviews" as NavPage, label: "Reviews", icon: Star },
       { id: "schedule" as NavPage, label: "Schedule", icon: Calendar },
+      { id: "trucks" as NavPage, label: "Trucks", icon: Truck },
     ],
   },
   {
