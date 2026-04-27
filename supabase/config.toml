@@ -11,3 +11,15 @@ verify_jwt = false
 
 [functions.holiday-confirm]
 verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = false
+
+[functions.stripe-webhook-ways]
+verify_jwt = false
+
+[functions.get-order-by-session]
+verify_jwt = false
+
+[functions.send-payment-failed-email]
+verify_jwt = false
