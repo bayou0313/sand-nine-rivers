@@ -24,6 +24,7 @@ import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
 import { WAYS_PHONE_DISPLAY } from "@/lib/constants";
 import ScheduleTab from "@/components/leads/schedule/ScheduleTab";
+import TrucksTab from "@/components/leads/trucks/TrucksTab";
 import { formatOrderMessage, buildWhatsAppUrl, canSendToDriver } from "@/lib/whatsapp-message";
 const BRAND_GOLD = "#C07A00";
 const BRAND_NAVY = "#0D2137"; // used for login screen only
@@ -226,7 +227,7 @@ const parseCityPageContent = (cp: any) => {
 
 type SortKey = "lead_number" | "created_at" | "address" | "state" | "zip" | "distance_miles" | "customer_name" | "customer_email" | "customer_phone" | "contacted" | "stage" | "nearest_pit_name";
 type SortDir = "asc" | "desc";
-type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "drivers" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
+type NavPage = "overview" | "zip" | "pipeline" | "revenue" | "pit" | "drivers" | "trucks" | "all" | "abandoned" | "live" | "cash_orders" | "customers" | "city_pages" | "waitlist" | "profile" | "settings" | "pending_review" | "reviews" | "schedule" | "finances" | "fraud";
 
 const STAGES = ["new", "called", "quoted", "won", "lost"] as const;
 const STAGE_COLORS: Record<string, string> = { new: "#0D2137", called: "#1A6BB8", quoted: "#F59E0B", won: "#22C55E", lost: "#999" };
@@ -244,6 +245,7 @@ const NAV_ITEMS: { section: string; items: { id: NavPage; label: string; icon: a
       { id: "abandoned", label: "Abandoned Sessions", icon: AlertTriangle },
       { id: "reviews" as NavPage, label: "Reviews", icon: Star },
       { id: "schedule" as NavPage, label: "Schedule", icon: Calendar },
+      { id: "trucks" as NavPage, label: "Trucks", icon: Truck },
     ],
   },
   {
@@ -2518,6 +2520,7 @@ const Leads = () => {
     pending_review: { title: "PENDING REVIEW", subtitle: `${pendingReviewOrders.length} orders to review` },
     reviews: { title: "REVIEWS", subtitle: "Customer feedback" },
     schedule: { title: "DELIVERY SCHEDULE", subtitle: "Orders by delivery date" },
+    trucks: { title: "TRUCKS", subtitle: "Live SureCam fleet status" },
     finances: { title: "TAXES & FINANCIALS", subtitle: "Tax liability, fees & revenue" },
     fraud: { title: "FRAUD & SECURITY", subtitle: "Threat monitoring & blocklist" },
   };
@@ -4376,6 +4379,9 @@ const Leads = () => {
             onSendToDriver={handleSendToDriver}
           />
         );
+
+      case "trucks":
+        return <TrucksTab password={storedPassword()} />;
 
       case "all":
         return (
