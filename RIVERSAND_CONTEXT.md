@@ -98,6 +98,7 @@ Status: tables empty, no data seeded yet. Block 2 (seed catalog data) is the nex
 Future task briefs check this file's Version line. If the task specifies a minimum version higher than what's in this file, the task author must update this file first.
 
 ## Changelog
+- v1.14 (2026-04-26) — Block 1 schema migration applied (8 new tables, 24 column additions, 14 indexes, 18 RLS policies, 4 triggers). Validated in production with real customer order + controlled test card transaction. No code changes. Block 2 seed data is the next step. Added companion docs: WAYS_LMT_UNIFICATION_v2_pit_driven, LMT_BLOCK_1_SCHEMA_PROMPT, SECURITY_ROADMAP, INCIDENT_RESPONSE, PHASE_3_PLAN, FLEETWORK_MIGRATION_PLAN, PROJECT_BRIEF_v1.0.
 - v1.13 (2026-04-25) — Committed fleetwork.net as driver portal production home (migration after Phase 3c). Added SECURITY_ROADMAP, INCIDENT_RESPONSE, PHASE_3_PLAN, FLEETWORK_MIGRATION_PLAN as companion documents.
 - v1.12 (2026-04-24) — Split reference into two docs: CORE_FLOW_REFERENCE.md (customer flow, regenerated) and LMT_REFERENCE.md (operator surface, new). Both supersede April 1 snapshot. Reflects Phase 0/1/2 work, Schedule Slice 1, 2FA Slice 1a, DriverModal Phase 1 polish, and P1 form cleanup (CityPage waitlist + OutOfAreaModal + ContactForm + WhatsAppButton).
 - v1.11 (2026-04-24) — Added reference to RIVERSAND_FORM_GUIDELINES_v1.1 as canonical form reference doc.
