@@ -500,6 +500,69 @@ export type Database = {
           },
         ]
       }
+      driver_compensation: {
+        Row: {
+          comp_type: string
+          created_at: string
+          driver_id: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          notes: string | null
+          rate: number
+        }
+        Insert: {
+          comp_type: string
+          created_at?: string
+          driver_id: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          rate: number
+        }
+        Update: {
+          comp_type?: string
+          created_at?: string
+          driver_id?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          rate?: number
+        }
+        Relationships: []
+      }
+      driver_goals: {
+        Row: {
+          created_at: string
+          driver_id: string
+          goal_type: string
+          id: string
+          period_end: string
+          period_start: string
+          target_value: number
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          goal_type: string
+          id?: string
+          period_end: string
+          period_start: string
+          target_value: number
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          goal_type?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          target_value?: number
+        }
+        Relationships: []
+      }
       driver_sessions: {
         Row: {
           created_at: string
@@ -549,9 +612,13 @@ export type Database = {
           active: boolean
           created_at: string
           email: string | null
+          employment_entity: string | null
+          hire_date: string | null
           id: string
           last_login_at: string | null
+          license_class: string | null
           license_expires_on: string | null
+          license_number: string | null
           name: string
           notes: string | null
           payment_rate: number | null
@@ -559,6 +626,9 @@ export type Database = {
           phone: string
           pin_hash: string | null
           pin_set_at: string | null
+          primary_hub_id: string | null
+          secondary_hub_ids: string[] | null
+          status: string | null
           truck_number: string | null
           updated_at: string
         }
@@ -566,9 +636,13 @@ export type Database = {
           active?: boolean
           created_at?: string
           email?: string | null
+          employment_entity?: string | null
+          hire_date?: string | null
           id?: string
           last_login_at?: string | null
+          license_class?: string | null
           license_expires_on?: string | null
+          license_number?: string | null
           name: string
           notes?: string | null
           payment_rate?: number | null
@@ -576,6 +650,9 @@ export type Database = {
           phone: string
           pin_hash?: string | null
           pin_set_at?: string | null
+          primary_hub_id?: string | null
+          secondary_hub_ids?: string[] | null
+          status?: string | null
           truck_number?: string | null
           updated_at?: string
         }
@@ -583,9 +660,13 @@ export type Database = {
           active?: boolean
           created_at?: string
           email?: string | null
+          employment_entity?: string | null
+          hire_date?: string | null
           id?: string
           last_login_at?: string | null
+          license_class?: string | null
           license_expires_on?: string | null
+          license_number?: string | null
           name?: string
           notes?: string | null
           payment_rate?: number | null
@@ -593,6 +674,9 @@ export type Database = {
           phone?: string
           pin_hash?: string | null
           pin_set_at?: string | null
+          primary_hub_id?: string | null
+          secondary_hub_ids?: string[] | null
+          status?: string | null
           truck_number?: string | null
           updated_at?: string
         }
@@ -744,6 +828,81 @@ export type Database = {
           operator_decision_at?: string | null
           operator_decision_by?: string | null
           surcharge_override?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hub_pits: {
+        Row: {
+          created_at: string
+          hub_id: string
+          pit_id: string
+          priority: number
+        }
+        Insert: {
+          created_at?: string
+          hub_id: string
+          pit_id: string
+          priority?: number
+        }
+        Update: {
+          created_at?: string
+          hub_id?: string
+          pit_id?: string
+          priority?: number
+        }
+        Relationships: []
+      }
+      hub_truck_class_rates: {
+        Row: {
+          created_at: string
+          hub_id: string
+          per_mile_rate: number
+          truck_class_id: string
+        }
+        Insert: {
+          created_at?: string
+          hub_id: string
+          per_mile_rate: number
+          truck_class_id: string
+        }
+        Update: {
+          created_at?: string
+          hub_id?: string
+          per_mile_rate?: number
+          truck_class_id?: string
+        }
+        Relationships: []
+      }
+      hubs: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -958,6 +1117,7 @@ export type Database = {
           sunday_surcharge_amount: number
           tax_amount: number
           tax_rate: number
+          truck_session_id: string | null
           trustlevel_fee: number
           updated_at: string
           workflow_delivered_at: string | null
@@ -1056,6 +1216,7 @@ export type Database = {
           sunday_surcharge_amount?: number
           tax_amount?: number
           tax_rate?: number
+          truck_session_id?: string | null
           trustlevel_fee?: number
           updated_at?: string
           workflow_delivered_at?: string | null
@@ -1154,6 +1315,7 @@ export type Database = {
           sunday_surcharge_amount?: number
           tax_amount?: number
           tax_rate?: number
+          truck_session_id?: string | null
           trustlevel_fee?: number
           updated_at?: string
           workflow_delivered_at?: string | null
@@ -1290,6 +1452,8 @@ export type Database = {
       pit_inventory: {
         Row: {
           available: boolean
+          cost_per_truck: number | null
+          cost_per_unit: number | null
           created_at: string
           id: string
           max_quantity_per_load: number | null
@@ -1298,11 +1462,14 @@ export type Database = {
           pit_id: string
           price_per_unit: number
           product_id: string
+          smart_offers_ref: string | null
           updated_at: string
           wholesale_cost: number | null
         }
         Insert: {
           available?: boolean
+          cost_per_truck?: number | null
+          cost_per_unit?: number | null
           created_at?: string
           id?: string
           max_quantity_per_load?: number | null
@@ -1311,11 +1478,14 @@ export type Database = {
           pit_id: string
           price_per_unit: number
           product_id: string
+          smart_offers_ref?: string | null
           updated_at?: string
           wholesale_cost?: number | null
         }
         Update: {
           available?: boolean
+          cost_per_truck?: number | null
+          cost_per_unit?: number | null
           created_at?: string
           id?: string
           max_quantity_per_load?: number | null
@@ -1324,6 +1494,7 @@ export type Database = {
           pit_id?: string
           price_per_unit?: number
           product_id?: string
+          smart_offers_ref?: string | null
           updated_at?: string
           wholesale_cost?: number | null
         }
@@ -1391,6 +1562,7 @@ export type Database = {
           lat: number
           lon: number
           max_distance: number | null
+          min_distance: number | null
           min_trip_charge: number
           name: string
           notes: string | null
@@ -1421,6 +1593,7 @@ export type Database = {
           lat: number
           lon: number
           max_distance?: number | null
+          min_distance?: number | null
           min_trip_charge?: number
           name: string
           notes?: string | null
@@ -1451,6 +1624,7 @@ export type Database = {
           lat?: number
           lon?: number
           max_distance?: number | null
+          min_distance?: number | null
           min_trip_charge?: number
           name?: string
           notes?: string | null
@@ -1477,6 +1651,7 @@ export type Database = {
           id: string
           image_urls: string[] | null
           long_description_template: string | null
+          min_quantity: number | null
           name: string
           slug: string
           sub_category: string | null
@@ -1492,6 +1667,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           long_description_template?: string | null
+          min_quantity?: number | null
           name: string
           slug: string
           sub_category?: string | null
@@ -1507,6 +1683,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           long_description_template?: string | null
+          min_quantity?: number | null
           name?: string
           slug?: string
           sub_category?: string | null
@@ -1642,6 +1819,102 @@ export type Database = {
           state_name?: string
           state_rate?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      truck_classes: {
+        Row: {
+          capacity_tons: number | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          capacity_tons?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          capacity_tons?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      truck_sessions: {
+        Row: {
+          created_at: string
+          driver_id: string
+          ended_at: string | null
+          id: string
+          notes: string | null
+          started_at: string
+          truck_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          truck_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          truck_id?: string
+        }
+        Relationships: []
+      }
+      trucks: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          hub_id: string | null
+          id: string
+          license_plate: string | null
+          name: string
+          notes: string | null
+          status: string
+          surecam_device_id: string | null
+          updated_at: string
+          vin: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          hub_id?: string | null
+          id?: string
+          license_plate?: string | null
+          name: string
+          notes?: string | null
+          status?: string
+          surecam_device_id?: string | null
+          updated_at?: string
+          vin?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          hub_id?: string | null
+          id?: string
+          license_plate?: string | null
+          name?: string
+          notes?: string | null
+          status?: string
+          surecam_device_id?: string | null
+          updated_at?: string
+          vin?: string | null
         }
         Relationships: []
       }
