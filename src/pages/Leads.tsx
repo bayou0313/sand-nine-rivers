@@ -4380,6 +4380,9 @@ const Leads = () => {
           />
         );
 
+      case "trucks":
+        return <TrucksTab password={storedPassword()} />;
+
       case "all":
         return (
           <>
