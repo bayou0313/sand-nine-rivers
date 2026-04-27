@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const username = Deno.env.get("SURECAM_USERNAME");
-  const password = Deno.env.get("SURECAM_PASSWORD");
+  const username = Deno.env.get("LMT_SURECAM_USERNAME") ?? Deno.env.get("SURECAM_USERNAME");
+  const password = Deno.env.get("LMT_SURECAM_PASSWORD") ?? Deno.env.get("SURECAM_PASSWORD");
 
   if (!username || !password) {
     return new Response(
