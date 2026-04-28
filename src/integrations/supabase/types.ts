@@ -1629,7 +1629,6 @@ export type Database = {
       pits: {
         Row: {
           address: string
-          base_delivery_fee: number
           base_price: number | null
           closed_dates: string[] | null
           contact_email: string | null
@@ -1667,7 +1666,6 @@ export type Database = {
         }
         Insert: {
           address: string
-          base_delivery_fee?: number
           base_price?: number | null
           closed_dates?: string[] | null
           contact_email?: string | null
@@ -1705,7 +1703,6 @@ export type Database = {
         }
         Update: {
           address?: string
-          base_delivery_fee?: number
           base_price?: number | null
           closed_dates?: string[] | null
           contact_email?: string | null

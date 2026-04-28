@@ -2188,7 +2188,6 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         lon: pit.lon,
         status: pit.status || "planning",
         notes: pit.notes || "",
-        base_delivery_fee: (pit.base_delivery_fee == null || pit.base_delivery_fee === "" || isNaN(Number(pit.base_delivery_fee))) ? 120 : Number(pit.base_delivery_fee),
         base_price: pit.base_price ?? null,
         free_miles: pit.free_miles ?? null,
         price_per_extra_mile: pit.price_per_extra_mile ?? null,
@@ -5394,8 +5393,6 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           phone: h.phone || null,
           contact_email: h.contact_email || null,
           status: h.status === "inactive" ? "inactive" : "active",
-          free_miles: h.free_miles != null ? Number(h.free_miles) : 15,
-          base_delivery_fee: h.base_delivery_fee != null ? Number(h.base_delivery_fee) : 0,
         };
         const { data: created, error: createErr } = await sb.from("hubs").insert(insertRow).select().single();
         if (createErr) throw createErr;
@@ -5407,8 +5404,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
             hub_id: created.id,
             truck_class_id: tc.id,
             per_mile_rate: 0,
-            extra_mile_surcharge: 0,
-            free_miles_override: null,
+            base_delivery_fee: 120,
             driver_extra_mile_bonus_pct: 0,
           }));
           await sb.from("hub_truck_class_rates").insert(rateRows);
@@ -5434,8 +5430,6 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         if (h.phone !== undefined) updates.phone = h.phone || null;
         if (h.contact_email !== undefined) updates.contact_email = h.contact_email || null;
         if (h.status !== undefined) updates.status = h.status === "inactive" ? "inactive" : "active";
-        if (h.free_miles !== undefined) updates.free_miles = Number(h.free_miles) || 0;
-        if (h.base_delivery_fee !== undefined) updates.base_delivery_fee = Number(h.base_delivery_fee) || 0;
 
         const { data, error } = await sb.from("hubs").update(updates).eq("id", hubId).select().single();
         if (error) throw error;
