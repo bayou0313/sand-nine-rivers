@@ -2188,6 +2188,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         lon: pit.lon,
         status: pit.status || "planning",
         notes: pit.notes || "",
+        base_delivery_fee: (pit.base_delivery_fee == null || pit.base_delivery_fee === "" || isNaN(Number(pit.base_delivery_fee))) ? 120 : Number(pit.base_delivery_fee),
         base_price: pit.base_price ?? null,
         free_miles: pit.free_miles ?? null,
         price_per_extra_mile: pit.price_per_extra_mile ?? null,
