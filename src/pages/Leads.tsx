@@ -128,6 +128,7 @@ interface Pit {
   status: "active" | "planning" | "inactive";
   notes: string;
   is_default?: boolean;
+  base_delivery_fee: number | null;
   base_price: number | null;
   free_miles: number | null;
   price_per_extra_mile: number | null;
