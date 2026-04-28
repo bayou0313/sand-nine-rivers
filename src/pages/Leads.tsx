@@ -608,6 +608,9 @@ const Leads = () => {
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Slice B'' — formAttempted validation pattern (DriverModal reference)
+  const [addPitFormAttempted, setAddPitFormAttempted] = useState(false);
+  const [editPitFormAttempted, setEditPitFormAttempted] = useState(false);
 
   // Activation modal state
   const [activationLeads, setActivationLeads] = useState<Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }>>([]);
