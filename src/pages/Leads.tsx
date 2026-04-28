@@ -1800,6 +1800,7 @@ const Leads = () => {
       return;
     }
     const requiredEditFields = [
+      { field: editPitData.base_delivery_fee, name: "Base delivery fee" },
       { field: editPitData.base_price, name: "Base price per load" },
       { field: editPitData.free_miles, name: "Free delivery distance" },
       { field: editPitData.price_per_extra_mile, name: "Extra per mile" },
@@ -1808,6 +1809,10 @@ const Leads = () => {
     const missingEditFields = requiredEditFields.filter(f => f.field == null || isNaN(Number(f.field)));
     if (missingEditFields.length > 0) {
       toast({ title: "Missing required pricing", description: `Please fill in: ${missingEditFields.map(f => f.name).join(", ")}`, variant: "destructive" });
+      return;
+    }
+    if (editPitData.base_delivery_fee != null && Number(editPitData.base_delivery_fee) < 0) {
+      toast({ title: "Invalid base delivery fee", description: "Base delivery fee must be 0 or greater.", variant: "destructive" });
       return;
     }
     setSavingPit(true);
@@ -1854,6 +1859,7 @@ const Leads = () => {
         status: editPitData.status,
         notes: editPitData.notes || "",
         is_default: editPitData.is_default,
+        base_delivery_fee: editPitData.base_delivery_fee ?? null,
         base_price: editPitData.base_price || null,
         free_miles: editPitData.free_miles || null,
         price_per_extra_mile: editPitData.price_per_extra_mile || null,
