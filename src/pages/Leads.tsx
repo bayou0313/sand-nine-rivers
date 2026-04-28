@@ -3215,7 +3215,7 @@ const Leads = () => {
                     {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
                     Geocode All Leads
                   </Button>
-                  <Button onClick={() => setShowAddPit(true)} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  <Button onClick={() => { setAddPitFormAttempted(false); setShowAddPit(true); }} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                     + Add New PIT
                   </Button>
                 </div>
