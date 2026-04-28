@@ -373,14 +373,6 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
 
       {detailHub && (
         <>
-          <EditIdentityModal
-            open={showEditIdentity}
-            onClose={() => setShowEditIdentity(false)}
-            hub={detailHub}
-            T={T}
-            storedPassword={storedPassword}
-            onSaved={() => { setShowEditIdentity(false); loadDetail(detailHub.id); loadHubs(); toast({ title: "Identity saved" }); }}
-          />
           <EditRatesModal
             open={showEditRates}
             onClose={() => setShowEditRates(false)}
