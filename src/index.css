@@ -178,13 +178,14 @@
 }
 
 /* Google autocomplete dropdown styling */
+/* Force Google Places autocomplete above Radix Dialog overlay */
 .pac-container {
   border-radius: 0.75rem;
   border: 1px solid hsl(var(--border));
   box-shadow: 0 10px 25px hsl(var(--foreground) / 0.15);
   margin-top: 4px;
   font-family: 'Inter', sans-serif;
-  z-index: 9999;
+  z-index: 10000 !important;
 }
 
 /* Print styles for order confirmation */
