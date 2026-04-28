@@ -1612,7 +1612,7 @@ const Leads = () => {
   };
 
   const addPit = async () => {
-    if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
+    if (!newPit.name || !newPit.address) { setAddPitFormAttempted(true); toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     const requiredNewPitFields = [
       { field: newPit.base_price, name: "Base price per load" },
       { field: newPit.free_miles, name: "Free delivery distance" },
