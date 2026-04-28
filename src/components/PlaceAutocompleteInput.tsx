@@ -1,6 +1,6 @@
 // Stable Autocomplete — redeployed 2026-04-13
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useId } from "react";
 
 export interface PlaceSelectResult {
   formattedAddress: string;
@@ -42,6 +42,8 @@ export default function PlaceAutocompleteInput({
 }: PlaceAutocompleteInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+  const generatedId = useId();
+  const inputId = id || `place-autocomplete-${generatedId}`;
   const resolvedAddressRef = useRef<string | null>(null);
   const [hasValue, setHasValue] = useState(
     !!(initialValue && initialValue.length > 0)
@@ -181,7 +183,7 @@ export default function PlaceAutocompleteInput({
       <input
         ref={inputRef}
         type="text"
-        id={id}
+        id={inputId}
         placeholder={placeholder}
         defaultValue={initialValue || ""}
         onChange={handleInput}
