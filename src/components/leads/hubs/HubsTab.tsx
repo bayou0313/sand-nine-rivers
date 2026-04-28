@@ -159,15 +159,37 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
           </Button>
         </div>
 
+        {creatingNew && (
+          <div className="mb-4">
+            <InlineHubForm
+              mode="create"
+              T={T}
+              storedPassword={storedPassword}
+              onCancel={() => setCreatingNew(false)}
+              onSaved={(id) => {
+                setCreatingNew(false);
+                loadHubs();
+                if (id) {
+                  setSelectedHubId(id);
+                  setView("detail");
+                }
+                toast({ title: "Hub created" });
+              }}
+            />
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" style={{ color: BRAND_GOLD }} /></div>
         ) : hubs.length === 0 ? (
-          <div className="rounded-xl border p-10 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
-            <p className="text-sm mb-3" style={{ color: T.textSecond }}>No hubs yet.</p>
-            <Button size="sm" onClick={() => setShowCreate(true)} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-              <Plus className="w-4 h-4 mr-1" /> Create your first hub
-            </Button>
-          </div>
+          !creatingNew && (
+            <div className="rounded-xl border p-10 text-center" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+              <p className="text-sm mb-3" style={{ color: T.textSecond }}>No hubs yet.</p>
+              <Button size="sm" onClick={() => setCreatingNew(true)} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                <Plus className="w-4 h-4 mr-1" /> Create your first hub
+              </Button>
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {hubs.map((h) => (
@@ -197,20 +219,6 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
             ))}
           </div>
         )}
-
-        <CreateHubModal
-          open={showCreate}
-          onClose={() => setShowCreate(false)}
-          T={T}
-          storedPassword={storedPassword}
-          onCreated={(id) => {
-            setShowCreate(false);
-            loadHubs();
-            setSelectedHubId(id);
-            setView("detail");
-            toast({ title: "Hub created" });
-          }}
-        />
       </div>
     );
   }
