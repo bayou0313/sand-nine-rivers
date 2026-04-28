@@ -2530,7 +2530,7 @@ const Leads = () => {
     pending_review: { title: "PENDING REVIEW", subtitle: `${pendingReviewOrders.length} orders to review` },
     reviews: { title: "REVIEWS", subtitle: "Customer feedback" },
     schedule: { title: "DELIVERY SCHEDULE", subtitle: "Orders by delivery date" },
-    trucks: { title: "TRUCKS", subtitle: "Live SureCam fleet status" },
+    trucks: { title: "TRUCKS", subtitle: "Fleet management" },
     finances: { title: "TAXES & FINANCIALS", subtitle: "Tax liability, fees & revenue" },
     fraud: { title: "FRAUD & SECURITY", subtitle: "Threat monitoring & blocklist" },
   };
