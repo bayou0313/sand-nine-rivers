@@ -2959,10 +2959,11 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         return new Response(JSON.stringify({ error: "Invalid password" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Slice C — return ALL drivers (status filter is now client-side: All/Active/On Leave/Inactive).
+      // Includes status + primary_hub_id so DriverCard can render hub assignment + status pill.
       const { data, error } = await supabase
         .from("drivers")
-        .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, pin_hash, created_at, updated_at")
-        .eq("active", true)
+        .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, status, primary_hub_id, pin_hash, created_at, updated_at")
         .order("name", { ascending: true });
       if (error) throw error;
 
@@ -3026,7 +3027,11 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      const selectCols = "id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at";
+      const selectCols = "id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, status, primary_hub_id, created_at, updated_at";
+
+      // Slice C — status drives derived `active` (active iff status === 'active'). Backend writes both
+      // for backward compat with anything still keying off `active`.
+      const VALID_STATUSES = new Set(["active", "on_leave", "inactive"]);
 
       let result;
       if (isUpdate) {
@@ -3047,8 +3052,21 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           payload.license_expires_on = driver.license_expires_on || null;
         if (Object.prototype.hasOwnProperty.call(driver, "notes"))
           payload.notes = driver.notes ? String(driver.notes) : null;
-        if (Object.prototype.hasOwnProperty.call(driver, "active"))
+        if (Object.prototype.hasOwnProperty.call(driver, "primary_hub_id"))
+          payload.primary_hub_id = driver.primary_hub_id || null;
+        if (Object.prototype.hasOwnProperty.call(driver, "status")) {
+          const s = String(driver.status || "active");
+          if (!VALID_STATUSES.has(s)) {
+            return new Response(JSON.stringify({ error: "Invalid status. Must be active, on_leave, or inactive." }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          payload.status = s;
+          payload.active = s === "active";
+        } else if (Object.prototype.hasOwnProperty.call(driver, "active")) {
+          // Legacy callers (Phase 0) only sent `active`. Mirror to status for forward compat.
           payload.active = !!driver.active;
+          payload.status = driver.active ? "active" : "inactive";
+        }
 
         if (Object.keys(payload).length === 0) {
           return new Response(JSON.stringify({ error: "No fields to update" }),
@@ -3062,6 +3080,16 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           .select(selectCols)
           .maybeSingle();
       } else {
+        const status = (() => {
+          if (Object.prototype.hasOwnProperty.call(driver, "status")) {
+            const s = String(driver.status || "active");
+            return VALID_STATUSES.has(s) ? s : "active";
+          }
+          if (Object.prototype.hasOwnProperty.call(driver, "active")) {
+            return driver.active ? "active" : "inactive";
+          }
+          return "active";
+        })();
         const payload: Record<string, any> = {
           name,
           phone,
@@ -3071,7 +3099,9 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           payment_rate: driver.payment_rate != null ? Number(driver.payment_rate) : 0,
           license_expires_on: driver.license_expires_on || null,
           notes: driver.notes ? String(driver.notes) : null,
-          active: driver.active !== undefined ? !!driver.active : true,
+          primary_hub_id: driver.primary_hub_id || null,
+          status,
+          active: status === "active",
         };
         result = await supabase
           .from("drivers")
@@ -5523,6 +5553,204 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         const { data, error } = await query;
         if (error) throw error;
         return new Response(JSON.stringify({ pits: data || [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SLICE C — DRIVERS TAB (5 actions): hub select, compensation CRUD, goals CRUD
+    // All actions require LEADS_PASSWORD. Service role for all DB ops.
+    // ─────────────────────────────────────────────────────────────────────────
+    const DRIVER_C_ACTIONS = new Set([
+      "hub_list_for_select",
+      "list_driver_compensation",
+      "save_driver_compensation",
+      "list_driver_goals",
+      "save_driver_goals",
+    ]);
+    if (DRIVER_C_ACTIONS.has(action)) {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      // ── HUB LIST FOR SELECT ── thin {id,name} list for the DriverModal hub dropdown.
+      if (action === "hub_list_for_select") {
+        const { data, error } = await sb
+          .from("hubs")
+          .select("id, name, status")
+          .eq("status", "active")
+          .order("name", { ascending: true });
+        if (error) throw error;
+        return new Response(JSON.stringify({ hubs: (data || []).map((h: any) => ({ id: h.id, name: h.name })) }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── LIST DRIVER COMPENSATION ── full history, newest effective_from first.
+      if (action === "list_driver_compensation") {
+        const driverId = (body as any).driver_id;
+        if (!driverId) {
+          return new Response(JSON.stringify({ error: "driver_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await sb
+          .from("driver_compensation")
+          .select("id, driver_id, comp_type, rate, effective_from, effective_to, notes, created_at")
+          .eq("driver_id", driverId)
+          .order("effective_from", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return new Response(JSON.stringify({ compensation: data || [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── SAVE DRIVER COMPENSATION ── versioned: closes any currently-open row
+      // (effective_to IS NULL) by setting effective_to = (new effective_from - 1 day),
+      // then inserts the new open row. Soft-only — never deletes.
+      if (action === "save_driver_compensation") {
+        const driverId = (body as any).driver_id;
+        const comp = (body as any).compensation;
+        if (!driverId || !comp || typeof comp !== "object") {
+          return new Response(JSON.stringify({ error: "driver_id and compensation required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const VALID_COMP = new Set(["per_load", "per_mile", "hourly", "flat_day", "salary"]);
+        const compType = String(comp.comp_type || "");
+        if (!VALID_COMP.has(compType)) {
+          return new Response(JSON.stringify({ error: "Invalid comp_type" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const rate = Number(comp.rate);
+        if (!Number.isFinite(rate) || rate < 0) {
+          return new Response(JSON.stringify({ error: "rate must be a non-negative number" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const effectiveFrom = String(comp.effective_from || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveFrom)) {
+          return new Response(JSON.stringify({ error: "effective_from must be YYYY-MM-DD" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Close current open row(s) — set effective_to = (effectiveFrom - 1 day).
+        const closeDate = new Date(effectiveFrom + "T00:00:00Z");
+        closeDate.setUTCDate(closeDate.getUTCDate() - 1);
+        const closeIso = closeDate.toISOString().slice(0, 10);
+
+        const { error: closeErr } = await sb
+          .from("driver_compensation")
+          .update({ effective_to: closeIso })
+          .eq("driver_id", driverId)
+          .is("effective_to", null);
+        if (closeErr) throw closeErr;
+
+        const { data, error } = await sb
+          .from("driver_compensation")
+          .insert({
+            driver_id: driverId,
+            comp_type: compType,
+            rate,
+            effective_from: effectiveFrom,
+            effective_to: null,
+            notes: comp.notes ? String(comp.notes) : null,
+          })
+          .select("id, driver_id, comp_type, rate, effective_from, effective_to, notes, created_at")
+          .maybeSingle();
+        if (error) throw error;
+        return new Response(JSON.stringify({ compensation: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── LIST DRIVER GOALS ── ordered by period_start desc.
+      if (action === "list_driver_goals") {
+        const driverId = (body as any).driver_id;
+        if (!driverId) {
+          return new Response(JSON.stringify({ error: "driver_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await sb
+          .from("driver_goals")
+          .select("id, driver_id, goal_type, target_value, period_start, period_end, created_at")
+          .eq("driver_id", driverId)
+          .order("period_start", { ascending: false });
+        if (error) throw error;
+        return new Response(JSON.stringify({ goals: data || [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── SAVE DRIVER GOALS ── diff-based: client sends full intended set, server
+      // inserts new + deletes removed. Goals are configuration (targets), not
+      // transactional records — hard-delete is acceptable here per Slice C policy.
+      if (action === "save_driver_goals") {
+        const driverId = (body as any).driver_id;
+        const goals = (body as any).goals;
+        if (!driverId || !Array.isArray(goals)) {
+          return new Response(JSON.stringify({ error: "driver_id and goals[] required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const VALID_GOAL = new Set([
+          "loads_per_week", "loads_per_month", "revenue_per_week",
+          "revenue_per_month", "on_time_pct", "review_score",
+        ]);
+        // Validate every goal up-front
+        for (const g of goals) {
+          if (!g || typeof g !== "object") {
+            return new Response(JSON.stringify({ error: "Each goal must be an object" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (!VALID_GOAL.has(String(g.goal_type))) {
+            return new Response(JSON.stringify({ error: `Invalid goal_type: ${g.goal_type}` }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          const t = Number(g.target_value);
+          if (!Number.isFinite(t) || t < 0) {
+            return new Response(JSON.stringify({ error: "target_value must be a non-negative number" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(String(g.period_start || ""))
+            || !/^\d{4}-\d{2}-\d{2}$/.test(String(g.period_end || ""))) {
+            return new Response(JSON.stringify({ error: "period_start / period_end must be YYYY-MM-DD" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
+
+        // Load existing
+        const { data: existing, error: exErr } = await sb
+          .from("driver_goals")
+          .select("id")
+          .eq("driver_id", driverId);
+        if (exErr) throw exErr;
+        const existingIds = new Set((existing || []).map((g: any) => g.id));
+        const keepIds = new Set(goals.filter((g: any) => g.id).map((g: any) => g.id));
+
+        // Delete removed
+        const toDelete = [...existingIds].filter(id => !keepIds.has(id));
+        if (toDelete.length > 0) {
+          const { error: delErr } = await sb.from("driver_goals").delete().in("id", toDelete);
+          if (delErr) throw delErr;
+        }
+
+        // Insert new (rows without id)
+        const toInsert = goals.filter((g: any) => !g.id).map((g: any) => ({
+          driver_id: driverId,
+          goal_type: g.goal_type,
+          target_value: Number(g.target_value),
+          period_start: g.period_start,
+          period_end: g.period_end,
+        }));
+        if (toInsert.length > 0) {
+          const { error: insErr } = await sb.from("driver_goals").insert(toInsert);
+          if (insErr) throw insErr;
+        }
+
+        const { data: fresh, error: refErr } = await sb
+          .from("driver_goals")
+          .select("id, driver_id, goal_type, target_value, period_start, period_end, created_at")
+          .eq("driver_id", driverId)
+          .order("period_start", { ascending: false });
+        if (refErr) throw refErr;
+
+        return new Response(JSON.stringify({ goals: fresh || [] }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
