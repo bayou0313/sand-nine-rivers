@@ -5755,7 +5755,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       }
     }
 
-
+    return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
