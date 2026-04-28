@@ -7,7 +7,7 @@ const IS_PROD_HOST = typeof window !== "undefined" && /(^|\.)riversand\.net$/i.t
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell, Star, Calendar, Shield, ExternalLink, Truck } from "lucide-react";
+import { Lock, Loader2, Search, X, Download, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, MapPin, Send, Settings, Power, Edit2, Save, XCircle, Copy, MessageCircle, ChevronDown, ChevronUp as ChevronUpIcon, Check, AlertTriangle, AlertCircle, BarChart3, Map as MapIcon, List, DollarSign, Zap, Users, Building2, LogOut, Menu, Trash2, Palette, Link, RefreshCw, Bell, Star, Calendar, Shield, ExternalLink, Truck } from "lucide-react";
 import DriversTab from "@/components/leads/drivers/DriversTab";
 import HubsTab from "@/components/leads/hubs/HubsTab";
 import type { Driver } from "@/components/leads/drivers/types";
@@ -608,6 +608,9 @@ const Leads = () => {
   const [editPitData, setEditPitData] = useState<Partial<Pit>>({});
   const [savingPit, setSavingPit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Slice B'' — formAttempted validation pattern (DriverModal reference)
+  const [addPitFormAttempted, setAddPitFormAttempted] = useState(false);
+  const [editPitFormAttempted, setEditPitFormAttempted] = useState(false);
 
   // Activation modal state
   const [activationLeads, setActivationLeads] = useState<Array<{ lead: ParsedLead; distance: number; price: number; hasEmail: boolean }>>([]);
@@ -1609,7 +1612,7 @@ const Leads = () => {
   };
 
   const addPit = async () => {
-    if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
+    if (!newPit.name || !newPit.address) { setAddPitFormAttempted(true); toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     const requiredNewPitFields = [
       { field: newPit.base_price, name: "Base price per load" },
       { field: newPit.free_miles, name: "Free delivery distance" },
@@ -1671,6 +1674,7 @@ const Leads = () => {
         }
       }
       setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false, delivery_hours: null });
+      setAddPitFormAttempted(false);
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -1724,12 +1728,14 @@ const Leads = () => {
     setEditingPitId(pit.id);
     setEditPitData({ ...pit });
     setShowDeleteConfirm(false);
+    setEditPitFormAttempted(false);
   };
 
   const cancelEditPit = () => {
     setEditingPitId(null);
     setEditPitData({});
     setShowDeleteConfirm(false);
+    setEditPitFormAttempted(false);
   };
 
   // Fetch waitlist data
@@ -1789,6 +1795,7 @@ const Leads = () => {
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
+      setEditPitFormAttempted(true);
       toast({ title: "Missing info", variant: "destructive" });
       return;
     }
@@ -3208,7 +3215,7 @@ const Leads = () => {
                     {geocoding ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MapPin className="w-4 h-4 mr-1" />}
                     Geocode All Leads
                   </Button>
-                  <Button onClick={() => setShowAddPit(true)} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+                  <Button onClick={() => { setAddPitFormAttempted(false); setShowAddPit(true); }} size="sm" style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
                     + Add New PIT
                   </Button>
                 </div>
@@ -8030,7 +8037,8 @@ const Leads = () => {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
-                    <Input placeholder="e.g. Denham Springs Yard" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
+                    <Input placeholder="e.g. Denham Springs Yard" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} className={addPitFormAttempted && !newPit.name ? "border-2" : ""} style={addPitFormAttempted && !newPit.name ? { borderColor: "#DC2626" } : undefined} />
+                    {addPitFormAttempted && !newPit.name && (<div className="flex items-center gap-1 mt-1 text-xs" style={{ color: "#DC2626" }}><AlertCircle className="w-3 h-3" /> Required</div>)}
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
@@ -8321,7 +8329,8 @@ const Leads = () => {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
-                    <Input value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
+                    <Input value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} className={editPitFormAttempted && !editPitData.name ? "border-2" : ""} style={editPitFormAttempted && !editPitData.name ? { borderColor: "#DC2626" } : undefined} />
+                    {editPitFormAttempted && !editPitData.name && (<div className="flex items-center gap-1 mt-1 text-xs" style={{ color: "#DC2626" }}><AlertCircle className="w-3 h-3" /> Required</div>)}
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
