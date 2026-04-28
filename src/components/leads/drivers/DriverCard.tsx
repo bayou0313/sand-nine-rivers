@@ -1,6 +1,7 @@
 // Slice C — Driver list card. Used in DriversTab grid.
 // Click → opens detail view. License expiry colored by tier (expired/critical/warning/normal).
-import { Truck, Phone, MapPin, AlertTriangle } from "lucide-react";
+// Slice C+ — adds "Compensation needed" badge when no active driver_compensation row.
+import { Truck, Phone, MapPin, AlertTriangle, AlertCircle } from "lucide-react";
 import { DRIVER_STATUSES, licenseExpiryTier, type Driver } from "./types";
 import { formatPhone } from "@/lib/format";
 
@@ -12,6 +13,7 @@ const MUTED = "#6B7280";
 interface Props {
   driver: Driver;
   hubName?: string | null;
+  hasCompensation?: boolean;
   onClick: (d: Driver) => void;
 }
 
