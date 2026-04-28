@@ -8037,7 +8037,8 @@ const Leads = () => {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
-                    <Input placeholder="e.g. Denham Springs Yard" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} />
+                    <Input placeholder="e.g. Denham Springs Yard" value={newPit.name} onChange={e => setNewPit({ ...newPit, name: e.target.value })} className={addPitFormAttempted && !newPit.name ? "border-2" : ""} style={addPitFormAttempted && !newPit.name ? { borderColor: "#DC2626" } : undefined} />
+                    {addPitFormAttempted && !newPit.name && (<div className="flex items-center gap-1 mt-1 text-xs" style={{ color: "#DC2626" }}><AlertCircle className="w-3 h-3" /> Required</div>)}
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
@@ -8328,7 +8329,8 @@ const Leads = () => {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Name <span style={{ color: BRAND_GOLD }}>*</span></label>
-                    <Input value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} />
+                    <Input value={editPitData.name || ""} onChange={e => setEditPitData({ ...editPitData, name: e.target.value })} className={editPitFormAttempted && !editPitData.name ? "border-2" : ""} style={editPitFormAttempted && !editPitData.name ? { borderColor: "#DC2626" } : undefined} />
+                    {editPitFormAttempted && !editPitData.name && (<div className="flex items-center gap-1 mt-1 text-xs" style={{ color: "#DC2626" }}><AlertCircle className="w-3 h-3" /> Required</div>)}
                   </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>PIT Address <span style={{ color: BRAND_GOLD }}>*</span></label>
