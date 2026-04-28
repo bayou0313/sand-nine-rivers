@@ -287,6 +287,79 @@ export type Database = {
           },
         ]
       }
+      cost_change_events: {
+        Row: {
+          change_amount: number | null
+          change_pct: number | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_cost: number
+          old_cost: number | null
+          pit_id: string
+          pit_inventory_id: string
+          product_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          change_amount?: number | null
+          change_pct?: number | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_cost: number
+          old_cost?: number | null
+          pit_id: string
+          pit_inventory_id: string
+          product_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          change_amount?: number | null
+          change_pct?: number | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_cost?: number
+          old_cost?: number | null
+          pit_id?: string
+          pit_inventory_id?: string
+          product_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_change_events_pit_id_fkey"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_change_events_pit_inventory_id_fkey"
+            columns: ["pit_inventory_id"]
+            isOneToOne: false
+            referencedRelation: "pit_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_change_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           company: string | null
@@ -1740,6 +1813,47 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_overrides: {
+        Row: {
+          approved_by: string | null
+          attempted_price: number
+          cost_at_time: number
+          created_at: string
+          hub_pit_product_id: string
+          id: string
+          minimum_required: number
+          override_reason: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          attempted_price: number
+          cost_at_time: number
+          created_at?: string
+          hub_pit_product_id: string
+          id?: string
+          minimum_required: number
+          override_reason?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          attempted_price?: number
+          cost_at_time?: number
+          created_at?: string
+          hub_pit_product_id?: string
+          id?: string
+          minimum_required?: number
+          override_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_overrides_hub_pit_product_id_fkey"
+            columns: ["hub_pit_product_id"]
+            isOneToOne: false
+            referencedRelation: "hub_pit_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           alternatives: string[] | null
@@ -1753,6 +1867,8 @@ export type Database = {
           is_popular: boolean | null
           long_description_template: string | null
           min_quantity: number | null
+          minimum_markup_dollars: number | null
+          minimum_markup_pct: number | null
           name: string
           slug: string
           sub_category: string | null
@@ -1774,6 +1890,8 @@ export type Database = {
           is_popular?: boolean | null
           long_description_template?: string | null
           min_quantity?: number | null
+          minimum_markup_dollars?: number | null
+          minimum_markup_pct?: number | null
           name: string
           slug: string
           sub_category?: string | null
@@ -1795,6 +1913,8 @@ export type Database = {
           is_popular?: boolean | null
           long_description_template?: string | null
           min_quantity?: number | null
+          minimum_markup_dollars?: number | null
+          minimum_markup_pct?: number | null
           name?: string
           slug?: string
           sub_category?: string | null
