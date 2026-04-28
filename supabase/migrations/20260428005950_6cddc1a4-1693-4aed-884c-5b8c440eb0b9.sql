@@ -1,0 +1,1 @@
+ALTER TABLE public.pits DROP COLUMN IF EXISTS base_delivery_fee;
