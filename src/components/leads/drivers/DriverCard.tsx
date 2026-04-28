@@ -95,6 +95,20 @@ export default function DriverCard({ driver, hubName, hasCompensation = true, on
           {expLabel && <span className="ml-1 text-[10px] font-bold uppercase">({expLabel})</span>}
         </span>
       </div>
+
+      {needsCompensation && (
+        <div
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold"
+          style={{
+            backgroundColor: WARN_AMBER + "1A",
+            color: WARN_AMBER,
+            border: `1px solid ${WARN_AMBER}55`,
+          }}
+        >
+          <AlertCircle className="w-3 h-3" />
+          Compensation needed
+        </div>
+      )}
     </button>
   );
 }
