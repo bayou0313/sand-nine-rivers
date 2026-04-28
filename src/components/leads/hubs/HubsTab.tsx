@@ -43,8 +43,6 @@ interface HubSummary {
   status: string;
   lat: number | null;
   lng: number | null;
-  free_miles: number;
-  base_delivery_fee: number;
   truck_class_count: number;
   rates_unset_count: number;
   attached_pit_count: number;
@@ -63,8 +61,7 @@ interface RateRow {
   hub_id: string;
   truck_class_id: string;
   per_mile_rate: number;
-  extra_mile_surcharge: number;
-  free_miles_override: number | null;
+  base_delivery_fee: number;
   driver_extra_mile_bonus_pct: number;
 }
 
@@ -181,7 +178,7 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
                 <div className="grid grid-cols-3 gap-2 mt-3">
                   <Stat label="Trucks" value={h.truck_class_count} T={T} />
                   <Stat label="Pits" value={`${h.active_pit_count}/${h.attached_pit_count}`} T={T} />
-                  <Stat label="Free mi" value={h.free_miles} T={T} />
+                  <Stat label="Rates set" value={`${h.truck_class_count - h.rates_unset_count}/${h.truck_class_count}`} T={T} />
                 </div>
                 {h.rates_unset_count > 0 && (
                   <div className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: WARN_YELLOW }}>
@@ -252,8 +249,6 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
               <Field label="Phone" value={detailHub.phone || "—"} T={T} />
               <Field label="Contact email" value={detailHub.contact_email || "—"} T={T} />
               <Field label="Coordinates" value={detailHub.lat != null && detailHub.lng != null ? `${Number(detailHub.lat).toFixed(5)}, ${Number(detailHub.lng).toFixed(5)}` : "—"} T={T} />
-              <Field label="Free miles" value={detailHub.free_miles} T={T} />
-              <Field label="Base delivery fee" value={`$${Number(detailHub.base_delivery_fee || 0).toFixed(2)}`} T={T} />
             </div>
           </Section>
 
@@ -271,30 +266,27 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
                   <thead>
                     <tr style={{ backgroundColor: T.tableHeaderBg }}>
                       <Th T={T}>Truck Class</Th>
+                      <Th T={T} right>Base Fee</Th>
                       <Th T={T} right>$/mile</Th>
-                      <Th T={T} right>Extra-mile surcharge</Th>
-                      <Th T={T} right>Free-mile override</Th>
-                      <Th T={T} right>Driver bonus</Th>
+                      <Th T={T} right>Driver Bonus</Th>
                     </tr>
                   </thead>
                   <tbody>
                     {activeTruckClasses.map((tc) => {
                       const r = rates.find((x) => x.truck_class_id === tc.id);
                       const ppm = Number(r?.per_mile_rate || 0);
+                      const bdf = Number(r?.base_delivery_fee || 0);
                       return (
                         <tr key={tc.id} style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                           <td className="px-3 py-2" style={{ color: T.textPrimary }}>
                             <div className="font-medium">{tc.name}</div>
                             {tc.description && <div className="text-[11px]" style={{ color: T.textSecond }}>{tc.description}</div>}
                           </td>
+                          <td className="px-3 py-2 text-right font-mono" style={{ color: bdf === 0 ? WARN_YELLOW : T.textPrimary }}>
+                            ${bdf.toFixed(2)}
+                          </td>
                           <td className="px-3 py-2 text-right font-mono" style={{ color: ppm === 0 ? WARN_YELLOW : T.textPrimary }}>
                             ${ppm.toFixed(2)}
-                          </td>
-                          <td className="px-3 py-2 text-right font-mono" style={{ color: T.textPrimary }}>
-                            ${Number(r?.extra_mile_surcharge || 0).toFixed(2)}
-                          </td>
-                          <td className="px-3 py-2 text-right font-mono" style={{ color: T.textSecond }}>
-                            {r?.free_miles_override != null ? r.free_miles_override : "—"}
                           </td>
                           <td className="px-3 py-2 text-right font-mono" style={{ color: T.textPrimary }}>
                             {(Number(r?.driver_extra_mile_bonus_pct || 0) * 100).toFixed(1)}%
@@ -481,11 +473,11 @@ function CreateHubModal({ open, onClose, T, storedPassword, onCreated }: {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "", address: "", phone: "", contact_email: "",
-    lat: "", lng: "", free_miles: "15", base_delivery_fee: "0",
+    lat: "", lng: "",
   });
 
   useEffect(() => {
-    if (open) setForm({ name: "", address: "", phone: "", contact_email: "", lat: "", lng: "", free_miles: "15", base_delivery_fee: "0" });
+    if (open) setForm({ name: "", address: "", phone: "", contact_email: "", lat: "", lng: "" });
   }, [open]);
 
   async function handleCreate() {
@@ -506,8 +498,6 @@ function CreateHubModal({ open, onClose, T, storedPassword, onCreated }: {
             contact_email: form.contact_email || null,
             lat: form.lat ? Number(form.lat) : null,
             lng: form.lng ? Number(form.lng) : null,
-            free_miles: form.free_miles ? Number(form.free_miles) : 15,
-            base_delivery_fee: form.base_delivery_fee ? Number(form.base_delivery_fee) : 0,
           },
         },
       });
@@ -536,10 +526,9 @@ function CreateHubModal({ open, onClose, T, storedPassword, onCreated }: {
             <FormRow label="Phone"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></FormRow>
             <FormRow label="Contact email"><Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></FormRow>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <FormRow label="Free miles"><Input type="number" min="0" value={form.free_miles} onChange={(e) => setForm({ ...form, free_miles: e.target.value })} /></FormRow>
-            <FormRow label="Base delivery fee ($)"><Input type="number" min="0" step="0.01" value={form.base_delivery_fee} onChange={(e) => setForm({ ...form, base_delivery_fee: e.target.value })} /></FormRow>
-          </div>
+          <p className="text-[11px]" style={{ color: T.textSecond }}>
+            Active truck classes will be auto-attached with default rates ($120 base fee, $0/mile). Set per-class rates after creating.
+          </p>
           <p className="text-[11px]" style={{ color: T.textSecond }}>
             Active truck classes will be auto-attached with $0 rates. Set rates after creating.
           </p>
@@ -575,8 +564,6 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
         lat: hub.lat ?? "",
         lng: hub.lng ?? "",
         status: hub.status || "active",
-        free_miles: hub.free_miles ?? 15,
-        base_delivery_fee: hub.base_delivery_fee ?? 0,
       });
     }
   }, [open, hub]);
@@ -616,18 +603,14 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
             <FormRow label="Phone"><Input value={form.phone || ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></FormRow>
             <FormRow label="Contact email"><Input type="email" value={form.contact_email || ""} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></FormRow>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <FormRow label="Free miles"><Input type="number" min="0" value={form.free_miles ?? ""} onChange={(e) => setForm({ ...form, free_miles: e.target.value })} /></FormRow>
-            <FormRow label="Base fee ($)"><Input type="number" min="0" step="0.01" value={form.base_delivery_fee ?? ""} onChange={(e) => setForm({ ...form, base_delivery_fee: e.target.value })} /></FormRow>
-            <FormRow label="Status">
-              <select className="w-full h-10 rounded-md border px-2 text-sm bg-background"
-                value={form.status || "active"}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </FormRow>
-          </div>
+          <FormRow label="Status">
+            <select className="w-full h-10 rounded-md border px-2 text-sm bg-background"
+              value={form.status || "active"}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </FormRow>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
@@ -649,7 +632,7 @@ function EditRatesModal({ open, onClose, hubId, truckClasses, existingRates, T, 
 }) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState<Record<string, { per_mile_rate: string; extra_mile_surcharge: string; free_miles_override: string; driver_extra_mile_bonus_pct: string }>>({});
+  const [draft, setDraft] = useState<Record<string, { base_delivery_fee: string; per_mile_rate: string; driver_extra_mile_bonus_pct: string }>>({});
 
   useEffect(() => {
     if (open) {
@@ -657,9 +640,8 @@ function EditRatesModal({ open, onClose, hubId, truckClasses, existingRates, T, 
       truckClasses.forEach((tc) => {
         const r = existingRates.find((x) => x.truck_class_id === tc.id);
         next[tc.id] = {
+          base_delivery_fee: String(r?.base_delivery_fee ?? 120),
           per_mile_rate: String(r?.per_mile_rate ?? 0),
-          extra_mile_surcharge: String(r?.extra_mile_surcharge ?? 0),
-          free_miles_override: r?.free_miles_override != null ? String(r.free_miles_override) : "",
           // Display as whole-number percent (stored 0..1)
           driver_extra_mile_bonus_pct: String((Number(r?.driver_extra_mile_bonus_pct ?? 0) * 100).toFixed(2)).replace(/\.00$/, ""),
         };
@@ -685,12 +667,10 @@ function EditRatesModal({ open, onClose, hubId, truckClasses, existingRates, T, 
     try {
       const rates = truckClasses.map((tc) => {
         const d = draft[tc.id];
-        const fmoRaw = (d?.free_miles_override ?? "").trim();
         return {
           truck_class_id: tc.id,
+          base_delivery_fee: Number(d?.base_delivery_fee || 120),
           per_mile_rate: Number(d?.per_mile_rate || 0),
-          extra_mile_surcharge: Number(d?.extra_mile_surcharge || 0),
-          free_miles_override: fmoRaw === "" ? null : Number(fmoRaw),
           // Convert whole-number percent → 0..1 fraction for storage
           driver_extra_mile_bonus_pct: Number(d?.driver_extra_mile_bonus_pct || 0) / 100,
         };
@@ -713,26 +693,24 @@ function EditRatesModal({ open, onClose, hubId, truckClasses, existingRates, T, 
       <DialogContent className="max-w-3xl">
         <DialogHeader><DialogTitle>Edit Rate Matrix</DialogTitle></DialogHeader>
         <p className="text-xs" style={{ color: T.textSecond }}>
-          Driver bonus is entered as a whole-number percent (e.g. <code>10</code> = 10%) and stored as a fraction. Leave free-mile override blank to inherit the hub default.
+          Driver bonus is entered as a whole-number percent (e.g. <code>10</code> = 10%) and stored as a fraction. Base fee defaults to $120 if left blank.
         </p>
         <div className="overflow-x-auto mt-2">
           <table className="w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: T.tableHeaderBg }}>
                 <Th T={T}>Truck Class</Th>
+                <Th T={T} right>Base Fee</Th>
                 <Th T={T} right>$/mile</Th>
-                <Th T={T} right>Extra-mile surcharge</Th>
-                <Th T={T} right>Free-mile override</Th>
-                <Th T={T} right>Driver bonus %</Th>
+                <Th T={T} right>Driver Bonus %</Th>
               </tr>
             </thead>
             <tbody>
               {truckClasses.map((tc) => (
                 <tr key={tc.id} style={{ borderTop: `1px solid ${T.cardBorder}` }}>
                   <td className="px-3 py-2" style={{ color: T.textPrimary }}>{tc.name}</td>
+                  <td className="px-2 py-1.5"><Input className="text-right" type="number" min="0" step="0.01" placeholder="120" value={draft[tc.id]?.base_delivery_fee ?? ""} onChange={(e) => update(tc.id, "base_delivery_fee", e.target.value)} /></td>
                   <td className="px-2 py-1.5"><Input className="text-right" type="number" min="0" step="0.01" value={draft[tc.id]?.per_mile_rate ?? ""} onChange={(e) => update(tc.id, "per_mile_rate", e.target.value)} /></td>
-                  <td className="px-2 py-1.5"><Input className="text-right" type="number" min="0" step="0.01" value={draft[tc.id]?.extra_mile_surcharge ?? ""} onChange={(e) => update(tc.id, "extra_mile_surcharge", e.target.value)} /></td>
-                  <td className="px-2 py-1.5"><Input className="text-right" type="number" min="0" placeholder="—" value={draft[tc.id]?.free_miles_override ?? ""} onChange={(e) => update(tc.id, "free_miles_override", e.target.value)} /></td>
                   <td className="px-2 py-1.5"><Input className="text-right" type="number" min="0" max="100" step="0.1" value={draft[tc.id]?.driver_extra_mile_bonus_pct ?? ""} onChange={(e) => update(tc.id, "driver_extra_mile_bonus_pct", e.target.value)} /></td>
                 </tr>
               ))}
