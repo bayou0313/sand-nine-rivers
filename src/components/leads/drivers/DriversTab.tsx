@@ -34,18 +34,31 @@ export default function DriversTab({ drivers, loading, password, onRefresh }: Pr
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hubs, setHubs] = useState<HubOption[]>([]);
+  // Slice C+ — Set of driver_ids with an active driver_compensation row.
+  // Drives the "Compensation needed" badge on DriverCard.
+  const [compensatedDrivers, setCompensatedDrivers] = useState<Set<string>>(new Set());
 
-  // Hub options for card display + detail view
+  // Hub options + active-compensation set for the list view.
+  // Re-fetched on `onRefresh` (driver list reload triggers password unchanged) — we
+  // also refetch comp set when the drivers array identity changes so newly-saved
+  // compensation reflects after a tab refresh round-trip.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.functions.invoke("leads-auth", {
-        body: { password, action: "hub_list_for_select" },
-      });
-      if (!cancelled) setHubs((data as any)?.hubs || []);
+      const [hubRes, compRes] = await Promise.all([
+        supabase.functions.invoke("leads-auth", {
+          body: { password, action: "hub_list_for_select" },
+        }),
+        supabase.functions.invoke("leads-auth", {
+          body: { password, action: "list_active_compensation_driver_ids" },
+        }),
+      ]);
+      if (cancelled) return;
+      setHubs((hubRes.data as any)?.hubs || []);
+      setCompensatedDrivers(new Set<string>(((compRes.data as any)?.driver_ids || []) as string[]));
     })();
     return () => { cancelled = true; };
-  }, [password]);
+  }, [password, drivers]);
 
   const hubName = useMemo(() => {
     const map = new Map(hubs.map(h => [h.id, h.name]));
@@ -148,6 +161,7 @@ export default function DriversTab({ drivers, loading, password, onRefresh }: Pr
                   key={d.id}
                   driver={d}
                   hubName={hubName(d.primary_hub_id)}
+                  hasCompensation={compensatedDrivers.has(d.id)}
                   onClick={() => setSelectedId(d.id)}
                 />
               ))}

@@ -1,6 +1,7 @@
 // Slice C — Driver list card. Used in DriversTab grid.
 // Click → opens detail view. License expiry colored by tier (expired/critical/warning/normal).
-import { Truck, Phone, MapPin, AlertTriangle } from "lucide-react";
+// Slice C+ — adds "Compensation needed" badge when no active driver_compensation row.
+import { Truck, Phone, MapPin, AlertTriangle, AlertCircle } from "lucide-react";
 import { DRIVER_STATUSES, licenseExpiryTier, type Driver } from "./types";
 import { formatPhone } from "@/lib/format";
 
@@ -12,6 +13,7 @@ const MUTED = "#6B7280";
 interface Props {
   driver: Driver;
   hubName?: string | null;
+  hasCompensation?: boolean;
   onClick: (d: Driver) => void;
 }
 
@@ -33,7 +35,7 @@ function formatExpiry(iso: string | null | undefined): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function DriverCard({ driver, hubName, onClick }: Props) {
+export default function DriverCard({ driver, hubName, hasCompensation = true, onClick }: Props) {
   const tier = licenseExpiryTier(driver.license_expires_on);
   const expColor =
     tier === "expired" || tier === "critical" ? ALERT_RED :
@@ -45,6 +47,10 @@ export default function DriverCard({ driver, hubName, onClick }: Props) {
     tier === "warning" ? "≤ 90 days" : null;
 
   const status = (driver.status as string) || (driver.active ? "active" : "inactive");
+  // Show "Compensation needed" badge when there's no active driver_compensation row.
+  // Legacy payment_rate > 0 still triggers the nudge — versioned compensation is the
+  // source of truth going forward (Slice C+).
+  const needsCompensation = !hasCompensation;
 
   return (
     <button
@@ -89,6 +95,20 @@ export default function DriverCard({ driver, hubName, onClick }: Props) {
           {expLabel && <span className="ml-1 text-[10px] font-bold uppercase">({expLabel})</span>}
         </span>
       </div>
+
+      {needsCompensation && (
+        <div
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold"
+          style={{
+            backgroundColor: WARN_AMBER + "1A",
+            color: WARN_AMBER,
+            border: `1px solid ${WARN_AMBER}55`,
+          }}
+        >
+          <AlertCircle className="w-3 h-3" />
+          Compensation needed
+        </div>
+      )}
     </button>
   );
 }
