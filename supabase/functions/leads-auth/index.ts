@@ -5606,7 +5606,22 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // ── SAVE DRIVER COMPENSATION ── versioned: closes any currently-open row
+      // ── LIST ACTIVE COMPENSATION DRIVER IDS ── Slice C+ — distinct driver_ids
+      // with an active driver_compensation row (effective_to IS NULL OR >= today).
+      // Powers the "Compensation needed" badge on DriverCard in DriversTab.
+      if (action === "list_active_compensation_driver_ids") {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data, error } = await sb
+          .from("driver_compensation")
+          .select("driver_id")
+          .or(`effective_to.is.null,effective_to.gte.${today}`);
+        if (error) throw error;
+        const ids = Array.from(new Set((data || []).map((r: any) => r.driver_id).filter(Boolean)));
+        return new Response(JSON.stringify({ driver_ids: ids }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+
       // (effective_to IS NULL) by setting effective_to = (new effective_from - 1 day),
       // then inserts the new open row. Soft-only — never deletes.
       if (action === "save_driver_compensation") {
