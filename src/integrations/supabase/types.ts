@@ -2231,6 +2231,51 @@ export type Database = {
         }
         Relationships: []
       }
+      truck_driver_assignments: {
+        Row: {
+          created_at: string
+          driver_id: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          notes: string | null
+          truck_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          truck_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          truck_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_driver_assignments_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "truck_driver_assignments_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       truck_maintenance: {
         Row: {
           cost: number | null
@@ -2324,6 +2369,7 @@ export type Database = {
         Row: {
           class_id: string | null
           created_at: string
+          dot_expiry: string | null
           dot_number: string | null
           hub_id: string | null
           id: string
@@ -2348,6 +2394,7 @@ export type Database = {
         Insert: {
           class_id?: string | null
           created_at?: string
+          dot_expiry?: string | null
           dot_number?: string | null
           hub_id?: string | null
           id?: string
@@ -2372,6 +2419,7 @@ export type Database = {
         Update: {
           class_id?: string | null
           created_at?: string
+          dot_expiry?: string | null
           dot_number?: string | null
           hub_id?: string | null
           id?: string
