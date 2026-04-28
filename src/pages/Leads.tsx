@@ -128,6 +128,7 @@ interface Pit {
   status: "active" | "planning" | "inactive";
   notes: string;
   is_default?: boolean;
+  base_delivery_fee: number | null;
   base_price: number | null;
   free_miles: number | null;
   price_per_extra_mile: number | null;
@@ -591,7 +592,7 @@ const Leads = () => {
 
   const [pits, setPits] = useState<Pit[]>([]);
   const [selectedPit, setSelectedPit] = useState<Pit | null>(null);
-  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "", sunday_surcharge: null as number | null, saturday_load_limit: null as number | null, sunday_load_limit: null as number | null, is_pickup_only: false, delivery_hours: null as DeliveryHoursMap });
+  const [newPit, setNewPit] = useState({ name: "", address: "", status: "planning" as "active" | "planning" | "inactive", notes: "", base_delivery_fee: null as number | null, base_price: null as number | null, free_miles: null as number | null, price_per_extra_mile: null as number | null, max_distance: null as number | null, lat: null as number | null, lon: null as number | null, operating_days: null as number[] | null, saturday_surcharge_override: null as number | null, same_day_cutoff: "", sunday_surcharge: null as number | null, saturday_load_limit: null as number | null, sunday_load_limit: null as number | null, is_pickup_only: false, delivery_hours: null as DeliveryHoursMap });
   const [showAddPit, setShowAddPit] = useState(false);
   const [geocodeCache, setGeocodeCache] = useState<Record<string, { lat: number; lon: number; location_type?: string; formatted_address?: string }>>(() => {
     try { return JSON.parse(sessionStorage.getItem("geocache") || "{}"); } catch { return {}; }
@@ -1611,11 +1612,17 @@ const Leads = () => {
   const addPit = async () => {
     if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     const requiredNewPitFields = [
+      { field: newPit.base_delivery_fee, name: "Base delivery fee" },
       { field: newPit.base_price, name: "Base price per load" },
       { field: newPit.free_miles, name: "Free delivery distance" },
       { field: newPit.price_per_extra_mile, name: "Extra per mile" },
       { field: newPit.max_distance, name: "Max delivery distance" },
     ];
+    const negativeFee = newPit.base_delivery_fee != null && Number(newPit.base_delivery_fee) < 0;
+    if (negativeFee) {
+      toast({ title: "Invalid base delivery fee", description: "Base delivery fee must be 0 or greater.", variant: "destructive" });
+      return;
+    }
     const missingNewFields = requiredNewPitFields.filter(f => f.field == null || isNaN(Number(f.field)));
     if (missingNewFields.length > 0) {
       toast({ title: "Missing required pricing", description: `Please fill in: ${missingNewFields.map(f => f.name).join(", ")}`, variant: "destructive" });
@@ -1660,7 +1667,7 @@ const Leads = () => {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit, is_pickup_only: newPit.is_pickup_only, delivery_hours: newPit.delivery_hours },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_delivery_fee: newPit.base_delivery_fee, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit, is_pickup_only: newPit.is_pickup_only, delivery_hours: newPit.delivery_hours },
         },
       });
       if (fnError) throw fnError;
@@ -1670,7 +1677,7 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
-      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false, delivery_hours: null });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_delivery_fee: null, base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false, delivery_hours: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -1793,6 +1800,7 @@ const Leads = () => {
       return;
     }
     const requiredEditFields = [
+      { field: editPitData.base_delivery_fee, name: "Base delivery fee" },
       { field: editPitData.base_price, name: "Base price per load" },
       { field: editPitData.free_miles, name: "Free delivery distance" },
       { field: editPitData.price_per_extra_mile, name: "Extra per mile" },
@@ -1801,6 +1809,10 @@ const Leads = () => {
     const missingEditFields = requiredEditFields.filter(f => f.field == null || isNaN(Number(f.field)));
     if (missingEditFields.length > 0) {
       toast({ title: "Missing required pricing", description: `Please fill in: ${missingEditFields.map(f => f.name).join(", ")}`, variant: "destructive" });
+      return;
+    }
+    if (editPitData.base_delivery_fee != null && Number(editPitData.base_delivery_fee) < 0) {
+      toast({ title: "Invalid base delivery fee", description: "Base delivery fee must be 0 or greater.", variant: "destructive" });
       return;
     }
     setSavingPit(true);
@@ -1847,6 +1859,7 @@ const Leads = () => {
         status: editPitData.status,
         notes: editPitData.notes || "",
         is_default: editPitData.is_default,
+        base_delivery_fee: editPitData.base_delivery_fee ?? null,
         base_price: editPitData.base_price || null,
         free_miles: editPitData.free_miles || null,
         price_per_extra_mile: editPitData.price_per_extra_mile || null,
@@ -8139,6 +8152,13 @@ const Leads = () => {
                 <p className="text-xs text-gray-500 mb-3">All pricing fields are required before a PIT can be activated.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base delivery fee *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#666" }}>$</span>
+                      <Input placeholder="120" value={newPit.base_delivery_fee ?? ""} onChange={e => setNewPit({ ...newPit, base_delivery_fee: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_delivery_fee == null || isNaN(Number(newPit.base_delivery_fee))) setNewPit(prev => ({ ...prev, base_delivery_fee: 120 })); else setNewPit(prev => ({ ...prev, base_delivery_fee: Math.round(prev.base_delivery_fee! * 100) / 100 })); }} type="number" min={0} className="h-9 text-sm pl-6" />
+                    </div>
+                  </div>
+                  <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load *</label>
                     <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
                   </div>
@@ -8443,6 +8463,13 @@ const Leads = () => {
                 <p className="text-sm font-medium mb-1" style={{ color: T.textPrimary }}>Pricing (Required)</p>
                 <p className="text-xs text-gray-500 mb-3">All pricing fields are required before a PIT can be activated.</p>
                 <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base delivery fee *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#666" }}>$</span>
+                      <Input placeholder="120" value={editPitData.base_delivery_fee ?? ""} onChange={e => setEditPitData({ ...editPitData, base_delivery_fee: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (editPitData.base_delivery_fee == null || isNaN(Number(editPitData.base_delivery_fee))) setEditPitData(prev => ({ ...prev, base_delivery_fee: 120 })); else setEditPitData(prev => ({ ...prev, base_delivery_fee: Math.round(Number(prev.base_delivery_fee) * 100) / 100 })); }} type="number" min={0} className="h-9 text-sm pl-6" />
+                    </div>
+                  </div>
                   <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load *</label>
                     <Input placeholder="e.g. 195.00" value={editPitData.base_price ?? ""} onChange={e => setEditPitData({ ...editPitData, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => handlePriceBlur("base_price", editPitData.base_price ?? null, setEditPitData, editPitData)} type="number" className="h-9 text-sm" />
