@@ -1728,12 +1728,14 @@ const Leads = () => {
     setEditingPitId(pit.id);
     setEditPitData({ ...pit });
     setShowDeleteConfirm(false);
+    setEditPitFormAttempted(false);
   };
 
   const cancelEditPit = () => {
     setEditingPitId(null);
     setEditPitData({});
     setShowDeleteConfirm(false);
+    setEditPitFormAttempted(false);
   };
 
   // Fetch waitlist data
