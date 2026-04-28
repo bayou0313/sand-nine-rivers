@@ -1674,6 +1674,7 @@ const Leads = () => {
         }
       }
       setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false, delivery_hours: null });
+      setAddPitFormAttempted(false);
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
@@ -1792,6 +1793,7 @@ const Leads = () => {
 
   const saveEditPit = async () => {
     if (!editPitData.name || !editPitData.address) {
+      setEditPitFormAttempted(true);
       toast({ title: "Missing info", variant: "destructive" });
       return;
     }
