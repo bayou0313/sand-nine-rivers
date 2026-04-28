@@ -358,6 +358,27 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_cost_change_events_pit_id"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_cost_change_events_pit_inventory_id"
+            columns: ["pit_inventory_id"]
+            isOneToOne: false
+            referencedRelation: "pit_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_cost_change_events_product_id"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
         ]
       }
       customers: {
@@ -604,7 +625,15 @@ export type Database = {
           notes?: string | null
           rate?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_driver_compensation_driver_id"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_goals: {
         Row: {
@@ -634,7 +663,15 @@ export type Database = {
           period_start?: string
           target_value?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_driver_goals_driver_id"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_sessions: {
         Row: {
@@ -753,7 +790,15 @@ export type Database = {
           truck_number?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_drivers_primary_hub_id"
+            columns: ["primary_hub_id"]
+            isOneToOne: false
+            referencedRelation: "hubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fraud_blocklist: {
         Row: {
@@ -916,6 +961,7 @@ export type Database = {
           pit_id: string
           price_per_unit: number
           product_id: string
+          status: string
           updated_at: string
         }
         Insert: {
@@ -928,6 +974,7 @@ export type Database = {
           pit_id: string
           price_per_unit: number
           product_id: string
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -940,9 +987,31 @@ export type Database = {
           pit_id?: string
           price_per_unit?: number
           product_id?: string
+          status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_hpp_hub_id"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "hubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_hpp_pit_id"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_hpp_product_id"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "hub_pit_products_hub_id_fkey"
             columns: ["hub_id"]
@@ -988,7 +1057,22 @@ export type Database = {
           priority?: number
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_hub_pits_hub_id"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "hubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_hub_pits_pit_id"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hub_truck_class_rates: {
         Row: {
@@ -1018,7 +1102,22 @@ export type Database = {
           truck_class_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_htcr_hub_id"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "hubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_htcr_truck_class_id"
+            columns: ["truck_class_id"]
+            isOneToOne: false
+            referencedRelation: "truck_classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hubs: {
         Row: {
@@ -1474,6 +1573,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_orders_customer_id"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_orders_driver_id"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_orders_pit_id"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -1615,6 +1735,7 @@ export type Database = {
           price_per_unit: number
           product_id: string
           smart_offers_ref: string | null
+          status: string
           updated_at: string
           wholesale_cost: number | null
         }
@@ -1631,6 +1752,7 @@ export type Database = {
           price_per_unit: number
           product_id: string
           smart_offers_ref?: string | null
+          status?: string
           updated_at?: string
           wholesale_cost?: number | null
         }
@@ -1647,10 +1769,25 @@ export type Database = {
           price_per_unit?: number
           product_id?: string
           smart_offers_ref?: string | null
+          status?: string
           updated_at?: string
           wholesale_cost?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_pit_inventory_pit_id"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pit_inventory_product_id"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pit_inventory_pit_id_fkey"
             columns: ["pit_id"]
@@ -1845,6 +1982,13 @@ export type Database = {
           override_reason?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_pricing_overrides_hpp_id"
+            columns: ["hub_pit_product_id"]
+            isOneToOne: false
+            referencedRelation: "hub_pit_products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pricing_overrides_hub_pit_product_id_fkey"
             columns: ["hub_pit_product_id"]
@@ -2249,7 +2393,22 @@ export type Database = {
           vin?: string | null
           year?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_trucks_class_id"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "truck_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trucks_hub_id"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "hubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
