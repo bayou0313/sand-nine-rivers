@@ -698,7 +698,15 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent
+        className="max-w-lg"
+        onPointerDownOutside={(e) => {
+          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
+        }}
+      >
         <DialogHeader><DialogTitle>Edit Identity</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <FormRow label="Name *">
