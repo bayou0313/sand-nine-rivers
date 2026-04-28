@@ -92,9 +92,10 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
   const [rates, setRates] = useState<RateRow[]>([]);
   const [attachedPits, setAttachedPits] = useState<AttachedPit[]>([]);
 
-  // Modals
-  const [showCreate, setShowCreate] = useState(false);
-  const [showEditIdentity, setShowEditIdentity] = useState(false);
+  // Inline form toggles (Create + Edit Identity now inline, matching PITs pattern)
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [editingIdentity, setEditingIdentity] = useState(false);
+  // Modals (Edit Rates + Attach Pits remain as Dialogs — no Google Places, no bug)
   const [showEditRates, setShowEditRates] = useState(false);
   const [showAttachPits, setShowAttachPits] = useState(false);
 
