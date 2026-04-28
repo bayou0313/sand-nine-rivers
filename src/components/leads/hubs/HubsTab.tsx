@@ -13,7 +13,7 @@
  * - bonus_pct stored as 0..1 fraction; UI shows/accepts whole-number percent
  */
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, ArrowLeft, AlertTriangle, Pencil, Link2, Unlink, Pause, Play } from "lucide-react";
+import { Loader2, Plus, ArrowLeft, AlertTriangle, Pencil, Link2, Unlink, Pause, Play, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import PlaceAutocompleteInput, { type PlaceSelectResult } from "@/components/PlaceAutocompleteInput";
+import EmailInput from "@/components/EmailInput";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { formatPhone, stripPhone } from "@/lib/format";
+import { formatEmail } from "@/lib/textFormat";
 
 // ─── Brand Constants (mirror Leads.tsx) ─────────────────────────────────────
 const BRAND_GOLD = "#C07A00";
