@@ -3027,7 +3027,11 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      const selectCols = "id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, created_at, updated_at";
+      const selectCols = "id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, status, primary_hub_id, created_at, updated_at";
+
+      // Slice C — status drives derived `active` (active iff status === 'active'). Backend writes both
+      // for backward compat with anything still keying off `active`.
+      const VALID_STATUSES = new Set(["active", "on_leave", "inactive"]);
 
       let result;
       if (isUpdate) {
@@ -3048,8 +3052,21 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           payload.license_expires_on = driver.license_expires_on || null;
         if (Object.prototype.hasOwnProperty.call(driver, "notes"))
           payload.notes = driver.notes ? String(driver.notes) : null;
-        if (Object.prototype.hasOwnProperty.call(driver, "active"))
+        if (Object.prototype.hasOwnProperty.call(driver, "primary_hub_id"))
+          payload.primary_hub_id = driver.primary_hub_id || null;
+        if (Object.prototype.hasOwnProperty.call(driver, "status")) {
+          const s = String(driver.status || "active");
+          if (!VALID_STATUSES.has(s)) {
+            return new Response(JSON.stringify({ error: "Invalid status. Must be active, on_leave, or inactive." }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          payload.status = s;
+          payload.active = s === "active";
+        } else if (Object.prototype.hasOwnProperty.call(driver, "active")) {
+          // Legacy callers (Phase 0) only sent `active`. Mirror to status for forward compat.
           payload.active = !!driver.active;
+          payload.status = driver.active ? "active" : "inactive";
+        }
 
         if (Object.keys(payload).length === 0) {
           return new Response(JSON.stringify({ error: "No fields to update" }),
@@ -3063,6 +3080,16 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           .select(selectCols)
           .maybeSingle();
       } else {
+        const status = (() => {
+          if (Object.prototype.hasOwnProperty.call(driver, "status")) {
+            const s = String(driver.status || "active");
+            return VALID_STATUSES.has(s) ? s : "active";
+          }
+          if (Object.prototype.hasOwnProperty.call(driver, "active")) {
+            return driver.active ? "active" : "inactive";
+          }
+          return "active";
+        })();
         const payload: Record<string, any> = {
           name,
           phone,
@@ -3072,7 +3099,9 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
           payment_rate: driver.payment_rate != null ? Number(driver.payment_rate) : 0,
           license_expires_on: driver.license_expires_on || null,
           notes: driver.notes ? String(driver.notes) : null,
-          active: driver.active !== undefined ? !!driver.active : true,
+          primary_hub_id: driver.primary_hub_id || null,
+          status,
+          active: status === "active",
         };
         result = await supabase
           .from("drivers")
