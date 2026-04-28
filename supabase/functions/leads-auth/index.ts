@@ -5557,7 +5557,205 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       }
     }
 
-    return new Response(
+    // ─────────────────────────────────────────────────────────────────────────
+    // SLICE C — DRIVERS TAB (5 actions): hub select, compensation CRUD, goals CRUD
+    // All actions require LEADS_PASSWORD. Service role for all DB ops.
+    // ─────────────────────────────────────────────────────────────────────────
+    const DRIVER_C_ACTIONS = new Set([
+      "hub_list_for_select",
+      "list_driver_compensation",
+      "save_driver_compensation",
+      "list_driver_goals",
+      "save_driver_goals",
+    ]);
+    if (DRIVER_C_ACTIONS.has(action)) {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      // ── HUB LIST FOR SELECT ── thin {id,name} list for the DriverModal hub dropdown.
+      if (action === "hub_list_for_select") {
+        const { data, error } = await sb
+          .from("hubs")
+          .select("id, name, status")
+          .eq("status", "active")
+          .order("name", { ascending: true });
+        if (error) throw error;
+        return new Response(JSON.stringify({ hubs: (data || []).map((h: any) => ({ id: h.id, name: h.name })) }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── LIST DRIVER COMPENSATION ── full history, newest effective_from first.
+      if (action === "list_driver_compensation") {
+        const driverId = (body as any).driver_id;
+        if (!driverId) {
+          return new Response(JSON.stringify({ error: "driver_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await sb
+          .from("driver_compensation")
+          .select("id, driver_id, comp_type, rate, effective_from, effective_to, notes, created_at")
+          .eq("driver_id", driverId)
+          .order("effective_from", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return new Response(JSON.stringify({ compensation: data || [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── SAVE DRIVER COMPENSATION ── versioned: closes any currently-open row
+      // (effective_to IS NULL) by setting effective_to = (new effective_from - 1 day),
+      // then inserts the new open row. Soft-only — never deletes.
+      if (action === "save_driver_compensation") {
+        const driverId = (body as any).driver_id;
+        const comp = (body as any).compensation;
+        if (!driverId || !comp || typeof comp !== "object") {
+          return new Response(JSON.stringify({ error: "driver_id and compensation required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const VALID_COMP = new Set(["per_load", "per_mile", "hourly", "flat_day", "salary"]);
+        const compType = String(comp.comp_type || "");
+        if (!VALID_COMP.has(compType)) {
+          return new Response(JSON.stringify({ error: "Invalid comp_type" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const rate = Number(comp.rate);
+        if (!Number.isFinite(rate) || rate < 0) {
+          return new Response(JSON.stringify({ error: "rate must be a non-negative number" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const effectiveFrom = String(comp.effective_from || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveFrom)) {
+          return new Response(JSON.stringify({ error: "effective_from must be YYYY-MM-DD" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Close current open row(s) — set effective_to = (effectiveFrom - 1 day).
+        const closeDate = new Date(effectiveFrom + "T00:00:00Z");
+        closeDate.setUTCDate(closeDate.getUTCDate() - 1);
+        const closeIso = closeDate.toISOString().slice(0, 10);
+
+        const { error: closeErr } = await sb
+          .from("driver_compensation")
+          .update({ effective_to: closeIso })
+          .eq("driver_id", driverId)
+          .is("effective_to", null);
+        if (closeErr) throw closeErr;
+
+        const { data, error } = await sb
+          .from("driver_compensation")
+          .insert({
+            driver_id: driverId,
+            comp_type: compType,
+            rate,
+            effective_from: effectiveFrom,
+            effective_to: null,
+            notes: comp.notes ? String(comp.notes) : null,
+          })
+          .select("id, driver_id, comp_type, rate, effective_from, effective_to, notes, created_at")
+          .maybeSingle();
+        if (error) throw error;
+        return new Response(JSON.stringify({ compensation: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── LIST DRIVER GOALS ── ordered by period_start desc.
+      if (action === "list_driver_goals") {
+        const driverId = (body as any).driver_id;
+        if (!driverId) {
+          return new Response(JSON.stringify({ error: "driver_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await sb
+          .from("driver_goals")
+          .select("id, driver_id, goal_type, target_value, period_start, period_end, created_at")
+          .eq("driver_id", driverId)
+          .order("period_start", { ascending: false });
+        if (error) throw error;
+        return new Response(JSON.stringify({ goals: data || [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── SAVE DRIVER GOALS ── diff-based: client sends full intended set, server
+      // inserts new + deletes removed. Goals are configuration (targets), not
+      // transactional records — hard-delete is acceptable here per Slice C policy.
+      if (action === "save_driver_goals") {
+        const driverId = (body as any).driver_id;
+        const goals = (body as any).goals;
+        if (!driverId || !Array.isArray(goals)) {
+          return new Response(JSON.stringify({ error: "driver_id and goals[] required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const VALID_GOAL = new Set([
+          "loads_per_week", "loads_per_month", "revenue_per_week",
+          "revenue_per_month", "on_time_pct", "review_score",
+        ]);
+        // Validate every goal up-front
+        for (const g of goals) {
+          if (!g || typeof g !== "object") {
+            return new Response(JSON.stringify({ error: "Each goal must be an object" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (!VALID_GOAL.has(String(g.goal_type))) {
+            return new Response(JSON.stringify({ error: `Invalid goal_type: ${g.goal_type}` }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          const t = Number(g.target_value);
+          if (!Number.isFinite(t) || t < 0) {
+            return new Response(JSON.stringify({ error: "target_value must be a non-negative number" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(String(g.period_start || ""))
+            || !/^\d{4}-\d{2}-\d{2}$/.test(String(g.period_end || ""))) {
+            return new Response(JSON.stringify({ error: "period_start / period_end must be YYYY-MM-DD" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
+
+        // Load existing
+        const { data: existing, error: exErr } = await sb
+          .from("driver_goals")
+          .select("id")
+          .eq("driver_id", driverId);
+        if (exErr) throw exErr;
+        const existingIds = new Set((existing || []).map((g: any) => g.id));
+        const keepIds = new Set(goals.filter((g: any) => g.id).map((g: any) => g.id));
+
+        // Delete removed
+        const toDelete = [...existingIds].filter(id => !keepIds.has(id));
+        if (toDelete.length > 0) {
+          const { error: delErr } = await sb.from("driver_goals").delete().in("id", toDelete);
+          if (delErr) throw delErr;
+        }
+
+        // Insert new (rows without id)
+        const toInsert = goals.filter((g: any) => !g.id).map((g: any) => ({
+          driver_id: driverId,
+          goal_type: g.goal_type,
+          target_value: Number(g.target_value),
+          period_start: g.period_start,
+          period_end: g.period_end,
+        }));
+        if (toInsert.length > 0) {
+          const { error: insErr } = await sb.from("driver_goals").insert(toInsert);
+          if (insErr) throw insErr;
+        }
+
+        const { data: fresh, error: refErr } = await sb
+          .from("driver_goals")
+          .select("id, driver_id, goal_type, target_value, period_start, period_end, created_at")
+          .eq("driver_id", driverId)
+          .order("period_start", { ascending: false });
+        if (refErr) throw refErr;
+
+        return new Response(JSON.stringify({ goals: fresh || [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
