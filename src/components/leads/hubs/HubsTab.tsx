@@ -489,196 +489,36 @@ function StatusPill({ status }: { status: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CREATE HUB MODAL
+// INLINE HUB FORM (shared by Create + Edit Identity)
+// Renders inline (no Radix Dialog) — matches PITs form pattern.
+// This is the fix for the Google Places autocomplete bug: Radix Dialog
+// `modal=true` set pointer-events:none on body, blocking suggestion clicks.
 // ═══════════════════════════════════════════════════════════════════════════
-function CreateHubModal({ open, onClose, T, storedPassword, onCreated }: {
-  open: boolean; onClose: () => void; T: any; storedPassword: () => string; onCreated: (id: string) => void;
+function InlineHubForm({ mode, hub, T, storedPassword, onCancel, onSaved }: {
+  mode: "create" | "edit";
+  hub?: any;
+  T: any;
+  storedPassword: () => string;
+  onCancel: () => void;
+  onSaved: (id?: string) => void;
 }) {
   const { toast } = useToast();
   const { loaded: googleLoaded } = useGoogleMaps();
   const [saving, setSaving] = useState(false);
   const [formAttempted, setFormAttempted] = useState(false);
-  const [form, setForm] = useState({
-    name: "", address: "", phone: "", contact_email: "",
-    lat: null as number | null, lng: null as number | null,
-  });
-
-  useEffect(() => {
-    if (open) {
-      setForm({ name: "", address: "", phone: "", contact_email: "", lat: null, lng: null });
-      setFormAttempted(false);
-    }
-  }, [open]);
-
-  const isFormValid = !!form.name.trim();
-
-  useEffect(() => {
-    if (isFormValid && formAttempted) setFormAttempted(false);
-  }, [isFormValid, formAttempted]);
-
-  function handlePlaceSelect(result: PlaceSelectResult) {
-    setForm((f) => ({ ...f, address: result.formattedAddress, lat: result.lat, lng: result.lng }));
-  }
-
-  async function handleCreate() {
-    if (!isFormValid) {
-      setFormAttempted(true);
-      return;
-    }
-    setSaving(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("leads-auth", {
-        body: {
-          password: storedPassword(),
-          action: "hub_create",
-          hub: {
-            name: form.name.trim(),
-            address: form.address || null,
-            phone: form.phone ? stripPhone(form.phone) : null,
-            contact_email: form.contact_email ? formatEmail(form.contact_email).trim() : null,
-            lat: form.lat,
-            lng: form.lng,
-          },
-        },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      onCreated((data as any).hub.id);
-    } catch (err: any) {
-      toast({ title: "Create failed", description: err.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const showNameError = formAttempted && !form.name.trim();
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent
-        className="max-w-lg"
-        onPointerDownOutside={(e) => {
-          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
-        }}
-        onFocusOutside={(e) => {
-          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
-        }}
-      >
-        <DialogHeader><DialogTitle>Create Hub</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <FormRow label="Name *">
-            <Input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g. Kenner Hub"
-              className={showNameError ? "border-2" : ""}
-              style={showNameError ? { borderColor: ALERT_RED } : undefined}
-            />
-            {showNameError && (
-              <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ALERT_RED }}>
-                <AlertCircle className="w-3 h-3" /> Required
-              </div>
-            )}
-          </FormRow>
-          <FormRow label="Address">
-            {googleLoaded ? (
-              <PlaceAutocompleteInput
-                onPlaceSelect={handlePlaceSelect}
-                onInputChange={(val) => setForm((f) => ({ ...f, address: val, lat: null, lng: null }))}
-                placeholder="Start typing an address..."
-                initialValue={form.address}
-                containerClassName="place-autocomplete-admin"
-              />
-            ) : (
-              <Input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value, lat: null, lng: null })}
-                placeholder="Loading Google Maps..."
-              />
-            )}
-            {form.address && form.lat == null && (
-              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: WARN_YELLOW }}>
-                <AlertTriangle className="w-3 h-3" /> Select from suggestions to capture coordinates
-              </p>
-            )}
-            {form.lat != null && form.lng != null && (
-              <p className="text-xs mt-1" style={{ color: T.textSecond }}>
-                ✓ {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
-              </p>
-            )}
-          </FormRow>
-          <div className="grid grid-cols-2 gap-3">
-            <FormRow label="Phone">
-              <Input
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={14}
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
-                placeholder="(504) 555-0100"
-              />
-            </FormRow>
-            <FormRow label="Contact email">
-              <EmailInput
-                value={form.contact_email}
-                onChange={(v) => setForm({ ...form, contact_email: formatEmail(v) })}
-              />
-            </FormRow>
-          </div>
-          <p className="text-[11px]" style={{ color: T.textSecond }}>
-            Active truck classes will be auto-attached with default rates ($120 base fee, $0/mile). Set per-class rates after creating.
-          </p>
-          {formAttempted && !isFormValid && (
-            <p className="text-xs" style={{ color: ALERT_RED }}>
-              Please fill in all required fields above.
-            </p>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleCreate} disabled={saving} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Hub"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+  const [form, setForm] = useState<any>(() =>
+    mode === "edit" && hub
+      ? {
+          name: hub.name || "",
+          address: hub.address || "",
+          phone: hub.phone ? formatPhone(hub.phone) : "",
+          contact_email: hub.contact_email || "",
+          lat: hub.lat ?? null,
+          lng: hub.lng ?? null,
+          status: hub.status || "active",
+        }
+      : { name: "", address: "", phone: "", contact_email: "", lat: null, lng: null, status: "active" }
   );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// EDIT IDENTITY MODAL
-// ═══════════════════════════════════════════════════════════════════════════
-function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
-  open: boolean; onClose: () => void; hub: any; T: any; storedPassword: () => string; onSaved: () => void;
-}) {
-  console.log("[Hubs EditIdentityModal] Render", {
-    open,
-    hubId: hub?.id,
-  });
-  const { toast } = useToast();
-  const { loaded: googleLoaded } = useGoogleMaps();
-  const [saving, setSaving] = useState(false);
-  const [formAttempted, setFormAttempted] = useState(false);
-  const [form, setForm] = useState<any>({});
-
-  useEffect(() => {
-    if (open && hub) {
-      setForm({
-        name: hub.name || "",
-        address: hub.address || "",
-        phone: hub.phone ? formatPhone(hub.phone) : "",
-        contact_email: hub.contact_email || "",
-        lat: hub.lat ?? null,
-        lng: hub.lng ?? null,
-        status: hub.status || "active",
-      });
-      setFormAttempted(false);
-    }
-  }, [open, hub]);
 
   const isFormValid = !!form.name?.trim();
 
@@ -687,139 +527,161 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
   }, [isFormValid, formAttempted]);
 
   function handlePlaceSelect(result: PlaceSelectResult) {
-    console.log("[Hubs EditIdentityModal] handlePlaceSelect invoked", result);
     setForm((f: any) => ({ ...f, address: result.formattedAddress, lat: result.lat, lng: result.lng }));
   }
 
-  async function handleSave() {
+  async function handleSubmit() {
     if (!isFormValid) {
       setFormAttempted(true);
       return;
     }
     setSaving(true);
     try {
-      const payload = {
-        name: form.name?.trim(),
+      const hubPayload: any = {
+        name: form.name.trim(),
         address: form.address || null,
         phone: form.phone ? stripPhone(form.phone) : null,
         contact_email: form.contact_email ? formatEmail(form.contact_email).trim() : null,
         lat: form.lat,
         lng: form.lng,
-        status: form.status,
       };
-      const { data, error } = await supabase.functions.invoke("leads-auth", {
-        body: { password: storedPassword(), action: "hub_update_identity", hub_id: hub.id, hub: payload },
-      });
+      if (mode === "edit") hubPayload.status = form.status;
+
+      const body =
+        mode === "create"
+          ? { password: storedPassword(), action: "hub_create", hub: hubPayload }
+          : { password: storedPassword(), action: "hub_update_identity", hub_id: hub.id, hub: hubPayload };
+
+      const { data, error } = await supabase.functions.invoke("leads-auth", { body });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      onSaved();
+      onSaved(mode === "create" ? (data as any).hub?.id : undefined);
     } catch (err: any) {
-      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+      toast({ title: mode === "create" ? "Create failed" : "Save failed", description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
   }
 
   const showNameError = formAttempted && !form.name?.trim();
-  const addressChanged = form.address && form.address !== (hub?.address || "");
+  const addressChanged =
+    mode === "edit" && form.address && form.address !== (hub?.address || "");
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent
-        className="max-w-lg"
-        onPointerDownOutside={(e) => {
-          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
-        }}
-        onFocusOutside={(e) => {
-          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
-        }}
-      >
-        <DialogHeader><DialogTitle>Edit Identity</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <FormRow label="Name *">
-            <Input
-              value={form.name || ""}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className={showNameError ? "border-2" : ""}
-              style={showNameError ? { borderColor: ALERT_RED } : undefined}
+    <div className="rounded-xl border p-5" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}>
+      {mode === "create" && (
+        <h4 className="font-display uppercase tracking-wide text-sm mb-3" style={{ color: T.textPrimary }}>
+          New Hub
+        </h4>
+      )}
+      <div className="space-y-3">
+        <FormRow label="Name *">
+          <Input
+            value={form.name || ""}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="e.g. Kenner Hub"
+            className={showNameError ? "border-2" : ""}
+            style={showNameError ? { borderColor: ALERT_RED } : undefined}
+          />
+          {showNameError && (
+            <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ALERT_RED }}>
+              <AlertCircle className="w-3 h-3" /> Required
+            </div>
+          )}
+        </FormRow>
+        <FormRow label="Address">
+          {googleLoaded ? (
+            <PlaceAutocompleteInput
+              onPlaceSelect={handlePlaceSelect}
+              onInputChange={(val) =>
+                setForm((f: any) =>
+                  mode === "create"
+                    ? { ...f, address: val, lat: null, lng: null }
+                    : { ...f, address: val }
+                )
+              }
+              placeholder="Start typing an address..."
+              initialValue={form.address || ""}
+              containerClassName="place-autocomplete-admin"
             />
-            {showNameError && (
-              <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ALERT_RED }}>
-                <AlertCircle className="w-3 h-3" /> Required
-              </div>
-            )}
+          ) : (
+            <Input
+              value={form.address || ""}
+              onChange={(e) =>
+                setForm(
+                  mode === "create"
+                    ? { ...form, address: e.target.value, lat: null, lng: null }
+                    : { ...form, address: e.target.value }
+                )
+              }
+              placeholder="Loading Google Maps..."
+            />
+          )}
+          {mode === "create" && form.address && form.lat == null && (
+            <p className="text-xs mt-1 flex items-center gap-1" style={{ color: WARN_YELLOW }}>
+              <AlertTriangle className="w-3 h-3" /> Select from suggestions to capture coordinates
+            </p>
+          )}
+          {mode === "edit" && addressChanged && form.lat === hub?.lat && form.lng === hub?.lng && (
+            <p className="text-xs mt-1 flex items-center gap-1" style={{ color: WARN_YELLOW }}>
+              <AlertTriangle className="w-3 h-3" /> Select from suggestions to capture new coordinates
+            </p>
+          )}
+          {form.lat != null && form.lng != null && (
+            <p className="text-xs mt-1" style={{ color: T.textSecond }}>
+              ✓ {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
+            </p>
+          )}
+        </FormRow>
+        <div className="grid grid-cols-2 gap-3">
+          <FormRow label="Phone">
+            <Input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={14}
+              value={form.phone || ""}
+              onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
+              placeholder="(504) 555-0100"
+            />
           </FormRow>
-          <FormRow label="Address">
-            {googleLoaded ? (
-              <PlaceAutocompleteInput
-                onPlaceSelect={handlePlaceSelect}
-                onInputChange={(val) => setForm((f: any) => ({ ...f, address: val }))}
-                placeholder="Start typing an address..."
-                initialValue={form.address || ""}
-                containerClassName="place-autocomplete-admin"
-              />
-            ) : (
-              <Input
-                value={form.address || ""}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Loading Google Maps..."
-              />
-            )}
-            {addressChanged && form.lat === hub?.lat && form.lng === hub?.lng && (
-              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: WARN_YELLOW }}>
-                <AlertTriangle className="w-3 h-3" /> Select from suggestions to capture new coordinates
-              </p>
-            )}
-            {form.lat != null && form.lng != null && (
-              <p className="text-xs mt-1" style={{ color: T.textSecond }}>
-                ✓ {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
-              </p>
-            )}
+          <FormRow label="Contact email">
+            <EmailInput
+              value={form.contact_email || ""}
+              onChange={(v) => setForm({ ...form, contact_email: formatEmail(v) })}
+            />
           </FormRow>
-          <div className="grid grid-cols-2 gap-3">
-            <FormRow label="Phone">
-              <Input
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={14}
-                value={form.phone || ""}
-                onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
-                placeholder="(504) 555-0100"
-              />
-            </FormRow>
-            <FormRow label="Contact email">
-              <EmailInput
-                value={form.contact_email || ""}
-                onChange={(v) => setForm({ ...form, contact_email: formatEmail(v) })}
-              />
-            </FormRow>
-          </div>
+        </div>
+        {mode === "edit" && (
           <FormRow label="Status">
-            <select className="w-full h-10 rounded-md border px-2 text-sm bg-background"
+            <select
+              className="w-full h-10 rounded-md border px-2 text-sm bg-background"
               value={form.status || "active"}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
           </FormRow>
-          {formAttempted && !isFormValid && (
-            <p className="text-xs" style={{ color: ALERT_RED }}>
-              Please fill in all required fields above.
-            </p>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+        )}
+        {mode === "create" && (
+          <p className="text-[11px]" style={{ color: T.textSecond }}>
+            Active truck classes will be auto-attached with default rates ($120 base fee, $0/mile). Set per-class rates after creating.
+          </p>
+        )}
+        {formAttempted && !isFormValid && (
+          <p className="text-xs" style={{ color: ALERT_RED }}>
+            Please fill in all required fields above.
+          </p>
+        )}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={saving} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === "create" ? "Create Hub" : "Save"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }
 
