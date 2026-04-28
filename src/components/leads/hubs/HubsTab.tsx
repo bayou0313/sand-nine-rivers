@@ -251,20 +251,38 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
             </div>
           )}
 
-          {/* IDENTITY SECTION */}
+          {/* IDENTITY SECTION — inline edit (no modal) */}
           <Section title="Identity" T={T} action={
-            <Button size="sm" variant="outline" onClick={() => setShowEditIdentity(true)}>
-              <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
-            </Button>
+            !editingIdentity ? (
+              <Button size="sm" variant="outline" onClick={() => setEditingIdentity(true)}>
+                <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+              </Button>
+            ) : null
           }>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <Field label="Name" value={detailHub.name} T={T} />
-              <Field label="Status" value={<StatusPill status={detailHub.status} />} T={T} />
-              <Field label="Address" value={detailHub.address || "—"} T={T} />
-              <Field label="Phone" value={detailHub.phone || "—"} T={T} />
-              <Field label="Contact email" value={detailHub.contact_email || "—"} T={T} />
-              <Field label="Coordinates" value={detailHub.lat != null && detailHub.lng != null ? `${Number(detailHub.lat).toFixed(5)}, ${Number(detailHub.lng).toFixed(5)}` : "—"} T={T} />
-            </div>
+            {editingIdentity ? (
+              <InlineHubForm
+                mode="edit"
+                hub={detailHub}
+                T={T}
+                storedPassword={storedPassword}
+                onCancel={() => setEditingIdentity(false)}
+                onSaved={() => {
+                  setEditingIdentity(false);
+                  loadDetail(detailHub.id);
+                  loadHubs();
+                  toast({ title: "Identity saved" });
+                }}
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <Field label="Name" value={detailHub.name} T={T} />
+                <Field label="Status" value={<StatusPill status={detailHub.status} />} T={T} />
+                <Field label="Address" value={detailHub.address || "—"} T={T} />
+                <Field label="Phone" value={detailHub.phone || "—"} T={T} />
+                <Field label="Contact email" value={detailHub.contact_email || "—"} T={T} />
+                <Field label="Coordinates" value={detailHub.lat != null && detailHub.lng != null ? `${Number(detailHub.lat).toFixed(5)}, ${Number(detailHub.lng).toFixed(5)}` : "—"} T={T} />
+              </div>
+            )}
           </Section>
 
           {/* RATE MATRIX */}
