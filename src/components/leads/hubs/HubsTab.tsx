@@ -536,7 +536,15 @@ function CreateHubModal({ open, onClose, T, storedPassword, onCreated }: {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent
+        className="max-w-lg"
+        onPointerDownOutside={(e) => {
+          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
+        }}
+      >
         <DialogHeader><DialogTitle>Create Hub</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <FormRow label="Name *">
