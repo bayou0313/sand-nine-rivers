@@ -154,8 +154,8 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
             <h3 className="font-display uppercase tracking-wide text-sm" style={{ color: T.textPrimary }}>Hub Manager</h3>
             <p className="text-sm" style={{ color: T.textSecond }}>{hubs.length} {hubs.length === 1 ? "hub" : "hubs"}</p>
           </div>
-          <Button size="sm" onClick={() => setShowCreate(true)} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
-            <Plus className="w-4 h-4 mr-1" /> Add Hub
+          <Button size="sm" onClick={() => setCreatingNew((v) => !v)} style={{ backgroundColor: BRAND_GOLD, color: "white" }}>
+            <Plus className="w-4 h-4 mr-1" /> {creatingNew ? "Close" : "Add Hub"}
           </Button>
         </div>
 
