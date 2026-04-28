@@ -5430,7 +5430,6 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         if (h.phone !== undefined) updates.phone = h.phone || null;
         if (h.contact_email !== undefined) updates.contact_email = h.contact_email || null;
         if (h.status !== undefined) updates.status = h.status === "inactive" ? "inactive" : "active";
-        if (h.status !== undefined) updates.status = h.status === "inactive" ? "inactive" : "active";
 
         const { data, error } = await sb.from("hubs").update(updates).eq("id", hubId).select().single();
         if (error) throw error;
