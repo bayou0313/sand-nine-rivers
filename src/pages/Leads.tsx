@@ -1612,11 +1612,17 @@ const Leads = () => {
   const addPit = async () => {
     if (!newPit.name || !newPit.address) { toast({ title: "Missing info", description: "Enter PIT name and address", variant: "destructive" }); return; }
     const requiredNewPitFields = [
+      { field: newPit.base_delivery_fee, name: "Base delivery fee" },
       { field: newPit.base_price, name: "Base price per load" },
       { field: newPit.free_miles, name: "Free delivery distance" },
       { field: newPit.price_per_extra_mile, name: "Extra per mile" },
       { field: newPit.max_distance, name: "Max delivery distance" },
     ];
+    const negativeFee = newPit.base_delivery_fee != null && Number(newPit.base_delivery_fee) < 0;
+    if (negativeFee) {
+      toast({ title: "Invalid base delivery fee", description: "Base delivery fee must be 0 or greater.", variant: "destructive" });
+      return;
+    }
     const missingNewFields = requiredNewPitFields.filter(f => f.field == null || isNaN(Number(f.field)));
     if (missingNewFields.length > 0) {
       toast({ title: "Missing required pricing", description: `Please fill in: ${missingNewFields.map(f => f.name).join(", ")}`, variant: "destructive" });
@@ -1661,7 +1667,7 @@ const Leads = () => {
         body: {
           password: storedPassword(),
           action: "save_pit",
-          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit, is_pickup_only: newPit.is_pickup_only, delivery_hours: newPit.delivery_hours },
+          pit: { name: newPit.name, address: newPit.address, lat, lon, status: newPit.status, notes: newPit.notes, base_delivery_fee: newPit.base_delivery_fee, base_price: newPit.base_price, free_miles: newPit.free_miles, price_per_extra_mile: newPit.price_per_extra_mile, max_distance: newPit.max_distance, operating_days: newPit.operating_days, saturday_surcharge_override: newPit.saturday_surcharge_override, same_day_cutoff: newPit.same_day_cutoff || null, sunday_surcharge: newPit.sunday_surcharge, saturday_load_limit: newPit.saturday_load_limit, sunday_load_limit: newPit.sunday_load_limit, is_pickup_only: newPit.is_pickup_only, delivery_hours: newPit.delivery_hours },
         },
       });
       if (fnError) throw fnError;
@@ -1671,7 +1677,7 @@ const Leads = () => {
           checkActivationLeads(data.pit);
         }
       }
-      setNewPit({ name: "", address: "", status: "planning", notes: "", base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false, delivery_hours: null });
+      setNewPit({ name: "", address: "", status: "planning", notes: "", base_delivery_fee: null, base_price: null, free_miles: null, price_per_extra_mile: null, max_distance: null, lat: null, lon: null, operating_days: null, saturday_surcharge_override: null, same_day_cutoff: "", sunday_surcharge: null, saturday_load_limit: null, sunday_load_limit: null, is_pickup_only: false, delivery_hours: null });
       setShowAddPit(false);
       toast({ title: "PIT added" });
     } catch (err: any) {
