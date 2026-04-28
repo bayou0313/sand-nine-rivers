@@ -35,7 +35,7 @@ function formatExpiry(iso: string | null | undefined): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function DriverCard({ driver, hubName, onClick }: Props) {
+export default function DriverCard({ driver, hubName, hasCompensation = true, onClick }: Props) {
   const tier = licenseExpiryTier(driver.license_expires_on);
   const expColor =
     tier === "expired" || tier === "critical" ? ALERT_RED :
@@ -47,6 +47,10 @@ export default function DriverCard({ driver, hubName, onClick }: Props) {
     tier === "warning" ? "≤ 90 days" : null;
 
   const status = (driver.status as string) || (driver.active ? "active" : "inactive");
+  // Show "Compensation needed" badge when there's no active driver_compensation row.
+  // Legacy payment_rate > 0 still triggers the nudge — versioned compensation is the
+  // source of truth going forward (Slice C+).
+  const needsCompensation = !hasCompensation;
 
   return (
     <button
