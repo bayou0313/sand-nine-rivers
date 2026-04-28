@@ -832,6 +832,67 @@ export type Database = {
         }
         Relationships: []
       }
+      hub_pit_products: {
+        Row: {
+          created_at: string
+          hub_id: string
+          id: string
+          is_available_in_hub: boolean
+          is_featured: boolean
+          notes: string | null
+          pit_id: string
+          price_per_unit: number
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hub_id: string
+          id?: string
+          is_available_in_hub?: boolean
+          is_featured?: boolean
+          notes?: string | null
+          pit_id: string
+          price_per_unit: number
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hub_id?: string
+          id?: string
+          is_available_in_hub?: boolean
+          is_featured?: boolean
+          notes?: string | null
+          pit_id?: string
+          price_per_unit?: number
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hub_pit_products_hub_id_fkey"
+            columns: ["hub_id"]
+            isOneToOne: false
+            referencedRelation: "hubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hub_pit_products_pit_id_fkey"
+            columns: ["pit_id"]
+            isOneToOne: false
+            referencedRelation: "pits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hub_pit_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hub_pits: {
         Row: {
           created_at: string
@@ -858,6 +919,7 @@ export type Database = {
       }
       hub_truck_class_rates: {
         Row: {
+          base_delivery_fee: number
           created_at: string
           driver_extra_mile_bonus_pct: number
           hub_id: string
@@ -866,6 +928,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_delivery_fee?: number
           created_at?: string
           driver_extra_mile_bonus_pct?: number
           hub_id: string
@@ -874,6 +937,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_delivery_fee?: number
           created_at?: string
           driver_extra_mile_bonus_pct?: number
           hub_id?: string
