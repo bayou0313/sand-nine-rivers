@@ -126,7 +126,8 @@ export default function PlaceAutocompleteInput({
         });
 
         autocompleteRef.current = autocomplete;
-        console.log("[PlaceAutocompleteInput] Autocomplete initialized");
+        const pacCount = document.querySelectorAll('.pac-container').length;
+        console.log("[PlaceAutocompleteInput] Autocomplete initialized", { pacContainersInDom: pacCount, inputId: inputRef.current?.id || '(no id)' });
         return true;
       } catch (err) {
         console.error("[PlaceAutocompleteInput] init failed:", err);
