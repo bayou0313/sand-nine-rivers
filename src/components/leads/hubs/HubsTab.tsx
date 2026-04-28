@@ -544,6 +544,9 @@ function CreateHubModal({ open, onClose, T, storedPassword, onCreated }: {
         onInteractOutside={(e) => {
           if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
         }}
+        onFocusOutside={(e) => {
+          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
+        }}
       >
         <DialogHeader><DialogTitle>Create Hub</DialogTitle></DialogHeader>
         <div className="space-y-3">
@@ -704,6 +707,9 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
           if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
         }}
         onInteractOutside={(e) => {
+          if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
+        }}
+        onFocusOutside={(e) => {
           if ((e.target as HTMLElement)?.closest('.pac-container')) e.preventDefault();
         }}
       >

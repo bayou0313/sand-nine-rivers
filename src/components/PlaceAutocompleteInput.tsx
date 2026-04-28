@@ -101,6 +101,7 @@ export default function PlaceAutocompleteInput({
             // ALWAYS use Google's resolved address for pricing/tax
             resolvedAddressRef.current = resolvedAddress;
             setHasValue(true);
+            if (inputRef.current) inputRef.current.value = resolvedAddress;
             onInputChangeRef.current?.(resolvedAddress);
             onPlaceSelectRef.current({
               formattedAddress: resolvedAddress,
