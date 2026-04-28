@@ -49,6 +49,12 @@ export default function PlaceAutocompleteInput({
     !!(initialValue && initialValue.length > 0)
   );
 
+  console.log("[PlaceAutocompleteInput] Render", {
+    inputId,
+    initialValue,
+    hasInputEl: !!inputRef.current,
+  });
+
   const onPlaceSelectRef = useRef(onPlaceSelect);
   const onAddressMismatchRef = useRef(onAddressMismatch);
   const onInputChangeRef = useRef(onInputChange);
@@ -66,6 +72,7 @@ export default function PlaceAutocompleteInput({
       if (!window.google?.maps?.places?.Autocomplete) return false;
 
       try {
+        console.log("[PlaceAutocompleteInput] Autocomplete created with input element", inputRef.current);
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current!, {
           componentRestrictions: { country: "us" },
           types: ["address"],
@@ -74,9 +81,9 @@ export default function PlaceAutocompleteInput({
         });
 
         autocomplete.addListener("place_changed", () => {
-          console.log("[PlaceAutocompleteInput] LISTENER TRIGGERED");
+          console.log("[PlaceAutocompleteInput] LISTENER FIRED");
           const place = autocomplete.getPlace();
-          console.log("[PlaceAutocompleteInput] place_changed fired", place);
+          console.log("[PlaceAutocompleteInput] Got place", place);
           const lat = place.geometry?.location?.lat();
           const lng = place.geometry?.location?.lng();
           if (lat != null && lng != null) {
@@ -112,6 +119,7 @@ export default function PlaceAutocompleteInput({
               lng,
               addressComponents: place.address_components || [],
             });
+            console.log("[PlaceAutocompleteInput] Callback invoked", { resolvedAddress, lat, lng });
 
             // Show confirmation dialog only when cities differ
             if (cityMismatch && onAddressMismatchRef.current) {
@@ -145,6 +153,8 @@ export default function PlaceAutocompleteInput({
 
     return () => {
       clearInterval(interval);
+      const pacCount = document.querySelectorAll('.pac-container').length;
+      console.log("[PlaceAutocompleteInput] Cleanup running", { pacContainersInDom: pacCount, inputId: inputRef.current?.id || inputId });
       if (autocompleteRef.current) {
         window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
         autocompleteRef.current = null;

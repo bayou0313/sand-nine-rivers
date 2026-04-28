@@ -636,6 +636,10 @@ function CreateHubModal({ open, onClose, T, storedPassword, onCreated }: {
 function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
   open: boolean; onClose: () => void; hub: any; T: any; storedPassword: () => string; onSaved: () => void;
 }) {
+  console.log("[Hubs EditIdentityModal] Render", {
+    open,
+    hubId: hub?.id,
+  });
   const { toast } = useToast();
   const { loaded: googleLoaded } = useGoogleMaps();
   const [saving, setSaving] = useState(false);
@@ -664,6 +668,7 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
   }, [isFormValid, formAttempted]);
 
   function handlePlaceSelect(result: PlaceSelectResult) {
+    console.log("[Hubs EditIdentityModal] handlePlaceSelect invoked", result);
     setForm((f: any) => ({ ...f, address: result.formattedAddress, lat: result.lat, lng: result.lng }));
   }
 
