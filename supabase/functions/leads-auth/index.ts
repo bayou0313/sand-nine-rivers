@@ -5771,6 +5771,379 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // SLICE D PART 1 — TRUCKS TAB (8 actions + 3 select helpers)
+    // All actions require LEADS_PASSWORD. Service role for all DB ops.
+    // Soft-delete-only (Section 13): status='inactive', never DELETE.
+    // ─────────────────────────────────────────────────────────────────────────
+    const TRUCK_ACTIONS = new Set([
+      "truck_list", "truck_get_detail", "truck_upsert",
+      "list_truck_classes", "truck_class_update",
+      "truck_classes_list_for_select",
+      "driver_list_for_truck_assignment", "truck_assignment_save",
+    ]);
+    if (TRUCK_ACTIONS.has(action)) {
+      if (password !== Deno.env.get("LEADS_PASSWORD")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      // ── TRUCK LIST ── enriched with hub_name, class_name, current driver
+      if (action === "truck_list") {
+        const { data: trucks, error } = await sb
+          .from("trucks")
+          .select("*")
+          .order("name", { ascending: true });
+        if (error) throw error;
+
+        const hubIds = Array.from(new Set((trucks || []).map((t: any) => t.hub_id).filter(Boolean)));
+        const classIds = Array.from(new Set((trucks || []).map((t: any) => t.class_id).filter(Boolean)));
+        const truckIds = (trucks || []).map((t: any) => t.id);
+
+        const [hubsRes, classesRes, assignsRes] = await Promise.all([
+          hubIds.length
+            ? sb.from("hubs").select("id, name").in("id", hubIds)
+            : Promise.resolve({ data: [], error: null } as any),
+          classIds.length
+            ? sb.from("truck_classes").select("id, name").in("id", classIds)
+            : Promise.resolve({ data: [], error: null } as any),
+          truckIds.length
+            ? sb.from("truck_driver_assignments")
+                .select("truck_id, driver_id")
+                .in("truck_id", truckIds)
+                .is("effective_to", null)
+            : Promise.resolve({ data: [], error: null } as any),
+        ]);
+
+        const driverIds = Array.from(new Set(((assignsRes.data || []) as any[]).map((a: any) => a.driver_id).filter(Boolean)));
+        const driversRes = driverIds.length
+          ? await sb.from("drivers").select("id, name").in("id", driverIds)
+          : { data: [] as any[] };
+
+        const hubMap = new Map(((hubsRes.data || []) as any[]).map((h: any) => [h.id, h.name]));
+        const classMap = new Map(((classesRes.data || []) as any[]).map((c: any) => [c.id, c.name]));
+        const driverMap = new Map(((driversRes.data || []) as any[]).map((d: any) => [d.id, d.name]));
+        const activeAssignByTruck = new Map<string, { driver_id: string | null }>();
+        for (const a of (assignsRes.data || []) as any[]) {
+          activeAssignByTruck.set(a.truck_id, { driver_id: a.driver_id });
+        }
+
+        const enriched = (trucks || []).map((t: any) => {
+          const a = activeAssignByTruck.get(t.id);
+          return {
+            ...t,
+            hub_name: t.hub_id ? (hubMap.get(t.hub_id) ?? null) : null,
+            class_name: t.class_id ? (classMap.get(t.class_id) ?? null) : null,
+            current_driver_id: a?.driver_id ?? null,
+            current_driver_name: a?.driver_id ? (driverMap.get(a.driver_id) ?? null) : null,
+          };
+        });
+
+        return new Response(JSON.stringify({ trucks: enriched }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── TRUCK GET DETAIL ── truck + assignments + maintenance + telemetry placeholder
+      if (action === "truck_get_detail") {
+        const truckId = (body as any).truck_id;
+        if (!truckId) {
+          return new Response(JSON.stringify({ error: "truck_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data: truck, error: tErr } = await sb.from("trucks").select("*").eq("id", truckId).maybeSingle();
+        if (tErr) throw tErr;
+        if (!truck) {
+          return new Response(JSON.stringify({ error: "Truck not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        const [assignsRes, maintRes, hubRes, classRes] = await Promise.all([
+          sb.from("truck_driver_assignments")
+            .select("id, truck_id, driver_id, effective_from, effective_to, notes, created_at")
+            .eq("truck_id", truckId)
+            .order("effective_from", { ascending: false }),
+          sb.from("truck_maintenance")
+            .select("id, truck_id, service_date, service_type, description, cost, performed_by, mileage_at_service, next_service_due, parts_replaced, notes, created_by, created_at")
+            .eq("truck_id", truckId)
+            .order("service_date", { ascending: false })
+            .limit(50),
+          truck.hub_id ? sb.from("hubs").select("id, name").eq("id", truck.hub_id).maybeSingle() : Promise.resolve({ data: null } as any),
+          truck.class_id ? sb.from("truck_classes").select("id, name").eq("id", truck.class_id).maybeSingle() : Promise.resolve({ data: null } as any),
+        ]);
+
+        const driverIds = Array.from(new Set(((assignsRes.data || []) as any[]).map((a: any) => a.driver_id).filter(Boolean)));
+        const driversRes = driverIds.length
+          ? await sb.from("drivers").select("id, name").in("id", driverIds)
+          : { data: [] as any[] };
+        const driverMap = new Map(((driversRes.data || []) as any[]).map((d: any) => [d.id, d.name]));
+        const assignments = ((assignsRes.data || []) as any[]).map((a: any) => ({
+          ...a,
+          driver_name: a.driver_id ? (driverMap.get(a.driver_id) ?? null) : null,
+        }));
+
+        const enrichedTruck = {
+          ...truck,
+          hub_name: (hubRes as any)?.data?.name ?? null,
+          class_name: (classRes as any)?.data?.name ?? null,
+        };
+
+        return new Response(JSON.stringify({
+          truck: enrichedTruck,
+          assignments,
+          maintenance: maintRes.data || [],
+          telemetry: null, // placeholder — wired in a later slice
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── TRUCK UPSERT ── create or partial update (no soft-delete here; status enum carries lifecycle)
+      if (action === "truck_upsert") {
+        const t = (body as any).truck || {};
+        const isUpdate = !!t.id;
+        const VALID_STATUS = new Set(["active", "out_of_service", "inactive"]);
+
+        if (!isUpdate) {
+          if (!t.name || !String(t.name).trim()) {
+            return new Response(JSON.stringify({ error: "Truck Number (name) is required" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (!t.hub_id) {
+            return new Response(JSON.stringify({ error: "Hub is required" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (!t.class_id) {
+            return new Response(JSON.stringify({ error: "Truck Class is required" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          if (t.status && !VALID_STATUS.has(t.status)) {
+            return new Response(JSON.stringify({ error: "Invalid status" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          const insertRow: any = {
+            name: String(t.name).trim(),
+            hub_id: t.hub_id,
+            class_id: t.class_id,
+            status: t.status || "active",
+            make: t.make ?? null,
+            model: t.model ?? null,
+            year: t.year ?? null,
+            vin: t.vin ?? null,
+            license_plate: t.license_plate ?? null,
+            insurance_expiry: t.insurance_expiry ?? null,
+            registration_expiry: t.registration_expiry ?? null,
+            dot_expiry: t.dot_expiry ?? null,
+            surecam_device_id: t.surecam_device_id ?? null,
+            notes: t.notes ?? null,
+          };
+          const { data, error } = await sb.from("trucks").insert(insertRow).select("*").maybeSingle();
+          if (error) {
+            const msg = String(error.message || "");
+            if (/idx_trucks_name_active_unique|duplicate key/i.test(msg)) {
+              return new Response(JSON.stringify({ error: "A truck with this number already exists" }),
+                { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            }
+            throw error;
+          }
+          return new Response(JSON.stringify({ truck: data }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Update path — only patch fields present in payload
+        if (t.status && !VALID_STATUS.has(t.status)) {
+          return new Response(JSON.stringify({ error: "Invalid status" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const ALLOWED = new Set([
+          "name", "hub_id", "class_id", "status", "make", "model", "year",
+          "vin", "license_plate", "insurance_expiry", "registration_expiry",
+          "dot_expiry", "surecam_device_id", "notes",
+          "insurance_provider", "insurance_policy_number",
+          "registration_state", "dot_number",
+          "last_maintenance_date", "next_service_due_date",
+        ]);
+        const patch: any = { updated_at: new Date().toISOString() };
+        for (const k of Object.keys(t)) {
+          if (k === "id") continue;
+          if (ALLOWED.has(k)) patch[k] = t[k];
+        }
+        if (typeof patch.name === "string") patch.name = patch.name.trim();
+        if (Object.keys(patch).length === 1) {
+          return new Response(JSON.stringify({ error: "No changes" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await sb.from("trucks").update(patch).eq("id", t.id).select("*").maybeSingle();
+        if (error) {
+          const msg = String(error.message || "");
+          if (/idx_trucks_name_active_unique|duplicate key/i.test(msg)) {
+            return new Response(JSON.stringify({ error: "A truck with this number already exists" }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          throw error;
+        }
+        return new Response(JSON.stringify({ truck: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── LIST TRUCK CLASSES ── for management modal (with active_truck_count)
+      if (action === "list_truck_classes") {
+        const { data: classes, error } = await sb
+          .from("truck_classes")
+          .select("id, name, description, capacity_tons, max_yards, max_tons, status")
+          .order("name", { ascending: true });
+        if (error) throw error;
+
+        const { data: truckRows } = await sb.from("trucks").select("class_id, status").neq("status", "inactive");
+        const counts = new Map<string, number>();
+        for (const r of (truckRows || []) as any[]) {
+          if (!r.class_id) continue;
+          counts.set(r.class_id, (counts.get(r.class_id) || 0) + 1);
+        }
+        const enriched = (classes || []).map((c: any) => ({
+          ...c,
+          active_truck_count: counts.get(c.id) || 0,
+        }));
+        return new Response(JSON.stringify({ classes: enriched }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── TRUCK CLASS UPDATE ── name/description/status only (capacity locked elsewhere)
+      if (action === "truck_class_update") {
+        const classId = (body as any).class_id;
+        if (!classId) {
+          return new Response(JSON.stringify({ error: "class_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const patch: any = {};
+        if (Object.prototype.hasOwnProperty.call(body, "name")) {
+          const n = String((body as any).name || "").trim();
+          if (!n) {
+            return new Response(JSON.stringify({ error: "Name is required" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          patch.name = n;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "description")) {
+          patch.description = (body as any).description ?? null;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "status")) {
+          const s = String((body as any).status || "");
+          if (!["active", "inactive"].includes(s)) {
+            return new Response(JSON.stringify({ error: "Invalid status" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          patch.status = s;
+        }
+        if (Object.keys(patch).length === 0) {
+          return new Response(JSON.stringify({ error: "No changes" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data, error } = await sb.from("truck_classes").update(patch).eq("id", classId).select("*").maybeSingle();
+        if (error) {
+          const msg = String(error.message || "");
+          if (/duplicate key|truck_classes_name_key/i.test(msg)) {
+            return new Response(JSON.stringify({ error: "A class with this name already exists" }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          throw error;
+        }
+        return new Response(JSON.stringify({ class: data }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── TRUCK CLASSES LIST FOR SELECT ── only active classes
+      if (action === "truck_classes_list_for_select") {
+        const { data, error } = await sb
+          .from("truck_classes")
+          .select("id, name, status")
+          .eq("status", "active")
+          .order("name", { ascending: true });
+        if (error) throw error;
+        return new Response(JSON.stringify({ classes: (data || []).map((c: any) => ({ id: c.id, name: c.name })) }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── DRIVER LIST FOR TRUCK ASSIGNMENT ── filtered by hub (primary or secondary)
+      if (action === "driver_list_for_truck_assignment") {
+        const hubId = (body as any).hub_id;
+        let q = sb.from("drivers").select("id, name, primary_hub_id, secondary_hub_ids, status, active")
+          .eq("active", true)
+          .neq("status", "terminated")
+          .order("name", { ascending: true });
+        const { data, error } = await q;
+        if (error) throw error;
+        const filtered = !hubId
+          ? (data || [])
+          : (data || []).filter((d: any) =>
+              d.primary_hub_id === hubId
+              || (Array.isArray(d.secondary_hub_ids) && d.secondary_hub_ids.includes(hubId)),
+            );
+        return new Response(JSON.stringify({ drivers: filtered.map((d: any) => ({ id: d.id, name: d.name })) }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── TRUCK ASSIGNMENT SAVE ── versioned: closes prior open row at (effective_from - 1s), inserts new
+      if (action === "truck_assignment_save") {
+        const truckId = (body as any).truck_id;
+        const driverId = (body as any).driver_id ?? null; // null = unassign
+        const effectiveFromStr = String((body as any).effective_from || "").trim();
+        const notes = (body as any).notes ?? null;
+        if (!truckId) {
+          return new Response(JSON.stringify({ error: "truck_id required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveFromStr)) {
+          return new Response(JSON.stringify({ error: "effective_from must be YYYY-MM-DD" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const effectiveFromIso = new Date(effectiveFromStr + "T00:00:00Z").toISOString();
+        const closeAtIso = new Date(new Date(effectiveFromIso).getTime() - 1000).toISOString();
+
+        // Verify driver belongs to truck's hub (primary or secondary) — soft warning only
+        let warning: string | null = null;
+        if (driverId) {
+          const { data: truckRow } = await sb.from("trucks").select("hub_id").eq("id", truckId).maybeSingle();
+          const { data: drvRow } = await sb.from("drivers")
+            .select("primary_hub_id, secondary_hub_ids, active, status")
+            .eq("id", driverId).maybeSingle();
+          if (!drvRow || drvRow.active === false || drvRow.status === "terminated") {
+            return new Response(JSON.stringify({ error: "Driver is not active" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+          const hubId = (truckRow as any)?.hub_id;
+          const inHub = hubId
+            && (drvRow.primary_hub_id === hubId
+              || (Array.isArray(drvRow.secondary_hub_ids) && drvRow.secondary_hub_ids.includes(hubId)));
+          if (hubId && !inHub) {
+            warning = "Driver is not assigned to this truck's hub.";
+          }
+        }
+
+        // Close any currently-open assignment for this truck
+        const { error: closeErr } = await sb
+          .from("truck_driver_assignments")
+          .update({ effective_to: closeAtIso })
+          .eq("truck_id", truckId)
+          .is("effective_to", null);
+        if (closeErr) throw closeErr;
+
+        // Insert new row (driver_id may be null = unassigned period)
+        const { data: inserted, error: insErr } = await sb
+          .from("truck_driver_assignments")
+          .insert({
+            truck_id: truckId,
+            driver_id: driverId,
+            effective_from: effectiveFromIso,
+            notes,
+          })
+          .select("*")
+          .maybeSingle();
+        if (insErr) throw insErr;
+
+        return new Response(JSON.stringify({ assignment: inserted, warning }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
