@@ -5565,6 +5565,7 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
       "hub_list_for_select",
       "list_driver_compensation",
       "save_driver_compensation",
+      "list_active_compensation_driver_ids",
       "list_driver_goals",
       "save_driver_goals",
     ]);
