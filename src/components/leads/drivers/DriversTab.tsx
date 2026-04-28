@@ -161,6 +161,7 @@ export default function DriversTab({ drivers, loading, password, onRefresh }: Pr
                   key={d.id}
                   driver={d}
                   hubName={hubName(d.primary_hub_id)}
+                  hasCompensation={compensatedDrivers.has(d.id)}
                   onClick={() => setSelectedId(d.id)}
                 />
               ))}
