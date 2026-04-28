@@ -45,6 +45,7 @@ interface HubSummary {
   lng: number | null;
   truck_class_count: number;
   rates_unset_count: number;
+  truck_count: number;
   attached_pit_count: number;
   active_pit_count: number;
 }
@@ -176,7 +177,7 @@ export default function HubsTab({ T, storedPassword }: HubsTabProps) {
                 </div>
                 {h.address && <p className="text-xs mb-2 truncate" style={{ color: T.textSecond }}>{h.address}</p>}
                 <div className="grid grid-cols-3 gap-2 mt-3">
-                  <Stat label="Trucks" value={h.truck_class_count} T={T} />
+                  <Stat label="Trucks" value={h.truck_count ?? 0} T={T} />
                   <Stat label="Pits" value={`${h.active_pit_count}/${h.attached_pit_count}`} T={T} />
                   <Stat label="Rates set" value={`${h.truck_class_count - h.rates_unset_count}/${h.truck_class_count}`} T={T} />
                 </div>
