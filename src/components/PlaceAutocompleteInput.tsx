@@ -72,6 +72,7 @@ export default function PlaceAutocompleteInput({
         });
 
         autocomplete.addListener("place_changed", () => {
+          console.log("[PlaceAutocompleteInput] LISTENER TRIGGERED");
           const place = autocomplete.getPlace();
           console.log("[PlaceAutocompleteInput] place_changed fired", place);
           const lat = place.geometry?.location?.lat();
