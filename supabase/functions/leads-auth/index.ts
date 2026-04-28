@@ -5318,15 +5318,18 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
 
         const { data: rateRows } = await sb.from("hub_truck_class_rates").select("hub_id, per_mile_rate");
         const { data: pitRows } = await sb.from("hub_pits").select("hub_id, status");
+        const { data: truckRows } = await sb.from("trucks").select("hub_id");
 
         const enriched = (hubs || []).map((h: any) => {
           const rates = (rateRows || []).filter((r: any) => r.hub_id === h.id);
           const pits = (pitRows || []).filter((p: any) => p.hub_id === h.id);
+          const trucks = (truckRows || []).filter((t: any) => t.hub_id === h.id);
           const ratesUnset = rates.filter((r: any) => Number(r.per_mile_rate || 0) === 0).length;
           return {
             ...h,
             truck_class_count: rates.length,
             rates_unset_count: ratesUnset,
+            truck_count: trucks.length,
             attached_pit_count: pits.length,
             active_pit_count: pits.filter((p: any) => p.status === "active").length,
           };
