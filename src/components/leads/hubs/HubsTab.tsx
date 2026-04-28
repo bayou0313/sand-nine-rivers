@@ -626,7 +626,9 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
   open: boolean; onClose: () => void; hub: any; T: any; storedPassword: () => string; onSaved: () => void;
 }) {
   const { toast } = useToast();
+  const { loaded: googleLoaded } = useGoogleMaps();
   const [saving, setSaving] = useState(false);
+  const [formAttempted, setFormAttempted] = useState(false);
   const [form, setForm] = useState<any>({});
 
   useEffect(() => {
@@ -634,24 +636,44 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
       setForm({
         name: hub.name || "",
         address: hub.address || "",
-        phone: hub.phone || "",
+        phone: hub.phone ? formatPhone(hub.phone) : "",
         contact_email: hub.contact_email || "",
-        lat: hub.lat ?? "",
-        lng: hub.lng ?? "",
+        lat: hub.lat ?? null,
+        lng: hub.lng ?? null,
         status: hub.status || "active",
       });
+      setFormAttempted(false);
     }
   }, [open, hub]);
 
+  const isFormValid = !!form.name?.trim();
+
+  useEffect(() => {
+    if (isFormValid && formAttempted) setFormAttempted(false);
+  }, [isFormValid, formAttempted]);
+
+  function handlePlaceSelect(result: PlaceSelectResult) {
+    setForm((f: any) => ({ ...f, address: result.formattedAddress, lat: result.lat, lng: result.lng }));
+  }
+
   async function handleSave() {
-    if (!form.name?.trim()) {
-      toast({ title: "Name is required", variant: "destructive" });
+    if (!isFormValid) {
+      setFormAttempted(true);
       return;
     }
     setSaving(true);
     try {
+      const payload = {
+        name: form.name?.trim(),
+        address: form.address || null,
+        phone: form.phone ? stripPhone(form.phone) : null,
+        contact_email: form.contact_email ? formatEmail(form.contact_email).trim() : null,
+        lat: form.lat,
+        lng: form.lng,
+        status: form.status,
+      };
       const { data, error } = await supabase.functions.invoke("leads-auth", {
-        body: { password: storedPassword(), action: "hub_update_identity", hub_id: hub.id, hub: form },
+        body: { password: storedPassword(), action: "hub_update_identity", hub_id: hub.id, hub: payload },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -663,20 +685,72 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
     }
   }
 
+  const showNameError = formAttempted && !form.name?.trim();
+  const addressChanged = form.address && form.address !== (hub?.address || "");
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Edit Identity</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <FormRow label="Name *"><Input value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></FormRow>
-          <FormRow label="Address"><Input value={form.address || ""} onChange={(e) => setForm({ ...form, address: e.target.value })} /></FormRow>
+          <FormRow label="Name *">
+            <Input
+              value={form.name || ""}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className={showNameError ? "border-2" : ""}
+              style={showNameError ? { borderColor: ALERT_RED } : undefined}
+            />
+            {showNameError && (
+              <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: ALERT_RED }}>
+                <AlertCircle className="w-3 h-3" /> Required
+              </div>
+            )}
+          </FormRow>
+          <FormRow label="Address">
+            {googleLoaded ? (
+              <PlaceAutocompleteInput
+                onPlaceSelect={handlePlaceSelect}
+                onInputChange={(val) => setForm((f: any) => ({ ...f, address: val }))}
+                placeholder="Start typing an address..."
+                initialValue={form.address || ""}
+                containerClassName="place-autocomplete-admin"
+              />
+            ) : (
+              <Input
+                value={form.address || ""}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                placeholder="Loading Google Maps..."
+              />
+            )}
+            {addressChanged && form.lat === hub?.lat && form.lng === hub?.lng && (
+              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: WARN_YELLOW }}>
+                <AlertTriangle className="w-3 h-3" /> Select from suggestions to capture new coordinates
+              </p>
+            )}
+            {form.lat != null && form.lng != null && (
+              <p className="text-xs mt-1" style={{ color: T.textSecond }}>
+                ✓ {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
+              </p>
+            )}
+          </FormRow>
           <div className="grid grid-cols-2 gap-3">
-            <FormRow label="Latitude"><Input value={form.lat ?? ""} onChange={(e) => setForm({ ...form, lat: e.target.value })} /></FormRow>
-            <FormRow label="Longitude"><Input value={form.lng ?? ""} onChange={(e) => setForm({ ...form, lng: e.target.value })} /></FormRow>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <FormRow label="Phone"><Input value={form.phone || ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></FormRow>
-            <FormRow label="Contact email"><Input type="email" value={form.contact_email || ""} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></FormRow>
+            <FormRow label="Phone">
+              <Input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={14}
+                value={form.phone || ""}
+                onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
+                placeholder="(504) 555-0100"
+              />
+            </FormRow>
+            <FormRow label="Contact email">
+              <EmailInput
+                value={form.contact_email || ""}
+                onChange={(v) => setForm({ ...form, contact_email: formatEmail(v) })}
+              />
+            </FormRow>
           </div>
           <FormRow label="Status">
             <select className="w-full h-10 rounded-md border px-2 text-sm bg-background"
@@ -686,6 +760,11 @@ function EditIdentityModal({ open, onClose, hub, T, storedPassword, onSaved }: {
               <option value="inactive">Inactive</option>
             </select>
           </FormRow>
+          {formAttempted && !isFormValid && (
+            <p className="text-xs" style={{ color: ALERT_RED }}>
+              Please fill in all required fields above.
+            </p>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
