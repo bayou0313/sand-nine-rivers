@@ -8152,6 +8152,13 @@ const Leads = () => {
                 <p className="text-xs text-gray-500 mb-3">All pricing fields are required before a PIT can be activated.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base delivery fee *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#666" }}>$</span>
+                      <Input placeholder="120" value={newPit.base_delivery_fee ?? ""} onChange={e => setNewPit({ ...newPit, base_delivery_fee: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_delivery_fee == null || isNaN(Number(newPit.base_delivery_fee))) setNewPit(prev => ({ ...prev, base_delivery_fee: 120 })); else setNewPit(prev => ({ ...prev, base_delivery_fee: Math.round(prev.base_delivery_fee! * 100) / 100 })); }} type="number" min={0} className="h-9 text-sm pl-6" />
+                    </div>
+                  </div>
+                  <div>
                     <label className="text-xs mb-1 block" style={{ color: "#666" }}>Base price per load *</label>
                     <Input placeholder="e.g. 195.00" value={newPit.base_price ?? ""} onChange={e => setNewPit({ ...newPit, base_price: e.target.value ? parseFloat(e.target.value) : null })} onBlur={() => { if (newPit.base_price != null && !isNaN(newPit.base_price)) setNewPit(prev => ({ ...prev, base_price: Math.round(prev.base_price! * 100) / 100 })); }} type="number" className="h-9 text-sm" />
                   </div>
