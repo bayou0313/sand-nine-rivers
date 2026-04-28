@@ -2959,10 +2959,11 @@ ${pendingNotes || "_(none recorded — update from /leads → Settings → Pendi
         return new Response(JSON.stringify({ error: "Invalid password" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      // Slice C — return ALL drivers (status filter is now client-side: All/Active/On Leave/Inactive).
+      // Includes status + primary_hub_id so DriverCard can render hub assignment + status pill.
       const { data, error } = await supabase
         .from("drivers")
-        .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, pin_hash, created_at, updated_at")
-        .eq("active", true)
+        .select("id, name, phone, email, truck_number, payment_type, payment_rate, license_expires_on, notes, active, status, primary_hub_id, pin_hash, created_at, updated_at")
         .order("name", { ascending: true });
       if (error) throw error;
 
